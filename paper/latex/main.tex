@@ -12,6 +12,7 @@
 \usepackage{amssymb}
 \usepackage{multirow}
 \usepackage{xcolor}
+\usepackage{url}
 
 \newcommand{\ci}[2]{\,{\scriptsize[#1,\,#2]}}
 \newcommand{\rw}[2]{read~#1\,/\,write~#2}
@@ -36,6 +37,7 @@ collapses, merely reading a two-loop prompt state, without any training, cuts un
 Ouro-2.6B-Thinking on GSM8K at $0.55\times$ its time per answer. Through a RoPE-commuting key scale, one prompt KV cache
 serves every loop exactly; storing the answer once too more than doubles long-answer decode throughput. Reading deep hurts short-context retrieval and few-shot mathematics, consistent with linear probes: deeper
 loops keep less of what was said and more of what comes next.
+Code, results and per-item outputs: \url{https://github.com/yanghu819/read-deep-write-shallow}.
 \end{abstract}
 
 \section{Introduction}
