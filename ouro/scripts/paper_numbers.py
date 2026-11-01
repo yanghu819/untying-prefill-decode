@@ -386,9 +386,9 @@ LEV_CMP = [("Lev-1.4B read-deep trained vs same-training control", "rd4-1.4B-rea
            ("Lev-2.6B training-free read 4 vs native", "Lev-2.6B-read4", "Lev-2.6B-read0"),
            ("Lev-2.6B control vs original", "ctl-2.6B-read0", "Lev-2.6B-read0"),
            ("Lev-3B read-deep trained vs same-training control", "rd2-3B-read2", "ctl-3B-read0"),
-           ("Lev-1.4B seed 1 read-deep trained vs same-training control", "rd4-1.4B-s1-read4", "ctl-1.4B-s1-read0"),
-           ("Lev-1.4B seed 2 read-deep trained vs same-training control", "rd4-1.4B-s2-read4", "ctl-1.4B-s2-read0"),
-           ("Lev-2.6B seed 1 read-deep trained vs same-training control", "rd4-2.6B-s1-read4", "ctl-2.6B-s1-read0")]
+           *[(f"{m} seed {k} read-deep trained vs same-training control", f"{a}-s{k}-read{r}", f"ctl-{b}-s{k}-read0")
+             for m, a, b, r in (("Lev-1.4B", "rd4-1.4B", "1.4B", 4), ("Lev-2.6B", "rd4-2.6B", "2.6B", 4), ("Lev-3B", "rd2-3B", "3B", 2))
+             for k in (1, 2, 3)]]
 
 
 def lev():
@@ -413,6 +413,17 @@ def lev():
             r = {x: (round(v, 1) if isinstance(v, float) else v) for x, v in boot(ca, cb, groups={i: A[i]["group"] for i in ids}).items()}
             out.append(dict(label=label, depth=k, **r))
             print(f"Lev          {label:52s} d={k} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f})")
+    # training seeds (seed 0 = the unsuffixed runs): per-seed gain at each decision depth, mean and sample std
+    for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B"):
+        main = f"{m} read-deep trained vs same-training control"
+        labels = [main] + [f"{m} seed {k} read-deep trained vs same-training control" for k in (1, 2, 3)]
+        for k in sorted({r["depth"] for r in out if r["label"] == main}):
+            g = [r["diff"] for lb in labels for r in out if r["label"] == lb and r["depth"] == k]
+            if len(g) > 1:
+                out.append(dict(label=f"{m} seeds", depth=k, seeds=len(g), mean=round(float(np.mean(g)), 1),
+                                sd=round(float(np.std(g, ddof=1)), 1), min=min(g), max=max(g)))
+                print(f"Lev seeds    {m:52s} d={k} {len(g)} seeds: mean {np.mean(g):+5.1f} sd {np.std(g, ddof=1):.1f} "
+                      f"range [{min(g):+.1f}, {max(g):+.1f}]")
     return out
 
 
