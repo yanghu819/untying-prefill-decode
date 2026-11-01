@@ -373,6 +373,7 @@ LEV = Path(__file__).resolve().parents[1] / "results" / "lev" / "levbench"
 LEV_CMP = [("Lev-1.4B read-deep trained vs same-training control", "rd4-1.4B-read4", "ctl-1.4B-read0"),
            ("Lev-1.4B control vs original", "ctl-1.4B-read0", "Lev-1.4B-read0"),
            ("Lev-1.4B training-free read 4 vs native", "Lev-1.4B-read4", "Lev-1.4B-read0"),
+           ("Lev-1.4B read-deep trained, read 4 vs read 2 (read 2 not trained)", "rd4-1.4B-read4", "rd4-1.4B-read2"),
            ("Lev-2.6B read-deep trained vs same-training control", "rd4-2.6B-read4", "ctl-2.6B-read0"),
            ("Lev-2.6B training-free read 4 vs native", "Lev-2.6B-read4", "Lev-2.6B-read0")]
 
