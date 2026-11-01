@@ -219,14 +219,9 @@ def fig4():
 
 def fig_equal():
     """The headline: reading 4 loops and writing 2 has the decode depth of native 2/2 and nearly the quality of 4/4."""
-    C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Equal decode cost"}
+    E = {e["bench"]: e for e in PN["equal"]}   # all three models on the same items per benchmark
     benches = ["GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"]
-    rows = []
-    for b in benches:
-        v2 = C[f"2.6B-T read 4/write 2 vs native 2/2 {b}"]
-        v4 = C[f"2.6B-T read 4/write 2 vs native 4/4 {b}"]
-        rows.append((v2["b"], v2["a"], v4["b"]))
-    rows = np.array(rows)
+    rows = np.array([(E[b]["native2"], E[b]["ours"], E[b]["native4"]) for b in benches])
     fig, ax = plt.subplots(figsize=(6.9, 2.8))
     y = np.arange(len(benches))[::-1]
     for yi, (n2, ours, n4) in zip(y, rows):

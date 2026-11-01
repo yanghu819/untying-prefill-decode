@@ -427,6 +427,36 @@ def lev():
     return out
 
 
+EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k_think:math_verify"),
+         ("MATH-500", "T:T26-S42-math500_think:math_verify", "T:think-native{n}-math500_think:math_verify"),
+         ("MMLU-Pro", "L:T26x-S42-mmlupro:exact_match", "L:T26x-native{n}-mmlupro:exact_match"),
+         ("ARC-C", "L:T26x-S42-arc:acc_norm", "L:T26x-native{n}-arc:acc_norm"),
+         ("BBH", "L:T26x-S42-bbh:exact_match", "L:T26x-native{n}-bbh:exact_match"),
+         ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
+         ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
+         ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet")]
+
+
+def equal():
+    """Figure 4: read 4 / write 2 vs native 2/2 and native 4/4 (Ouro-2.6B-Thinking), all three on the items every one
+    of them has, so the three scores and both paired differences share one item set."""
+    out = []
+    for bench, ka, kb in EQUAL:
+        o, n2, n4 = load(ka), load(kb.format(n=2)), load(kb.format(n=4))
+        if o is None or n2 is None or n4 is None:
+            print(f"Equal        {bench:12s} MISSING"); continue
+        ids = set(o) & set(n2) & set(n4)
+        o, n2, n4 = ({i: x[i] for i in ids} for x in (o, n2, n4))
+        r2, r4 = boot(o, n2), boot(o, n4)
+        row = dict(bench=bench, n=len(ids), ours=round(r2["a"], 1), native2=round(r2["b"], 1), native4=round(r4["b"], 1),
+                   vs2=[round(r2[k], 1) for k in ("diff", "lo", "hi")], vs4=[round(r4[k], 1) for k in ("diff", "lo", "hi")])
+        out.append(row)
+        print(f"Equal        {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
+              f"{row['vs2'][0]:+5.1f} [{row['vs2'][1]:+.1f}, {row['vs2'][2]:+.1f}] | 4/4 {row['native4']:5.1f} "
+              f"{row['vs4'][0]:+5.1f} [{row['vs4'][1]:+.1f}, {row['vs4'][2]:+.1f}]")
+    return out
+
+
 def throughput():
     """Table in Appendix (decode throughput) and the ratios in Sec 4.2: best tokens/s over batch sizes, 8K context."""
     d = Path(__file__).resolve().parents[1] / "results" / "throughput-sb4"
@@ -469,7 +499,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev(), equal=equal()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
