@@ -1,0 +1,21 @@
+# MATH-500 shard 0 of 5 (every 5th problem from 0); otherwise identical to math500_think
+task: math500_think_s0
+dataset_path: HuggingFaceH4/MATH-500
+process_docs: !function utils.math_shard0
+output_type: generate_until
+test_split: test
+doc_to_text: "{{problem}}\nPlease reason step by step, and put your final answer within \\boxed{}."
+doc_to_target: "{{answer}}"
+process_results: !function utils.math_results
+generation_kwargs:
+  until: []
+  max_gen_toks: 8192
+  do_sample: false
+  temperature: 0
+metric_list:
+  - metric: math_verify
+    aggregation: mean
+    higher_is_better: true
+num_fewshot: 0
+metadata:
+  version: 1.0

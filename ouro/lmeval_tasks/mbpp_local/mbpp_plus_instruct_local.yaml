@@ -1,0 +1,15 @@
+include: mbpp_instruct_local.yaml
+task: mbpp_plus_instruct_local
+dataset_path: parquet
+doc_to_text: "{{prompt if prompt is defined else text}} Your code should satisfy the following assertion:\n{{test_list[0]}}"
+doc_to_target: "{{test_list[0]}}"
+gen_prefix: "Here is a solution to this programming problem:\n```python\n"
+num_fewshot: 0
+generation_kwargs:
+  max_gen_toks: 1024
+  until: []
+  do_sample: false
+
+dataset_kwargs:
+  data_files:
+    test: /dev/shm/big-small-ouro/hf-lmeval/hub/datasets--evalplus--mbppplus/snapshots/b2d74c91837c3f2a20c1299ae98133cbe7cfa077/data/test-00000-of-00001-d5781c9c51e02795.parquet

@@ -1,0 +1,22 @@
+# GSM8K shard 1 of 4 (every 4th problem from 1); otherwise identical to gsm8k_think
+task: gsm8k_think_s1
+dataset_path: gsm8k
+dataset_name: main
+process_docs: !function utils.gsm_shard1
+output_type: generate_until
+test_split: test
+doc_to_text: "{{question}}\nPlease reason step by step, and put your final answer within \\boxed{}."
+doc_to_target: !function utils.gsm_target
+process_results: !function utils.gsm_results
+generation_kwargs:
+  until: []
+  max_gen_toks: 4096
+  do_sample: false
+  temperature: 0
+metric_list:
+  - metric: math_verify
+    aggregation: mean
+    higher_is_better: true
+num_fewshot: 0
+metadata:
+  version: 1.0

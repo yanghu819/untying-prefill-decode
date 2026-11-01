@@ -1,0 +1,23 @@
+
+tag:
+  - longbench_local
+task: lbl_trec
+dataset_path: json
+test_split: test
+doc_to_text: 'Please determine the type of the question below. Here are some examples of questions.\n\n{{context}}\n{{input}}'
+doc_to_target: '{{answers}}'
+process_results: !function metrics.get_classification_score
+generation_kwargs:
+  max_gen_toks: 64
+  temperature: 0
+  do_sample: false
+  until: ["\n"]
+metric_list:
+  - metric: "classification_score"
+    aggregation: mean
+    higher_is_better: True
+metadata:
+  version: 3.0
+dataset_kwargs:
+  data_files:
+    test: /dev/shm/big-small-ouro/longbench-data/data/trec.jsonl
