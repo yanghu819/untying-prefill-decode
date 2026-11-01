@@ -33,8 +33,9 @@
 
 \begin{abstract}
 Looped language models reuse one block of layers several times per token and spend the same number of loops on the
-prompt (prefill) and on every generated token (decoding). We show that the two buy different things: \emph{prefill
-depth mainly buys knowledge and long-context accuracy, while decoding depth mainly buys multi-step reasoning}. A small
+prompt (prefill) and on every generated token (decoding). On the checkpoints and benchmarks we test, the two buy
+different things: \emph{prefill depth mainly buys knowledge and long-context accuracy, while decoding depth mainly buys
+multi-step reasoning}, with exceptions that depend on the prompting protocol. A small
 connector trained on a frozen looped model separates the two budgets: one set of parameters serves all 16 pairs of
 prefill and decoding depth up to four loops, and one stored prompt KV cache serves every decoding loop. On
 Ouro-2.6B-Thinking, reading the prompt with four loops and writing with two scores above the native two-loop model on seven
@@ -245,12 +246,14 @@ SenseNova-Loop-9B, read 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{3
 \caption{\textbf{Reading depth with the writer held fixed} across five checkpoints (paired, within one connector). Set
 sizes: MMLU 14,042, ARC-C 1,172, MMLU-Pro 420 (Ouro) and 980 (SenseNova), RULER 520, HELMET 1,108 (Ouro) and 6,646
 (SenseNova), GSM8K 1,319, BBH 6,511. HELMET is averaged as its authors do (mean per dataset, then per category, then
-over its four categories). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap
-intervals.}
+over its four categories). Each column shows one benchmark of that kind per checkpoint;
+counterexamples are discussed in Section~\ref{sec:grid} and Appendix~\ref{app:hurt}. Differences are score points on
+a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:models}
 \end{table*}
 
 \subsection{Reading buys knowledge and long context, writing buys reasoning}
+\label{sec:grid}
 
 Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
 four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 8 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
@@ -284,8 +287,10 @@ same way but do not isolate reading depth (Appendix~\ref{app:eval}).
 
 
 
-Reading deep is not uniformly better: on Ouro it can lower exact key--value recall and few-shot exemplar imitation at
-short context (Appendix~\ref{app:hurt}).
+Reading deep is not uniformly better. At one writing loop on Ouro-2.6B it lowers 4-shot MATH-500 by 11.2 points while
+raising zero-shot MATH-500 by 7.0; it sharply lowers 3-shot BBH on both 1.4B checkpoints ($-24.5$ and $-20.5$); and on
+Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}). The division of labour is a tendency on the
+benchmarks we test, and it depends on how the task is prompted.
 
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
