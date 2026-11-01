@@ -115,6 +115,14 @@ State-Prediction Separation~\citep{sps} add decode-side computation. These works
 computation or share caches across recurrences; we instead vary prompt and answer depth independently within one trained
 connector and measure what each buys.
 
+\paragraph{Asymmetric KV producers and consumers.} YOCO~\citep{yoco} splits a decoder into a self-decoder that produces
+one shared global KV cache and a cross-decoder that reads it; YOCO-U~\citep{yocou} loops the self-decoder with shared
+parameters, keeping global KV storage independent of the number of loops while every token still runs the loops;
+KITE~\citep{kite} expands a checkpoint into two towers in which bulk prefill runs only the KV-producing tower. These
+architectures are designed or expanded for an asymmetric split. We instead adapt an existing looped model after
+pretraining and choose prompt depth $p$ and answer depth $d$ independently per request: the frozen backbone produces the
+prompt KV once with $p$ loops, and generation uses $d$ loops through a small connector.
+
 \paragraph{Sharing and transferring KV.} Looped Latent Attention~\citep{lla} compresses KV across loops; BeNice!~\citep{benice}
 and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c}, HeteroFold~\citep{heterofold},
 Swarm Telepathy~\citep{swat} and CacheLink~\citep{cachelink} transfer KV between models; BellowsKV~\citep{bellows}
