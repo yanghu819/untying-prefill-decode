@@ -219,7 +219,7 @@ def fig4():
 
 def fig_equal():
     """The headline: reading 4 loops and writing 2 has the decode depth of native 2/2 and nearly the quality of 4/4."""
-    E = {e["bench"]: e for e in PN["equal"]}   # all three models on the same items per benchmark
+    E = {e["bench"]: e for e in PN["equal"] if e.get("model", "2.6B-T") == "2.6B-T"}   # all three models on the same items per benchmark
     benches = ["GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"]
     rows = np.array([(E[b]["native2"], E[b]["ours"], E[b]["native4"]) for b in benches])
     fig, ax = plt.subplots(figsize=(6.9, 2.8))

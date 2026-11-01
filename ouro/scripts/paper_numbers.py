@@ -246,6 +246,7 @@ def load_raw(runs, key):
 
 def keys():
     ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS} | set(WKEYS)
+    ks |= {k for _, _, ka, kb in equal_specs() for k in (ka, ka.replace("S42", "S22"), kb.format(n=2), kb.format(n=4))}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -447,28 +448,34 @@ def lev():
 
 
 
+def equal_specs():
+    """(model, benchmark, read 4/write 2 key, native key with {n}) for Ouro-2.6B-Thinking and Ouro-1.4B-Thinking."""
+    t14 = lambda k: k.replace("T26", "T14").replace("T:think-native", "T:T14-native")   # 2.6B natives are "think-native*"
+    return [("2.6B-T", *e) for e in EQUAL] + [("1.4B-T", e[0], *(t14(k) for k in e[1:])) for e in EQUAL]
+
+
 def equal():
     """Figure 4: read 4 / write 2 vs native 2/2 and native 4/4 (Ouro-2.6B-Thinking), all three on the items every one
     of them has, so the three scores and both paired differences share one item set."""
     out = []
-    for bench, ka, kb in EQUAL:
+    for model, bench, ka, kb in equal_specs():
         o, n2, n4 = load(ka), load(kb.format(n=2)), load(kb.format(n=4))
         if o is None or n2 is None or n4 is None:
-            print(f"Equal        {bench:12s} MISSING"); continue
+            print(f"Equal        {model} {bench:12s} MISSING"); continue
         s22 = load(ka.replace("S42", "S22"))   # the same connector reading 2 loops (same weights, same training)
         ids = set(o) & set(n2) & set(n4)
         if s22 is not None and not ids <= set(s22):   # not yet on every shared item: report it alone, keep the triple
-            print(f"Equal        {bench:12s} same connector 2/2 on {len(ids & set(s22))} of {len(ids)} shared items; not used")
+            print(f"Equal        {model} {bench:12s} same connector 2/2 on {len(ids & set(s22))} of {len(ids)} shared items; not used")
             s22 = None
         o, n2, n4 = ({i: x[i] for i in ids} for x in (o, n2, n4))
         r2, r4 = boot(o, n2), boot(o, n4)
-        row = dict(bench=bench, n=len(ids), ours=round(r2["a"], 1), native2=round(r2["b"], 1), native4=round(r4["b"], 1),
+        row = dict(model=model, bench=bench, n=len(ids), ours=round(r2["a"], 1), native2=round(r2["b"], 1), native4=round(r4["b"], 1),
                    vs2=[round(r2[k], 1) for k in ("diff", "lo", "hi")], vs4=[round(r4[k], 1) for k in ("diff", "lo", "hi")])
         if s22 is not None:
             r22 = boot(o, {i: s22[i] for i in ids})
             row.update(same22=round(r22["b"], 1), vs22=[round(r22[k], 1) for k in ("diff", "lo", "hi")])
         out.append(row)
-        print(f"Equal        {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
+        print(f"Equal        {model} {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
               f"{row['vs2'][0]:+5.1f} [{row['vs2'][1]:+.1f}, {row['vs2'][2]:+.1f}] | 4/4 {row['native4']:5.1f} "
               f"{row['vs4'][0]:+5.1f} [{row['vs4'][1]:+.1f}, {row['vs4'][2]:+.1f}]"
               + (f" | same 2/2 {row['same22']:5.1f} {row['vs22'][0]:+5.1f} [{row['vs22'][1]:+.1f}, {row['vs22'][2]:+.1f}]"
