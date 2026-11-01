@@ -21,10 +21,11 @@ up to four loops.
    **+15.2 MMLU** [14.3, 16.1] and **+8.6 RULER-16K** [4.3, 12.8] within the same connector (full test sets, paired
    bootstrap 95% intervals); a second training seed gives +15.2 and +8.6 again.
 2. **With the writer fixed, reading deeper helps on five checkpoints from two families** (Ouro-2.6B, Ouro-1.4B,
-   Ouro-2.6B-Thinking, Ouro-1.4B-Thinking, SenseNova-Loop-9B), e.g. MMLU-Pro +18.6 and HELMET +12.0 on
-   Ouro-2.6B-Thinking. Against the native allocation, reading 4 loops and writing 2 beats native 4/4 on HELMET
-   (60.1 vs 55.8, **+4.3** [2.4, 6.2]) with half the writing depth. The effect is task-dependent: both 1.4B models collapse
-   on few-shot BBH at read 4 / write 1.
+   Ouro-2.6B-Thinking, Ouro-1.4B-Thinking, SenseNova-Loop-9B), e.g. MMLU-Pro +18.6 [13.6, 23.8] on Ouro-2.6B-Thinking.
+   **Not everywhere:** on HELMET (averaged per category, as its authors do) reading deep helps retrieval-augmented QA,
+   re-ranking and in-context learning on Ouro but loses exact key-value recall, so read 4 / write 2 scores below native
+   4/4 on the HELMET average (-8.7 [-13.3, -4.1]); it also lowers 4-shot MATH, and both 1.4B models collapse on few-shot
+   BBH at read 4 / write 1.
 3. **Writing shallow is where time is saved.** Writing is paid per token. On Ouro-2.6B-Thinking a connector writing with
    2 loops answers GSM8K in **0.55×** [0.45, 0.67] the time of the 4-loop model (batch 1, prefill included), and on all
    1,319 problems it is 1.0 point below it (93.3 vs 94.2, paired [−2.0, +0.1]). Reading 2 or 4 loops before writing gives

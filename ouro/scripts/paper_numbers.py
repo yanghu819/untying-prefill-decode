@@ -55,13 +55,13 @@ CMP += [
     ("Table 2", "Ouro-1.4B RULER-16K", ruler("O14-S41", 16), ruler("O14-S11", 16), (1.4, -2.6, 5.4)),
     ("Table 2", "Ouro-1.4B GSM8K", gsm("O14-S41"), gsm("O14-S11"), (6.2, 3.6, 8.7)),
     ("Table 2", "Ouro-2.6B-T MMLU-Pro", "L:T26x-S41-mmlupro:exact_match", "L:T26x-S11-mmlupro:exact_match", (18.6, 13.6, 23.8)),
-    ("Table 2", "Ouro-2.6B-T HELMET", "B:T26ne-S41-helmet:helmet", "B:T26ne-S11-helmet:helmet", (12.0, 9.1, 15.0)),
+    ("Table 2", "Ouro-2.6B-T HELMET", "B:T26ne-S41-helmet:helmet", "B:T26ne-S11-helmet:helmet", (7.7, 2.1, 13.6)),
     ("Table 2", "Ouro-2.6B-T GSM8K", "T:T26-S41-gsm8k_think:math_verify", "T:T26-S11-gsm8k_think:math_verify", (6.6, 4.2, 9.2)),
     ("Table 2", "Ouro-1.4B-T MMLU-Pro", "L:T14x-S41-mmlupro:exact_match", "L:T14x-S11-mmlupro:exact_match", (17.1, 12.4, 22.4)),
-    ("Table 2", "Ouro-1.4B-T HELMET", "B:T14ne-S41-helmet:helmet", "B:T14ne-S11-helmet:helmet", (11.9, 9.0, 14.8)),
+    ("Table 2", "Ouro-1.4B-T HELMET", "B:T14ne-S41-helmet:helmet", "B:T14ne-S11-helmet:helmet", (4.6, 0.1, 8.6)),
     ("Table 2", "Ouro-1.4B-T GSM8K", "T:T14-S41-gsm8k_think:math_verify", "T:T14-S11-gsm8k_think:math_verify", (13.6, 10.5, 16.6)),
     ("Table 2", "SenseNova MMLU-Pro", "L:SN-C21-mmlupro:exact_match", "L:SN-C11-mmlupro:exact_match", (5.5, 2.9, 8.1)),
-    ("Table 2", "SenseNova HELMET", "B:SNnt-C21-helmet:helmet", "B:SNnt-C11-helmet:helmet", (6.7, 5.7, 7.8)),
+    ("Table 2", "SenseNova HELMET", "B:SNnt-C21-helmet:helmet", "B:SNnt-C11-helmet:helmet", (3.5, 0.8, 6.1)),
     ("Table 2", "SenseNova BBH", "B:SNnt-C21-bbh:bbh", "B:SNnt-C11-bbh:bbh", (7.0, 5.9, 8.0)),
     ("Table 5", "2.6B write 1 RULER-4K", ruler("X26-S41", 4), ruler("X26-S11", 4), (-3.8, -8.2, 0.3)),
     ("Table 5", "2.6B write 1 MATH 4-shot", "L:o26x-S41-math:mvfull", "L:o26x-S11-math:mvfull", (-11.2, -15.4, -6.8)),
@@ -90,11 +90,18 @@ for seed, run in ((1, "X26"), (2, "X26s2")):
     CMP.append(("Table 7", f"seed {seed} write 2 RULER-4K", ruler(f"{run}-S42", 4), ruler(f"{run}-S22", 4), None))
 CMP += [
     ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 4/4", "B:T26ne-S42-helmet:helmet", "B:T26ne-native4-helmet:helmet",
-     (4.3, 2.4, 6.2)),
+     (-8.7, -13.3, -4.1)),
     ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 2/2", "B:T26ne-S42-helmet:helmet", "B:T26ne-native2-helmet:helmet",
      None),
     ("App A", "2.6B-T answer once vs per-loop answer banks, read 4/write 2 GSM8K (full)",
      "T:T26-O-universal-O42-gsm8k_think:math_verify", "T:T26-S42-gsm8k_think:math_verify", (0.5, -0.5, 1.6)),
+    *[("HELMET by category", f"{lab} {cat}", f"B:{x}:helmet@{cat}", f"B:{y}:helmet@{cat}", None)
+      for lab, x, y in (("2.6B-T read 4/write 2 vs native 4/4", "T26ne-S42-helmet", "T26ne-native4-helmet"),
+                        ("2.6B-T read 4/write 2 vs native 2/2", "T26ne-S42-helmet", "T26ne-native2-helmet"),
+                        ("2.6B-T read 4 vs 1 (write 1)", "T26ne-S41-helmet", "T26ne-S11-helmet"),
+                        ("1.4B-T read 4 vs 1 (write 1)", "T14ne-S41-helmet", "T14ne-S11-helmet"),
+                        ("SenseNova read 2 vs 1 (write 1)", "SNnt-C21-helmet", "SNnt-C11-helmet"))
+      for cat in ("rag", "rerank", "icl", "recall")],
     ("Sec 4.2", "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
      "T:think-native4-gsm8k_think:math_verify", (-1.0, -2.0, 0.1)),
     ("Sec 4.2", "SenseNova read 1/write 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",
@@ -198,7 +205,7 @@ def load_raw(runs, key):
 
 def keys():
     ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS} | set(WKEYS)
-    return sorted(ks)
+    return sorted({k.partition("@")[0] for k in ks})
 
 
 def export(runs, out_dir):
@@ -220,12 +227,39 @@ def export(runs, out_dir):
 
 
 def load(key):
+    """Item scores of `key`; `key@category` keeps one HELMET category (rag, recall, rerank, icl)."""
+    key, _, cat = key.partition("@")
     p = ITEMS / fname(key)
-    return json.load(gzip.open(p))["scores"] if p.exists() else None
+    if not p.exists():
+        return None
+    scores = json.load(gzip.open(p))["scores"]
+    return {i: v for i, v in scores.items() if i.split("/")[1].split("_")[0] == cat} if cat else scores
+
+
+def helmet_boot(a, b, reps=5000):
+    """HELMET as its authors aggregate it: mean per dataset, then per category (RAG, recall, re-rank, ICL), then the
+    mean over categories; bootstrap resamples items within each dataset."""
+    ids = sorted(set(a) & set(b))
+    groups = {}
+    for i in ids:
+        task = i.split("/")[1]
+        groups.setdefault(task.split("_")[0], {}).setdefault(task, []).append(i)
+    rng = np.random.default_rng(0)
+    da, db, dd = 0.0, 0.0, np.zeros(reps)
+    for cat, tasks in groups.items():
+        for task, items in tasks.items():
+            w = 1 / (len(groups) * len(tasks))
+            x = np.array([a[i] for i in items]); y = np.array([b[i] for i in items])
+            da += w * x.mean(); db += w * y.mean()
+            dd += w * (x - y)[rng.integers(0, len(items), (reps, len(items)))].mean(1)
+    return dict(n=len(ids), a=100 * da, b=100 * db, diff=100 * (da - db), lo=100 * np.percentile(dd, 2.5),
+                hi=100 * np.percentile(dd, 97.5))
 
 
 def boot(a, b, reps=5000):
     ids = sorted(set(a) & set(b))
+    if ids and all(str(i).startswith("helmet/") for i in ids):
+        return helmet_boot(a, b, reps)
     d = np.array([a[i] - b[i] for i in ids])
     rng = np.random.default_rng(0)
     m = d[rng.integers(0, len(d), (reps, len(d)))].mean(1)
@@ -238,6 +272,7 @@ E2E = Path(__file__).resolve().parents[1] / "results" / "e2e"
 RATIOS = [("2.6B-T GSM8K read 4/write 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.46, 0.64)),
           ("2.6B-T GSM8K read 4/write 2 vs read 2/write 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.91, 1.11)),
           ("2.6B-T MATH read 4/write 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
+          ("2.6B-T MATH read 4/write 2 vs native 2/2", "think", "math", "S42sb", "native2st", (1.22, None, None)),
           ("SenseNova GSM8K read 1/write 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
           ("2.6B-T GSM8K answer once vs per-loop answer banks (read 4/write 2, batch 1)", "think", "gsm", "O42sb", "S42sb", None)]
 

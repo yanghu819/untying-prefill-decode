@@ -37,9 +37,9 @@ reading the prompt and writing the answer. We show that the two buy different th
 prompt mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys multi-step
 derivation}. To measure this, a small connector trained on a frozen looped model lets the prompt be read with $p$ loops
 and the answer written with $d$ loops, one set of parameters serving all 16 pairs up to four loops on Ouro-2.6B. With the writer fixed, reading deeper improves knowledge and long-context benchmarks on five
-checkpoints from two model families. On Ouro-2.6B-Thinking, reading four loops and writing two
-beats the native four-loop model on long-context HELMET by 4.3 points, and on GSM8K a two-loop writer answers in
-$0.55\times$ its time, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV
+checkpoints from two model families, although not on every task: deep reading costs exact recall of the prompt.
+Writing is paid per token, so writing shallow is what saves time: on Ouro-2.6B-Thinking a two-loop writer answers GSM8K
+in $0.55\times$ the time of the four-loop model, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV
 cache serve every writing loop exactly. Linear probes find the next token more, and in Ouro the previous token less, linearly decodable from later loops' value cache.
 \end{abstract}
 
@@ -77,8 +77,9 @@ writing the answer (decode) is sequential and paid for every token. A looped mod
 both. This raises a simple question: \emph{what does depth buy when reading, and what does it buy when writing?} If the
 answers differ, a model could read deep and write shallow.
 
-Answering the question needs a model that writes with fewer loops than it read with, so its shallow writing loops
-must attend to KV produced by a deeper loop. We introduce a small \emph{depth-split connector}: LoRA on the frozen writer
+We write \rw{p}{d} for prefilling the prompt with $p$ loops and generating every answer token with $d$ loops, and
+\nat{d} for the unmodified model, which uses $d$ loops for both. Answering the question needs a model that writes with
+fewer loops than it read with, so its shallow writing loops must attend to KV produced by a deeper loop. We introduce a small \emph{depth-split connector}: LoRA on the frozen writer
 plus, for every writing loop, a map on the prompt KV (Figure~\ref{fig:method}). The key map commutes with rotary position
 embeddings, so one stored prompt cache serves every writing loop exactly. We train one connector by distillation from the
 native model and evaluate it at all 16 combinations of read and write depth up to four with its parameters fixed, which
@@ -86,8 +87,9 @@ lets us measure the two effects separately.
 
 The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
 moves knowledge and long-context accuracy, and writing depth mainly moves multi-step derivation. With the writer held
-fixed, reading deeper helps on five checkpoints (Table~\ref{tab:models}), although the effect depends on the task; on
-Ouro-2.6B-Thinking, reading four loops and writing two beats native 4/4 on HELMET (60.1 vs.\ 55.8).
+fixed, reading deeper helps on five checkpoints (Table~\ref{tab:models}), although the effect depends on the task: on
+HELMET it helps retrieval-augmented QA, re-ranking and in-context learning but, on Ouro, lowers exact key--value recall
+(Table~\ref{tab:helmet}).
 
 Time is saved on the writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
 one point below it on the full GSM8K test set, and reading deeper first adds no detectable time
@@ -142,10 +144,10 @@ We describe the connector for Ouro; SenseNova-Loop-9B uses a lighter variant wit
 \begin{figure}[t]
 \begin{lstlisting}
 # blocks: frozen looped block, L layers; p/d: read/write loops
-# c[k][l]: complex key scale per RoPE pair; W[k][l]: value map
+# c[k][l] = 1+a+1j*b per RoPE pair; W[k][l] = I+delta (init: I)
 # LoRA on q, k, v, o is active only while writing.
 
-def read(prompt, p):                      # prefill, once per request
+def read(prompt, p):                      # prompt minus its last token
     h = embed(prompt)
     for _ in range(p):
         for l in range(L):
@@ -160,7 +162,7 @@ def attend(q, K, V, kv_answer, c, W):     # layer l, writing loop k
     g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
     return g * o_p + (1 - g) * o_a
 
-def write(token, K, V, d):                # decode, every answer token
+def write(token, K, V, d):   # last prompt token, then each answer token
     h = embed(token)
     for k in range(d):
         for l in range(L):
@@ -221,14 +223,16 @@ model (same writer, write 1) & knowledge & long context & multi-step \\
 \midrule
 Ouro-2.6B, read 4 vs.\ 1 & MMLU \up{15.2}\ci{14.3}{16.1} & RULER-16K \up{8.6}\ci{4.3}{12.8} & GSM8K \up{8.0}\ci{5.3}{10.5} \\
 Ouro-1.4B, read 4 vs.\ 1 & ARC-C \up{10.8}\ci{8.4}{13.1} & RULER-16K \up{1.4}\ci{-2.6}{5.4} & GSM8K \up{6.2}\ci{3.6}{8.7} \\
-Ouro-2.6B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{18.6}\ci{13.6}{23.8} & HELMET \up{12.0}\ci{9.1}{15.0} & GSM8K \up{6.6}\ci{4.2}{9.2} \\
-Ouro-1.4B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{17.1}\ci{12.4}{22.4} & HELMET \up{11.9}\ci{9.0}{14.8} & GSM8K \up{13.6}\ci{10.5}{16.6} \\
-SenseNova-Loop-9B, read 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{6.7}\ci{5.7}{7.8} & BBH \up{7.0}\ci{5.9}{8.0} \\
+Ouro-2.6B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{18.6}\ci{13.6}{23.8} & HELMET \up{7.7}\ci{2.1}{13.6} & GSM8K \up{6.6}\ci{4.2}{9.2} \\
+Ouro-1.4B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{17.1}\ci{12.4}{22.4} & HELMET \up{4.6}\ci{0.1}{8.6} & GSM8K \up{13.6}\ci{10.5}{16.6} \\
+SenseNova-Loop-9B, read 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{3.5}\ci{0.8}{6.1} & BBH \up{7.0}\ci{5.9}{8.0} \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Reading depth with the writer held fixed} across five checkpoints (paired, within one connector). Set
 sizes: MMLU 14,042, ARC-C 1,172, MMLU-Pro 420 (Ouro) and 980 (SenseNova), RULER 520, HELMET 1,108 (Ouro) and 6,646
-(SenseNova), GSM8K 1,319, BBH 6,511. Differences are accuracy points; brackets are paired 95\% bootstrap intervals.}
+(SenseNova), GSM8K 1,319, BBH 6,511. HELMET is averaged as its authors do (mean per dataset, then per category, then
+over its four categories). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap
+intervals.}
 \label{tab:models}
 \end{table*}
 
@@ -253,7 +257,7 @@ write $d$ & MMLU & RULER-16K & GSM8K \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Reading depth at fixed writing depth} (Ouro-2.6B, one connector, full sets): \rw{4}{d} minus
-\rw{d}{d}. Differences are accuracy points; brackets are paired 95\% bootstrap intervals.}
+\rw{d}{d}. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:equal}
 \end{table}
 
@@ -261,9 +265,73 @@ The same holds across models (Table~\ref{tab:models}). With the writer fixed at 
 knowledge and long-context tasks and the selected multi-step task on all five checkpoints; Ouro-1.4B is the exception on
 long context (RULER-16K $+1.4$, not significant). The gains are task-dependent: on both 1.4B checkpoints the same change
 sharply lowers 3-shot BBH (Limitations). On Nanbeige4.2-3B-Base separately trained connectors per $(p,d)$ pair point the
-same way but do not isolate reading depth (Appendix~\ref{app:eval}). Against the native allocation, read deep / write
-shallow wins on long context: on Ouro-2.6B-Thinking HELMET, \rw{4}{2} scores 60.1 against 55.8 for \nat{4}
-($+4.3$\ci{2.4}{6.2}) with half the writing depth, and 34.1 for \nat{2}.
+same way but do not isolate reading depth (Appendix~\ref{app:eval}).
+
+
+
+
+\paragraph{A test without training.} SenseNova-Loop-9B's one-loop writer collapses on its own. Handing that unchanged
+writer the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
+parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
+from 2.2 to 10.9, far below the 95.8 of \nat{2}: deeper reading recovers knowledge and long-context accuracy, not
+multi-step derivation.
+
+\subsection{Where reading deep does not help}
+\label{sec:hurt}
+
+HELMET shows where reading deep helps and where it hurts (Table~\ref{tab:helmet}). On both Ouro reasoning models,
+reading four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
+exact recall from a JSON key--value store on Ouro-1.4B-Thinking ($-23.5$); against \nat{4}, \rw{4}{2} gains on
+retrieval-augmented QA and in-context learning ($+6.1$, $+6.6$) and loses exact recall ($58.8$ vs.\ $100$), so its
+HELMET average is lower ($-8.7$\ci{-13.3}{-4.1}). SenseNova-Loop-9B does not follow the Ouro pattern on recall and
+re-ranking. The recall category is small (34 items on Ouro).
+
+\begin{table}[!t]
+\centering\small
+\setlength\tabcolsep{2pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+comparison & RAG & re-rank & ICL & recall \\
+\midrule
+2.6B-T, read 4 $-$ 1 & \up{15.4} & \up{13.4} & \up{5.1} & \dn{2.9} \\
+1.4B-T, read 4 $-$ 1 & \up{14.5} & \up{18.0} & \up{9.3} & \dn{23.5} \\
+SenseNova, read 2 $-$ 1 & \up{1.2} & \dn{32.9} & \up{21.6} & \up{24.0} \\
+\midrule
+2.6B-T, 4/2 $-$ native 4/4 & \up{6.1} & \dn{6.3} & \up{6.6} & \dn{41.2} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{HELMET by category} (score differences on a 0--100 scale; reading comparisons at one writing loop,
+same connector). Reading deep helps retrieval-augmented QA (RAG), re-ranking and in-context learning (ICL) on Ouro but
+can lose exact key--value recall. Items: 700 / 41 / 333 / 34 per category on Ouro, 4,200 / 246 / 2,000 / 200 on
+SenseNova; intervals are in \texttt{paper\_numbers.json}.}
+\label{tab:helmet}
+\end{table}
+
+Reading deeper does not help everywhere (Table~\ref{tab:hurt}). At one writing loop it gives a negative but inconclusive
+estimate on RULER-4K, where answers are copied verbatim, and clearly lowers 4-shot MATH-500 on Ouro-2.6B; without
+exemplars the same comparison turns positive on two model sizes and two writing depths. Removing exemplars also changes length and format, so we read this as a
+prompting interaction rather than as evidence that literal information is lost; linear probes of the cache, which find the
+next token more and (in Ouro) the previous token less linearly decodable after more loops, are consistent with it
+(Appendix~\ref{app:analyses}).
+
+\begin{table}[!htb]
+\centering\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}lclr@{}}
+\toprule
+model & write $d$ & task & read 4 $-$ read $d$ \\
+\midrule
+Ouro-2.6B & 1 & RULER-4K & \dn{3.8}\ci{-8.2}{0.3} \\
+ & 1 & MATH, 4-shot & \dn{11.2}\ci{-15.4}{-6.8} \\
+ & 1 & MATH, 0-shot & \up{7.0}\ci{3.0}{10.8} \\
+ & 2 & MATH, 0-shot & \up{7.0}\ci{3.0}{11.2} \\
+Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
+ & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\label{tab:hurt}
+\end{table}
 
 
 \subsection{Writing shallow is fast}
@@ -286,8 +354,8 @@ with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}.
 scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Reading 4 rather than 2 loops before writing two
 takes $1.01\times$\ci{0.90}{1.11} the time: deeper reading costs no detectable time, and the saving against the native
 model comes from the shallower, adapted writer, including its shorter answers. On the 40 timed MATH-500 problems read 4 /
-write 2 scores 85.0, against 82.5 for \nat{4} and 85.0 for \nat{2}, at $0.63\times$ the time of \nat{4} but more than
-\nat{2}, because its solutions are not shorter. On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for
+write 2 scores 85.0, against 82.5 for \nat{4} and 85.0 for \nat{2}, at $0.63\times$ the time of \nat{4} but $1.22\times$
+the time of \nat{2}, because its solutions are not shorter. On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for
 \nat{2} on all 1,319 GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close to the ratio of layer
 executions per token (32 vs.\ 56).
 
@@ -313,7 +381,7 @@ task / model & config & acc.\ (\%) & time (s) \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; Ouro-2.6B-Thinking and
-SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, read 4 / write 2 costs $1.27\times$ \nat{2} per generated token at batch 1, but its answers are
+SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, read 4 / write 2 spends $1.27\times$ the decode time per generated token of \nat{2} at batch 1, but its answers are
 shorter.}
 \label{tab:e2e}
 \end{table}
@@ -346,80 +414,6 @@ against the connector reading 4 loops with one stored prompt KV cache.}
 \label{tab:serve}
 \end{table}
 
-\subsection{Deep reading helps a shallow writer}
-
-A reasoning model written with one loop often gives no answer. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
-on 43.1\% of GSM8K problems; 43.5\% of its answers approach the 4,096-token budget. Training the connector at \rw{1}{1}
-reduces answers without a boxed answer to 19.5\%; with the same writer, reading four loops reduces them further to
-12.7\% overall, lower in every difficulty bucket (Figure~\ref{fig:wander}, left), and shortens answers by 20\% overall. A lexical
-hesitation-marker rate does not fall (12.2 vs.\ 13.8 per 1,000 tokens), so shorter answers do not come from fewer
-markers of hesitation; these counts do not identify the underlying reasoning process. SenseNova-Loop-9B gives a test
-without training, because its one-loop writer collapses. Handing that writer the two-visit prompt state---attention KV
-and Gated-DeltaNet state, no parameter changed---cuts answers without a boxed answer from 96.8\% to 43.7\% and lifts
-RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1 (Figure~\ref{fig:wander}, right); GSM8K accuracy, however,
-only rises from 2.2 to 10.9, far below the 95.8 of \nat{2}.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig3_wandering.pdf}
-\caption{\textbf{Deep reading helps a shallow writer.} Left: Ouro-2.6B-Thinking at one writing loop, GSM8K problems
-bucketed by the number of lines in the reference solution (326 / 668 / 325 problems). Answers without a boxed answer
-grow with difficulty; reading four loops instead of one lowers them by 5.5--7.7 points in every bucket. Right:
-SenseNova-Loop-9B without any training: the native one-loop writer reads the prompt state of a two-visit prefill.}
-\label{fig:wander}
-\end{figure*}
-
-\subsection{What each loop stores}
-\label{sec:probe}
-
-
-
-
-What changes in the cache from loop to loop? We fit linear probes to the frozen native model's per-loop value cache---what
-attention reads back from the prompt---at the same layer and with the same weights, varying only the loop
-(Figure~\ref{fig:probe}). From loop 1 to loop 4 of Ouro-2.6B the previous token becomes less linearly decodable
-(57.7\% $\to$ 45.5\%, lower in 12 of 13 probed layers) and the next token more (26.0\% $\to$ 36.1\%, higher in all 13);
-Ouro-1.4B and Ouro-2.6B-Thinking agree. In SenseNova-Loop-9B the next-token gain replicates in all six attention layers
-(24.1\% $\to$ 29.1\%) while the previous token is about as decodable at both visits (56.8\% vs.\ 56.5\%). These are
-decodability results, not proof of information loss or causal use~\citep{presenthard}, and the probes read the native
-model, not the adapted writer; they resemble the across-layer trend of \citet{voita2019bottom}, and per-loop probes of looped transformers go back to
-\citet{loopedicl}.
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig4_probe.pdf}
-\caption{\textbf{Later loops make the next token more decodable; in Ouro the previous token becomes less decodable.} Linear probes on the stored value
-cache, same weights and layer, change from loop 1 (mean over probed layers; 384 FineWeb windows of 1,024 tokens, 20\%
-held out; 2,048 most frequent training tokens).}
-\label{fig:probe}
-\end{figure*}
-
-Reading deeper does not help everywhere (Table~\ref{tab:hurt}). At one writing loop it gives a negative but inconclusive
-estimate on RULER-4K, where answers are copied verbatim, and clearly lowers 4-shot MATH-500 on Ouro-2.6B; without
-exemplars the same comparison turns positive on two model sizes and two writing depths. This fits the probes, but
-removing exemplars also changes length and format, so we read it as a prompting interaction rather than as evidence that
-literal information is lost.
-
-\begin{table}[!htb]
-\centering\small
-\setlength\tabcolsep{3pt}
-\begin{tabular}{@{}lclr@{}}
-\toprule
-model & write $d$ & task & read 4 $-$ read $d$ \\
-\midrule
-Ouro-2.6B & 1 & RULER-4K & \dn{3.8}\ci{-8.2}{0.3} \\
- & 1 & MATH, 4-shot & \dn{11.2}\ci{-15.4}{-6.8} \\
- & 1 & MATH, 0-shot & \up{7.0}\ci{3.0}{10.8} \\
- & 2 & MATH, 0-shot & \up{7.0}\ci{3.0}{11.2} \\
-Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
- & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer. Differences are accuracy points; brackets are paired 95\% bootstrap intervals.}
-\label{tab:hurt}
-\end{table}
-
-
 \subsection{Design variants}
 \label{sec:ablation}
 
@@ -441,7 +435,7 @@ first-loop branch & 4/1 & RULER-4K & \up{2.3}\ci{1.0}{3.6} \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
-paired). Differences are accuracy points; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per $(p,d)$ pair, 24M answer tokens; the other variants follow our recipe.
+paired). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per $(p,d)$ pair, 24M answer tokens; the other variants follow our recipe.
 $^\ddagger$Unrestricted key maps with one prompt KV cache per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
 \label{tab:ablation}
 \end{table}
@@ -469,7 +463,8 @@ accuracy cost.
 \section*{Limitations}
 \label{sec:limits}
 
-Reading deep is worse for short-context retrieval and 4-shot mathematics (Table~\ref{tab:hurt}); at three
+Reading deep lowers 4-shot MATH-500, gives a negative but inconclusive estimate on RULER-4K and, on Ouro, lowers exact
+key--value recall in HELMET (Tables~\ref{tab:hurt} and~\ref{tab:helmet}); at three
 or more writing loops, one deep prompt KV cache trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, write 3).
 Deeper prefill raises time to first token, so it pays when answers are long or quality requires it. Both 1.4B checkpoints
 degenerate at \rw{4}{1} on 3-shot BBH (Ouro-1.4B: $-24.5$, Ouro-1.4B-Thinking: $-20.5$ against \rw{1}{1}); with two
@@ -537,9 +532,9 @@ CoT with 60 per subtask. SenseNova-Loop-9B uses MMLU-Pro with 70 questions per s
 BBH (6,511) through our own scripts. For base models, MATH-500 answers are scored with math-verify on the full
 generated answer, with and without exemplars. The harness's own math-verify extraction gives $-9.8$ instead of $-11.2$ for
 the 4-shot comparison on Ouro-2.6B; Minerva's strict ``Final Answer'' match would reverse it (19.6 vs.\ 9.8) because the
-read-1 writer drops the required format more often. On raw HELMET prompts thinking checkpoints can emit a newline and stop (42.7\% of \nat{2}
-answers on Ouro-2.6B-Thinking); for thinking models we mask the stop tokens until an answer has a non-whitespace token,
-for every configuration; this does not rescue \nat{2} (34.1 vs.\ 31.4). SenseNova RULER uses a non-thinking prefill for
+read-1 writer drops the required format more often. On raw HELMET prompts thinking checkpoints can emit a newline and
+stop; for thinking models we therefore mask the stop tokens until an answer has a non-whitespace token, for every
+configuration. SenseNova RULER uses a non-thinking prefill for
 every configuration. Native throughput baselines: static per-loop caches with the same two-call flash attention (fastest),
 the standard dynamic cache (500 / 245 / 105 tokens/s at $d=1/2/4$), and a preallocated contiguous cache with one attention
 call (267 / 130 / 57); all produce identical greedy tokens. Nanbeige4.2-3B-Base connectors trained per $(p,d)$ pair, \rw{2}{1} minus
@@ -570,6 +565,47 @@ resamples; every interval in the paper is recomputed from released per-item scor
 \caption{Ouro-2.6B connector trained with two seeds (initialisation and $(p,d)$ sampling); paired differences within each
 seed, full sets.}
 \end{table}
+
+\section{Additional Analyses}
+\label{app:analyses}
+
+\paragraph{Unfinished answers of a one-loop writer.} A reasoning model written with one loop often gives no answer. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
+on 43.1\% of GSM8K problems; 43.5\% of its answers approach the 4,096-token budget. Training the connector at \rw{1}{1}
+reduces answers without a boxed answer to 19.5\%; with the same writer, reading four loops reduces them further to
+12.7\% overall, lower in every difficulty bucket (Figure~\ref{fig:wander}, left), and shortens answers by 20\% overall. A lexical
+hesitation-marker rate does not fall (12.2 vs.\ 13.8 per 1,000 tokens), so shorter answers do not come from fewer
+markers of hesitation; these counts do not identify the underlying reasoning process. The same writer on SenseNova-Loop-9B, handed the
+two-visit prompt state without training, leaves no boxed answer on 43.7\% of GSM8K problems instead of 96.8\%
+(Figure~\ref{fig:wander}, right).
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig3_wandering.pdf}
+\caption{\textbf{Deep reading helps a shallow writer.} Left: Ouro-2.6B-Thinking at one writing loop, GSM8K problems
+bucketed by the number of lines in the reference solution (326 / 668 / 325 problems). Answers without a boxed answer
+grow with difficulty; reading four loops instead of one lowers them by 5.5--7.7 points in every bucket. Right:
+SenseNova-Loop-9B without any training: the native one-loop writer reads the prompt state of a two-visit prefill.}
+\label{fig:wander}
+\end{figure*}
+
+\paragraph{What each loop stores.} What changes in the cache from loop to loop? We fit linear probes to the frozen native model's per-loop value cache---what
+attention reads back from the prompt---at the same layer and with the same weights, varying only the loop
+(Figure~\ref{fig:probe}). From loop 1 to loop 4 of Ouro-2.6B the previous token becomes less linearly decodable
+(57.7\% $\to$ 45.5\%, lower in 12 of 13 probed layers) and the next token more (26.0\% $\to$ 36.1\%, higher in all 13);
+Ouro-1.4B and Ouro-2.6B-Thinking agree. In SenseNova-Loop-9B the next-token gain replicates in all six attention layers
+(24.1\% $\to$ 29.1\%) while the previous token is about as decodable at both visits (56.8\% vs.\ 56.5\%). These are
+decodability results, not proof of information loss or causal use~\citep{presenthard}, and the probes read the native
+model, not the adapted writer; they resemble the across-layer trend of \citet{voita2019bottom}, and per-loop probes of looped transformers go back to
+\citet{loopedicl}.
+
+\begin{figure*}[h]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig4_probe.pdf}
+\caption{\textbf{Later loops make the next token more decodable; in Ouro the previous token becomes less decodable.} Linear probes on the stored value
+cache, same weights and layer, change from loop 1 (mean over probed layers; 384 FineWeb windows of 1,024 tokens, 20\%
+held out; 2,048 most frequent training tokens).}
+\label{fig:probe}
+\end{figure*}
 
 \section{Reproducibility}
 \label{app:repro}
