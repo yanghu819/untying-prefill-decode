@@ -131,7 +131,7 @@ CMP += [
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
     # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
     *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"),
-       {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3)}.get(bench))
+       {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3), "MMLU-Pro": (8.1, 4.0, 12.1)}.get(bench))
       for bench, ka, _ in EQUAL],
     *[("Pareto", f"read 4/write {d} vs native {d}/{d} {name}", ka.format(d=d), kb.format(d=d), None)
       for d in range(1, 5)
