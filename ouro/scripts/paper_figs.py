@@ -248,6 +248,45 @@ def fig_equal():
               bbox_to_anchor=(0.45, 1.0), columnspacing=1.2, handletextpad=0.4)
     save(fig, "fig_equal")
 
+def _tput(cond):
+    """Best decode tokens/s over tested batch sizes at 8K context, one B300 (results/throughput-sb4)."""
+    rows = json.loads((ROOT / "results" / "throughput-sb4" / f"{cond}.json").read_text())
+    return max(r["tokens_per_s"] for r in rows if "tokens_per_s" in r and r["context"] == 8192)
+
+
+def fig_pareto():
+    """Accuracy vs decode throughput: native d/d against read 4 / write d, d = 1..4."""
+    C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Pareto"}
+    panels = [("MMLU (20/subject)", "MMLU"), ("RULER-16K (260)", "RULER-16K"), ("GSM8K (400)", "GSM8K"),
+              ("GSM8K Thinking (full)", "GSM8K (Thinking)")]
+    fig, axes = plt.subplots(1, 4, figsize=(6.9, 2.1))
+    for ax, (key, title) in zip(axes, panels):
+        nat, ours = [], []
+        for d in range(1, 5):
+            c = C.get(f"read 4/write {d} vs native {d}/{d} {key}")
+            if c is not None and c.get("n", 0):
+                nat.append((_tput(f"native{d}st"), c["b"], d)); ours.append((_tput(f"S4{d}sb"), c["a"], d))
+            elif key.startswith("GSM8K Thinking"):  # read 4 / write 4 not evaluated on the Thinking model
+                nat.append((_tput(f"native{d}st"), _M[f"GSM8K full think-native{d}"], d))
+        for pts, col, lab, mk in ((nat, NAT_LIGHT, "native d/d", "o"), (ours, OURS, "read 4 / write d", "o")):
+            x, y = [p[0] for p in pts], [p[1] for p in pts]
+            ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
+            ax.scatter(x, y, s=18, color=col, zorder=3, label=lab)
+            for xi, yi, d in pts:
+                ax.annotate(f"{d}", (xi, yi), xytext=(0, 5 if col == OURS else -9), textcoords="offset points",
+                            fontsize=6.8, color=OURS if col == OURS else NAT, ha="center")
+        ax.set_xscale("log"); ax.set_xticks([125, 250, 500, 1000], ["125", "250", "500", "1k"])
+        ax.minorticks_off(); ax.set_xlim(100, 1100)
+        ax.set_title(title, fontsize=8.5, color=INK, pad=4)
+        ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+    axes[0].set_ylabel("accuracy (%)")
+    fig.supxlabel("decode throughput (tokens/s, log scale)", fontsize=8.5, y=-0.04)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", ncol=2, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.2)
+    fig.subplots_adjust(wspace=0.32)
+    save(fig, "fig_pareto")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

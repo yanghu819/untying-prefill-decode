@@ -298,6 +298,22 @@ BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}), MBPP+ ($+4.8$\ci
 twice the depth, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), where native 4/4
 recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt}), and on MATH-500.
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_pareto.pdf}
+\caption{\textbf{Accuracy against decode throughput.} Native $d/d$ (grey) and the connector reading 4 loops and writing
+$d$ (red), $d=1$--4 (labels). Throughput: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
+base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $d$ grows.
+Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on all 1,319 GSM8K problems.}
+\label{fig:pareto}
+\end{figure*}
+
+Figure~\ref{fig:pareto} shows the same trade-off across all writing depths, against measured decode throughput. For
+every writing depth, reading four loops moves the model up (more accurate at one or two writing loops: MMLU $+18.4$ and
+$+5.9$, RULER-16K $+22.2$ and $+11.6$ on the grid subsets) or right (faster at three or four writing loops, because one
+stored prompt cache admits larger batches: 271 and 203 against 200 and 125 tokens/s). Read 4 / write 2 runs at
+$1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
+
 \subsection{Writing shallow is fast}
 \label{sec:fast}
 
@@ -350,33 +366,13 @@ shorter.}
 \label{tab:e2e}
 \end{table}
 
-\paragraph{Serving.} Storing the prompt once also changes throughput (Table~\ref{tab:serve}). In a controlled decode
+\paragraph{Serving.} Storing the prompt once also changes throughput (Figure~\ref{fig:pareto}; Table~\ref{tab:serve} in Appendix~\ref{app:serve}). In a controlled decode
 benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), one prompt KV cache decodes
 $0.97\times$ as fast as the fastest native implementation we measured at one writing loop and $1.19$--$1.62\times$ at
 two to four, because it admits larger batches as $d$ grows; this native baseline uses the same flash attention and is
 faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
 generated tokens) one prompt KV cache decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
 
-\begin{table}[t]
-\centering\small
-\setlength\tabcolsep{3pt}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-8K context, 32 steps & $d{=}1$ & $d{=}2$ & $d{=}3$ & $d{=}4$ \\
-\midrule
-native $d/d$ & 834 & 342 & 200 & 125 \\
-\rw{4}{d}, one prompt cache & 813 & 406 & 271 & 203 \\
-\midrule
-1K context, 2{,}048 steps & & $d{=}2$ & & $d{=}4$ \\
-\midrule
-native $d/d$ & & 586 & & 219 \\
-\rw{4}{d}, one prompt cache & & 570 & & 253 \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Decode throughput} of Ouro-2.6B (tokens/s, best over tested batch sizes, one B300): native model
-against the connector reading 4 loops with one stored prompt KV cache.}
-\label{tab:serve}
-\end{table}
 
 \subsection{Design variants}
 \label{sec:ablation}
@@ -521,6 +517,30 @@ resamples; every interval in the paper is recomputed from released per-item scor
 \end{tabular}
 \caption{Ouro-2.6B connector trained with two seeds (initialisation and $(p,d)$ sampling); paired differences within each
 seed, full sets.}
+\end{table}
+
+\section{Decode Throughput}
+\label{app:serve}
+
+\begin{table}[h]
+\centering\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+8K context, 32 steps & $d{=}1$ & $d{=}2$ & $d{=}3$ & $d{=}4$ \\
+\midrule
+native $d/d$ & 834 & 342 & 200 & 125 \\
+\rw{4}{d}, one prompt cache & 813 & 406 & 271 & 203 \\
+\midrule
+1K context, 2{,}048 steps & & $d{=}2$ & & $d{=}4$ \\
+\midrule
+native $d/d$ & & 586 & & 219 \\
+\rw{4}{d}, one prompt cache & & 570 & & 253 \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Decode throughput} of Ouro-2.6B (tokens/s, best over tested batch sizes, one B300): native model
+against the connector reading 4 loops with one stored prompt KV cache.}
+\label{tab:serve}
 \end{table}
 
 \section{Where Reading Deep Does Not Help}

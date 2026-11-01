@@ -114,6 +114,13 @@ CMP += [
           ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
           ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
+    *[("Pareto", f"read 4/write {d} vs native {d}/{d} {name}", ka.format(d=d), kb.format(d=d), None)
+      for d in range(1, 5)
+      for name, ka, kb in (("MMLU (20/subject)", "L:X26-S4{d}-mmlu:acc", "L:o26n{d}-mmlu:acc"),
+                           ("RULER-16K (260)", "B:X26-S4{d}:ruler16k", "B:X26-n{d}:ruler16k"),
+                           ("GSM8K (400)", f"L:X26-S4{{d}}-gsm:{GF}", f"L:o26n{{d}}-gsm:{GF}"),
+                           ("GSM8K Thinking (full)", "T:T26-S4{d}-gsm8k_think:math_verify",
+                            "T:think-native{d}-gsm8k_think:math_verify"))],
     ("Sec 4.2", "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
      "T:think-native4-gsm8k_think:math_verify", (-1.0, -2.0, 0.1)),
     ("Sec 4.2", "SenseNova read 1/write 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",
@@ -142,6 +149,7 @@ MEANS += [("Sec 4.3", f"SenseNova {c} MMLU-Pro", f"L:SN-{c}-mmlupro:exact_match"
 MEANS += [("Sec 4.3", f"SenseNova {c} GSM8K no final answer", k) for c, k in SN_NOANS.items()]
 MEANS += [("Sec 4.2", f"GSM8K full {c}", f"T:{c}-gsm8k_think:math_verify")
           for c in ("T26-S42", "think-native4", "SN-C11", "SN-C21", "SN-native2", "SN-native1", "SN-splice21")]
+MEANS += [("Figure pareto", f"GSM8K full think-native{d}", f"T:think-native{d}-gsm8k_think:math_verify") for d in (1, 2, 3)]
 for p in range(1, 5):
     for d in range(1, 5):
         MEANS += [("Figure 1", f"S{p}{d} MMLU (20/subject)", f"L:X26-S{p}{d}-mmlu:acc"),
@@ -354,6 +362,22 @@ def wander():
     return out
 
 
+def throughput():
+    """Table in Appendix (decode throughput) and the ratios in Sec 4.2: best tokens/s over batch sizes, 8K context."""
+    d = Path(__file__).resolve().parents[1] / "results" / "throughput-sb4"
+    best = {}
+    for f in sorted(d.glob("*.json")):
+        rows = [r for r in json.loads(f.read_text()) if "tokens_per_s" in r and r["context"] == 8192]
+        if rows:
+            b = max(rows, key=lambda r: r["tokens_per_s"])
+            best[f.stem] = dict(tokens_per_s=round(b["tokens_per_s"]), batch=b["batch"])
+    for k, v in best.items():
+        print(f"Throughput   {k:52s} {v['tokens_per_s']:6d} tok/s (batch {v['batch']})")
+    for a, b in (("S42sb", "native2st"), ("S42sb", "native4st")):
+        print(f"Throughput   {a} / {b}: {best[a]['tokens_per_s'] / best[b]['tokens_per_s']:.2f}x")
+    return best
+
+
 def compute():
     res, bad = [], 0
     for sec, label, ka, kb, printed in CMP:
@@ -380,7 +404,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
