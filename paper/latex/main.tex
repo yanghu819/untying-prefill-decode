@@ -13,6 +13,10 @@
 \usepackage{multirow}
 \usepackage{xcolor}
 \usepackage{url}
+\usepackage{listings}
+\lstset{language=Python,basicstyle=\fontsize{6.5pt}{7.5pt}\ttfamily\selectfont,columns=fullflexible,
+  commentstyle=\color{gray},keywordstyle=\color{black},showstringspaces=false,frame=tb,framerule=0.4pt,
+  aboveskip=2pt,belowskip=2pt,xleftmargin=2pt}
 
 \newcommand{\ci}[2]{\,{\scriptsize\ensuremath{[#1,\,#2]}}}
 \newcommand{\rw}[2]{read~#1\,/\,write~#2}
@@ -55,7 +59,7 @@ derivation (GSM8K) improves along the write axis. Grid subsets: MMLU 20 question
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig0_method.pdf}
 \caption{\textbf{The depth-split connector.} The frozen model reads the prompt with $p$ loops and keeps one prompt KV
-bank. Each of the $d$ writing loops reads that bank through its own map: a per-frequency complex key scale, folded into
+cache. Each of the $d$ writing loops reads that cache through its own map: a per-frequency complex key scale, folded into
 the query because it commutes with RoPE, and a value map applied after attention. The prompt part is merged by
 log-sum-exp with ordinary attention over the generated tokens' KV. The prompt KV is stored once for every $d$: total
 KV $b(n+d\,t)$ instead of $b\,d(n+t)$, with $b$ bytes per token and loop and $n$, $t$ the prompt and answer length.}
@@ -135,25 +139,67 @@ and a value map suffice, and serving them from one stored cache is exact.
 
 We describe the connector for Ouro; SenseNova-Loop-9B uses a lighter variant without maps (Appendix~\ref{app:training}).
 
+\begin{figure}[t]
+\begin{lstlisting}
+# blocks: frozen looped block, L layers; p/d: read/write loops
+# c[k][l]: complex key scale per RoPE pair; W[k][l]: value map
+# LoRA on q, k, v, o is active only while writing.
+
+def read(prompt, p):                      # prefill, once per request
+    h = embed(prompt)
+    for _ in range(p):
+        for l in range(L):
+            h, K[l], V[l] = blocks[l](h)  # last loop's K, V kept
+    return K, V                           # one prompt KV cache
+
+def attend(q, K, V, kv_answer, c, W):     # layer l, writing loop k
+    qc = complex_mul(q, c.conj())         # key scale moved to the query
+    o_p, lse_p = flash_attn(qc, K, V)     # prompt part
+    o_p = o_p @ W.T                       # attention is linear in V
+    o_a, lse_a = flash_attn(q, *kv_answer, causal=True)
+    g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
+    return g * o_p + (1 - g) * o_a
+
+def write(token, K, V, d):                # decode, every answer token
+    h = embed(token)
+    for k in range(d):
+        for l in range(L):
+            h = blocks[l](h, attn=lambda q, kv: attend(
+                    q, K[l], V[l], kv, c[k][l], W[k][l]))
+    return lm_head(h)
+
+# training: one (p, d) per micro-batch; teacher = native 4/4
+p, d = randint(1, 4), randint(1, 4)
+with torch.no_grad(): t = model(x, read=4, write=4)
+s = model(x, read=p, write=d)             # LoRA + maps
+loss = kl_div(s.log_softmax(-1), t.log_softmax(-1),
+              log_target=True)[answer].sum() / answer.sum()
+\end{lstlisting}
+\caption{\textbf{The depth-split connector in PyTorch-style pseudocode.} The prompt KV cache is written once by the
+last of $p$ read loops; every writing loop reads it through its own key scale (applied to the query) and value map
+(applied to the attention output), and the prompt and answer attention are combined exactly through their log-sum-exp.}
+\label{alg:connector}
+\end{figure}
+
 \paragraph{Reading and writing.} ``\rw{p}{d}'' prefills the prompt with $p$ loops and decodes every answer token with
 $d$ loops; \nat{d} is the unmodified model. The frozen model reads the prompt with $p$ loops and keeps only the last
 loop's prompt keys and values. The writer is the same frozen model with rank-16 LoRA~\citep{lora} on its attention
 projections, running $d$ loops per token.
 
-\paragraph{RoPE-commuting maps.} Writing loop $k$ reads the prompt bank through a map per (loop, layer, KV head). The
+\paragraph{RoPE-commuting maps.} Writing loop $k$ reads the prompt KV cache through a map per (loop, layer, KV head). The
 key map is one complex scale $c_j$ per rotary frequency pair $j$~\citep{rope}. Writing a rotated key pair as a complex
 number $\tilde k_j = e^{im\theta_j}k_j$, scaling commutes with the rotation, $c_j\tilde k_j = e^{im\theta_j}(c_jk_j)$,
 and $\mathrm{Re}\langle q_j, c_j\tilde k_j\rangle = \mathrm{Re}\langle \bar c_jq_j, \tilde k_j\rangle$: the map is applied
 to the query and the stored cache is never rewritten. The value map is a full linear map $W_k$ per head; because
 attention is linear in the values, $\sum_i a_iW_kv_i = W_k\sum_i a_iv_i$ is applied once to the attention output over the
 prompt. Prompt and generated tokens share one softmax: the two parts are computed by two attention calls and merged by
-their log-sum-exp. The prompt KV is therefore stored once for every $d$ (``single bank''), and total KV is $b(n+d\,t)$
-instead of $b\,d(n+t)$. The single-bank form equals materialising a mapped prompt bank per loop; in bfloat16 all 512
+their log-sum-exp. The prompt KV is therefore stored once for every $d$, and total KV is $b(n+d\,t)$
+instead of $b\,d(n+t)$. Serving from one cache equals materialising a mapped prompt cache per loop; in bfloat16 all 512
 checked greedy tokens agree.
 
 \paragraph{Training.} We minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
 native 4/4 model as teacher, on 48M answer tokens of reasoning traces, instruction data, long-context data and web text.
-One $(p,d)$ cell is sampled per micro-batch, so one set of parameters (63M, 2.4\% of Ouro-2.6B) serves all 16 cells.
+One $(p,d)$ pair is sampled per micro-batch, so one set of parameters (63M, 2.4\% of Ouro-2.6B) serves all 16 pairs.
 Details are in Appendix~\ref{app:training}.
 
 \section{Experiments}
@@ -214,7 +260,7 @@ write $d$ & MMLU & RULER-16K & GSM8K \\
 The same holds across models (Table~\ref{tab:models}). With the writer fixed at one loop, reading deeper improves
 knowledge and long-context tasks and the selected multi-step task on all five checkpoints; Ouro-1.4B is the exception on
 long context (RULER-16K $+1.4$, not significant). The gains are task-dependent: on both 1.4B checkpoints the same change
-sharply lowers 3-shot BBH (Limitations). On Nanbeige4.2-3B-Base separately trained connectors per cell point the
+sharply lowers 3-shot BBH (Limitations). On Nanbeige4.2-3B-Base separately trained connectors per $(p,d)$ pair point the
 same way but do not isolate reading depth (Appendix~\ref{app:eval}). Against the native allocation, read deep / write
 shallow wins on long context: on Ouro-2.6B-Thinking HELMET, \rw{4}{2} scores 60.1 against 55.8 for \nat{4}
 ($+4.3$\ci{2.4}{6.2}) with half the writing depth, and 34.1 for \nat{2}.
@@ -273,11 +319,11 @@ shorter.}
 \end{table}
 
 \paragraph{Serving.} Storing the prompt once also changes throughput (Table~\ref{tab:serve}). In a controlled decode
-benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), the single bank decodes
+benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), one prompt KV cache decodes
 $0.97\times$ as fast as the fastest native implementation we measured at one writing loop and $1.19$--$1.62\times$ at
 two to four, because it admits larger batches as $d$ grows; this native baseline uses the same flash attention and is
 faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
-generated tokens) one prompt bank decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
+generated tokens) one prompt KV cache decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
 
 \begin{table}[t]
 \centering\small
@@ -287,16 +333,16 @@ generated tokens) one prompt bank decodes $0.97\times$ native at $d{=}2$ and $1.
 8K context, 32 steps & $d{=}1$ & $d{=}2$ & $d{=}3$ & $d{=}4$ \\
 \midrule
 native $d/d$ & 834 & 342 & 200 & 125 \\
-\rw{4}{d}, one prompt bank & 813 & 406 & 271 & 203 \\
+\rw{4}{d}, one prompt cache & 813 & 406 & 271 & 203 \\
 \midrule
 1K context, 2{,}048 steps & & $d{=}2$ & & $d{=}4$ \\
 \midrule
 native $d/d$ & & 586 & & 219 \\
-\rw{4}{d}, one prompt bank & & 570 & & 253 \\
+\rw{4}{d}, one prompt cache & & 570 & & 253 \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Decode throughput} of Ouro-2.6B (tokens/s, best over tested batch sizes, one B300): native model
-against the connector reading 4 loops with one stored prompt bank.}
+against the connector reading 4 loops with one stored prompt KV cache.}
 \label{tab:serve}
 \end{table}
 
@@ -395,18 +441,18 @@ first-loop branch & 4/1 & RULER-4K & \up{2.3}\ci{1.0}{3.6} \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
-paired). Differences are accuracy points; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per cell, 24M KL tokens; the other variants follow our recipe.
-$^\ddagger$Unrestricted key maps with one prompt bank per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
+paired). Differences are accuracy points; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per $(p,d)$ pair, 24M answer tokens; the other variants follow our recipe.
+$^\ddagger$Unrestricted key maps with one prompt KV cache per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
 \label{tab:ablation}
 \end{table}
 
 
-Table~\ref{tab:ablation} compares design variants. A per-cell, LoRA-only writer that reads the last prefill loop's KV
+Table~\ref{tab:ablation} compares design variants. A LoRA-only writer trained for one $(p,d)$ pair that reads the last prefill loop's KV
 without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and is within noise of it at write 2 ($-0.1$); this terminal-KV
 baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
 connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
-RoPE-commuting scale, which is what allows one stored prompt bank, shows no measurable cost against unrestricted key
-maps with one bank per loop (RULER-16K, five cells). Sharing generated-token KV across writing loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
+RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
+maps with one cache per loop (RULER-16K, five $(p,d)$ pairs). Sharing generated-token KV across writing loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
 costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
 / write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit.
 
@@ -424,11 +470,11 @@ accuracy cost.
 \label{sec:limits}
 
 Reading deep is worse for short-context retrieval and 4-shot mathematics (Table~\ref{tab:hurt}); at three
-or more writing loops, one deep prompt bank trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, write 3).
+or more writing loops, one deep prompt KV cache trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, write 3).
 Deeper prefill raises time to first token, so it pays when answers are long or quality requires it. Both 1.4B checkpoints
 degenerate at \rw{4}{1} on 3-shot BBH (Ouro-1.4B: $-24.5$, Ouro-1.4B-Thinking: $-20.5$ against \rw{1}{1}); with two
 writing loops, reading four instead of two helps (Ouro-1.4B-Thinking: $+8.9$).
-On Nanbeige4.2-3B-Base our universal recipes trail per-cell connectors, so Appendix~\ref{app:eval} reports per-cell
+On Nanbeige4.2-3B-Base our shared-connector recipes trail connectors trained per $(p,d)$ pair, so Appendix~\ref{app:eval} reports per-pair
 results.
 Gains against native models include the adaptation of the connector. Throughput is a controlled decode benchmark and
 end-to-end time is measured at batch 1 on one GPU type. Thinking checkpoints on raw HELMET prompts can stop at once; we
@@ -448,9 +494,9 @@ $D\times D$ value map, both initialised to the identity. Trainable parameters: 6
 frozen.
 
 \paragraph{Objective and data.} $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ summed over answer positions and
-normalised by the KL tokens in the global batch; teacher = native 4/4 with the same weights; one cell $(p,d)$ sampled per
-micro-batch. 48M KL tokens: OpenThoughts reasoning traces 45\%, Tulu SFT responses 40\%, LongAlpaca long-context answers
-5\% and FineWeb-Edu windows 10\% (fractions of KL tokens); prompts up to 7,680 tokens, answers up to 1,024. Base models see
+normalised by the answer tokens in the global batch; teacher = native 4/4 with the same weights; one pair $(p,d)$ sampled per
+micro-batch. 48M answer tokens: OpenThoughts reasoning traces 45\%, Tulu SFT responses 40\%, LongAlpaca long-context answers
+5\% and FineWeb-Edu windows 10\% (fractions of answer tokens); prompts up to 7,680 tokens, answers up to 1,024. Base models see
 a plain ``User: \ldots\ Assistant:'' format; thinking models see the same samples in their chat template. No benchmark
 data was deliberately included; we did not decontaminate the training corpora.
 
@@ -458,17 +504,17 @@ data was deliberately included; we did not decontaminate the training corpora.
 warm-up and cosine decay to $10^{-5}$, gradient clipping at 1.0, global batch 24 sequences on 4 B300 GPUs (6.75 hours for
 Ouro-2.6B), bfloat16 backbone.
 
-\paragraph{Answer stored once.} Generated tokens keep one KV bank per layer shared by all writing loops; at inference
+\paragraph{Answer stored once.} Generated tokens keep one KV cache per layer shared by all writing loops; at inference
 the last writing loop commits each token, and earlier loops read that history plus the current token's KV computed live
 in their own loop (\emph{self-live}, a layout also used by LSTM-style looped transformers~\citep{lstmloop}). Training
 uses the same KL objective in this layout, in two passes: a no-grad pass in which each loop reads its own causal answer KV records the last loop's answer KV; a second pass
-reads, at every loop, the prompt bank, that recorded history strictly before the current position, and the current
+reads, at every loop, the prompt KV cache, that recorded history strictly before the current position, and the current
 token's KV computed live on the diagonal. Training thus approximates, but does not exactly reproduce, inference, where
-the history is generated recursively in the shared bank. With prompt and answer each stored once, total KV is $b(n+t)$, that
+the history is generated recursively in the shared cache. With prompt and answer each stored once, total KV is $b(n+t)$, that
 of a one-loop model; with 1K-token prompts and 2,048 generated tokens the largest batch that fits grows from 32
 (\nat{4}) to 192 and write-4 decode throughput from 219 to 476 tokens/s (759 vs.\ 586 at $d{=}2$), at a cost of 4.8
-GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer banks). On Ouro-2.6B-Thinking, a connector
-trained the same way changes full-set GSM8K at \rw{4}{2} by $+0.5$\ci{-0.5}{1.6} against per-loop answer banks; at batch 1
+GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer caches). On Ouro-2.6B-Thinking, a connector
+trained the same way changes full-set GSM8K at \rw{4}{2} by $+0.5$\ci{-0.5}{1.6} against per-loop answer caches; at batch 1
 its cost per generated token is the same (82.5 vs.\ 83.1\,ms) but its answers are longer (1,166 vs.\ 741 tokens), so it
 takes $1.53\times$\ci{1.27}{1.84} the time per answer. Its benefit is memory and batch size, not batch-1 latency.
 
@@ -476,7 +522,7 @@ takes $1.53\times$\ci{1.27}{1.84} the time per answer. Its benefit is memory and
 Gated-DeltaNet: input and output projections), active only when writing; no maps. The one-visit writer reads the prefill
 state of the last of $p\in\{1,2\}$ visits (sampled 50/50), so the same writer serves read~1 and read~2. The untrained
 condition passes the last visit's full-attention KV and Gated-DeltaNet convolution and recurrent states. Teacher: native
-2/2; 20M KL tokens of the same mixture in the SenseNova chat template; peak learning rate $2\times10^{-4}$.
+2/2; 20M answer tokens of the same mixture in the SenseNova chat template; peak learning rate $2\times10^{-4}$.
 
 \section{Evaluation Details}
 \label{app:eval}
@@ -494,9 +540,9 @@ the 4-shot comparison on Ouro-2.6B; Minerva's strict ``Final Answer'' match woul
 read-1 writer drops the required format more often. On raw HELMET prompts thinking checkpoints can emit a newline and stop (42.7\% of \nat{2}
 answers on Ouro-2.6B-Thinking); for thinking models we mask the stop tokens until an answer has a non-whitespace token,
 for every configuration; this does not rescue \nat{2} (34.1 vs.\ 31.4). SenseNova RULER uses a non-thinking prefill for
-every configuration. Native throughput baselines: static per-loop banks with the same two-call flash attention (fastest),
+every configuration. Native throughput baselines: static per-loop caches with the same two-call flash attention (fastest),
 the standard dynamic cache (500 / 245 / 105 tokens/s at $d=1/2/4$), and a preallocated contiguous cache with one attention
-call (267 / 130 / 57); all produce identical greedy tokens. Nanbeige4.2-3B-Base per-cell connectors, \rw{2}{1} minus
+call (267 / 130 / 57); all produce identical greedy tokens. Nanbeige4.2-3B-Base connectors trained per $(p,d)$ pair, \rw{2}{1} minus
 \rw{1}{1}: RULER 4K/8K/16K $+11.8/+11.7/+14.2$, MMLU $+12.2$, GSM8K $+5.2$. Intervals: paired bootstrap over items, 5,000
 resamples; every interval in the paper is recomputed from released per-item scores by one script
 (Appendix~\ref{app:repro}).
@@ -521,7 +567,7 @@ resamples; every interval in the paper is recomputed from released per-item scor
  & RULER-4K & \dn{7.2} & \dn{6.8} \\
 \bottomrule
 \end{tabular}
-\caption{Ouro-2.6B connector trained with two seeds (initialisation and cell sampling); paired differences within each
+\caption{Ouro-2.6B connector trained with two seeds (initialisation and $(p,d)$ sampling); paired differences within each
 seed, full sets.}
 \end{table}
 
