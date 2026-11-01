@@ -89,6 +89,10 @@ for seed, run in ((1, "X26"), (2, "X26s2")):
         CMP.append(("Table 7", f"seed {seed} write 1 RULER-{k}K", ruler(f"{run}-S41", k), ruler(f"{run}-S11", k), None))
     CMP.append(("Table 7", f"seed {seed} write 2 RULER-4K", ruler(f"{run}-S42", 4), ruler(f"{run}-S22", 4), None))
 CMP += [
+    ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 4/4", "B:T26ne-S42-helmet:helmet", "B:T26ne-native4-helmet:helmet",
+     (4.3, 2.4, 6.2)),
+    ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 2/2", "B:T26ne-S42-helmet:helmet", "B:T26ne-native2-helmet:helmet",
+     None),
     ("Sec 4.2", "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
      "T:think-native4-gsm8k_think:math_verify", (-1.0, -2.0, 0.1)),
     ("Sec 4.2", "SenseNova read 1/write 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",

@@ -34,9 +34,9 @@ looped model lets the prompt be read with $p$ loops and the answer written with 
 serves all 16 pairs up to four loops. On Ouro-2.6B the $4\times4$ map shows a division of labour: \emph{depth spent
 reading the prompt mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys
 multi-step derivation}. With the writer fixed, reading deeper improves knowledge and long-context benchmarks on five
-checkpoints from two model families. Because writing is paid per token, writing shallow is what saves time: on
-Ouro-2.6B-Thinking a two-loop writer answers GSM8K in $0.55\times$ the time of the four-loop model, 1.0 point below it on
-the full test set. A RoPE-commuting key map lets one stored prompt KV cache serve every writing loop exactly. Linear probes
+checkpoints from two model families. On Ouro-2.6B-Thinking, reading four loops and writing two
+beats the native four-loop model on long-context HELMET by 4.3 points, and on GSM8K a two-loop writer answers in
+$0.55\times$ its time, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV cache serve every writing loop exactly. Linear probes
 find the next token more, and in Ouro the previous token less, linearly decodable from later loops' value cache.
 \end{abstract}
 
@@ -83,17 +83,18 @@ lets us measure the two effects separately.
 
 The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
 moves knowledge and long-context accuracy, and writing depth mainly moves multi-step derivation. With the writer held
-fixed, reading deeper helps on five checkpoints (Table~\ref{tab:models}), although the effect depends on the task.
-Because writing is paid per token, shallow writing is where time is saved: a two-loop writer answers in about half the
-time of the four-loop reasoning model, one point below it on the full GSM8K test set (Figure~\ref{fig:frontier}).
-Reading deeper also helps a one-loop writer finish its answer; on SenseNova-Loop-9B this holds even without any training
-(Figure~\ref{fig:wander}). Linear probes of the cache are consistent with the split: later loops make the next token more
-linearly decodable and, in Ouro, the previous token less (Figure~\ref{fig:probe}); correspondingly, reading deep is worse
-for short-context retrieval and few-shot mathematics.
+fixed, reading deeper helps on five checkpoints (Table~\ref{tab:models}), although the effect depends on the task; on
+Ouro-2.6B-Thinking, reading four loops and writing two beats native 4/4 on HELMET (60.1 vs.\ 55.8). Time is saved on the
+writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
+one point below it on the full GSM8K test set, and reading deeper first adds no detectable time
+(Figure~\ref{fig:frontier}). The reading benefit can even appear without training: on SenseNova-Loop-9B, giving the
+unchanged one-loop writer a two-visit prompt state raises RULER-4K from 21.6 to 83.5 (Figure~\ref{fig:wander}). Linear probes of the cache are consistent with the split: later loops make the next token more
+linearly decodable and, in Ouro, the previous token less (Figure~\ref{fig:probe}); in the same direction, reading deep
+gives a negative estimate on short-context retrieval and lowers few-shot mathematics.
 
 Our contributions are a measurement of what reading and writing depth each buy in looped language models, a connector
 that makes the split usable on existing checkpoints with an exact single prompt cache, and an analysis of what each
-loop's KV stores. Code, per-item results and a script that recomputes every number in the paper accompany it.
+loop's KV stores. Code, per-item results and a script that recomputes the paper's statistics accompany it.
 
 
 \section{Related Work}
@@ -142,10 +143,6 @@ their log-sum-exp. The prompt KV is therefore stored once for every $d$ (``singl
 instead of $b\,d(n+t)$. The single-bank form equals materialising a mapped prompt bank per loop; in bfloat16 all 512
 checked greedy tokens agree.
 
-\paragraph{Storing the answer once.} Generated tokens can also share one KV bank across writing loops, which reduces
-total KV to $b(n+t)$. This optional variant changes training and costs accuracy at four writing loops
-(Appendix~\ref{app:training}, Table~\ref{tab:ablation}).
-
 \paragraph{Training.} We minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
 native 4/4 model as teacher, on 48M answer tokens of reasoning traces, instruction data, long-context data and web text.
 One $(p,d)$ cell is sampled per micro-batch, so one set of parameters (63M, 2.4\% of Ouro-2.6B) serves all 16 cells.
@@ -164,7 +161,7 @@ models include the effect of training the connector.
 \subsection{Reading buys understanding, writing buys derivation}
 
 Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
-four with a one-loop writer and to 74--75 with deeper writers; GSM8K barely moves along a row at one write loop and rises from 46--55 to 78--88 with writing
+four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 8 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
 depth. Table~\ref{tab:equal} confirms the pattern on full sets: at one writing loop, reading four loops instead of one
 adds 15.2 MMLU, 8.6 RULER-16K and 8.0 GSM8K points; the gain shrinks as writing deepens. A second training seed
 reproduces these numbers (Appendix~\ref{app:seed}).
@@ -190,7 +187,9 @@ The same holds across models (Table~\ref{tab:models}). With the writer fixed at 
 knowledge and long-context tasks and the selected multi-step task on all five checkpoints; Ouro-1.4B is the exception on
 long context (RULER-16K $+1.4$, not significant). The gains are task-dependent: on both 1.4B checkpoints the same change
 sharply lowers 3-shot BBH (Limitations). On Nanbeige4.2-3B-Base separately trained connectors per cell point the
-same way but do not isolate reading depth (Appendix~\ref{app:eval}).
+same way but do not isolate reading depth (Appendix~\ref{app:eval}). Against the native allocation, read deep / write
+shallow wins on long context: on Ouro-2.6B-Thinking HELMET, \rw{4}{2} scores 60.1 against 55.8 for \nat{4}
+($+4.3$\ci{2.4}{6.2}) with half the writing depth, and 34.1 for \nat{2}.
 
 \begin{table*}[t]
 \centering\small
@@ -222,7 +221,7 @@ sizes: MMLU 14,042, ARC-C 1,172, MMLU-Pro 420 (Ouro) and 980 (SenseNova), RULER 
 real greedy answers, the same 64 GSM8K problems for every point). Left: writing with two loops takes $0.55\times$ the
 time of native 4/4, whether the prompt is read with 2 or 4 loops; on all 1,319 problems read 4 / write 2 is 1.0 point below
 native 4/4 (Section~\ref{sec:fast}). Right: on SenseNova-Loop-9B, whose native one-loop model solves 2.2\% of all GSM8K
-problems, read 1 / write 1 is 1.5 points below native 2/2 at $0.59\times$ the time (y axis zoomed).}
+problems, read 1 / write 1 is 1.6 points below native 2/2 at $0.59\times$ the time (y axis zoomed).}
 \label{fig:frontier}
 \end{figure*}
 
@@ -268,9 +267,8 @@ shorter.}
 benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), the single bank decodes
 $0.97\times$ as fast as the fastest native implementation we measured at one writing loop and $1.19$--$1.62\times$ at
 two to four, because it admits larger batches as $d$ grows; this native baseline uses the same flash attention and is
-faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048 generated
-tokens) the optional shared answer bank more than doubles write-4 throughput (219 to 476 tokens/s), at a cost of 4.8 GSM8K
-points against \nat{4}.
+faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
+generated tokens) one prompt bank decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
 
 \begin{table}[t]
 \centering\small
@@ -286,20 +284,18 @@ native $d/d$ & 834 & 342 & 200 & 125 \\
 \midrule
 native $d/d$ & & 586 & & 219 \\
 one prompt bank & & 570 & & 253 \\
-prompt and answer once & & 759 & & 476 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Decode throughput} (tokens/s, best over tested batch sizes, one B300). Largest tested batch that fits,
-long answers at $d{=}4$: 32 / 64 / 192.}
+\caption{\textbf{Decode throughput} (tokens/s, best over tested batch sizes, one B300).}
 \label{tab:serve}
 \end{table}
 
 \subsection{Deep reading helps a shallow writer}
 
-A reasoning model written with one loop often does not finish. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
-on 43.1\% of GSM8K problems; 43.5\% of its answers run into the 4,096-token budget. Training the connector at \rw{1}{1}
+A reasoning model written with one loop often gives no answer. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
+on 43.1\% of GSM8K problems; 43.5\% of its answers approach the 4,096-token budget. Training the connector at \rw{1}{1}
 reduces answers without a boxed answer to 19.5\%; with the same writer, reading four loops reduces them further to
-12.7\% in every difficulty bucket (Figure~\ref{fig:wander}, left) and shortens answers by 20\% overall. A lexical
+12.7\% overall, lower in every difficulty bucket (Figure~\ref{fig:wander}, left), and shortens answers by 20\% overall. A lexical
 hesitation-marker rate does not fall (12.2 vs.\ 13.8 per 1,000 tokens), so shorter answers do not come from fewer
 markers of hesitation; these counts do not identify the underlying reasoning process. SenseNova-Loop-9B gives a test
 without training, because its one-loop writer collapses. Handing that writer the two-visit prompt state---attention KV
@@ -372,11 +368,11 @@ Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
 \label{sec:ablation}
 
 Table~\ref{tab:ablation} compares design variants. A per-cell, LoRA-only writer that reads the last prefill loop's KV
-without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and ties it at write 2; this terminal-KV
+without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and is within noise of it at write 2 ($-0.1$); this terminal-KV
 baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
 connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
-RoPE-commuting scale, which is what allows one stored prompt bank, costs nothing measurable against unrestricted key
-maps with one bank per loop. Storing the answer once shows no significant difference at two and three writing loops and
+RoPE-commuting scale, which is what allows one stored prompt bank, shows no measurable cost against unrestricted key
+maps with one bank per loop (RULER-16K, five cells). Sharing generated-token KV across writing loops (Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
 costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
 / write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit.
 
@@ -455,7 +451,10 @@ in their own loop (\emph{self-live}, a layout also used by LSTM-style looped tra
 uses the same KL objective in this layout, in two passes: a no-grad pass in which each loop reads its own causal answer KV records the last loop's answer KV; a second pass
 reads, at every loop, the prompt bank, that recorded history strictly before the current position, and the current
 token's KV computed live on the diagonal. Training thus approximates, but does not exactly reproduce, inference, where
-the history is generated recursively in the shared bank.
+the history is generated recursively in the shared bank. With prompt and answer each stored once, total KV is $b(n+t)$, that
+of a one-loop model; with 1K-token prompts and 2,048 generated tokens the largest batch that fits grows from 32
+(\nat{4}) to 192 and write-4 decode throughput from 219 to 476 tokens/s (759 vs.\ 586 at $d{=}2$), at a cost of 4.8
+GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer banks).
 
 \paragraph{SenseNova-Loop-9B.} Rank-16 LoRA on the attention projections of the looped layers (full attention: q/k/v/o;
 Gated-DeltaNet: input and output projections), active only when writing; no maps. The one-visit writer reads the prefill
@@ -513,9 +512,9 @@ seed, full sets.}
 \section{Reproducibility}
 \label{app:repro}
 
-\texttt{python ouro/scripts/paper\_numbers.py compute} recomputes every paired difference, interval, mean, timing
-ratio and Section~4.3 statistic in this paper from the accompanying per-item records (1\,MB) in seconds on a laptop, and
-checks them against the printed values. \texttt{REPRODUCE.md} maps the remaining results (throughput, probes) to their
+\texttt{python ouro/scripts/paper\_numbers.py compute} recomputes the paired differences, intervals, means, timing
+ratios and Section~4.3 statistics of this paper from the accompanying per-item records (1\,MB) in seconds on a laptop,
+and compares them with the values printed here, which it lists. \texttt{REPRODUCE.md} maps the remaining results (throughput, probes) to their
 scripts and gives the training and evaluation commands that regenerate the per-item records.
 
 \end{document}
