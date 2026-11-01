@@ -404,7 +404,7 @@ LEV_CMP = [("Lev-1.4B read-deep trained vs same-training control", "rd4-1.4B-rea
              for k in (1, 2, 3)],
            # compute check: the control trained for two epochs (twice the updates; our read-deep training forward
            # costs about twice the control's per update)
-           ("Lev-1.4B read-deep trained vs control trained 2x", "rd4-1.4B-read4", "ctl2x-1.4B-read0"),
+           ("Lev-1.4B read-deep trained vs control trained 2x", "rd4-1.4B-read4", "ctl2x-1.4B-read0"),  # d=1: +4.0 [2.1, 6.0]
            ("Lev-2.6B read-deep trained vs control trained 2x", "rd4-2.6B-read4", "ctl2x-2.6B-read0"),
            ("Lev-3B read-deep trained vs control trained 2x", "rd2-3B-read2", "ctl2x-3B-read0")]
 

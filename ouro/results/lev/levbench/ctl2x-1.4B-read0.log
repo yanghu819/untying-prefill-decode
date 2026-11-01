@@ -1,0 +1,17 @@
+The repository ByteDance/Ouro-1.4B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-1.4B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-1.4B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+Loading weights:   0%|          | 0/266 [00:00<?, ?it/s]Loading weights:  15%|█▍        | 39/266 [00:00<00:00, 376.98it/s]Loading weights:  35%|███▍      | 93/266 [00:00<00:00, 463.12it/s]Loading weights:  55%|█████▌    | 147/266 [00:00<00:00, 489.07it/s]Loading weights:  74%|███████▎  | 196/266 [00:00<00:00, 462.01it/s]Loading weights:  91%|█████████▏| 243/266 [00:00<00:00, 341.46it/s]Loading weights: 100%|██████████| 266/266 [00:00<00:00, 364.32it/s]
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-1.4B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+model.early_exit_gate.weight | UNEXPECTED |  | 
+lm_head.weight               | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+levwork-levbench-dev: 3570 records (0 skipped as overlong), 3570 questions, 4 depths, 306s
+DONE
