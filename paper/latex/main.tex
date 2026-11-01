@@ -14,7 +14,7 @@
 \usepackage{xcolor}
 \usepackage{url}
 \usepackage{listings}
-\lstset{language=Python,basicstyle=\fontsize{6.5pt}{7.5pt}\ttfamily\selectfont,columns=fullflexible,
+\lstset{language=Python,basicstyle=\fontsize{7.5pt}{8.6pt}\ttfamily\selectfont,columns=fullflexible,
   commentstyle=\color{gray},keywordstyle=\color{black},showstringspaces=false,frame=tb,framerule=0.4pt,
   aboveskip=2pt,belowskip=2pt,xleftmargin=2pt}
 
@@ -32,16 +32,14 @@
 \maketitle
 
 \begin{abstract}
-Looped language models reuse one block of layers several times per token and spend the same number of loops reading
-the prompt and writing the answer. We show that the two buy different things: \emph{depth spent reading the prompt
-mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys multi-step
-derivation}. A small connector trained on a frozen looped model lets the prompt be read with $p$ loops and the answer
-written with $d$ loops; one set of parameters serves all 16 pairs up to four loops, and a key map that commutes with
-rotary embeddings lets one stored prompt KV cache serve every writing loop exactly. Reading deep and writing shallow
-follows: on Ouro-2.6B-Thinking, reading four loops and writing two scores higher than the native two-loop model on all
-eight standard benchmarks we test, at the same decode depth, and comes within two points of the native four-loop model
-on six of them while answering GSM8K in $0.55\times$ its time. With the writer fixed, reading deeper improves knowledge
-and long-context benchmarks on five checkpoints from two model families.
+Looped language models reuse one block of layers several times per token and spend the same number of loops on the
+prompt (prefill) and on every generated token (decoding). We show that the two buy different things: \emph{prefill
+depth mainly buys knowledge and long-context accuracy, while decoding depth mainly buys multi-step reasoning}. A small
+connector trained on a frozen looped model separates the two budgets: one set of parameters serves all 16 pairs of
+prefill and decoding depth up to four loops, and one stored prompt KV cache serves every decoding loop exactly. On
+Ouro-2.6B-Thinking, reading the prompt with four loops and writing with two scores above the native two-loop model on all
+eight standard benchmarks we test, at the same decoding depth, and within two points of the native four-loop model on
+six; on GSM8K it is 1.0 point below the four-loop model on the full test set and answers in $0.55\times$ its time.
 \end{abstract}
 
 \section{Introduction}
@@ -49,9 +47,9 @@ and long-context benchmarks on five checkpoints from two model families.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig1_grid.pdf}
-\caption{\textbf{Reading deeper improves knowledge and long-context accuracy; writing deeper improves multi-step derivation.} One connector on frozen Ouro-2.6B evaluated at
+\caption{\textbf{Reading deeper improves knowledge and long-context accuracy; writing deeper improves multi-step reasoning.} One connector on frozen Ouro-2.6B evaluated at
 all 16 (read, write) pairs. Knowledge (MMLU) and long-context reading (RULER-16K) improve along the read axis; multi-step
-derivation (GSM8K) improves along the write axis. Grid subsets: MMLU 20 questions per subject, RULER-16K 260 rows, GSM8K
+reasoning (GSM8K) improves along the write axis. Grid subsets: MMLU 20 questions per subject, RULER-16K 260 rows, GSM8K
 400 problems; cells show accuracy (\%), one colour scale for all panels; full-set comparisons are in Table~\ref{tab:equal}.}
 \label{fig:grid}
 \end{figure*}
@@ -74,28 +72,26 @@ fixed-depth inference we study, the price is paid twice: every generated token r
 its own key--value (KV) cache.
 
 Yet the two phases of inference are not alike. Reading the prompt (prefill) is parallel and paid once per request;
-writing the answer (decode) is sequential and paid for every token. A looped model nevertheless spends the same depth on
-both. This raises a simple question: \emph{what does depth buy when reading, and what does it buy when writing?} If the
-answers differ, a model could read deep and write shallow.
+writing the answer (decoding) is sequential and paid for every token. A looped model nevertheless spends the same depth on
+both. What does depth buy when reading, and what does it buy when writing? If the answers differ, a model could read
+deep and write shallow.
 
 We write \rw{p}{d} for prefilling the prompt with $p$ loops and generating every answer token with $d$ loops, and
 \nat{d} for the unmodified model, which uses $d$ loops for both. Answering the question needs a model that writes with
-fewer loops than it read with, so its shallow writing loops must attend to KV produced by a deeper loop. We introduce a small \emph{depth-split connector}: LoRA on the frozen writer
-plus, for every writing loop, a map on the prompt KV (Figure~\ref{fig:method}). The key map commutes with rotary position
-embeddings, so one stored prompt cache serves every writing loop exactly. We train one connector by distillation from the
-native model and evaluate it at all 16 combinations of read and write depth up to four with its parameters fixed, which
-lets us measure the two effects separately.
+fewer loops than it read with, so its shallow writing loops must attend to KV produced by a deeper loop. Our
+\emph{depth-split connector} combines LoRA on the frozen model with a learned map on the prompt KV for every writing loop
+(Figure~\ref{fig:method}); one stored prompt cache serves every writing loop. We train one connector and evaluate it at
+all 16 pairs of read and write depth with its parameters fixed.
 
 The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
-moves knowledge and long-context accuracy, and writing depth mainly moves multi-step derivation. With the writer held
+moves knowledge and long-context accuracy, and writing depth mainly moves multi-step reasoning. With the writer held
 fixed, reading deeper helps on five checkpoints from two model families (Table~\ref{tab:models}).
 
 Reading deep and writing shallow puts the two findings together (Figure~\ref{fig:equal}): on Ouro-2.6B-Thinking,
 reading four loops and writing two scores above native 2/2 on all eight benchmarks at the same decode depth, and within
-two points of native 4/4 on six. Time is saved on the writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
-one point below it on the full GSM8K test set, and reading deeper first adds no detectable time
-(Figure~\ref{fig:frontier}). The reading benefit can even appear without training: on SenseNova-Loop-9B, giving the
-unchanged one-loop writer a two-visit prompt state raises RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1.
+two points of native 4/4 on six. On full GSM8K it scores 93.3 against 94.2 for native 4/4; on 64 timed problems its
+answer time, prefill included, is $0.55\times$ that of native 4/4 (Figure~\ref{fig:frontier}). Across all writing depths
+the connector is more accurate at the same decoding throughput, or faster at the same accuracy (Figure~\ref{fig:pareto}).
 
 Our contributions are a measurement of what reading and writing depth each buy in looped language models, a connector
 that makes the split usable on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
@@ -140,7 +136,9 @@ and a value map suffice, and serving them from one stored cache is exact.
 
 We describe the connector for Ouro; SenseNova-Loop-9B uses a lighter variant without maps (Appendix~\ref{app:training}).
 
-\begin{figure}[t]
+\begin{figure*}[t]
+\centering
+\begin{minipage}[t]{0.555\textwidth}
 \begin{lstlisting}
 # blocks: frozen looped block, L layers; p/d: read/write loops
 # c[k][l] = 1+a+1j*b per RoPE pair; W[k][l] = I+delta (init: I)
@@ -161,26 +159,33 @@ def attend(q, K, V, kv_answer, c, W):     # layer l, writing loop k
     g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
     return g * o_p + (1 - g) * o_a
 
-def write(token, K, V, d):   # last prompt token, then each answer token
+def write(token, K, V, d):  # last prompt token, then answer
     h = embed(token)
     for k in range(d):
         for l in range(L):
             h = blocks[l](h, attn=lambda q, kv: attend(
                     q, K[l], V[l], kv, c[k][l], W[k][l]))
     return lm_head(h)
-
-# training: one (p, d) per micro-batch; teacher = native 4/4
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.425\textwidth}
+\begin{lstlisting}
+# training: one (p, d) per micro-batch,
+# teacher = the native 4/4 model
 p, d = randint(1, 4), randint(1, 4)
 with torch.no_grad(): t = model(x, read=4, write=4)
 s = model(x, read=p, write=d)             # LoRA + maps
-loss = kl_div(s.log_softmax(-1), t.log_softmax(-1),
-              log_target=True)[answer].sum() / answer.sum()
+kl = kl_div(s.log_softmax(-1),
+            t.log_softmax(-1), log_target=True,
+            reduction="none").sum(-1)
+loss = kl[answer].sum() / answer.sum()
 \end{lstlisting}
+\end{minipage}
 \caption{\textbf{The depth-split connector in PyTorch-style pseudocode.} The prompt KV cache is written once by the
 last of $p$ read loops; every writing loop reads it through its own key scale (applied to the query) and value map
 (applied to the attention output), and the prompt and answer attention are combined exactly through their log-sum-exp.}
 \label{alg:connector}
-\end{figure}
+\end{figure*}
 
 \paragraph{Reading and writing.} ``\rw{p}{d}'' prefills the prompt with $p$ loops and decodes every answer token with
 $d$ loops; \nat{d} is the unmodified model. The frozen model reads the prompt with $p$ loops and keeps only the last
@@ -235,7 +240,7 @@ intervals.}
 \label{tab:models}
 \end{table*}
 
-\subsection{Reading buys knowledge and long context, writing buys derivation}
+\subsection{Reading buys knowledge and long context, writing buys reasoning}
 
 Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
 four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 8 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
@@ -271,12 +276,6 @@ same way but do not isolate reading depth (Appendix~\ref{app:eval}).
 
 Reading deep is not uniformly better: on Ouro it can lower exact key--value recall and few-shot exemplar imitation at
 short context (Appendix~\ref{app:hurt}).
-
-\paragraph{A test without training.} SenseNova-Loop-9B's one-loop writer collapses on its own. Handing that unchanged
-writer the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
-parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
-from 2.2 to 10.9, far below the 95.8 of \nat{2}: deeper reading recovers knowledge and long-context accuracy, not
-multi-step derivation.
 
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
@@ -314,7 +313,7 @@ $+5.9$, RULER-16K $+22.2$ and $+11.6$ on the grid subsets) or right (faster at t
 stored prompt cache admits larger batches: 271 and 203 against 200 and 125 tokens/s). Read 4 / write 2 runs at
 $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
 
-\subsection{Writing shallow is fast}
+\subsection{Writing shallow is fast end to end}
 \label{sec:fast}
 
 \begin{figure*}[t]
@@ -328,88 +327,22 @@ problems, read 1 / write 1 is 1.6 points below native 2/2 at $0.59\times$ the ti
 \label{fig:frontier}
 \end{figure*}
 
-Section~4.1 asked whether reading deeper helps a fixed writer. Here we ask whether a shallower trained writer saves time,
-measuring whole answers (Figure~\ref{fig:frontier}, Table~\ref{tab:e2e}). On Ouro-2.6B-Thinking a connector that writes
+We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}). On Ouro-2.6B-Thinking a connector that writes
 with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}. On all 1,319 problems, read 4 / write 2
 scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Reading 4 rather than 2 loops before writing two
-takes $1.01\times$\ci{0.90}{1.11} the time: deeper reading costs no detectable time, and the saving against the native
-model comes from the shallower, adapted writer, including its shorter answers. On the 40 timed MATH-500 problems read 4 /
+changes the answer time by $1.01\times$\ci{0.90}{1.11}: the saving comes from the shallower, adapted writer, including
+its shorter answers. On the 40 timed MATH-500 problems read 4 /
 write 2 scores 85.0, against 82.5 for \nat{4} and 85.0 for \nat{2}, at $0.63\times$ the time of \nat{4} but $1.22\times$
 the time of \nat{2}, because its solutions are not shorter. On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for
 \nat{2} on all 1,319 GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close to the ratio of layer
 executions per token (32 vs.\ 56).
-
-\begin{table}[t]
-\centering\small
-\setlength\tabcolsep{3pt}
-\begin{tabular}{@{}llrr@{}}
-\toprule
-task / model & config & acc.\ (\%) & time (s) \\
-\midrule
-\multirow{4}{*}{\shortstack[l]{GSM8K\\Ouro-2.6B-T}} & \nat{2} & 95.3 & 70.0 \\
- & \nat{4} & 93.8 & 114.2 \\
- & \rw{2}{2} & 96.9 & 62.6 \\
- & \rw{4}{2} & 96.9 & 63.1 \\
-\midrule
-\multirow{3}{*}{\shortstack[l]{MATH-500\\Ouro-2.6B-T}} & \nat{2} & 85.0 & 243 \\
- & \nat{4} & 82.5 & 469 \\
- & \rw{4}{2} & 85.0 & 298 \\
-\midrule
-\multirow{3}{*}{\shortstack[l]{GSM8K\\SenseNova}} & \nat{2} & 98.4 & 48.0 \\
- & \rw{1}{1} & 96.9 & 28.4 \\
- & \rw{2}{1} & 95.3 & 30.6 \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; Ouro-2.6B-Thinking and
-SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, read 4 / write 2 spends $1.27\times$ the decode time per generated token of \nat{2} at batch 1, but its answers are
-shorter.}
-\label{tab:e2e}
-\end{table}
-
-\paragraph{Serving.} Storing the prompt once also changes throughput (Figure~\ref{fig:pareto}; Table~\ref{tab:serve} in Appendix~\ref{app:serve}). In a controlled decode
-benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), one prompt KV cache decodes
-$0.97\times$ as fast as the fastest native implementation we measured at one writing loop and $1.19$--$1.62\times$ at
-two to four, because it admits larger batches as $d$ grows; this native baseline uses the same flash attention and is
-faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
-generated tokens) one prompt KV cache decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
-
-
-\subsection{Design variants}
-\label{sec:ablation}
-
-\begin{table}[!t]
-\centering\small
-\setlength\tabcolsep{2.5pt}
-\begin{tabular}{@{}lclr@{}}
-\toprule
-variant & $p/d$ & task & difference \\
-\midrule
-\multirow{2}{*}{\shortstack[l]{direct sharing,\\no map$^\dagger$}} & 4/1 & GSM8K & \dn{17.5}\ci{-20.1}{-14.9} \\
- & 4/2 & GSM8K & \dn{0.1}\ci{-2.0}{1.7} \\
-unrestricted keys$^\ddagger$ & -- & RULER-16K & all CIs include 0 \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
-paired). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per $(p,d)$ pair, 24M answer tokens; the other variants follow our recipe.
-$^\ddagger$Unrestricted key maps with one prompt KV cache per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
-\label{tab:ablation}
-\end{table}
-
-
-Table~\ref{tab:ablation} compares design variants. A LoRA-only writer trained for one $(p,d)$ pair that reads the last prefill loop's KV
-without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and is within noise of it at write 2 ($-0.1$); this terminal-KV
-baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
-connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
-RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
-maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
-
 
 
 \section{Conclusion}
 
 Depth in a looped language model is two budgets, not one. On the checkpoints and benchmarks we test, reading depth is
 paid once and mainly buys knowledge and long-context accuracy, while writing depth is paid per token and mainly buys
-multi-step derivation; both effects depend on the task. A small connector makes the two separable on existing
+multi-step reasoning; both effects depend on the task. A small connector makes the two separable on existing
 checkpoints with one exact prompt cache, and a shallower adapted writer cuts the measured time per answer at a small
 accuracy cost.
 
@@ -519,8 +452,43 @@ resamples; every interval in the paper is recomputed from released per-item scor
 seed, full sets.}
 \end{table}
 
-\section{Decode Throughput}
+\section{End-to-End Time and Decode Throughput}
 \label{app:serve}
+
+\begin{table}[h]
+\centering\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+task / model & config & acc.\ (\%) & time (s) \\
+\midrule
+\multirow{4}{*}{\shortstack[l]{GSM8K\\Ouro-2.6B-T}} & \nat{2} & 95.3 & 70.0 \\
+ & \nat{4} & 93.8 & 114.2 \\
+ & \rw{2}{2} & 96.9 & 62.6 \\
+ & \rw{4}{2} & 96.9 & 63.1 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{MATH-500\\Ouro-2.6B-T}} & \nat{2} & 85.0 & 243 \\
+ & \nat{4} & 82.5 & 469 \\
+ & \rw{4}{2} & 85.0 & 298 \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{GSM8K\\SenseNova}} & \nat{2} & 98.4 & 48.0 \\
+ & \rw{1}{1} & 96.9 & 28.4 \\
+ & \rw{2}{1} & 95.3 & 30.6 \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; Ouro-2.6B-Thinking and
+SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, read 4 / write 2 spends $1.27\times$ the decode time per generated token of \nat{2} at batch 1, but its answers are
+shorter.}
+\label{tab:e2e}
+\end{table}
+
+\paragraph{Serving.} Storing the prompt once also changes throughput (Figure~\ref{fig:pareto}; Table~\ref{tab:serve} in Appendix~\ref{app:serve}). In a controlled decode
+benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), one prompt KV cache decodes
+$0.97\times$ as fast as the fastest native implementation we measured at one writing loop and $1.19$--$1.62\times$ at
+two to four, because it admits larger batches as $d$ grows; this native baseline uses the same flash attention and is
+faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
+generated tokens) one prompt KV cache decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
+
 
 \begin{table}[h]
 \centering\small
@@ -542,6 +510,44 @@ native $d/d$ & & 586 & & 219 \\
 against the connector reading 4 loops with one stored prompt KV cache.}
 \label{tab:serve}
 \end{table}
+
+\section{Design Variants}
+\label{sec:ablation}
+
+\begin{table}[h]
+\centering\small
+\setlength\tabcolsep{2.5pt}
+\begin{tabular}{@{}lclr@{}}
+\toprule
+variant & $p/d$ & task & difference \\
+\midrule
+\multirow{2}{*}{\shortstack[l]{direct sharing,\\no map$^\dagger$}} & 4/1 & GSM8K & \dn{17.5}\ci{-20.1}{-14.9} \\
+ & 4/2 & GSM8K & \dn{0.1}\ci{-2.0}{1.7} \\
+unrestricted keys$^\ddagger$ & -- & RULER-16K & all CIs include 0 \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
+paired). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per $(p,d)$ pair, 24M answer tokens; the other variants follow our recipe.
+$^\ddagger$Unrestricted key maps with one prompt KV cache per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
+\label{tab:ablation}
+\end{table}
+
+
+Table~\ref{tab:ablation} compares design variants. A LoRA-only writer trained for one $(p,d)$ pair that reads the last prefill loop's KV
+without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and is within noise of it at write 2 ($-0.1$); this terminal-KV
+baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
+connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
+RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
+maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
+
+\section{SenseNova-Loop-9B Without Training}
+\label{app:sn}
+
+SenseNova-Loop-9B's one-loop writer collapses on its own. Handing that unchanged
+writer the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
+parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
+from 2.2 to 10.9, far below the 95.8 of \nat{2}: deeper reading recovers knowledge and long-context accuracy, not
+multi-step reasoning.
 
 \section{Where Reading Deep Does Not Help}
 \label{app:hurt}
