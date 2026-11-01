@@ -293,8 +293,8 @@ def fig_lev():
     def series(label, which):
         pts = sorted((r["depth"], r[which]) for r in L if r["label"] == label)
         return [p[0] for p in pts], [p[1] for p in pts]
-    models = [m for m in ("Lev-1.4B", "Lev-2.6B") if any(r["label"] == f"{m} read-deep trained vs same-training control" for r in L)]
-    fig, axes = plt.subplots(1, len(models), figsize=(3.3 * len(models), 2.3), squeeze=False)
+    models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if any(r["label"] == f"{m} read-deep trained vs same-training control" for r in L)]
+    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.2), squeeze=False, sharey=False)
     for ax, m in zip(axes[0], models):
         d, ours = series(f"{m} read-deep trained vs same-training control", "a")
         _, ctl = series(f"{m} read-deep trained vs same-training control", "b")
@@ -302,11 +302,13 @@ def fig_lev():
         if orig:
             ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="Lev (released)")
         ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="Lev, same extra training")
-        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="read 4 / decide with d loops")
-        ax.set_xticks(d); ax.set_xlabel("decision loops d"); ax.set_title(m, fontsize=9, color=INK, pad=3)
+        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="read deep, decide with d loops")
+        ax.set_xticks(d); ax.set_xlabel("decision loops d"); ax.set_title(m + (" (Nanbeige, read 2)" if m == "Lev-3B" else " (Ouro, read 4)"), fontsize=8.5, color=INK, pad=3)
         ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    axes[0][0].set_ylabel("LevBench dev accuracy (%)")
-    axes[0][0].legend(fontsize=7, loc="lower right")
+    axes[0][0].set_ylabel("accuracy (%)")
+    h, l = axes[0][0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.6)
+    fig.subplots_adjust(wspace=0.28)
     save(fig, "fig_lev")
 
 
