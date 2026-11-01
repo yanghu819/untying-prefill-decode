@@ -284,13 +284,21 @@ def helmet_boot(a, b, reps=5000):
                 hi=100 * np.percentile(dd, 97.5))
 
 
-def boot(a, b, reps=5000):
-    ids = sorted(set(a) & set(b))
+def boot(a, b, reps=5000, groups=None):
+    """Paired bootstrap of mean(a - b); with `groups` (item -> group), resample groups (LevBench record groups)."""
+    ids = sorted(set(a) & set(b), key=str)
     if ids and all(str(i).startswith("helmet/") for i in ids):
         return helmet_boot(a, b, reps)
     d = np.array([a[i] - b[i] for i in ids])
     rng = np.random.default_rng(0)
-    m = d[rng.integers(0, len(d), (reps, len(d)))].mean(1)
+    if groups is None:
+        m = d[rng.integers(0, len(d), (reps, len(d)))].mean(1)
+    else:
+        g = sorted({groups[i] for i in ids}); pos = {x: j for j, x in enumerate(g)}
+        gi = np.array([pos[groups[i]] for i in ids])
+        sums, cnts = np.bincount(gi, d, len(g)), np.bincount(gi, None, len(g))
+        draws = rng.integers(0, len(g), (reps, len(g)))
+        m = sums[draws].sum(1) / cnts[draws].sum(1)
     return dict(n=len(ids), a=100 * np.mean([a[i] for i in ids]), b=100 * np.mean([b[i] for i in ids]),
                 diff=100 * d.mean(), lo=100 * np.percentile(m, 2.5), hi=100 * np.percentile(m, 97.5))
 
@@ -377,16 +385,22 @@ LEV_CMP = [("Lev-1.4B read-deep trained vs same-training control", "rd4-1.4B-rea
            ("Lev-2.6B read-deep trained vs same-training control", "rd4-2.6B-read4", "ctl-2.6B-read0"),
            ("Lev-2.6B training-free read 4 vs native", "Lev-2.6B-read4", "Lev-2.6B-read0"),
            ("Lev-2.6B control vs original", "ctl-2.6B-read0", "Lev-2.6B-read0"),
-           ("Lev-3B read-deep trained vs same-training control", "rd2-3B-read2", "ctl-3B-read0")]
+           ("Lev-3B read-deep trained vs same-training control", "rd2-3B-read2", "ctl-3B-read0"),
+           ("Lev-1.4B seed 1 read-deep trained vs same-training control", "rd4-1.4B-s1-read4", "ctl-1.4B-s1-read0"),
+           ("Lev-1.4B seed 2 read-deep trained vs same-training control", "rd4-1.4B-s2-read4", "ctl-1.4B-s2-read0"),
+           ("Lev-2.6B seed 1 read-deep trained vs same-training control", "rd4-2.6B-s1-read4", "ctl-2.6B-s1-read0")]
 
 
 def lev():
-    """Section on decision models: per-depth accuracy (argmax of the depth's logits == label), paired bootstrap."""
+    """Section on decision models: per-depth accuracy (argmax of the depth's logits == label) on LevBench's answerable
+    questions (as Lev: unanswerable and report-only rows have uniform targets and a placeholder label), paired bootstrap
+    over record groups (as Lev's analysis/adaptive_depth.py)."""
     def rows(d):
         f = sorted((LEV / d).glob("*.json"))
         if not f:
             return None
-        return {(r["id"], r.get("question")): r for r in json.loads(f[0].read_text())["rows"]}
+        return {(r["id"], r.get("question")): r for r in json.loads(f[0].read_text())["rows"]
+                if not r.get("unanswerable") and not r.get("report_only")}
     out = []
     for label, a, b in LEV_CMP:
         A, B = rows(a), rows(b)
@@ -396,7 +410,7 @@ def lev():
         for k in range(1, len(A[ids[0]]["logits"]) + 1):
             ca = {i: float(int(np.argmax(A[i]["logits"][k - 1])) == A[i]["label"]) for i in ids}
             cb = {i: float(int(np.argmax(B[i]["logits"][k - 1])) == B[i]["label"]) for i in ids}
-            r = {x: (round(v, 1) if isinstance(v, float) else v) for x, v in boot(ca, cb).items()}
+            r = {x: (round(v, 1) if isinstance(v, float) else v) for x, v in boot(ca, cb, groups={i: A[i]["group"] for i in ids}).items()}
             out.append(dict(label=label, depth=k, **r))
             print(f"Lev          {label:52s} d={k} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f})")
     return out

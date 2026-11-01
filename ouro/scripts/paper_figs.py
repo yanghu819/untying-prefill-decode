@@ -301,7 +301,7 @@ def fig_lev():
         _, orig = series(f"{m} control vs original", "b") if any(r["label"] == f"{m} control vs original" for r in L) else (d, None)
         if orig:
             ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="Lev (released)")
-        ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="Lev, same extra training")
+        ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="Lev, same continued training")
         ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="read deep, decide with d loops")
         ax.set_xticks(d); ax.set_xlabel("decision loops d"); ax.set_title(m + (" (Nanbeige, read 2)" if m == "Lev-3B" else " (Ouro, read 4)"), fontsize=8.5, color=INK, pad=3)
         ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)

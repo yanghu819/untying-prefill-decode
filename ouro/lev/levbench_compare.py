@@ -3,8 +3,9 @@
     python ouro/lev/levbench_compare.py ROWS_DIR MODEL     (ROWS_DIR/<MODEL>-read0/*.json, <MODEL>-read4/*.json)
     python ouro/lev/levbench_compare.py ROWS_DIR A B         (any two row directories under ROWS_DIR: A minus B)
 
-Accuracy = argmax of a depth's logits equals the label; paired bootstrap over questions (5,000 resamples, seed 0);
-breakdown by state length (tokens) and by LevBench tier.
+Accuracy = argmax of a depth's logits equals the label, on answerable questions only (as Lev: unanswerable and
+report-only rows have uniform targets and a placeholder label). 95% intervals: paired bootstrap resampling record groups
+(as Lev's analysis/adaptive_depth.py; 5,000 draws, seed 0). Breakdown by state length (tokens) and by LevBench tier.
 """
 import glob
 import json
@@ -15,15 +16,20 @@ import numpy as np
 
 def load(path):
     rows = json.load(open(glob.glob(f"{path}/*.json")[0]))["rows"]
-    return {(r["id"], r.get("question")): r for r in rows}
+    return {(r["id"], r.get("question")): r for r in rows if not r.get("unanswerable") and not r.get("report_only")}
 
 
 def correct(r, k):
     return float(int(np.argmax(r["logits"][k - 1])) == r["label"])
 
 
-def boot(d, rng):
-    m = d[rng.integers(0, len(d), (5000, len(d)))].mean(1)
+def boot(d, groups, n=5000, seed=0):
+    keys = sorted(set(groups)); idx = {g: [] for g in keys}
+    for i, g in enumerate(groups):
+        idx[g].append(i)
+    sums = np.array([d[idx[g]].sum() for g in keys]); cnts = np.array([len(idx[g]) for g in keys])
+    draws = np.random.default_rng(seed).integers(0, len(keys), (n, len(keys)))
+    m = sums[draws].sum(1) / cnts[draws].sum(1)
     return 100 * d.mean(), 100 * np.percentile(m, 2.5), 100 * np.percentile(m, 97.5)
 
 
@@ -37,12 +43,12 @@ def main():
         nat, deep = load(f"{root}/{model}-read0"), load(f"{root}/{model}-read4")
     ids = sorted(set(nat) & set(deep), key=str)
     depths = len(next(iter(nat.values()))["logits"])
-    rng = np.random.default_rng(0)
     out = {"model": model, "n": len(ids), "depths": {}}
-    print(f"{model}: {len(ids)} questions")
+    G = lambda sel: [nat[i]["group"] for i in sel]
+    print(f"{model}: {len(ids)} answerable questions, {len(set(G(ids)))} record groups")
     for k in range(1, depths + 1):
         a = np.array([correct(deep[i], k) for i in ids]); b = np.array([correct(nat[i], k) for i in ids])
-        diff, lo, hi = boot(a - b, rng)
+        diff, lo, hi = boot(a - b, G(ids))
         out["depths"][k] = dict(native=100 * b.mean(), read4=100 * a.mean(), diff=diff, lo=lo, hi=hi)
         print(f"  write {k}: native {100 * b.mean():.1f}  read 4 {100 * a.mean():.1f}  {diff:+.1f} [{lo:+.1f}, {hi:+.1f}]")
     for name, key, edges in (("state tokens", "state_tokens", [0, 256, 1024, 10 ** 9]),):
@@ -51,13 +57,13 @@ def main():
             if not sel:
                 continue
             a = np.array([correct(deep[i], 1) for i in sel]); b = np.array([correct(nat[i], 1) for i in sel])
-            d, l, h = boot(a - b, rng)
+            d, l, h = boot(a - b, G(sel))
             print(f"  write 1, {name} {lo_e}-{hi_e}: n={len(sel)} native {100 * b.mean():.1f} read4 {100 * a.mean():.1f} {d:+.1f} [{l:+.1f}, {h:+.1f}]")
     tiers = sorted({nat[i].get("tier") for i in ids} - {None})
     for t in tiers:
         sel = [i for i in ids if nat[i].get("tier") == t]
         a = np.array([correct(deep[i], 1) for i in sel]); b = np.array([correct(nat[i], 1) for i in sel])
-        d, l, h = boot(a - b, rng)
+        d, l, h = boot(a - b, G(sel))
         print(f"  write 1, tier {t}: n={len(sel)} native {100 * b.mean():.1f} read4 {100 * a.mean():.1f} {d:+.1f} [{l:+.1f}, {h:+.1f}]")
     json.dump(out, open(f"{root}/{model}-compare.json", "w"), indent=1)
 
