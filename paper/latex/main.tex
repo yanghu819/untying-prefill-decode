@@ -381,7 +381,7 @@ generating text. We read the context with four loops (two for Lev-3B, whose back
 loop attend to the last read loop's KV; we add no maps and continue training Lev's own LoRA and scoring head. The
 control continues the same released weights on the same data with Lev's own forward: both arms take 140 updates on the
 8,925-record public S31 training subset with Lev's hyperparameters. Our reference forward runs the full sequence through
-both the read and the decision loops, so training compute is not matched. We evaluate on the 3,270 answerable questions
+both the read and the decision loops, so training compute is not matched (we check this below). We evaluate on the 3,270 answerable questions
 of LevBench's public development set and never touch its locked test set; intervals resample record groups, as Lev does.
 
 With one decision loop, reading deep raises accuracy by $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on
