@@ -532,11 +532,12 @@ brackets are paired 95\% bootstrap intervals.}
 \end{table*}
 
 Table~\ref{tab:t14} repeats the comparison of Figure~\ref{fig:equal} on the smaller Thinking checkpoint. The effect of
-reading depth replicates: with the same connector, reading four loops instead of two raises MMLU-Pro ($+8.6$), HELMET,
+reading depth replicates: with the same connector, reading four loops instead of two raises MMLU-Pro ($+8.6$), HELMET ($+7.3$),
 ARC-Challenge ($+2.7$) and BBH ($+8.8$) and leaves GSM8K, MATH-500, HumanEval and MBPP+ unchanged within noise. Against
 native 2/2 the result is weaker than on Ouro-2.6B-Thinking: read 4 / write 2 is significantly better on GSM8K ($+3.0$)
 and ARC-Challenge ($+4.3$), within noise on five benchmarks, and much worse on 3-shot BBH ($-15.9$), where this
-checkpoint's connector degenerates at both read depths (Limitations).
+checkpoint's connector degenerates at both read depths (Limitations). Against native 4/4 the gap is larger than on
+Ouro-2.6B-Thinking, most of all on HELMET ($-18.3$).
 
 \section{End-to-End Time and Decode Throughput}
 \label{app:serve}
