@@ -70,6 +70,12 @@ CMP += [
     ("Table 5", "2.6B write 2 MATH 0-shot", "L:o26x-S42-math0shot:mvfull", "L:o26x-S22-math0shot:mvfull", (7.0, 3.0, 11.2)),
     ("Table 5", "1.4B write 1 MATH 4-shot", "L:o14x-S41-math4shot:mvfull", "L:o14x-S11-math4shot:mvfull", (-4.0, -8.2, 0.0)),
     ("Table 5", "1.4B write 1 MATH 0-shot", "L:o14x-S41-math0shot:mvfull", "L:o14x-S11-math0shot:mvfull", (4.8, 1.4, 8.4)),
+    *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), None)
+      for c in ("S41", "S42", "S11", "S22")
+      for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
+                           ("RULER-4K", "B:X26fz-{c}f:ruler4k", "B:X26-{c}f:ruler4k"),
+                           ("RULER-16K", "B:X26fz-{c}f:ruler16k", "B:X26-{c}f:ruler16k"),
+                           ("MMLU", mmlu("X26fz-{c}"), mmlu("X26-{c}")))],
     ("Table 6", "direct sharing 4/1 GSM8K", gsm("X26-Y1"), gsm("X26-S41"), (-17.5, -20.1, -14.9)),
     ("Table 6", "direct sharing 4/2 GSM8K", gsm("X26-Y2"), gsm("X26-S42"), (-0.1, -2.0, 1.7)),
     ("Table 6", "answer once 4/2 GSM8K", gsm("X26-O42"), gsm("X26-S42"), (0.3, -1.5, 2.1)),
@@ -362,6 +368,37 @@ def wander():
     return out
 
 
+LEV = Path(__file__).resolve().parents[1] / "results" / "lev" / "levbench"
+# (label, A rows dir, B rows dir): accuracy at every decision depth, A minus B (LevBench development, Lev's depth_rows)
+LEV_CMP = [("Lev-1.4B read-deep trained vs same-training control", "rd4-1.4B-read4", "ctl-1.4B-read0"),
+           ("Lev-1.4B control vs original", "ctl-1.4B-read0", "Lev-1.4B-read0"),
+           ("Lev-1.4B training-free read 4 vs native", "Lev-1.4B-read4", "Lev-1.4B-read0"),
+           ("Lev-2.6B read-deep trained vs same-training control", "rd4-2.6B-read4", "ctl-2.6B-read0"),
+           ("Lev-2.6B training-free read 4 vs native", "Lev-2.6B-read4", "Lev-2.6B-read0")]
+
+
+def lev():
+    """Section on decision models: per-depth accuracy (argmax of the depth's logits == label), paired bootstrap."""
+    def rows(d):
+        f = sorted((LEV / d).glob("*.json"))
+        if not f:
+            return None
+        return {(r["id"], r.get("question")): r for r in json.loads(f[0].read_text())["rows"]}
+    out = []
+    for label, a, b in LEV_CMP:
+        A, B = rows(a), rows(b)
+        if A is None or B is None:
+            print(f"Lev          {label:52s} MISSING"); continue
+        ids = sorted(set(A) & set(B), key=str)
+        for k in range(1, len(A[ids[0]]["logits"]) + 1):
+            ca = {i: float(int(np.argmax(A[i]["logits"][k - 1])) == A[i]["label"]) for i in ids}
+            cb = {i: float(int(np.argmax(B[i]["logits"][k - 1])) == B[i]["label"]) for i in ids}
+            r = {x: (round(v, 1) if isinstance(v, float) else v) for x, v in boot(ca, cb).items()}
+            out.append(dict(label=label, depth=k, **r))
+            print(f"Lev          {label:52s} d={k} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f})")
+    return out
+
+
 def throughput():
     """Table in Appendix (decode throughput) and the ratios in Sec 4.2: best tokens/s over batch sizes, 8K context."""
     d = Path(__file__).resolve().parents[1] / "results" / "throughput-sb4"
@@ -404,7 +441,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

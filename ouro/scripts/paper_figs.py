@@ -287,6 +287,29 @@ def fig_pareto():
     save(fig, "fig_pareto")
 
 
+def fig_lev():
+    """Decision models (Lev): accuracy vs decision depth; reading the context with 4 loops after training."""
+    L = PN.get("lev", [])
+    def series(label, which):
+        pts = sorted((r["depth"], r[which]) for r in L if r["label"] == label)
+        return [p[0] for p in pts], [p[1] for p in pts]
+    models = [m for m in ("Lev-1.4B", "Lev-2.6B") if any(r["label"] == f"{m} read-deep trained vs same-training control" for r in L)]
+    fig, axes = plt.subplots(1, len(models), figsize=(3.3 * len(models), 2.3), squeeze=False)
+    for ax, m in zip(axes[0], models):
+        d, ours = series(f"{m} read-deep trained vs same-training control", "a")
+        _, ctl = series(f"{m} read-deep trained vs same-training control", "b")
+        _, orig = series(f"{m} control vs original", "b") if any(r["label"] == f"{m} control vs original" for r in L) else (d, None)
+        if orig:
+            ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="Lev (released)")
+        ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="Lev, same extra training")
+        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="read 4 / decide with d loops")
+        ax.set_xticks(d); ax.set_xlabel("decision loops d"); ax.set_title(m, fontsize=9, color=INK, pad=3)
+        ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
+    axes[0][0].set_ylabel("LevBench dev accuracy (%)")
+    axes[0][0].legend(fontsize=7, loc="lower right")
+    save(fig, "fig_lev")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

@@ -39,7 +39,8 @@ connector trained on a frozen looped model separates the two budgets: one set of
 prefill and decoding depth up to four loops, and one stored prompt KV cache serves every decoding loop exactly. On
 Ouro-2.6B-Thinking, reading the prompt with four loops and writing with two scores above the native two-loop model on all
 eight standard benchmarks we test, at the same decoding depth, and within two points of the native four-loop model on
-six; on GSM8K it is 1.0 point below the four-loop model on the full test set and answers in $0.55\times$ its time.
+six; on GSM8K it is 1.0 point below the four-loop model on the full test set and answers in $0.55\times$ its time. The
+same split makes a looped decision model more accurate at one to three decision loops.
 \end{abstract}
 
 \section{Introduction}
@@ -91,7 +92,8 @@ Reading deep and writing shallow puts the two findings together (Figure~\ref{fig
 reading four loops and writing two scores above native 2/2 on all eight benchmarks at the same decode depth, and within
 two points of native 4/4 on six. On full GSM8K it scores 93.3 against 94.2 for native 4/4; on 64 timed problems its
 answer time, prefill included, is $0.55\times$ that of native 4/4 (Figure~\ref{fig:frontier}). Across all writing depths
-the connector is more accurate at the same decoding throughput, or faster at the same accuracy (Figure~\ref{fig:pareto}).
+the connector is more accurate at the same decoding throughput, or faster at the same accuracy (Figure~\ref{fig:pareto}). The split carries over to looped decision models: after the same extra training, Lev-1.4B
+reading its context deep is 5.4 points more accurate at one decision loop (Figure~\ref{fig:lev}).
 
 Our contributions are a measurement of what reading and writing depth each buy in looped language models, a connector
 that makes the split usable on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
@@ -337,6 +339,27 @@ the time of \nat{2}, because its solutions are not shorter. On SenseNova-Loop-9B
 \nat{2} on all 1,319 GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close to the ratio of layer
 executions per token (32 vs.\ 56).
 
+
+\subsection{Decision models}
+\label{sec:lev}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\columnwidth]{../figs/fig_lev.pdf}
+\caption{\textbf{Read deep, decide shallow.} Lev-1.4B~\citep{lev} on the public LevBench development set (3,570
+questions): accuracy against the number of loops spent on the decision. Red: the context is read with four loops and
+the decision runs $d$ loops on its deep KV; dark grey: the same extra training with Lev's own forward; dashed: the
+released model.}
+\label{fig:lev}
+\end{figure}
+
+The split also serves looped decision models. Lev~\citep{lev} reads a context and scores options with a pointer head
+after every loop of Ouro, without generating text. We continue Lev-1.4B's training for one epoch of its public training
+subset (8,925 records, Lev's recipe) with the context read by four loops and the question and options computed with
+$d$ loops on that deep KV, and compare with the same continuation under Lev's own forward
+(Figure~\ref{fig:lev}). Reading deep raises accuracy at one, two and three decision loops by $+5.4$\ci{3.6}{7.1},
+$+3.8$\ci{2.4}{5.2} and $+1.8$\ci{0.6}{2.9}, and is level at four ($-0.1$); two decision loops after a deep read come
+within 1.1 points of three native loops. Without this training, reading deep does not help ($-3.6$ at one loop).
 
 \section{Conclusion}
 
