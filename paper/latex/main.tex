@@ -14,13 +14,13 @@
 \usepackage{xcolor}
 \usepackage{url}
 
-\newcommand{\ci}[2]{\,{\scriptsize[#1,\,#2]}}
+\newcommand{\ci}[2]{\,{\scriptsize\ensuremath{[#1,\,#2]}}}
 \newcommand{\rw}[2]{read~#1\,/\,write~#2}
 \newcommand{\nat}[1]{native~#1/#1}
 \newcommand{\up}[1]{$+#1$}
 \newcommand{\dn}[1]{$-#1$}
 
-\title{Read Deep, Write Shallow: How Looped Language Models Should Spend Their Depth}
+\title{Read Deep, Write Shallow:\\ How Looped Language Models Should Spend Their Depth}
 
 \author{Anonymous ACL submission}
 
@@ -29,11 +29,10 @@
 
 \begin{abstract}
 Looped language models reuse one block of layers several times per token and usually spend the same number of loops
-reading the prompt and writing the answer. We ask what each kind of depth buys. A small connector trained on a frozen
-looped model lets the prompt be read with $p$ loops and the answer written with $d$ loops, and one set of its parameters
-serves all 16 pairs up to four loops. On Ouro-2.6B the $4\times4$ map shows a division of labour: \emph{depth spent
-reading the prompt mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys
-multi-step derivation}. With the writer fixed, reading deeper improves knowledge and long-context benchmarks on five
+reading the prompt and writing the answer. We show that the two buy different things: \emph{depth spent reading the
+prompt mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys multi-step
+derivation}. To measure this, a small connector trained on a frozen looped model lets the prompt be read with $p$ loops
+and the answer written with $d$ loops, one set of parameters serving all 16 pairs up to four loops on Ouro-2.6B. With the writer fixed, reading deeper improves knowledge and long-context benchmarks on five
 checkpoints from two model families. On Ouro-2.6B-Thinking, reading four loops and writing two
 beats the native four-loop model on long-context HELMET by 4.3 points, and on GSM8K a two-loop writer answers in
 $0.55\times$ its time, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV
@@ -45,7 +44,7 @@ cache serve every writing loop exactly. Linear probes find the next token more, 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig1_grid.pdf}
-\caption{\textbf{Reading depth and writing depth buy different things.} One connector on frozen Ouro-2.6B evaluated at
+\caption{\textbf{Reading deeper improves knowledge and long-context accuracy; writing deeper improves multi-step derivation.} One connector on frozen Ouro-2.6B evaluated at
 all 16 (read, write) pairs. Knowledge (MMLU) and long-context reading (RULER-16K) improve along the read axis; multi-step
 derivation (GSM8K) improves along the write axis. Grid subsets: MMLU 20 questions per subject, RULER-16K 260 rows, GSM8K
 400 problems; one colour scale for all panels; full-set comparisons are in Table~\ref{tab:equal}.}
@@ -167,6 +166,26 @@ sizes are in Appendix~\ref{app:eval}. Every comparison is paired over items with
 reading depth from adaptation we compare \rw{p}{d} with \rw{d}{d} of the \emph{same} connector; comparisons with native
 models include the effect of training the connector.
 
+\begin{table*}[!t]
+\centering\small
+\setlength\tabcolsep{2.5pt}
+\begin{tabular}{@{}llll@{}}
+\toprule
+model (same writer, write 1) & knowledge & long context & multi-step \\
+\midrule
+Ouro-2.6B, read 4 vs.\ 1 & MMLU \up{15.2}\ci{14.3}{16.1} & RULER-16K \up{8.6}\ci{4.3}{12.8} & GSM8K \up{8.0}\ci{5.3}{10.5} \\
+Ouro-1.4B, read 4 vs.\ 1 & ARC-C \up{10.8}\ci{8.4}{13.1} & RULER-16K \up{1.4}\ci{-2.6}{5.4} & GSM8K \up{6.2}\ci{3.6}{8.7} \\
+Ouro-2.6B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{18.6}\ci{13.6}{23.8} & HELMET \up{12.0}\ci{9.1}{15.0} & GSM8K \up{6.6}\ci{4.2}{9.2} \\
+Ouro-1.4B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{17.1}\ci{12.4}{22.4} & HELMET \up{11.9}\ci{9.0}{14.8} & GSM8K \up{13.6}\ci{10.5}{16.6} \\
+SenseNova-Loop-9B, read 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{6.7}\ci{5.7}{7.8} & BBH \up{7.0}\ci{5.9}{8.0} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Reading depth with the writer held fixed} across five checkpoints (paired, within one connector). Set
+sizes: MMLU 14,042, ARC-C 1,172, MMLU-Pro 420 (Ouro) and 980 (SenseNova), RULER 520, HELMET 1,108 (Ouro) and 6,646
+(SenseNova), GSM8K 1,319, BBH 6,511. Differences are accuracy points; brackets are paired 95\% bootstrap intervals.}
+\label{tab:models}
+\end{table*}
+
 \subsection{Reading buys knowledge and long context, writing buys derivation}
 
 Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
@@ -177,7 +196,7 @@ reproduces these numbers (Appendix~\ref{app:seed}).
 
 \begin{table}[t]
 \centering\small
-\setlength\tabcolsep{3.5pt}
+\setlength\tabcolsep{2pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
 write $d$ & MMLU & RULER-16K & GSM8K \\
@@ -188,7 +207,7 @@ write $d$ & MMLU & RULER-16K & GSM8K \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Reading depth at fixed writing depth} (Ouro-2.6B, one connector, full sets): \rw{4}{d} minus
-\rw{d}{d}.}
+\rw{d}{d}. Differences are accuracy points; brackets are paired 95\% bootstrap intervals.}
 \label{tab:equal}
 \end{table}
 
@@ -200,25 +219,6 @@ same way but do not isolate reading depth (Appendix~\ref{app:eval}). Against the
 shallow wins on long context: on Ouro-2.6B-Thinking HELMET, \rw{4}{2} scores 60.1 against 55.8 for \nat{4}
 ($+4.3$\ci{2.4}{6.2}) with half the writing depth, and 34.1 for \nat{2}.
 
-\begin{table*}[t]
-\centering\small
-\setlength\tabcolsep{4pt}
-\begin{tabular}{@{}llll@{}}
-\toprule
-model (same writer, one writing loop) & knowledge & long context & multi-step \\
-\midrule
-Ouro-2.6B, read 4 vs.\ 1 & MMLU \up{15.2}\ci{14.3}{16.1} & RULER-16K \up{8.6}\ci{4.3}{12.8} & GSM8K \up{8.0}\ci{5.3}{10.5} \\
-Ouro-1.4B, read 4 vs.\ 1 & ARC-C \up{10.8}\ci{8.4}{13.1} & RULER-16K \up{1.4}\ci{-2.6}{5.4} & GSM8K \up{6.2}\ci{3.6}{8.7} \\
-Ouro-2.6B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{18.6}\ci{13.6}{23.8} & HELMET \up{12.0}\ci{9.1}{15.0} & GSM8K \up{6.6}\ci{4.2}{9.2} \\
-Ouro-1.4B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{17.1}\ci{12.4}{22.4} & HELMET \up{11.9}\ci{9.0}{14.8} & GSM8K \up{13.6}\ci{10.5}{16.6} \\
-SenseNova-Loop-9B, read 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{6.7}\ci{5.7}{7.8} & BBH \up{7.0}\ci{5.9}{8.0} \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Reading depth with the writer held fixed} across five checkpoints (paired, within one connector). Set
-sizes: MMLU 14,042, ARC-C 1,172, MMLU-Pro 420 (Ouro) and 980 (SenseNova), RULER 520, HELMET 1,108 (Ouro) and 6,646
-(SenseNova), GSM8K 1,319, BBH 6,511.}
-\label{tab:models}
-\end{table*}
 
 \subsection{Writing shallow is fast}
 \label{sec:fast}
@@ -250,7 +250,7 @@ executions per token (32 vs.\ 56).
 \setlength\tabcolsep{3pt}
 \begin{tabular}{@{}llrr@{}}
 \toprule
- & config & acc. & s / answer \\
+task / model & config & acc.\ (\%) & time (s) \\
 \midrule
 \multirow{4}{*}{\shortstack[l]{GSM8K\\Ouro-2.6B-T}} & \nat{2} & 95.3 & 70.0 \\
  & \nat{4} & 93.8 & 114.2 \\
@@ -266,8 +266,8 @@ executions per token (32 vs.\ 56).
  & \rw{2}{1} & 95.3 & 30.6 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{End to end per answer} (batch 1, one B300; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192
-tokens). On GSM8K, read 4 / write 2 costs $1.27\times$ \nat{2} per generated token at batch 1, but its answers are
+\caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; Ouro-2.6B-Thinking and
+SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, read 4 / write 2 costs $1.27\times$ \nat{2} per generated token at batch 1, but its answers are
 shorter.}
 \label{tab:e2e}
 \end{table}
@@ -292,10 +292,11 @@ native $d/d$ & 834 & 342 & 200 & 125 \\
 1K context, 2{,}048 steps & & $d{=}2$ & & $d{=}4$ \\
 \midrule
 native $d/d$ & & 586 & & 219 \\
-one prompt bank & & 570 & & 253 \\
+\rw{4}{d}, one prompt bank & & 570 & & 253 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Decode throughput} (tokens/s, best over tested batch sizes, one B300).}
+\caption{\textbf{Decode throughput} of Ouro-2.6B (tokens/s, best over tested batch sizes, one B300): native model
+against the connector reading 4 loops with one stored prompt bank.}
 \label{tab:serve}
 \end{table}
 
@@ -368,7 +369,7 @@ Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
  & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer.}
+\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer. Differences are accuracy points; brackets are paired 95\% bootstrap intervals.}
 \label{tab:hurt}
 \end{table}
 
@@ -376,26 +377,17 @@ Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
 \subsection{Design variants}
 \label{sec:ablation}
 
-Table~\ref{tab:ablation} compares design variants. A per-cell, LoRA-only writer that reads the last prefill loop's KV
-without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and is within noise of it at write 2 ($-0.1$); this terminal-KV
-baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
-connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
-RoPE-commuting scale, which is what allows one stored prompt bank, shows no measurable cost against unrestricted key
-maps with one bank per loop (RULER-16K, five cells). Sharing generated-token KV across writing loops (Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
-costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
-/ write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit.
-
-\begin{table}[!htb]
+\begin{table}[!t]
 \centering\small
 \setlength\tabcolsep{2.5pt}
-\begin{tabular}{@{}lccr@{}}
+\begin{tabular}{@{}lclr@{}}
 \toprule
 variant & $p/d$ & task & difference \\
 \midrule
-direct sharing$^\dagger$ & 4/1 & GSM8K & \dn{17.5}\ci{-20.1}{-14.9} \\
-\quad (no map) & 4/2 & GSM8K & \dn{0.1}\ci{-2.0}{1.7} \\
-unrestricted keys & 5 cells & RULER-16K & all intervals $\ni 0$ \\
-answer once & 4/2 & GSM8K & \up{0.3}\ci{-1.5}{2.1} \\
+\multirow{2}{*}{\shortstack[l]{direct sharing,\\no map$^\dagger$}} & 4/1 & GSM8K & \dn{17.5}\ci{-20.1}{-14.9} \\
+ & 4/2 & GSM8K & \dn{0.1}\ci{-2.0}{1.7} \\
+unrestricted keys$^\ddagger$ & -- & RULER-16K & all CIs include 0 \\
+shared answer KV & 4/2 & GSM8K & \up{0.3}\ci{-1.5}{2.1} \\
  & 3/3 & GSM8K & \dn{0.8}\ci{-2.4}{0.8} \\
  & 4/4 & GSM8K & \dn{2.6}\ci{-4.2}{-1.1} \\
 first-loop branch & 4/1 & RULER-4K & \up{2.3}\ci{1.0}{3.6} \\
@@ -403,9 +395,21 @@ first-loop branch & 4/1 & RULER-4K & \up{2.3}\ci{1.0}{3.6} \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
-paired). $^\dagger$LoRA only, one connector per cell, 24M KL tokens; the other variants follow our recipe.}
+paired). Differences are accuracy points; brackets are paired 95\% bootstrap intervals. $^\dagger$LoRA only, one connector per cell, 24M KL tokens; the other variants follow our recipe.
+$^\ddagger$Unrestricted key maps with one prompt bank per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
 \label{tab:ablation}
 \end{table}
+
+
+Table~\ref{tab:ablation} compares design variants. A per-cell, LoRA-only writer that reads the last prefill loop's KV
+without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 and is within noise of it at write 2 ($-0.1$); this terminal-KV
+baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
+connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
+RoPE-commuting scale, which is what allows one stored prompt bank, shows no measurable cost against unrestricted key
+maps with one bank per loop (RULER-16K, five cells). Sharing generated-token KV across writing loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
+costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
+/ write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit.
+
 
 
 \section{Conclusion}
