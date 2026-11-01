@@ -302,7 +302,7 @@ benchmarks we test, and it depends on how the task is prompted.
 on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
 categories); read 4 / write 2 uses one connector and one stored prompt KV cache. Hollow circles: the same connector reading only two
 loops, which separates the effect of training from that of reading depth. Each benchmark compares the models on the same
-problems; on MATH-500 these are the 200 problems native 4/4 has finished.}
+problems; on MATH-500 these are the 400 problems native 4/4 has finished.}
 \label{fig:equal}
 \end{figure*}
 
@@ -310,10 +310,10 @@ Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: rea
 depth of \nat{2}, \rw{4}{2} scores higher on seven of the eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
 BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}), MBPP+ ($+4.8$\ci{1.3}{8.2}) and HELMET
 ($+13.0$\ci{6.7}{19.5}); on GSM8K and HumanEval the gains are within noise, and on MATH-500 it is
-lower, also within noise ($-2.0$\ci{-6.5}{2.0}). Against \nat{4}, which writes with
+lower, also within noise ($-0.5$\ci{-3.5}{2.5}). Against \nat{4}, which writes with
 twice the depth, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), where native 4/4
 recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt}), and on MATH-500
-($-6.5$\ci{-11.0}{-2.5}).
+($-5.5$\ci{-8.8}{-2.5}).
 
 Part of the gain over \nat{2} comes from training the connector, not from depth. The same connector reading two loops
 (hollow circles; same weights, same training, same writing depth) isolates reading depth: reading four rather than two
