@@ -1,0 +1,17 @@
+The repository ByteDance/Ouro-2.6B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+Loading weights:   0%|          | 0/530 [00:00<?, ?it/s]Loading weights:  11%|█         | 56/530 [00:00<00:00, 543.19it/s]Loading weights:  22%|██▏       | 114/530 [00:00<00:00, 555.84it/s]Loading weights:  33%|███▎      | 177/530 [00:00<00:00, 585.92it/s]Loading weights:  45%|████▍     | 236/530 [00:00<00:00, 544.56it/s]Loading weights:  55%|█████▍    | 291/530 [00:00<00:00, 523.12it/s]Loading weights:  65%|██████▍   | 344/530 [00:00<00:00, 494.71it/s]Loading weights:  74%|███████▍  | 394/530 [00:00<00:00, 481.64it/s]Loading weights:  84%|████████▎ | 443/530 [00:00<00:00, 439.60it/s]Loading weights:  92%|█████████▏| 488/530 [00:01<00:00, 338.36it/s]Loading weights:  99%|█████████▉| 526/530 [00:01<00:00, 294.20it/s]Loading weights: 100%|██████████| 530/530 [00:01<00:00, 407.47it/s]
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-2.6B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+model.early_exit_gate.weight | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+lm_head.weight               | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+levwork-levbench-dev: 3570 records (0 skipped as overlong), 3570 questions, 4 depths, 604s
+DONE

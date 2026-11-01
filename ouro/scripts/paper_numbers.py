@@ -43,6 +43,15 @@ def ruler(run, k):
 
 
 # (section, label, A, B, printed value (diff, lo, hi) or None); difference = A - B
+EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k_think:math_verify"),
+         ("MATH-500", "T:T26-S42-math500_think:math_verify", "T:think-native{n}-math500_think:math_verify"),
+         ("MMLU-Pro", "L:T26x-S42-mmlupro:exact_match", "L:T26x-native{n}-mmlupro:exact_match"),
+         ("ARC-C", "L:T26x-S42-arc:acc_norm", "L:T26x-native{n}-arc:acc_norm"),
+         ("BBH", "L:T26x-S42-bbh:exact_match", "L:T26x-native{n}-bbh:exact_match"),
+         ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
+         ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
+         ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet")]
+
 CMP = []
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
              (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-1.7, -3.6, 0.2)]),
@@ -120,6 +129,9 @@ CMP += [
           ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
           ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
+    # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
+    *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"), None)
+      for bench, ka, _ in EQUAL],
     *[("Pareto", f"read 4/write {d} vs native {d}/{d} {name}", ka.format(d=d), kb.format(d=d), None)
       for d in range(1, 5)
       for name, ka, kb in (("MMLU (20/subject)", "L:X26-S4{d}-mmlu:acc", "L:o26n{d}-mmlu:acc"),
@@ -427,14 +439,6 @@ def lev():
     return out
 
 
-EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k_think:math_verify"),
-         ("MATH-500", "T:T26-S42-math500_think:math_verify", "T:think-native{n}-math500_think:math_verify"),
-         ("MMLU-Pro", "L:T26x-S42-mmlupro:exact_match", "L:T26x-native{n}-mmlupro:exact_match"),
-         ("ARC-C", "L:T26x-S42-arc:acc_norm", "L:T26x-native{n}-arc:acc_norm"),
-         ("BBH", "L:T26x-S42-bbh:exact_match", "L:T26x-native{n}-bbh:exact_match"),
-         ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
-         ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
-         ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet")]
 
 
 def equal():
