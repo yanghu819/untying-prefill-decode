@@ -205,6 +205,34 @@ def fig4():
     save(fig, "fig4_probe")
 
 
+def fig_equal():
+    """The headline: reading 4 loops and writing 2 has the decode cost of native 2/2 and the quality of native 4/4."""
+    C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Equal decode cost"}
+    benches = ["GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"]
+    rows = []
+    for b in benches:
+        v2 = C[f"2.6B-T read 4/write 2 vs native 2/2 {b}"]
+        v4 = C[f"2.6B-T read 4/write 2 vs native 4/4 {b}"]
+        rows.append((v2["b"], v2["a"], v4["b"]))
+    rows = np.array(rows)
+    fig, ax = plt.subplots(figsize=(6.9, 2.05))
+    x = np.arange(len(benches)); w = 0.27
+    styles = [("native 2/2  (decode: 2 loops)", NAT_LIGHT), ("read 4 / write 2  (decode: 2 loops)", OURS),
+              ("native 4/4  (decode: 4 loops)", NAT)]
+    for j, (lab, col) in enumerate(styles):
+        bars = ax.bar(x + (j - 1) * w, rows[:, j], w * 0.9, color=col, label=lab, zorder=2)
+        if j == 1:
+            for b_, v in zip(bars, rows[:, j]):
+                ax.text(b_.get_x() + b_.get_width() / 2, v + 1.2, f"{v:.0f}", ha="center", va="bottom", fontsize=6.6,
+                        color=OURS, fontweight="bold")
+    ax.set_xticks(x, benches, fontsize=7.5)
+    ax.set_ylim(0, 112); ax.set_yticks(range(0, 101, 25)); ax.set_ylabel("score (%)")
+    ax.grid(axis="y", color=GRID, lw=0.5, zorder=0); ax.set_axisbelow(True)
+    ax.tick_params(axis="x", length=0)
+    ax.legend(loc="upper center", ncol=3, fontsize=7, bbox_to_anchor=(0.5, 1.16), handlelength=1.1, columnspacing=1.4)
+    save(fig, "fig_equal")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

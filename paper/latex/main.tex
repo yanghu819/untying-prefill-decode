@@ -32,15 +32,16 @@
 \maketitle
 
 \begin{abstract}
-Looped language models reuse one block of layers several times per token and usually spend the same number of loops
-reading the prompt and writing the answer. We show that the two buy different things: \emph{depth spent reading the
-prompt mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys multi-step
-derivation}. To measure this, a small connector trained on a frozen looped model lets the prompt be read with $p$ loops
-and the answer written with $d$ loops, one set of parameters serving all 16 pairs up to four loops on Ouro-2.6B. With the writer fixed, reading deeper improves knowledge and long-context benchmarks on five
-checkpoints from two model families, although not on every task: deep reading costs exact recall of the prompt.
-Writing is paid per token, so writing shallow is what saves time: on Ouro-2.6B-Thinking a two-loop writer answers GSM8K
-in $0.55\times$ the time of the four-loop model, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV
-cache serve every writing loop exactly. Linear probes find the next token more, and in Ouro the previous token less, linearly decodable from later loops' value cache.
+Looped language models reuse one block of layers several times per token and spend the same number of loops reading
+the prompt and writing the answer. We show that the two buy different things: \emph{depth spent reading the prompt
+mainly buys knowledge and long-context accuracy, while depth spent writing the answer mainly buys multi-step
+derivation}. A small connector trained on a frozen looped model lets the prompt be read with $p$ loops and the answer
+written with $d$ loops; one set of parameters serves all 16 pairs up to four loops, and a key map that commutes with
+rotary embeddings lets one stored prompt KV cache serve every writing loop exactly. Reading deep and writing shallow
+follows: on Ouro-2.6B-Thinking, reading four loops and writing two scores higher than the native two-loop model on all
+eight standard benchmarks we test, at the same decode depth, and comes within two points of the native four-loop model
+on six of them while answering GSM8K in $0.55\times$ its time. With the writer fixed, reading deeper improves knowledge
+and long-context benchmarks on five checkpoints from two model families.
 \end{abstract}
 
 \section{Introduction}
@@ -89,7 +90,9 @@ The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the ben
 moves knowledge and long-context accuracy, and writing depth mainly moves multi-step derivation. With the writer held
 fixed, reading deeper helps on five checkpoints from two model families (Table~\ref{tab:models}).
 
-Time is saved on the writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
+Reading deep and writing shallow puts the two findings together (Figure~\ref{fig:equal}): on Ouro-2.6B-Thinking,
+reading four loops and writing two scores above native 2/2 on all eight benchmarks at the same decode depth, and within
+two points of native 4/4 on six. Time is saved on the writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
 one point below it on the full GSM8K test set, and reading deeper first adds no detectable time
 (Figure~\ref{fig:frontier}). The reading benefit can even appear without training: on SenseNova-Loop-9B, giving the
 unchanged one-loop writer a two-visit prompt state raises RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1.
@@ -274,6 +277,26 @@ writer the prompt state of a two-visit prefill---attention KV and the recurrent 
 parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
 from 2.2 to 10.9, far below the 95.8 of \nat{2}: deeper reading recovers knowledge and long-context accuracy, not
 multi-step derivation.
+
+\subsection{Read deep, write shallow}
+\label{sec:rdws}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
+\caption{\textbf{Read deep, write shallow: the decode depth of two loops, close to the quality of four.} Ouro-2.6B-Thinking
+on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
+categories); read 4 / write 2 uses one connector and one stored prompt KV cache. Native 4/4 on MATH-500 is measured on
+100 problems.}
+\label{fig:equal}
+\end{figure*}
+
+Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: read four loops, write two. At the decode
+depth of \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
+BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}), MBPP+ ($+4.8$\ci{1.3}{8.2}) and HELMET
+($+13.0$\ci{6.7}{19.5}); on GSM8K, MATH-500 and HumanEval the gains are within noise. Against \nat{4}, which writes with
+twice the depth, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), where native 4/4
+recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt}), and on MATH-500.
 
 \subsection{Writing shallow is fast}
 \label{sec:fast}

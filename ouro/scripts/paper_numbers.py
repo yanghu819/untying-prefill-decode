@@ -95,13 +95,25 @@ CMP += [
      None),
     ("App A", "2.6B-T answer once vs per-loop answer banks, read 4/write 2 GSM8K (full)",
      "T:T26-O-universal-O42-gsm8k_think:math_verify", "T:T26-S42-gsm8k_think:math_verify", (0.5, -0.5, 1.6)),
-    *[("HELMET by category", f"{lab} {cat}", f"B:{x}:helmet@{cat}", f"B:{y}:helmet@{cat}", None)
+    *[("HELMET by category", f"{lab} {cat}", f"B:{x}:helmet#{cat}", f"B:{y}:helmet#{cat}", None)
       for lab, x, y in (("2.6B-T read 4/write 2 vs native 4/4", "T26ne-S42-helmet", "T26ne-native4-helmet"),
                         ("2.6B-T read 4/write 2 vs native 2/2", "T26ne-S42-helmet", "T26ne-native2-helmet"),
                         ("2.6B-T read 4 vs 1 (write 1)", "T26ne-S41-helmet", "T26ne-S11-helmet"),
                         ("1.4B-T read 4 vs 1 (write 1)", "T14ne-S41-helmet", "T14ne-S11-helmet"),
                         ("SenseNova read 2 vs 1 (write 1)", "SNnt-C21-helmet", "SNnt-C11-helmet"))
       for cat in ("rag", "rerank", "icl", "recall")],
+    *[("Equal decode cost", f"2.6B-T read 4/write 2 vs native {n}/{n} {bench}", ka.format(c="S42", r=f"T26x"),
+       kb.format(n=n), None)
+      for n in (2, 4)
+      for bench, ka, kb in (
+          ("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k_think:math_verify"),
+          ("MATH-500", "T:T26-S42-math500_think:math_verify", "T:think-native{n}-math500_think:math_verify"),
+          ("MMLU-Pro", "L:T26x-S42-mmlupro:exact_match", "L:T26x-native{n}-mmlupro:exact_match"),
+          ("ARC-C", "L:T26x-S42-arc:acc_norm", "L:T26x-native{n}-arc:acc_norm"),
+          ("BBH", "L:T26x-S42-bbh:exact_match", "L:T26x-native{n}-bbh:exact_match"),
+          ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
+          ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
+          ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
     ("Sec 4.2", "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
      "T:think-native4-gsm8k_think:math_verify", (-1.0, -2.0, 0.1)),
     ("Sec 4.2", "SenseNova read 1/write 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",
@@ -189,12 +201,14 @@ def load_raw(runs, key):
     kind, name, *rest = key.split(":")
     if kind == "L":
         return read_lm(runs, name, rest[0], rest[1] if len(rest) > 1 else None)
-    if kind == "T":
+    if kind == "T":  # all shards <name>_s0, _s1, ... (GSM8K: 4, MATH-500: 5); empty unless every shard has samples
+        shards = sorted({d.rsplit("_", 1)[1] for d in glob.glob(f"{runs}/lmeval/out/{name}_s[0-9]")})
+        if not shards or not all(glob.glob(f"{runs}/lmeval/out/{name}_{s}/*/samples_*.jsonl") for s in shards):
+            return {}
         out = {}
-        for s in ("s0", "s1", "s2", "s3"):
-            part = read_lm(runs, f"{name}_{s}", rest[0])
-            out.update(part)
-        return out if all(glob.glob(f"{runs}/lmeval/out/{name}_{s}/*/samples_*.jsonl") for s in ("s0", "s1", "s2", "s3")) else {}
+        for s in shards:
+            out.update(read_lm(runs, f"{name}_{s}", rest[0]))
+        return out
     out = {}
     for f in glob.glob(f"{runs}/bench/{name}/s*/{rest[0]}.jsonl"):
         for line in open(f):
@@ -205,7 +219,7 @@ def load_raw(runs, key):
 
 def keys():
     ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS} | set(WKEYS)
-    return sorted({k.partition("@")[0] for k in ks})
+    return sorted({k.partition("#")[0] for k in ks})
 
 
 def export(runs, out_dir):
@@ -227,8 +241,8 @@ def export(runs, out_dir):
 
 
 def load(key):
-    """Item scores of `key`; `key@category` keeps one HELMET category (rag, recall, rerank, icl)."""
-    key, _, cat = key.partition("@")
+    """Item scores of `key`; `key#category` keeps one HELMET category (rag, recall, rerank, icl)."""
+    key, _, cat = key.partition("#")
     p = ITEMS / fname(key)
     if not p.exists():
         return None
