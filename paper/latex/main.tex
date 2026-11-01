@@ -87,20 +87,16 @@ lets us measure the two effects separately.
 
 The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
 moves knowledge and long-context accuracy, and writing depth mainly moves multi-step derivation. With the writer held
-fixed, reading deeper helps on five checkpoints (Table~\ref{tab:models}), although the effect depends on the task: on
-HELMET it helps retrieval-augmented QA, re-ranking and in-context learning but, on Ouro, lowers exact key--value recall
-(Table~\ref{tab:helmet}).
+fixed, reading deeper helps on five checkpoints from two model families (Table~\ref{tab:models}).
 
 Time is saved on the writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
 one point below it on the full GSM8K test set, and reading deeper first adds no detectable time
 (Figure~\ref{fig:frontier}). The reading benefit can even appear without training: on SenseNova-Loop-9B, giving the
-unchanged one-loop writer a two-visit prompt state raises RULER-4K from 21.6 to 83.5 (Figure~\ref{fig:wander}). Linear probes of the cache are consistent with the split: later loops make the next token more
-linearly decodable and, in Ouro, the previous token less (Figure~\ref{fig:probe}); in the same direction, reading deep
-gives a negative estimate on short-context retrieval and lowers few-shot mathematics.
+unchanged one-loop writer a two-visit prompt state raises RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1.
 
 Our contributions are a measurement of what reading and writing depth each buy in looped language models, a connector
-that makes the split usable on existing checkpoints with an exact single prompt cache, and an analysis of what each
-loop's KV stores. Code, per-item results and a script that recomputes the paper's statistics accompany it.
+that makes the split usable on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
+of the time it saves. Code, per-item results and a script that recomputes the paper's statistics accompany it.
 
 
 \section{Related Work}
@@ -270,69 +266,14 @@ same way but do not isolate reading depth (Appendix~\ref{app:eval}).
 
 
 
+Reading deep is not uniformly better: on Ouro it can lower exact key--value recall and few-shot exemplar imitation at
+short context (Appendix~\ref{app:hurt}).
+
 \paragraph{A test without training.} SenseNova-Loop-9B's one-loop writer collapses on its own. Handing that unchanged
 writer the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
 parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
 from 2.2 to 10.9, far below the 95.8 of \nat{2}: deeper reading recovers knowledge and long-context accuracy, not
 multi-step derivation.
-
-\subsection{Where reading deep does not help}
-\label{sec:hurt}
-
-HELMET shows where reading deep helps and where it hurts (Table~\ref{tab:helmet}). On both Ouro reasoning models,
-reading four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
-exact recall from a JSON key--value store on Ouro-1.4B-Thinking ($-23.5$); against \nat{4}, \rw{4}{2} gains on
-retrieval-augmented QA and in-context learning ($+6.1$, $+6.6$) and loses exact recall ($58.8$ vs.\ $100$), so its
-HELMET average is lower ($-8.7$\ci{-13.3}{-4.1}). SenseNova-Loop-9B does not follow the Ouro pattern on recall and
-re-ranking. The recall category is small (34 items on Ouro).
-
-\begin{table}[!t]
-\centering\small
-\setlength\tabcolsep{2pt}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-comparison & RAG & re-rank & ICL & recall \\
-\midrule
-2.6B-T, read 4 $-$ 1 & \up{15.4} & \up{13.4} & \up{5.1} & \dn{2.9} \\
-1.4B-T, read 4 $-$ 1 & \up{14.5} & \up{18.0} & \up{9.3} & \dn{23.5} \\
-SenseNova, read 2 $-$ 1 & \up{1.2} & \dn{32.9} & \up{21.6} & \up{24.0} \\
-\midrule
-2.6B-T, 4/2 $-$ native 4/4 & \up{6.1} & \dn{6.3} & \up{6.6} & \dn{41.2} \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{HELMET by category} (score differences on a 0--100 scale; reading comparisons at one writing loop,
-same connector). Reading deep helps retrieval-augmented QA (RAG), re-ranking and in-context learning (ICL) on Ouro but
-can lose exact key--value recall. Items: 700 / 41 / 333 / 34 per category on Ouro, 4,200 / 246 / 2,000 / 200 on
-SenseNova; intervals are in \texttt{paper\_numbers.json}.}
-\label{tab:helmet}
-\end{table}
-
-Reading deeper does not help everywhere (Table~\ref{tab:hurt}). At one writing loop it gives a negative but inconclusive
-estimate on RULER-4K, where answers are copied verbatim, and clearly lowers 4-shot MATH-500 on Ouro-2.6B; without
-exemplars the same comparison turns positive on two model sizes and two writing depths. Removing exemplars also changes length and format, so we read this as a
-prompting interaction rather than as evidence that literal information is lost; linear probes of the cache, which find the
-next token more and (in Ouro) the previous token less linearly decodable after more loops, are consistent with it
-(Appendix~\ref{app:analyses}).
-
-\begin{table}[!htb]
-\centering\small
-\setlength\tabcolsep{3pt}
-\begin{tabular}{@{}lclr@{}}
-\toprule
-model & write $d$ & task & read 4 $-$ read $d$ \\
-\midrule
-Ouro-2.6B & 1 & RULER-4K & \dn{3.8}\ci{-8.2}{0.3} \\
- & 1 & MATH, 4-shot & \dn{11.2}\ci{-15.4}{-6.8} \\
- & 1 & MATH, 0-shot & \up{7.0}\ci{3.0}{10.8} \\
- & 2 & MATH, 0-shot & \up{7.0}\ci{3.0}{11.2} \\
-Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
- & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
-\bottomrule
-\end{tabular}
-\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
-\label{tab:hurt}
-\end{table}
-
 
 \subsection{Writing shallow is fast}
 \label{sec:fast}
@@ -427,11 +368,6 @@ variant & $p/d$ & task & difference \\
 \multirow{2}{*}{\shortstack[l]{direct sharing,\\no map$^\dagger$}} & 4/1 & GSM8K & \dn{17.5}\ci{-20.1}{-14.9} \\
  & 4/2 & GSM8K & \dn{0.1}\ci{-2.0}{1.7} \\
 unrestricted keys$^\ddagger$ & -- & RULER-16K & all CIs include 0 \\
-shared answer KV & 4/2 & GSM8K & \up{0.3}\ci{-1.5}{2.1} \\
- & 3/3 & GSM8K & \dn{0.8}\ci{-2.4}{0.8} \\
- & 4/4 & GSM8K & \dn{2.6}\ci{-4.2}{-1.1} \\
-first-loop branch & 4/1 & RULER-4K & \up{2.3}\ci{1.0}{3.6} \\
- & 4/1 & GSM8K & \up{0.7}\ci{-0.8}{2.2} \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
@@ -446,9 +382,7 @@ without a map scores 17.5 GSM8K points below our connector at read 4 / write 1 a
 baseline is inspired by cache sharing~\citep{benice} but does not reproduce its recipe, and it also differs from our
 connector in training allocation and tokens, so it does not isolate the map. Restricting the key map to a
 RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
-maps with one cache per loop (RULER-16K, five $(p,d)$ pairs). Sharing generated-token KV across writing loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
-costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
-/ write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit.
+maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
 
 
 
@@ -565,6 +499,69 @@ resamples; every interval in the paper is recomputed from released per-item scor
 \caption{Ouro-2.6B connector trained with two seeds (initialisation and $(p,d)$ sampling); paired differences within each
 seed, full sets.}
 \end{table}
+
+\section{Where Reading Deep Does Not Help}
+\label{app:hurt}
+
+HELMET shows where reading deep helps and where it hurts (Table~\ref{tab:helmet}). On both Ouro reasoning models,
+reading four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
+exact recall from a JSON key--value store on Ouro-1.4B-Thinking ($-23.5$); against \nat{4}, \rw{4}{2} gains on
+retrieval-augmented QA and in-context learning ($+6.1$, $+6.6$) and loses exact recall ($58.8$ vs.\ $100$), so its
+HELMET average is lower ($-8.7$\ci{-13.3}{-4.1}). SenseNova-Loop-9B does not follow the Ouro pattern on recall and
+re-ranking. The recall category is small (34 items on Ouro).
+
+\begin{table}[h]
+\centering\small
+\setlength\tabcolsep{2pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+comparison & RAG & re-rank & ICL & recall \\
+\midrule
+2.6B-T, read 4 $-$ 1 & \up{15.4} & \up{13.4} & \up{5.1} & \dn{2.9} \\
+1.4B-T, read 4 $-$ 1 & \up{14.5} & \up{18.0} & \up{9.3} & \dn{23.5} \\
+SenseNova, read 2 $-$ 1 & \up{1.2} & \dn{32.9} & \up{21.6} & \up{24.0} \\
+\midrule
+2.6B-T, 4/2 $-$ native 4/4 & \up{6.1} & \dn{6.3} & \up{6.6} & \dn{41.2} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{HELMET by category} (score differences on a 0--100 scale; reading comparisons at one writing loop,
+same connector). Reading deep helps retrieval-augmented QA (RAG), re-ranking and in-context learning (ICL) on Ouro but
+can lose exact key--value recall. Items: 700 / 41 / 333 / 34 per category on Ouro, 4,200 / 246 / 2,000 / 200 on
+SenseNova; intervals are in \texttt{paper\_numbers.json}.}
+\label{tab:helmet}
+\end{table}
+
+Reading deeper does not help everywhere (Table~\ref{tab:hurt}). At one writing loop it gives a negative but inconclusive
+estimate on RULER-4K, where answers are copied verbatim, and clearly lowers 4-shot MATH-500 on Ouro-2.6B; without
+exemplars the same comparison turns positive on two model sizes and two writing depths. Removing exemplars also changes length and format, so we read this as a
+prompting interaction rather than as evidence that literal information is lost; linear probes of the cache, which find the
+next token more and (in Ouro) the previous token less linearly decodable after more loops, are consistent with it
+(Appendix~\ref{app:analyses}).
+
+\begin{table}[h]
+\centering\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}lclr@{}}
+\toprule
+model & write $d$ & task & read 4 $-$ read $d$ \\
+\midrule
+Ouro-2.6B & 1 & RULER-4K & \dn{3.8}\ci{-8.2}{0.3} \\
+ & 1 & MATH, 4-shot & \dn{11.2}\ci{-15.4}{-6.8} \\
+ & 1 & MATH, 0-shot & \up{7.0}\ci{3.0}{10.8} \\
+ & 2 & MATH, 0-shot & \up{7.0}\ci{3.0}{11.2} \\
+Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
+ & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\label{tab:hurt}
+\end{table}
+
+\paragraph{Other design variants.} Sharing generated-token KV across writing loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
+costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
+/ write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit. (Ouro-2.6B, full sets: shared answer KV at 4/2, 3/3, 4/4:
+$+0.3$\ci{-1.5}{2.1}, $-0.8$\ci{-2.4}{0.8}, $-2.6$\ci{-4.2}{-1.1}; first-loop branch at 4/1: RULER-4K $+2.3$\ci{1.0}{3.6},
+GSM8K $+0.7$\ci{-0.8}{2.2}.)
 
 \section{Additional Analyses}
 \label{app:analyses}
