@@ -104,8 +104,8 @@ def fig2():
     names = {"native1st": "native 1/1", "native2st": "native 2/2", "native4st": "native 4/4", "S41sb": "read 4 / write 1",
              "S22sb": "read 2 / write 2", "S42sb": "read 4 / write 2", "native2": "native 2/2", "C11": "read 1 / write 1",
              "C21": "read 2 / write 1"}
-    E = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"}
-    S = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "sn" and r["task"] == "gsm"}
+    E = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm" and r["cond"] in names}
+    S = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "sn" and r["task"] == "gsm" and r["cond"] in names}
     ratio = {r["label"]: r["ratio"] for r in PN["e2e_ratios"]}
 
     def point(ax, P, n, ours, dx, dy, ha="left", hollow=False):

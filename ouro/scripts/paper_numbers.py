@@ -93,6 +93,8 @@ CMP += [
      (4.3, 2.4, 6.2)),
     ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 2/2", "B:T26ne-S42-helmet:helmet", "B:T26ne-native2-helmet:helmet",
      None),
+    ("App A", "2.6B-T answer once vs per-loop answer banks, read 4/write 2 GSM8K (full)",
+     "T:T26-O-universal-O42-gsm8k_think:math_verify", "T:T26-S42-gsm8k_think:math_verify", (0.5, -0.5, 1.6)),
     ("Sec 4.2", "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
      "T:think-native4-gsm8k_think:math_verify", (-1.0, -2.0, 0.1)),
     ("Sec 4.2", "SenseNova read 1/write 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",
@@ -236,7 +238,8 @@ E2E = Path(__file__).resolve().parents[1] / "results" / "e2e"
 RATIOS = [("2.6B-T GSM8K read 4/write 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.46, 0.64)),
           ("2.6B-T GSM8K read 4/write 2 vs read 2/write 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.91, 1.11)),
           ("2.6B-T MATH read 4/write 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
-          ("SenseNova GSM8K read 1/write 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68))]
+          ("SenseNova GSM8K read 1/write 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
+          ("2.6B-T GSM8K answer once vs per-loop answer banks (read 4/write 2, batch 1)", "think", "gsm", "O42sb", "S42sb", None)]
 
 
 def e2e(model, task, cond):
@@ -252,7 +255,8 @@ def e2e_table():
     rows = []
     for model, task, conds in (("think", "gsm", ("native1st", "native2st", "native4st", "S41sb", "S22sb", "S42sb")),
                                ("think", "math", ("native2st", "native4st", "S42sb")),
-                               ("sn", "gsm", ("native2", "C11", "C21"))):
+                               ("sn", "gsm", ("native2", "C11", "C21")),
+                               ("think", "gsm", ("S42sb", "O42sb"))):  # appendix: answer stored once
         recs = {c: e2e(model, task, c) for c in conds}
         common = set.intersection(*(set(r) for r in recs.values() if r))  # same problems for every configuration
         for c in conds:
@@ -260,7 +264,8 @@ def e2e_table():
             if r:
                 rows.append(dict(model=model, task=task, cond=c, n=len(r), acc=round(100 * np.mean([x["correct"] for x in r.values()]), 1),
                                  seconds=round(float(np.mean([x["total_s"] for x in r.values()])), 1),
-                                 tokens=round(float(np.mean([x["new_tokens"] for x in r.values()])))))
+                                 tokens=round(float(np.mean([x["new_tokens"] for x in r.values()]))),
+                                 ms_per_token=round(float(np.mean([x["ms_per_token"] for x in r.values()])), 1)))
                 print(f"Table 3      {model} {task} {c:10s} acc {rows[-1]['acc']:5.1f}  s/answer {rows[-1]['seconds']:6.1f}  n={len(r)}")
     ratios = []
     for label, model, task, a, b, printed in RATIOS:

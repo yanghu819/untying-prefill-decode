@@ -455,7 +455,10 @@ token's KV computed live on the diagonal. Training thus approximates, but does n
 the history is generated recursively in the shared bank. With prompt and answer each stored once, total KV is $b(n+t)$, that
 of a one-loop model; with 1K-token prompts and 2,048 generated tokens the largest batch that fits grows from 32
 (\nat{4}) to 192 and write-4 decode throughput from 219 to 476 tokens/s (759 vs.\ 586 at $d{=}2$), at a cost of 4.8
-GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer banks).
+GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer banks). On Ouro-2.6B-Thinking, a connector
+trained the same way changes full-set GSM8K at \rw{4}{2} by $+0.5$\ci{-0.5}{1.6} against per-loop answer banks; at batch 1
+its cost per generated token is the same (82.5 vs.\ 83.1\,ms) but its answers are longer (1,166 vs.\ 741 tokens), so it
+takes $1.53\times$\ci{1.27}{1.84} the time per answer. Its benefit is memory and batch size, not batch-1 latency.
 
 \paragraph{SenseNova-Loop-9B.} Rank-16 LoRA on the attention projections of the looped layers (full attention: q/k/v/o;
 Gated-DeltaNet: input and output projections), active only when writing; no maps. The one-visit writer reads the prefill

@@ -882,6 +882,23 @@
    "hi": 29.1
   },
   {
+   "section": "App A",
+   "label": "2.6B-T answer once vs per-loop answer banks, read 4/write 2 GSM8K (full)",
+   "key_a": "T:T26-O-universal-O42-gsm8k_think:math_verify",
+   "key_b": "T:T26-S42-gsm8k_think:math_verify",
+   "printed": [
+    0.5,
+    -0.5,
+    1.6
+   ],
+   "n": 1319,
+   "a": 93.8,
+   "b": 93.3,
+   "diff": 0.5,
+   "lo": -0.5,
+   "hi": 1.6
+  },
+  {
    "section": "Sec 4.2",
    "label": "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)",
    "key_a": "T:T26-S42-gsm8k_think:math_verify",
@@ -1557,7 +1574,8 @@
    "n": 64,
    "acc": 62.5,
    "seconds": 86.5,
-   "tokens": 2500
+   "tokens": 2500,
+   "ms_per_token": 34.6
   },
   {
    "model": "think",
@@ -1566,7 +1584,8 @@
    "n": 64,
    "acc": 95.3,
    "seconds": 70.0,
-   "tokens": 1044
+   "tokens": 1044,
+   "ms_per_token": 66.9
   },
   {
    "model": "think",
@@ -1575,7 +1594,8 @@
    "n": 64,
    "acc": 93.8,
    "seconds": 114.2,
-   "tokens": 879
+   "tokens": 879,
+   "ms_per_token": 131.6
   },
   {
    "model": "think",
@@ -1584,7 +1604,8 @@
    "n": 64,
    "acc": 73.4,
    "seconds": 55.1,
-   "tokens": 1310
+   "tokens": 1310,
+   "ms_per_token": 41.9
   },
   {
    "model": "think",
@@ -1593,7 +1614,8 @@
    "n": 64,
    "acc": 96.9,
    "seconds": 62.6,
-   "tokens": 755
+   "tokens": 755,
+   "ms_per_token": 82.7
   },
   {
    "model": "think",
@@ -1602,7 +1624,8 @@
    "n": 64,
    "acc": 96.9,
    "seconds": 63.1,
-   "tokens": 741
+   "tokens": 741,
+   "ms_per_token": 83.1
   },
   {
    "model": "think",
@@ -1611,7 +1634,8 @@
    "n": 40,
    "acc": 85.0,
    "seconds": 243.2,
-   "tokens": 3191
+   "tokens": 3191,
+   "ms_per_token": 75.7
   },
   {
    "model": "think",
@@ -1620,7 +1644,8 @@
    "n": 40,
    "acc": 82.5,
    "seconds": 469.4,
-   "tokens": 3069
+   "tokens": 3069,
+   "ms_per_token": 152.3
   },
   {
    "model": "think",
@@ -1629,7 +1654,8 @@
    "n": 40,
    "acc": 85.0,
    "seconds": 297.6,
-   "tokens": 3519
+   "tokens": 3519,
+   "ms_per_token": 84.2
   },
   {
    "model": "sn",
@@ -1638,7 +1664,8 @@
    "n": 64,
    "acc": 98.4,
    "seconds": 48.0,
-   "tokens": 365
+   "tokens": 365,
+   "ms_per_token": 130.5
   },
   {
    "model": "sn",
@@ -1647,7 +1674,8 @@
    "n": 64,
    "acc": 96.9,
    "seconds": 28.4,
-   "tokens": 380
+   "tokens": 380,
+   "ms_per_token": 74.8
   },
   {
    "model": "sn",
@@ -1656,7 +1684,28 @@
    "n": 64,
    "acc": 95.3,
    "seconds": 30.6,
-   "tokens": 380
+   "tokens": 380,
+   "ms_per_token": 79.8
+  },
+  {
+   "model": "think",
+   "task": "gsm",
+   "cond": "S42sb",
+   "n": 64,
+   "acc": 96.9,
+   "seconds": 63.1,
+   "tokens": 741,
+   "ms_per_token": 83.1
+  },
+  {
+   "model": "think",
+   "task": "gsm",
+   "cond": "O42sb",
+   "n": 64,
+   "acc": 98.4,
+   "seconds": 96.7,
+   "tokens": 1166,
+   "ms_per_token": 82.5
   }
  ],
  "e2e_ratios": [
@@ -1707,6 +1756,14 @@
     0.52,
     0.68
    ]
+  },
+  {
+   "label": "2.6B-T GSM8K answer once vs per-loop answer banks (read 4/write 2, batch 1)",
+   "n": 64,
+   "ratio": 1.53,
+   "lo": 1.27,
+   "hi": 1.84,
+   "printed": null
   }
  ],
  "wander": {
