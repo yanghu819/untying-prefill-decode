@@ -59,9 +59,10 @@ reasoning (GSM8K) improves along the write axis. Grid subsets: MMLU 20 questions
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig0_method.pdf}
 \caption{\textbf{The depth-split connector.} The frozen model reads the prompt with $p$ loops and keeps one prompt KV
-cache. Each of the $d$ writing loops reads that cache through its own map: a per-frequency complex key scale, folded into
-the query because it commutes with RoPE, and a value map applied after attention. The prompt part is merged by
-log-sum-exp with ordinary attention over the generated tokens' KV. The prompt KV is stored once for every $d$: total
+cache. Each of the $d$ writing loops reads that cache through its own map: a learned scale on each rotary
+(RoPE) pair of the keys, which can be moved onto the query so the cache is never rewritten, and a value map applied
+after attention. Attention over the prompt and over the generated tokens is computed separately and combined into one
+softmax, as in blockwise (FlashAttention-style) attention. The prompt KV is stored once for every $d$: total
 KV $b(n+d\,t)$ instead of $b\,d(n+t)$, with $b$ bytes per token and loop and $n$, $t$ the prompt and answer length.}
 \label{fig:method}
 \end{figure*}
@@ -202,8 +203,9 @@ number $\tilde k_j = e^{im\theta_j}k_j$, scaling commutes with the rotation, $c_
 and $\mathrm{Re}\langle q_j, c_j\tilde k_j\rangle = \mathrm{Re}\langle \bar c_jq_j, \tilde k_j\rangle$: the map is applied
 to the query and the stored cache is never rewritten. The value map is a full linear map $W_k$ per head; because
 attention is linear in the values, $\sum_i a_iW_kv_i = W_k\sum_i a_iv_i$ is applied once to the attention output over the
-prompt. Prompt and generated tokens share one softmax: the two parts are computed by two attention calls and merged by
-their log-sum-exp. The prompt KV is therefore stored once for every $d$, and total KV is $b(n+d\,t)$
+prompt. Prompt and generated tokens share one softmax: the two parts are computed by two attention calls with outputs
+$o_P, o_A$ and log-sum-exps $\ell_P, \ell_A$ of their attention logits, and merged as $g\,o_P+(1-g)\,o_A$ with
+$g=\sigma(\ell_P-\ell_A)$, which equals one softmax over both (the blockwise softmax of FlashAttention~\citep{flashattn2}). The prompt KV is therefore stored once for every $d$, and total KV is $b(n+d\,t)$
 instead of $b\,d(n+t)$. Serving from one cache equals materialising a mapped prompt cache per loop; in bfloat16 all 512
 checked greedy tokens agree.
 
@@ -425,7 +427,9 @@ Ouro-2.6B), bfloat16 backbone.
 
 \paragraph{Answer stored once.} Generated tokens keep one KV cache per layer shared by all writing loops; at inference
 the last writing loop commits each token, and earlier loops read that history plus the current token's KV computed live
-in their own loop (\emph{self-live}, a layout also used by LSTM-style looped transformers~\citep{lstmloop}). Training
+in their own loop (\emph{self-live}, a layout also used by LSTM-style looped transformers~\citep{lstmloop}). For
+example, when loop 1 processes token 5, it attends to tokens 1--4 through the last loop's stored KV and to token 5
+through its own, freshly computed KV. Training
 uses the same KL objective in this layout, in two passes: a no-grad pass in which each loop reads its own causal answer KV records the last loop's answer KV; a second pass
 reads, at every loop, the prompt KV cache, that recorded history strictly before the current position, and the current
 token's KV computed live on the diagonal. Training thus approximates, but does not exactly reproduce, inference, where

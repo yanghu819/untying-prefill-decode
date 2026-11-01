@@ -268,8 +268,10 @@ def fig_pareto():
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
             ax.scatter(x, y, s=18, color=col, zorder=3, label=lab)
             for xi, yi, d in pts:
-                ax.annotate(f"{d}", (xi, yi), xytext=(0, 5 if col == OURS else -9), textcoords="offset points",
-                            fontsize=6.8, color=OURS if col == OURS else NAT, ha="center")
+                dx = {4: -4, 3: 4}.get(d, 0) if col == OURS else 0   # read 4 / write 3 and 4 sit close: split labels
+                ax.annotate(f"{d}", (xi, yi), xytext=(dx, 5 if col == OURS else -9), textcoords="offset points",
+                            fontsize=6.8, color=OURS if col == OURS else NAT,
+                            ha="center" if dx == 0 else ("right" if dx < 0 else "left"))
         ax.set_xscale("log"); ax.set_xticks([125, 250, 500, 1000], ["125", "250", "500", "1k"])
         ax.minorticks_off(); ax.set_xlim(100, 1100)
         ax.set_title(title, fontsize=8.5, color=INK, pad=4)
