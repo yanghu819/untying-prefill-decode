@@ -32,6 +32,9 @@ def main():
     for a, b in SUBS:
         assert a in tex, f"pattern not found in latex/main.tex: {a[:60]}"
         tex = tex.replace(a, b)
+    # generated table rows (paper_figs.py tab_equal) are inlined so the arXiv source is one file
+    tex = re.sub(r"\\csname @@input\\endcsname \.\./figs/(\S+\.tex)",
+                 lambda m: (P / "figs" / m.group(1)).read_text().strip(), tex)
     OUT.mkdir(exist_ok=True)
     (OUT / "figs").mkdir(exist_ok=True)
     (OUT / "main.tex").write_text(tex)

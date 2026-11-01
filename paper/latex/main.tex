@@ -317,7 +317,8 @@ Part of the gain over \nat{2} comes from training the connector, not from depth.
 (hollow circles; same weights, same training, same writing depth) isolates reading depth: reading four rather than two
 loops adds $+8.1$\ci{4.0}{12.1} on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge
 and $+2.2$\ci{0.1}{4.3} on BBH, and leaves GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$) unchanged. The knowledge gain (MMLU-Pro)
-is all reading depth; the MBPP+ gain is all training.
+is all reading depth; the MBPP+ gain is all training. On Ouro-1.4B-Thinking the effect of reading depth repeats on the
+same eight benchmarks, but that connector loses 3-shot BBH against native 2/2 (Appendix~\ref{app:t14}).
 
 \begin{figure*}[t]
 \centering
@@ -508,6 +509,34 @@ resamples; every interval in the paper is recomputed from released per-item scor
 \caption{Ouro-2.6B connector trained with two seeds (initialisation and $(p,d)$ sampling); paired differences within each
 seed, full sets.}
 \end{table}
+
+\section{Read Deep, Write Shallow on Ouro-1.4B-Thinking}
+\label{app:t14}
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{4pt}
+\begin{tabular}{@{}lcccccccc@{}}
+\toprule
+ & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{read 4 / write 2 minus} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-8}
+benchmark & native 2/2 & read 2 / write 2 & read 4 / write 2 & native 4/4 & native 2/2 & read 2 / write 2 & native 4/4 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_equal_14B-T.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Figure~\ref{fig:equal} on Ouro-1.4B-Thinking.} One connector serves read 2 / write 2 and read 4 / write 2;
+same benchmarks, protocols and items as Figure~\ref{fig:equal}. Differences are score points on a 0--100 scale;
+brackets are paired 95\% bootstrap intervals.}
+\label{tab:t14}
+\end{table*}
+
+Table~\ref{tab:t14} repeats the comparison of Figure~\ref{fig:equal} on the smaller Thinking checkpoint. The effect of
+reading depth replicates: with the same connector, reading four loops instead of two raises MMLU-Pro ($+8.6$), HELMET,
+ARC-Challenge ($+2.7$) and BBH ($+8.8$) and leaves GSM8K, MATH-500, HumanEval and MBPP+ unchanged within noise. Against
+native 2/2 the result is weaker than on Ouro-2.6B-Thinking: read 4 / write 2 is significantly better on GSM8K ($+3.0$)
+and ARC-Challenge ($+4.3$), within noise on five benchmarks, and much worse on 3-shot BBH ($-15.9$), where this
+checkpoint's connector degenerates at both read depths (Limitations).
 
 \section{End-to-End Time and Decode Throughput}
 \label{app:serve}
