@@ -86,6 +86,8 @@ def main():
     parser.add_argument("--full-ft", action="store_true", help="train every reader weight (fp32 master, bf16 autocast)")
     parser.add_argument("--reader-lr-scale", type=float, default=0.1)
     parser.add_argument("--start-sample", type=int, default=0, help="fresh run: begin the schedule here")
+    parser.add_argument("--freeze-maps", action="store_true",
+                        help="ablation: keep the per-loop KV maps at their identity initialisation (LoRA only, direct sharing)")
     args = parser.parse_args()
     if args.stop_tokens > args.planned_tokens:
         raise ValueError("Requested stop exceeds the planned token budget.")
@@ -108,6 +110,9 @@ def main():
     reader = load_model(args.model_path, device=device, dtype=torch.float32 if args.full_ft else torch.bfloat16)
     system = RefreshSystem(writer, reader) if args.arm == "R" else AdapterSystem(writer, reader, args.arm, full_ft=args.full_ft)
     trainable = [p for p in system.parameters() if p.requires_grad]
+    if args.freeze_maps:  # maps stay in the checkpoint (as identity) so evaluation is unchanged, but are never updated
+        frozen = {id(p) for p in system.loop_adapter.parameters()}
+        trainable = [p for p in trainable if id(p) not in frozen]
     reader_ids = {id(p) for p in system.reader.parameters()}
     groups = [dict(params=[p for p in trainable if id(p) not in reader_ids], scale=1.0),
               dict(params=[p for p in trainable if id(p) in reader_ids], scale=args.reader_lr_scale)]
@@ -139,7 +144,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     if rank == 0:
         setup = {
-            "event": "start", "arm": args.arm, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
+            "event": "start", "arm": args.arm, "freeze_maps": args.freeze_maps, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
             "global_batch": args.global_batch, "microbatch": 1,
             "gradient_accumulation": args.global_batch // world,
             "trainable_parameters": sum(p.numel() for p in trainable),

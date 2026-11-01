@@ -2,12 +2,13 @@
 the connector, the decoder's pass over the last prompt token), per-step decode time, total answer time, generated tokens,
 stop reason and correctness — for real greedy answers, not a fixed-token replay.
 
-usage: e2e_latency.py MODEL_DIR COND [CKPT|-] TASK N OUT.jsonl
+usage: e2e_latency.py MODEL_DIR COND [CKPT|-] TASK N OUT.jsonl   (env START=k: items k .. k+N-1, default 0)
   COND: native<d>st (static-cache native baseline) | S<p><d>sb (fused single-bank connector)
   TASK: gsm8k_think | math500_think (chat template, zero-shot, \\boxed{} answer, math_verify; caps 4,096 / 8,192) | ruler16k (long prompt, short answer;
         timing only — accuracy comes from the full-set evaluations)
 """
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -17,6 +18,7 @@ from transformers import AutoTokenizer
 
 
 model_dir, cond, ckpt, task, n, out = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]), Path(sys.argv[6])
+start = int(os.environ.get("START", 0))
 family = json.load(open(Path(model_dir) / "config.json"))["model_type"]
 if family == "sensenova_loop":  # native<c> | splice<p><d> | C<p>1 (+ checkpoint); needs transformers 5.18 on PYTHONPATH
     from ouro.sensenova_runner import SenseNovaRunner, tokenizer
@@ -41,7 +43,7 @@ def items():
     if task == "gsm8k_think":
         import datasets
         rows = datasets.load_dataset("gsm8k", "main", split="test")
-        for i in range(n):
+        for i in range(start, start + n):
             r = rows[i]
             msg = [{"role": "user", "content": r["question"] + "\nPlease reason step by step, and put your final answer within \\boxed{}."}]
             ids = chat_ids(msg)
@@ -49,13 +51,13 @@ def items():
     elif task == "math500_think":
         import datasets
         rows = datasets.load_dataset("HuggingFaceH4/MATH-500", split="test")
-        for i in range(n):
+        for i in range(start, start + n):
             r = rows[i]
             msg = [{"role": "user", "content": r["problem"] + "\nPlease reason step by step, and put your final answer within \\boxed{}."}]
             ids = chat_ids(msg)
             yield i, ids, r["answer"], 8192
     else:
-        for line in list(open(f"/dev/shm/big-small-ouro/bench/{task}.jsonl"))[:n]:
+        for line in list(open(f"/dev/shm/big-small-ouro/bench/{task}.jsonl"))[start:start + n]:
             r = json.loads(line)
             yield r["id"], r["prompt_ids"], None, 64
 

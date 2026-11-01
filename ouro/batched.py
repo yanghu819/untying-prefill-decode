@@ -107,7 +107,7 @@ def loopmap_forward(system, samples, device):
 
 
 def loopmap_selflive_forward(system, samples, device, faithful=False, gamma=0.1):
-    """Arm O: arm S's mapped deep prompt bank + the self-live shared answer history (the author's self-live, applied to the
+    """Arm O: arm S's mapped deep prompt bank + the self-live shared answer history (self-live, applied to the
     decoder's own answer tokens). Pass 1 (no grad): per-loop own K/V, record the final decode loop's K/V of the answer.
     Pass 2: every decode loop reads [mapped prompt | that final-loop answer history for strictly earlier tokens | its own
     live K/V for the current token] — exactly what a decoder with one answer bank sees at inference.

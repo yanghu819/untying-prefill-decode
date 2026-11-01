@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage: launch_p.sh [NUM_GPUS=4]
-# Arm P: the ORIGINAL self-live recipe (the author's method) on the single-bank connector — main loss = per-loop answer
+# Arm P: the ORIGINAL self-live recipe (the original self-live method) on the single-bank connector — main loss = per-loop answer
 # banks (the S objective), auxiliary 0.1 x KL in the self-live view, history from one fixed-point iteration of the model's
 # own compressed pass. Same data and budget as S / O (48M KL tokens). Then GSM8K / MMLU full, MATH-500, RULER 4K-16K for
 # P42 P43 P44 (compare with O and S at the same cells).

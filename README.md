@@ -2,107 +2,79 @@
 
 **Paper:** [`paper/read-deep-write-shallow.pdf`](paper/read-deep-write-shallow.pdf) (arXiv link coming) · **Author:** Yang Hu ·
 **Code license:** MIT · **Keywords:** looped language model, recurrent depth, universal transformer, Ouro, SenseNova-Loop,
-test-time compute, prefill vs decode depth, KV cache, KV sharing, RoPE, depth allocation, efficient reasoning, overthinking
+test-time compute, prefill vs decode depth, KV cache, KV sharing, RoPE, depth allocation, efficient reasoning
 
-Looped (recurrent-depth) language models run one block of layers several times per token, and they spend the same number
-of loops reading the prompt (prefill) and writing the answer (decode). This repository shows how that depth should be
-split. A small **depth-split connector** (LoRA plus per-loop key–value maps on a frozen model) lets a looped model read
-the prompt with *p* loops and write the answer with *d* loops, for any pair up to four.
+Looped (recurrent-depth) language models run one block of layers several times per token, and they usually spend the
+same number of loops reading the prompt (prefill) and writing the answer (decode). This repository measures what each
+kind of depth buys. A small **depth-split connector** (LoRA plus per-loop key–value maps on a frozen model) lets a looped
+model read the prompt with *p* loops and write the answer with *d* loops; one set of its parameters serves all 16 pairs
+up to four loops.
 
-## Key findings (quotable)
+**Every number in the paper is recomputed from released per-item scores by one script:**
+`python ouro/scripts/paper_numbers.py compute` (numpy only, seconds on a laptop). See [`REPRODUCE.md`](REPRODUCE.md).
 
-1. **In looped language models, depth spent reading the prompt buys understanding, while depth spent writing the answer
-   buys multi-step derivation.** On Ouro-2.6B, at one writing loop, reading 4 loops instead of 1 adds **+15.2 MMLU**
-   [14.3, 16.1] and **+8.6 RULER-16K** [4.5, 12.5] within the same connector; GSM8K moves mainly with writing depth.
-   The read-depth effect replicates on Ouro-1.4B, Nanbeige4.2-3B, Ouro-2.6B-Thinking, Ouro-1.4B-Thinking and
-   SenseNova-Loop-9B, and under a second training seed (MMLU +15.2 / +15.2, RULER-16K +8.6 / +8.6).
-2. **Reading deeper rescues a collapsed shallow writer, even without training.** SenseNova-Loop-9B's one-loop writer
-   solves 2.2% of GSM8K; letting the *same* writer read a two-loop prompt state (no parameter changed) cuts unanswered
-   problems from 97% to 44% and lifts RULER-4K from 21.6 to 83.5.
-3. **Writing shallow is where time is saved.** On Ouro-2.6B-Thinking, a connector that writes with 2 loops comes within
-   one point of the 4-loop model's GSM8K accuracy (93.3 vs 94.2 on 1,319) at **0.55×** its time per answer (batch 1);
-   on SenseNova-Loop-9B a one-loop writer matches the two-loop model at **0.59×**. Reading 2 or 4 loops before writing
-   gives the same end-to-end time: the saving comes from shallow writing, enabled by the connector.
-4. **One KV cache serves every loop exactly.** A per-frequency complex scale commutes with RoPE, so it can be folded into
-   the query; with a post-attention value map, one stored prompt cache serves every decode loop (512/512 greedy tokens
-   identical). Storing the answer once as well (trained in the inference-time "self-live" view) gives **2.17×** the
-   decode throughput of native 4/4 on long answers (1K prompt, 2,048 generated tokens; batch 192 vs 32).
-5. **Shallow KV keeps what was said, deep KV keeps what comes next.** Linear probes on the value cache (same weights,
-   same layer): from loop 1 to 4, the previous token becomes less linearly decodable (57.7 → 45.5%) and the next token
-   more (26.0 → 36.1%). Behaviourally, reading deep costs short-context retrieval (RULER-4K −3.8) and 4-shot MATH
-   (−9.8), but the MATH loss turns into a **+7.0** gain when the exemplars are removed.
+## Key findings
 
-![The depth-split connector](paper/figs/fig0_method.png)
+1. **Reading depth and writing depth buy different things.** On Ouro-2.6B, with one connector evaluated at all 16
+   (read, write) pairs, knowledge (MMLU) and long-context accuracy (RULER-16K) change mainly along the read axis and
+   multi-step derivation (GSM8K) mainly along the write axis. At one writing loop, reading 4 loops instead of 1 adds
+   **+15.2 MMLU** [14.3, 16.1] and **+8.6 RULER-16K** [4.3, 12.8] within the same connector (full test sets, paired
+   bootstrap 95% intervals); a second training seed gives +15.2 and +8.6 again.
+2. **With the writer fixed, reading deeper helps on five checkpoints from two families** (Ouro-2.6B, Ouro-1.4B,
+   Ouro-2.6B-Thinking, Ouro-1.4B-Thinking, SenseNova-Loop-9B), e.g. MMLU-Pro +18.6 and HELMET +12.0 on
+   Ouro-2.6B-Thinking. The effect is task-dependent: both 1.4B models collapse on few-shot BBH at read 4 / write 1.
+3. **Writing shallow is where time is saved.** Writing is paid per token. On Ouro-2.6B-Thinking a connector writing with
+   2 loops answers GSM8K in **0.55×** [0.45, 0.67] the time of the 4-loop model (batch 1, prefill included), and on all
+   1,319 problems it is 1.0 point below it (93.3 vs 94.2, paired [−2.0, +0.1]). Reading 2 or 4 loops before writing gives
+   the same time (1.01× [0.90, 1.11]): the saving comes from the shallower adapted writer. On SenseNova-Loop-9B a one-loop
+   writer scores 95.6 vs 95.8 for the two-loop model at **0.59×** the time.
+4. **Reading deeper helps a one-loop writer finish.** On Ouro-2.6B-Thinking the share of GSM8K answers without a boxed
+   answer falls from 19.5% (read 1 / write 1) to 12.7% (read 4 / write 1) in every difficulty bucket. On
+   SenseNova-Loop-9B, handing the native one-loop writer a two-visit prompt state, with no training at all, lifts RULER-4K
+   from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1 (GSM8K accuracy only from 2.2 to 10.9).
+5. **One KV cache serves every loop exactly.** A per-frequency complex key scale commutes with RoPE, so it can be folded
+   into the query; with a post-attention value map, one stored prompt cache serves every writing loop (512/512 greedy
+   tokens identical to materialised per-loop caches). Restricting the key map this way costs nothing measurable.
+6. **Later loops make the next token more decodable.** Linear probes on the value cache (same weights, same layer): from
+   loop 1 to 4 of Ouro-2.6B the next token becomes more linearly decodable (26.0 → 36.1%) and the previous token less
+   (57.7 → 45.5%); SenseNova shows the next-token gain only. Reading deep is worse for short-context retrieval
+   (RULER-4K −3.8, inconclusive) and 4-shot MATH (−11.2), but zero-shot MATH improves (+7.0).
 
 ![Read x write map on Ouro-2.6B](paper/figs/fig1_grid.png)
 
-| ![end-to-end frontier](paper/figs/fig2_frontier.png) | ![probes](paper/figs/fig4_probe.png) |
-|---|---|
+![The depth-split connector](paper/figs/fig0_method.png)
 
-![Shallow-writer wandering by difficulty](paper/figs/fig3_wandering.png)
+![End-to-end time per answer](paper/figs/fig2_frontier.png)
 
-## Main results
+![Deep reading helps a shallow writer](paper/figs/fig3_wandering.png)
 
-| finding | evidence (paired bootstrap 95% CI) |
-|---|---|
-| Reading buys understanding (Ouro-2.6B, same connector, write 1) | read 4 − read 1: MMLU (14,042) +15.2 [14.3, 16.1]; RULER-16K (520) +8.6 [4.5, 12.5]; GSM8K (1,319) +8.0 [5.5, 10.3] |
-| Reasoning models | Ouro-2.6B-Thinking HELMET: read 4 / write 2 +26.0 [22.9, 29.1] over native 2/2, +4.3 [2.5, 6.2] over native 4/4; Ouro-1.4B-Thinking (write 1): GSM8K +13.6 [10.4, 16.5], MMLU-Pro +17.1 [12.4, 22.1], HELMET +11.9 [8.9, 14.6] |
-| Third family (hybrid Gated-DeltaNet / attention) | SenseNova-Loop-9B, same one-loop decoder, read 2 − read 1: HELMET +6.7 [5.8, 7.7], MMLU-Pro +5.5 [3.0, 8.1], BBH +7.0 [5.9, 8.0] |
-| Shallow writers run out of budget | Ouro-2.6B-Thinking GSM8K: answers hitting the 4,096-token budget 43.5% (native 1/1) → 19.8% (connector, read 1) → 13.0% (read 4); the gain grows with problem difficulty |
-| Writing shallow saves time | write-2 connector: 0.55× [0.46, 0.64] the time of native 4/4 per GSM8K answer, within one point of its accuracy |
-| Serving | single prompt bank: 0.97 / 1.19 / 1.36 / 1.62× the fastest native implementation at write 1–4 (8K); prompt + answer stored once: 2.17× native 4/4 on long answers |
-
-All numbers, sample sizes and intervals are in the paper; per-item outputs for the end-to-end, probe and throughput
-results are in [`results/`](results/).
+![Probes on the per-loop value cache](paper/figs/fig4_probe.png)
 
 ## When to use it, and when not
 
-- Use read-deep / write-shallow for knowledge, long-context reading and long reasoning answers.
-- Shallow writing needs the connector: plain KV sharing loses 17.5 GSM8K points at one writing loop.
-- For short verbatim retrieval or few-shot prompts that must be imitated, read fewer loops (deep KV keeps less of the
-  literal text).
-- At three or more writing loops, a single deep prompt bank trails the native model on retrieval.
-- 1.4B models collapse at read 4 / write 1 on few-shot CoT BBH; read 1–2, or write 2, does not.
-- A shared answer bank is free at write 2–3 and costs 2.6 GSM8K points at write 4.
+- Read deep for knowledge and long-context reading; write shallow when answers are long and latency matters.
+- Gains against native models include the adaptation of the connector; read-depth effects are measured within one
+  connector (read p / write d vs read d / write d) or without training (SenseNova).
+- For short verbatim retrieval or few-shot prompts that must be imitated, read fewer loops.
+- At three or more writing loops, a single deep prompt bank trails the native model on retrieval (RULER-4K −10.4 at write 3).
+- 1.4B models collapse at read 4 / write 1 on few-shot CoT BBH.
+- Sharing one answer bank across loops more than doubles long-answer throughput at write 4 but costs 4.8 GSM8K points
+  against native 4/4.
 
 ## Repository map
 
 | path | what |
 |---|---|
-| `ouro/model.py`, `ouro/adapter_model.py`, `ouro/batched.py`, `ouro/train_batched.py` | frozen Ouro backbone, depth-split connector (LoRA + RoPE-commuting per-loop KV maps), batched KL distillation from the native model |
-| `ouro/single_bank.py`, `ouro/bench_throughput.py` | exact single-bank decoding (two flash-attention calls merged by log-sum-exp), shared answer bank, native baselines, throughput |
-| `ouro/evaluate_bench.py`, `ouro/lmeval_ouro.py`, `ouro/run_lmeval.py`, `ouro/lmeval_tasks/` | evaluation (RULER, HELMET, BBH, MATH; lm-evaluation-harness wrapper and zero-shot thinking tasks) |
-| `ouro/looped_bridge.py` | Nanbeige4.2 and other Hugging Face looped families |
-| `ouro/sensenova_runner.py`, `ouro/sensenova_bridge.py` | SenseNova-Loop-9B (hybrid Gated-DeltaNet) runner, cache splicing and connector |
-| `ouro/scripts/` | analysis: end-to-end latency, said-vs-meant probes, wandering decomposition, bootstrap, figures |
-| `ouro/runs_scripts/` | the launchers used for every run (GPU dispatcher, training and evaluation queues) |
+| `REPRODUCE.md` | every table and figure → script → result file; training and evaluation commands |
+| `ouro/scripts/paper_numbers.py`, `ouro/results/items/` | per-item scores of every run the paper uses; recomputes every number |
+| `ouro/model.py`, `ouro/adapter_model.py`, `ouro/batched.py`, `ouro/train_batched.py` | frozen Ouro backbone, depth-split connector, batched KL distillation from the native model |
+| `ouro/single_bank.py`, `ouro/bench_throughput.py` | exact single-bank decoding (two flash-attention calls merged by log-sum-exp), native baselines, throughput |
+| `ouro/evaluate_bench.py`, `ouro/lmeval_ouro.py`, `ouro/run_lmeval.py`, `ouro/lmeval_tasks/` | evaluation (RULER, HELMET; lm-evaluation-harness wrapper and zero-shot thinking tasks) |
+| `ouro/sensenova_runner.py`, `ouro/sensenova_bridge.py` | SenseNova-Loop-9B (hybrid Gated-DeltaNet) runner, state splicing and connector |
+| `ouro/scripts/` | end-to-end latency, probes, figures |
+| `ouro/runs_scripts/` | the launchers used for every run |
 | `third_party/ouro/` | Ouro modeling code (Apache-2.0, see its LICENSE) |
-| `paper/` | PDF, LaTeX source and figures |
-
-## Reproduce (outline)
-
-```bash
-# environment (uv)
-cd environments/ouro && uv sync && cd ../..
-# connector on Ouro-2.6B: one (p, d) cell sampled per micro-batch, 48M KL tokens, 4 GPUs
-DATA=<mix dir> ./ouro/runs_scripts/run_mix2.sh X26-S-universal S 0,1,2,3 29751 48000000 --micro 1
-# single-bank decoding check (exactness) and throughput
-python ouro/scripts/single_bank_check.py <Ouro-2.6B> <checkpoint> <prompts.jsonl>
-python -m ouro.bench_throughput --model-path <Ouro-2.6B> --condition S41sb --checkpoint <ckpt> --merge-lora ...
-# evaluation: lm-evaluation-harness with our runner (conditions native<d>, S<p><d>, O<p><d>, ...)
-python ouro/run_lmeval.py --model ouro --model_args path=<model>,condition=S41,checkpoint=<ckpt> --tasks gsm8k_cot --num_fewshot 3
-```
-
-Data preparation scripts are `ouro/prepare_adapter_data.py`, `ouro/prepare_mix.py`, `ouro/scripts/prepare_think_mix.py`
-and `ouro/scripts/sn_prepare.py`; benchmark preparation is in `ouro/prepare_full_qa.py` (RULER) and
-`ouro/prepare_helmet.py` (HELMET).
-
-## Honest notes
-
-Gains against native models include the adaptation of the connector; reading-depth effects are isolated by comparing
-read *p* / write *d* with read *d* / write *d* of the same connector, or without training (SenseNova). Thinking
-checkpoints on raw HELMET prompts can emit an immediate end-of-sequence; we decode them so that an answer cannot be
-empty, for every configuration. Linear probes measure decodability, not causal use.
+| `paper/` | PDF, LaTeX source, figures, arXiv build script |
 
 ## Citation
 

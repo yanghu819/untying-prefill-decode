@@ -124,7 +124,7 @@ def source_rows(dataset, data, gsm_data, full_data=None):
     source = rows(directory / f"{filename}.jsonl")
     if dataset == "pg19":
         source = [split_document(row) for row in source]
-    # Missing or duplicate rows would silently change the user's fixed subset.
+    # Missing or duplicate rows would silently change the fixed subset.
     if len(source) != COUNTS[dataset] or len({r["id"] for r in source}) != len(source):
         raise ValueError(f"{dataset}: expected {COUNTS[dataset]} unique fixed examples")
     return source
