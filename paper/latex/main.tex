@@ -36,8 +36,8 @@ reading the prompt mainly buys knowledge and long-context accuracy, while depth 
 multi-step derivation}. With the writer fixed, reading deeper improves knowledge and long-context benchmarks on five
 checkpoints from two model families. On Ouro-2.6B-Thinking, reading four loops and writing two
 beats the native four-loop model on long-context HELMET by 4.3 points, and on GSM8K a two-loop writer answers in
-$0.55\times$ its time, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV cache serve every writing loop exactly. Linear probes
-find the next token more, and in Ouro the previous token less, linearly decodable from later loops' value cache.
+$0.55\times$ its time, 1.0 point below it on the full test set. A RoPE-commuting key map lets one stored prompt KV
+cache serve every writing loop exactly. Linear probes find the next token more, and in Ouro the previous token less, linearly decodable from later loops' value cache.
 \end{abstract}
 
 \section{Introduction}
@@ -84,8 +84,9 @@ lets us measure the two effects separately.
 The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
 moves knowledge and long-context accuracy, and writing depth mainly moves multi-step derivation. With the writer held
 fixed, reading deeper helps on five checkpoints (Table~\ref{tab:models}), although the effect depends on the task; on
-Ouro-2.6B-Thinking, reading four loops and writing two beats native 4/4 on HELMET (60.1 vs.\ 55.8). Time is saved on the
-writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
+Ouro-2.6B-Thinking, reading four loops and writing two beats native 4/4 on HELMET (60.1 vs.\ 55.8).
+
+Time is saved on the writing side, which is paid per token: a two-loop writer answers in about half the time of the four-loop reasoning model,
 one point below it on the full GSM8K test set, and reading deeper first adds no detectable time
 (Figure~\ref{fig:frontier}). The reading benefit can even appear without training: on SenseNova-Loop-9B, giving the
 unchanged one-loop writer a two-visit prompt state raises RULER-4K from 21.6 to 83.5 (Figure~\ref{fig:wander}). Linear probes of the cache are consistent with the split: later loops make the next token more
@@ -158,7 +159,7 @@ sizes are in Appendix~\ref{app:eval}. Every comparison is paired over items with
 reading depth from adaptation we compare \rw{p}{d} with \rw{d}{d} of the \emph{same} connector; comparisons with native
 models include the effect of training the connector.
 
-\subsection{Reading buys understanding, writing buys derivation}
+\subsection{Reading buys knowledge and long context, writing buys derivation}
 
 Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
 four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 8 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
