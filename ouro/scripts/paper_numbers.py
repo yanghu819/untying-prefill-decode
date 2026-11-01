@@ -130,7 +130,8 @@ CMP += [
           ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
     # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
-    *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"), None)
+    *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"),
+       {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3)}.get(bench))
       for bench, ka, _ in EQUAL],
     *[("Pareto", f"read 4/write {d} vs native {d}/{d} {name}", ka.format(d=d), kb.format(d=d), None)
       for d in range(1, 5)
@@ -449,15 +450,24 @@ def equal():
         o, n2, n4 = load(ka), load(kb.format(n=2)), load(kb.format(n=4))
         if o is None or n2 is None or n4 is None:
             print(f"Equal        {bench:12s} MISSING"); continue
+        s22 = load(ka.replace("S42", "S22"))   # the same connector reading 2 loops (same weights, same training)
         ids = set(o) & set(n2) & set(n4)
+        if s22 is not None and not ids <= set(s22):   # not yet on every shared item: report it alone, keep the triple
+            print(f"Equal        {bench:12s} same connector 2/2 on {len(ids & set(s22))} of {len(ids)} shared items; not used")
+            s22 = None
         o, n2, n4 = ({i: x[i] for i in ids} for x in (o, n2, n4))
         r2, r4 = boot(o, n2), boot(o, n4)
         row = dict(bench=bench, n=len(ids), ours=round(r2["a"], 1), native2=round(r2["b"], 1), native4=round(r4["b"], 1),
                    vs2=[round(r2[k], 1) for k in ("diff", "lo", "hi")], vs4=[round(r4[k], 1) for k in ("diff", "lo", "hi")])
+        if s22 is not None:
+            r22 = boot(o, {i: s22[i] for i in ids})
+            row.update(same22=round(r22["b"], 1), vs22=[round(r22[k], 1) for k in ("diff", "lo", "hi")])
         out.append(row)
         print(f"Equal        {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
               f"{row['vs2'][0]:+5.1f} [{row['vs2'][1]:+.1f}, {row['vs2'][2]:+.1f}] | 4/4 {row['native4']:5.1f} "
-              f"{row['vs4'][0]:+5.1f} [{row['vs4'][1]:+.1f}, {row['vs4'][2]:+.1f}]")
+              f"{row['vs4'][0]:+5.1f} [{row['vs4'][1]:+.1f}, {row['vs4'][2]:+.1f}]"
+              + (f" | same 2/2 {row['same22']:5.1f} {row['vs22'][0]:+5.1f} [{row['vs22'][1]:+.1f}, {row['vs22'][2]:+.1f}]"
+                 if "same22" in row else ""))
     return out
 
 

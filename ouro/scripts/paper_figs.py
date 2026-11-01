@@ -226,6 +226,10 @@ def fig_equal():
     y = np.arange(len(benches))[::-1]
     for yi, (n2, ours, n4) in zip(y, rows):
         ax.plot([n2, ours], [yi, yi], color="#D4D4D4", lw=1.0, zorder=1)
+    s22 = [(yi, E[b]["same22"]) for yi, b in zip(y, benches) if "same22" in E[b]]
+    if s22:   # the same connector reading 2 loops: separates adaptation from reading depth
+        ax.scatter([v for _, v in s22], [yi for yi, _ in s22], s=26, facecolors="white", edgecolors=OURS, linewidths=1.1,
+                   zorder=3.5, label="read 2 / write 2 (same connector)")
     ax.scatter(rows[:, 0], y, s=22, color="#A6A6A6", zorder=2, label="native 2/2")
     ax.scatter(rows[:, 2], y, s=65, marker="|", color=NAT, linewidths=1.6, zorder=3, label="native 4/4")
     ax.scatter(rows[:, 1], y, s=32, color=OURS, zorder=4, label="read 4 / write 2")
@@ -238,8 +242,8 @@ def fig_equal():
         ax.spines[sp].set_visible(False)
     ax.tick_params(axis="y", length=0)
     h, l = ax.get_legend_handles_labels()
-    order = [l.index("native 2/2"), l.index("read 4 / write 2"), l.index("native 4/4")]
-    ax.legend([h[k] for k in order], [l[k] for k in order], loc="lower center", ncol=3, fontsize=8,
+    order = [l.index(x) for x in ("native 2/2", "read 2 / write 2 (same connector)", "read 4 / write 2", "native 4/4") if x in l]
+    ax.legend([h[k] for k in order], [l[k] for k in order], loc="lower center", ncol=len(order), fontsize=8,
               bbox_to_anchor=(0.45, 1.0), columnspacing=1.2, handletextpad=0.4)
     save(fig, "fig_equal")
 
