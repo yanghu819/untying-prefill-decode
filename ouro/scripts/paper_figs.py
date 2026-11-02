@@ -402,6 +402,24 @@ def fig_taskmap():
     save(fig, "fig_taskmap")
 
 
+def tab_select():
+    """Main table: per benchmark and decode loops n, prefill loops m chosen on one half of the items and scored on the
+    other (cross-fitted), minus native n/n on the same items (LaTeX rows from paper_numbers.json, taskmap_select)."""
+    R = {(r["bench"], r["n"]): r for r in PN.get("taskmap_select", [])}
+    benches = [b for b in dict.fromkeys(r["bench"] for r in PN.get("taskmap_select", []))]
+    def cell(r):
+        if r is None:
+            return "--"
+        d, lo, hi = r["diff"]
+        m = r["m_chosen"]
+        mm = str(m[0]) if m[0] == m[1] else f"{m[0]},{m[1]}"
+        v = (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d)
+        sig = "$^*$" if lo > 0 or hi < 0 else ""          # paired 95% interval excludes zero
+        return rf"{v}{sig}\ci{{{lo:.1f}}}{{{hi:.1f}}}\,{{\scriptsize ($m$={mm})}}"
+    lines = [f"{b} & " + " & ".join(cell(R.get((b, n))) for n in range(1, 5)) + r" \\" for b in benches]
+    (OUT / "tab_select.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

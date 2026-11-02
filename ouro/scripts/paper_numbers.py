@@ -586,15 +586,15 @@ def taskmap_select():
     import hashlib
     half = lambda i: int(hashlib.md5(str(i).encode()).hexdigest(), 16) % 2
     out = []
-    for bench, key in TASK_MAP:
+    specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc"), ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF)]
+    specs += [(bench, key, key.replace("{c}", "native{n}")) for bench, key in TASK_MAP]
+    for bench, key, nkey in specs:
         for n in range(1, 5):
             cells = {m: load(key.format(c=f"S{m}{n}")) for m in range(1, 5)}
-            nat = load(key.format(c=f"native{n}"))
+            nat = load(nkey.format(n=n))
             if nat is None or any(v is None for v in cells.values()):
                 continue
             ids = set(nat).intersection(*(set(v) for v in cells.values()))
-            if bench.startswith("RULER") or bench == "HELMET":
-                pass
             folds = [[i for i in ids if half(i) == h] for h in (0, 1)]
             chosen, picked = [], {}
             for h in (0, 1):
