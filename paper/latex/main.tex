@@ -111,40 +111,33 @@ of the time it saves. Code, per-item results and a script that recomputes the pa
 \section{Related Work}
 
 \paragraph{Looped and elastic depth.} Accordion~\citep{accordion} and Elastic Latent Recurrence~\citep{elr} train one
-model to serve several depth budgets; ELR also reports that keeping only the last loop's KV at inference retains most of
-the gain. The Parallel Loop Transformer~\citep{plt}, LoopCoder-v2~\citep{loopcoder2} and shared-memory looped
-transformers~\citep{sharedmem} let later loops read the first loop's global KV plus a short window of their own. All of
-them spend the same depth on prompt and answer.
+model for several depth budgets; ELR also finds that keeping only the last loop's KV retains most of the gain. The
+Parallel Loop Transformer~\citep{plt}, LoopCoder-v2~\citep{loopcoder2} and shared-memory looped
+transformers~\citep{sharedmem} let later loops read the first loop's KV plus a short local window. All spend the same
+depth on prompt and answer.
 
-\paragraph{Phase-specific computation.} Continuous Depth Batching~\citep{cdb} runs full-depth prefill and exits early
-during decode; Position-Aware Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill}
-prefills with the full model and decodes with a width-pruned one. Fixed Points Part~II~\citep{fixedpoints2} distils a
-lightweight prefill network, followed by one teacher recurrence, while keeping the teacher's decoding depth; POP~\citep{pop} and SPEED~\citep{speed} use
-shallower prefill than decode. Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and Almost Free
-State-Prediction Separation~\citep{sps} add decode-side computation. These works change decode depth, reduce prefill
-computation or share caches across recurrences; we instead vary prompt and answer depth independently within one trained
-connector and measure what each buys.
+\paragraph{Phase-specific computation.} Continuous Depth Batching~\citep{cdb} exits early during decode; Position-Aware
+Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill} decodes with a width-pruned model;
+Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop} and SPEED~\citep{speed}
+prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
+State-Prediction Separation~\citep{sps} add decode-side computation. We instead vary prompt and answer depth
+independently within one connector and measure what each buys.
 
-\paragraph{Asymmetric KV producers and consumers.} YOCO~\citep{yoco} splits a decoder into a self-decoder that produces
-one shared global KV cache and a cross-decoder that reads it; YOCO-U~\citep{yocou} loops the self-decoder with shared
-parameters, keeping global KV storage independent of the number of loops while every token still runs the loops;
-KITE~\citep{kite} expands a checkpoint into two towers in which bulk prefill runs only the KV-producing tower. These
-architectures are designed or expanded for an asymmetric split. We instead adapt an existing looped model after
-pretraining and choose prompt depth $p$ and answer depth $d$ independently per request: the frozen backbone produces the
-prompt KV once with $p$ loops, and generation uses $d$ loops through a small connector.
+\paragraph{Asymmetric KV producers and consumers.} YOCO~\citep{yoco} has a self-decoder produce one global KV cache that
+a cross-decoder reads; YOCO-U~\citep{yocou} loops the self-decoder, keeping KV storage independent of the loop count
+while every token still runs the loops; KITE~\citep{kite} expands a checkpoint into two towers so that bulk prefill runs
+only the KV-producing tower. These architectures are built for the split; we adapt an existing looped model after
+pretraining and choose the prompt depth $p$ and answer depth $d$ per request.
 
-\paragraph{Hybrid models.} Gated DeltaNet~\citep{gdn} and Hymba~\citep{hymba} combine linear recurrence or state
-space layers with attention; split-prefill and state-swap interventions find that exact retrieval relies on the
-attention KV while the recurrent state shapes generation~\citep{afendulev}, and LatentPort~\citep{latentport}
-transfers KV, recurrent and convolution states between hybrid models. We instead vary which prefill visit supplies each
-kind of state within one looped hybrid (Appendix~\ref{app:hybrid}).
-
-\paragraph{Sharing and transferring KV.} Looped Latent Attention~\citep{lla} compresses KV across loops; BeNice!~\citep{benice}
-and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c}, HeteroFold~\citep{heterofold},
-Swarm Telepathy~\citep{swat} and CacheLink~\citep{cachelink} transfer KV between models; BellowsKV~\citep{bellows}
-shares one latent across layers. As in CacheLink's output-supervised corrections, our maps are trained through the
-receiver's output distribution. Within one Ouro model, tokens, layers and positions align, so a RoPE-commuting scale
-and a value map suffice, and serving them from one stored cache is exact.
+\paragraph{Sharing and transferring state.} Looped Latent Attention~\citep{lla} compresses KV across loops;
+BeNice!~\citep{benice} and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c},
+HeteroFold~\citep{heterofold}, Swarm Telepathy~\citep{swat} and CacheLink~\citep{cachelink} transfer KV between models,
+and BellowsKV~\citep{bellows} shares one latent across layers. Like CacheLink, we train our maps through the receiver's
+output; within one model tokens, layers and positions align, so a RoPE-commuting scale and a value map suffice. In
+hybrid models that combine attention with linear recurrence, such as Gated DeltaNet~\citep{gdn} and
+Hymba~\citep{hymba}, state-swap interventions find exact retrieval relying on attention KV and generation shaped by the
+recurrent state~\citep{afendulev}, and LatentPort~\citep{latentport} transfers both kinds of state between models; we
+vary which prefill visit supplies each kind (Appendix~\ref{app:hybrid}).
 
 \section{Method}
 \label{sec:method}
