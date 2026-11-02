@@ -133,6 +133,12 @@ architectures are designed or expanded for an asymmetric split. We instead adapt
 pretraining and choose prompt depth $p$ and answer depth $d$ independently per request: the frozen backbone produces the
 prompt KV once with $p$ loops, and generation uses $d$ loops through a small connector.
 
+\paragraph{Hybrid models.} Gated DeltaNet~\citep{gdn} and Hymba~\citep{hymba} combine linear recurrence or state
+space layers with attention; split-prefill and state-swap interventions find that exact retrieval relies on the
+attention KV while the recurrent state shapes generation~\citep{afendulev}, and LatentPort~\citep{latentport}
+transfers KV, recurrent and convolution states between hybrid models. We instead vary which prefill visit supplies each
+kind of state within one looped hybrid (Appendix~\ref{app:hybrid}).
+
 \paragraph{Sharing and transferring KV.} Looped Latent Attention~\citep{lla} compresses KV across loops; BeNice!~\citep{benice}
 and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c}, HeteroFold~\citep{heterofold},
 Swarm Telepathy~\citep{swat} and CacheLink~\citep{cachelink} transfer KV between models; BellowsKV~\citep{bellows}
@@ -327,9 +333,10 @@ Reading deep is not uniformly better. At one writing loop on Ouro-2.6B it lowers
 raising zero-shot MATH-500 by 7.0; it sharply lowers 3-shot BBH on both 1.4B checkpoints ($-24.5$ and $-20.5$); on
 Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}); and on SenseNova-Loop-9B the trained connector
 loses ARC-Challenge points when it reads deeper ($-2.9$\ci{-4.8}{-1.0}). The division of labour is a tendency on the
-benchmarks we test, and it depends on how the task is prompted. In the hybrid SenseNova-Loop-9B the gain splits by
-layer type: deep attention KV carries the knowledge gain, the deep linear-attention state the long-context gain
-(Appendix~\ref{app:hybrid}).
+benchmarks we test, and it depends on how the task is prompted. In the hybrid SenseNova-Loop-9B, giving the writer the second visit's state only in the
+linear-attention (Gated-DeltaNet) layers, with first-visit attention KV, scores 5.6 points above the full second-visit
+state on HELMET but 3.5 below it on MMLU-Pro; these task-dependent effects come from one connector evaluated on mixed
+states absent from its training (Appendix~\ref{app:hybrid}).
 
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
@@ -666,30 +673,38 @@ deep state given to the writer & attention KV & GDN state & both & attention KV 
 \csname @@input\endcsname ../figs/tab_hybrid.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Where reading depth lives in a hybrid model.} SenseNova-Loop-9B, one writing visit. The writer receives
-the second (deep) prefill visit's state for the full-attention layers only, for the Gated-DeltaNet (GDN) layers only, or
-for both; the other layers receive the first visit's state. Differences to the first-visit state for every layer, in
-score points; brackets are paired 95\% bootstrap intervals.}
+\caption{\textbf{Which part of a hybrid model's prompt state benefits from reading deep.} SenseNova-Loop-9B, one
+writing visit, after a two-visit prefill. Within the repeated block, ``attention KV'' gives the writer the second visit's
+attention KV and the first visit's Gated-DeltaNet (GDN) convolution and recurrent states; ``GDN state'' the reverse;
+``both'' the second visit's states throughout. Layers outside the block keep the two-visit prefill's states.
+Differences are to the one-visit prefill with the same writer, in score points; brackets are paired 95\% bootstrap
+intervals.}
 \label{tab:hybrid}
 \end{table*}
 
 SenseNova-Loop-9B stacks three Gated-DeltaNet layers per full-attention layer. Its prompt state therefore has two
 parts: the attention KV, which the writer attends to, and each Gated-DeltaNet layer's convolution and recurrent state, a
-fixed-size summary of the prompt (per layer and sequence, $32\times128\times128$ numbers whatever the prompt length) from
-which the writer continues and which it keeps updating with its own tokens. Which part carries reading depth? We give
-the one-visit writer the deep state for one kind of layer and the shallow state for the other (Table~\ref{tab:hybrid}).
-Without training, either part alone recovers most of the gain of the full deep state (RULER-16K $+50.2$ and $+50.5$
-against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts do different
-things. The deep Gated-DeltaNet state carries the long-context gain: HELMET $+9.1$\ci{6.5}{11.6} and RULER-16K
-$+4.9$\ci{2.1}{7.7}, against $-0.2$ and $+0.7$ for the deep attention KV, which even lowers RULER-4K
-($-4.5$\ci{-7.2}{-2.0}). The deep attention KV carries the knowledge gain (MMLU-Pro $+4.6$\ci{2.0}{7.2}; deep
-Gated-DeltaNet state alone $+2.0$\ci{-0.4}{4.5}). The ARC-Challenge loss of the full deep state (Section~\ref{sec:grid})
-comes from the Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). On Ouro, which has only attention
-layers, deeper KV likewise helps knowledge and loses exact recall (Appendix~\ref{app:hurt}); in the hybrid, the
-long-context benefit moves to the linear-attention layers. The same trained connector, given the deep state only in its
-Gated-DeltaNet layers, beats the full deep state on HELMET by $5.6$ points and on RULER-4K/8K/16K by $6.5$, $4.2$ and
-$3.7$, ties it on ARC-Challenge, and trails it on MMLU-Pro by $3.5$: without retraining, the deep state can be routed per
-task.
+fixed-size summary of the prompt from which the writer continues and which it keeps updating with its own tokens (the
+prefill stops before the last prompt token, which the writer processes first). We give the one-visit writer the
+second visit's state for one kind of layer and the first visit's for the other (Table~\ref{tab:hybrid}). These are
+interventions on one checkpoint and one connector, which was trained only with jointly shallow or jointly deep states;
+the mixed states are outside its training, so the results describe how this writer responds to the substitution, not
+where information is stored.
+
+Without training, either part alone recovers most of the gain of the full second-visit state (RULER-16K $+50.2$ and
+$+50.5$ against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts behave
+differently. The second-visit Gated-DeltaNet state raises long-context scores: HELMET $+9.1$\ci{6.5}{11.6} and
+RULER-16K $+4.9$\ci{2.1}{7.7}, against $-0.2$ and $+0.7$ for the second-visit attention KV, which lowers RULER-4K
+($-4.5$\ci{-7.2}{-2.0}). The second-visit attention KV raises MMLU-Pro ($+4.6$\ci{2.0}{7.2}; Gated-DeltaNet state alone
+$+2.0$\ci{-0.4}{4.5}). The ARC-Challenge loss of the full second-visit state (Section~\ref{sec:grid}) appears with the
+Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). In the ``GDN state'' condition the writer still
+attends to the first visit's KV, consistent with exact retrieval relying on attention in hybrid
+models~\citep{afendulev}; what improves is the recurrent state it continues from. On Ouro, which has only attention
+layers, deeper KV likewise helps knowledge and loses exact recall (Appendix~\ref{app:hurt}). The same trained connector,
+given the second-visit state only in its Gated-DeltaNet layers, scores above the full second-visit state on HELMET by
+$5.6$ points and on RULER-4K/8K/16K by $6.5$, $4.2$ and $3.7$, shows no detectable difference on ARC-Challenge, and
+scores below it on MMLU-Pro by $3.5$. These are task-dependent trade-offs, not a validated policy for choosing the state
+per task.
 
 \begin{table*}[t]
 \centering\small
@@ -704,19 +719,21 @@ benchmark & native 1/1 & read 1 / write 1 & read 2 / write 1 & native 2/2 & read
 \bottomrule
 \end{tabular}
 \caption{\textbf{SenseNova-Loop-9B at one writing visit.} One connector serves read 1 / write 1 and read 2 / write 1;
-native 2/2 decodes with twice the depth. Same protocols as Table~\ref{tab:models} (MMLU-Pro 980, HELMET 6,646, BBH
+native 2/2 runs the repeated block twice per token (56 layer executions instead of 32). Same protocols as Table~\ref{tab:models} (MMLU-Pro 980, HELMET 6,646, BBH
 6,511 items). MBPP+ is omitted: its prompt forces the answer to start with code, and this thinking model then opens a
-reasoning block inside the code in nearly every answer (375 of 378 for native 2/2), for every configuration.
+reasoning block inside the code (native 1/1: 294, read 1 / write 1: 236, read 2 / write 1: 372, native 2/2: 375 of 378
+answers), so its score measures this format failure.
 Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:sn}
 \end{table*}
 
-Table~\ref{tab:sn} is the SenseNova-Loop-9B counterpart of Figure~\ref{fig:equal}, at one writing visit, half the
-native decode depth. With the same connector, reading two visits instead of one raises MMLU-Pro ($+5.5$), BBH ($+7.0$)
+Table~\ref{tab:sn} is the SenseNova-Loop-9B counterpart of Figure~\ref{fig:equal}, at one writing visit through the
+repeated block instead of two. With the same connector, reading two visits instead of one raises MMLU-Pro ($+5.5$), BBH ($+7.0$)
 and HELMET ($+3.5$), lowers ARC-Challenge ($-2.9$), and leaves GSM8K, MATH-500 and HumanEval within noise. Against
-native 2/2, which writes with twice the depth, read 2 / write 1 matches GSM8K ($-0.6$\ci{-1.6}{0.4}) in $0.59\times$ the
-time (Section~\ref{sec:fast}) and trails on the other benchmarks, most on HELMET ($-16.8$); routing only the deep
-Gated-DeltaNet state to the writer narrows that HELMET gap to $-11.2$\ci{-13.0}{-9.4}. The native one-visit model fails on all of them.
+native 2/2, read 2 / write 1 shows no detectable difference on GSM8K ($-0.6$\ci{-1.6}{0.4}; the $0.59\times$ answer time
+of Section~\ref{sec:fast} is measured for read 1 / write 1) and scores lower on the other benchmarks, most on HELMET
+($-16.8$); giving the writer the second-visit state only in the Gated-DeltaNet layers narrows that HELMET gap to
+$-11.2$\ci{-13.0}{-9.4}. The native one-visit model scores far lower on every benchmark.
 
 \section{SenseNova-Loop-9B Without Training}
 \label{app:sn}
