@@ -189,7 +189,8 @@ CMP += [
     *[("Fewer prefill loops", f"Ouro-2.6B prefill {m} / decode {n} vs native {k}/{k} MATH-500 4-shot", f"L:o26x-S{m}{n}-math:mvfull",
        f"L:o26x-native{k}-math:mvfull", None) for m, n, k in ((1, 2, 2), (1, 2, 4), (1, 4, 4), (2, 4, 4), (1, 3, 4))],
     # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the connector)
-    *[("Distillation baseline", f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"), None)
+    *[("Distillation baseline", f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"),
+       {"MMLU-Pro": (5.2, 1.2, 9.3), "ARC-C": (2.9, 1.4, 4.4)}.get(bench))
       for bench, ka, _ in EQUAL],
     *[("Distillation baseline", f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {bench}", ka.replace("S42", "D"), kb.format(n=2), None)
       for bench, ka, kb in EQUAL],

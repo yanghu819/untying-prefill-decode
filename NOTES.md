@@ -55,3 +55,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   m beats native 1/1 on every benchmark so far (+5 to +21 points); at n = 2 it still wins clearly (MATH 4-shot +13.8,
   BBH +6.5, RULER-4K +5.7, ARC-C +2.7); at n >= 3 it is roughly on par (BBH -2.3, RULER-4K -2.9), except 4-shot MATH
   (+13.6/+14.4). Untying helps most when decoding is cheap.
+- Paper restructured around the task map: Figure 1 = task map (8 panels; all 14 in the appendix), Table 1 = cross-fitted
+  choice of m per benchmark and n vs native n/n, then Ouro-2.6B-Thinking at decode 2 (with the distillation control),
+  end-to-end time, decision models. Old cross-model table moved to the appendix (Other Checkpoints); the fixed-n table
+  removed. Abstract, introduction and conclusion rewritten. Bibliography script added (GPQA, IFEval).
