@@ -393,7 +393,7 @@ shallow model's decode cost, and the same holds for looped decision models.
 The prefill count is chosen per benchmark from half of its labeled items; we do not route individual prompts, and a
 choice need not transfer to an unseen task. The best count also depends on the prompt format: on the base model one
 prefill loop helps 4-shot MATH-500 but hurts zero-shot MATH-500 (Appendix~\ref{app:hurt}), and at two decode loops the
-zero-shot Thinking model is better with four prefill loops than with one or two on all eight benchmarks we test. With three or four decode loops the native model is better
+zero-shot Thinking model is better with four prefill loops than with one on all eight benchmarks we test. With three or four decode loops the native model is better
 on long-context retrieval (RULER) and slightly on BBH. Gains against native models include training the adapter; the
 distillation control (Section~\ref{sec:rdws}) separates part of it. More prefill loops raise the time to first token,
 and equal decode loops do not mean equal latency; end-to-end time is measured at batch 1 on one GPU type, and throughput
