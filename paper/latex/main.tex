@@ -37,15 +37,17 @@
 \begin{abstract}
 Looped language models reuse one block of layers several times per token and, under fixed-depth inference, spend the
 same number of loops on the prompt (prefill) and on every generated token (decoding). On the checkpoints and benchmarks we test, the two buy
-different things: \emph{prefill depth mainly buys knowledge and long-context accuracy, while decoding depth mainly buys
-multi-step reasoning}, with exceptions that depend on the prompting protocol. A small
+different things: \emph{prefill depth mainly raises knowledge and long-context benchmarks (MMLU, MMLU-Pro, RULER,
+HELMET), while decoding depth mainly raises multi-step math benchmarks (GSM8K, MATH-500)}, with exceptions that depend on
+the task and the prompting protocol. A small
 connector trained on a frozen looped model separates the two budgets: one set of parameters serves all 16 pairs of
 prefill and decoding depth up to four loops, and one stored prompt KV cache serves every decoding loop. On
 Ouro-2.6B-Thinking, reading the prompt with four loops and writing with two scores at least as high as the native two-loop
 model on all eight standard benchmarks we test (significantly higher on five), at the same decoding depth, and within two points of the native four-loop model on
 six; on GSM8K it is 1.0 point below the four-loop model on the full test set and, on 64 timed problems, answers in
 $0.55\times$ its time. The
-same split, with matched continued training, makes looped decision models more accurate when they decide with one loop.
+same split makes looped decision models more accurate when they decide with one loop, against a control continued with
+the same data and updates.
 \end{abstract}
 
 \section{Introduction}
@@ -91,7 +93,7 @@ fewer loops than it read with, so its shallow writing loops must attend to KV pr
 all 16 pairs of read and write depth with its parameters fixed.
 
 The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
-moves knowledge and long-context accuracy, and writing depth mainly moves multi-step reasoning. With the writer held
+moves knowledge and long-context scores (MMLU, RULER-16K), and writing depth mainly moves multi-step math (GSM8K). With the writer held
 fixed, reading deeper helps on five checkpoints from two model families (Table~\ref{tab:models}).
 
 Reading deep and writing shallow puts the two findings together (Figure~\ref{fig:equal}): on Ouro-2.6B-Thinking,
@@ -346,8 +348,9 @@ recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt})
 Part of the gain over \nat{2} comes from training the connector, not from depth. The same connector reading two loops
 (hollow circles; same weights, same training, same writing depth) isolates reading depth: reading four rather than two
 loops adds $+8.1$\ci{4.0}{12.1} on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge
-and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$). On MMLU-Pro the gain
-over \nat{2} is accounted for by reading depth; on MBPP+, by training. On Ouro-1.4B-Thinking the effect of reading depth repeats on the
+and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$). Against \nat{2},
+comparisons also include the effect of training the connector: on MBPP+ the gain over \nat{2} ($+4.8$) comes with no
+detectable reading-depth effect. On Ouro-1.4B-Thinking the effect of reading depth repeats on the
 same eight benchmarks, but that connector loses 3-shot BBH against native 2/2 (Appendix~\ref{app:t14}).
 
 
@@ -656,12 +659,12 @@ maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
 
 \begin{table*}[t]
 \centering\small
-\setlength\tabcolsep{4pt}
+\setlength\tabcolsep{2pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
  & \multicolumn{3}{c}{untrained one-visit writer} & \multicolumn{3}{c}{trained connector} \\
 \cmidrule(lr){2-4}\cmidrule(l){5-7}
-deep state given to the writer & attention KV & GDN state & both & attention KV & GDN state & both \\
+benchmark & attention KV & GDN state & both & attention KV & GDN state & both \\
 \midrule
 \csname @@input\endcsname ../figs/tab_hybrid.tex
 \bottomrule
