@@ -390,18 +390,16 @@ shallow model's decode cost, and the same holds for looped decision models.
 \section*{Limitations}
 \label{sec:limits}
 
-More prefill loops lower 4-shot MATH-500, give a negative but inconclusive estimate on RULER-4K and, on Ouro, lower exact
-key--value recall in HELMET (Tables~\ref{tab:hurt} and~\ref{tab:helmet}); at three
-or more decode loops, one prompt KV cache from the fourth loop trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, decode 3).
-More prefill loops raise time to first token, so it pays when answers are long or quality requires it. Both 1.4B checkpoints
-degenerate at \rw{4}{1} on 3-shot BBH (Ouro-1.4B: $-24.5$, Ouro-1.4B-Thinking: $-20.5$ against \rw{1}{1}); with two
-decode loops, prefilling with four instead of two helps (Ouro-1.4B-Thinking: $+8.8$, Table~\ref{tab:t14}).
-On Nanbeige4.2-3B-Base our shared-loop adapter recipes trail loop adapters trained per $(m,n)$ pair, so Appendix~\ref{app:eval} reports per-pair
-results.
-Gains against native models include the adaptation of the loop adapter. Throughput is a controlled decode benchmark and
-end-to-end time is measured at batch 1 on one GPU type. Thinking checkpoints on raw HELMET prompts can stop at once; we
-decode them so that an answer cannot be empty, for every configuration (Appendix~\ref{app:eval}). Probes measure linear
-decodability, not causal use. All models are 1.4B--9B, decoding is greedy and benchmarks are English.
+The prefill count is chosen per benchmark from half of its labeled items; we do not route individual prompts, and a
+choice need not transfer to an unseen task. The best count also depends on the prompt format: on the base model one
+prefill loop helps 4-shot MATH-500 but hurts zero-shot MATH-500 (Appendix~\ref{app:hurt}), and at two decode loops the
+zero-shot Thinking model is better with four prefill loops than with one or two on all eight benchmarks we test. With three or four decode loops the native model is better
+on long-context retrieval (RULER) and slightly on BBH. Gains against native models include training the adapter; the
+distillation control (Section~\ref{sec:rdws}) separates part of it. More prefill loops raise the time to first token,
+and equal decode loops do not mean equal latency; end-to-end time is measured at batch 1 on one GPU type, and throughput
+is a controlled decode benchmark. Thinking checkpoints on raw HELMET prompts can stop at once; we decode them so that an
+answer cannot be empty, for every configuration (Appendix~\ref{app:eval}). Probes measure linear decodability, not causal
+use. All models are 1.4B--9B, decoding is greedy and benchmarks are English.
 
 \bibliography{references}
 
