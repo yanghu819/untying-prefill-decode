@@ -2313,12 +2313,12 @@
    "key_a": "T:SNG-C21G-gsm8k_think:math_verify",
    "key_b": "T:SNG-C11-gsm8k_think:math_verify",
    "printed": null,
-   "n": 660,
-   "a": 95.0,
-   "b": 95.6,
-   "diff": -0.6,
-   "lo": -2.0,
-   "hi": 0.8
+   "n": 1319,
+   "a": 95.1,
+   "b": 95.4,
+   "diff": -0.2,
+   "lo": -1.2,
+   "hi": 0.7
   },
   {
    "section": "Hybrid G-trained",
@@ -2528,6 +2528,32 @@
   },
   {
    "section": "Fewer prefill loops",
+   "label": "Ouro-2.6B prefill 1 vs 4 (decode 4) RULER-4K",
+   "key_a": "B:X26-S14f:ruler4k",
+   "key_b": "B:X26-S44f:ruler4k",
+   "printed": null,
+   "n": 151,
+   "a": 93.2,
+   "b": 83.9,
+   "diff": 9.3,
+   "lo": 2.0,
+   "hi": 16.4
+  },
+  {
+   "section": "Fewer prefill loops",
+   "label": "Ouro-2.6B prefill 2 vs 4 (decode 4) RULER-4K",
+   "key_a": "B:X26-S24f:ruler4k",
+   "key_b": "B:X26-S44f:ruler4k",
+   "printed": null,
+   "n": 151,
+   "a": 98.3,
+   "b": 83.9,
+   "diff": 14.4,
+   "lo": 8.6,
+   "hi": 20.9
+  },
+  {
+   "section": "Fewer prefill loops",
    "label": "Ouro-2.6B prefill 1 vs 4 (decode 2) RULER-4K",
    "key_a": "B:X26-S12f:ruler4k",
    "key_b": "B:X26-S42f:ruler4k",
@@ -2571,12 +2597,12 @@
    "key_a": "B:X26-S12f:ruler16k",
    "key_b": "B:X26-S22f:ruler16k",
    "printed": null,
-   "n": 396,
-   "a": 62.0,
-   "b": 72.2,
-   "diff": -10.2,
-   "lo": -13.6,
-   "hi": -6.8
+   "n": 520,
+   "a": 57.6,
+   "b": 66.9,
+   "diff": -9.3,
+   "lo": -12.3,
+   "hi": -6.3
   },
   {
    "section": "Fewer prefill loops",
@@ -2584,12 +2610,38 @@
    "key_a": "B:X26-S12f:ruler16k",
    "key_b": "B:X26-S42f:ruler16k",
    "printed": null,
-   "n": 396,
-   "a": 62.0,
-   "b": 73.1,
-   "diff": -11.1,
-   "lo": -16.4,
-   "hi": -6.0
+   "n": 520,
+   "a": 57.6,
+   "b": 72.2,
+   "diff": -14.6,
+   "lo": -18.8,
+   "hi": -10.5
+  },
+  {
+   "section": "Fewer prefill loops",
+   "label": "Ouro-1.4B prefill 1 vs 4 (decode 4) BBH 3-shot",
+   "key_a": "L:O14x-S14-bbh:exact_match",
+   "key_b": "L:O14x-S44-bbh:exact_match",
+   "printed": null,
+   "n": 1620,
+   "a": 52.4,
+   "b": 64.4,
+   "diff": -12.0,
+   "lo": -14.8,
+   "hi": -9.3
+  },
+  {
+   "section": "Fewer prefill loops",
+   "label": "Ouro-1.4B prefill 2 vs 4 (decode 4) BBH 3-shot",
+   "key_a": "L:O14x-S24-bbh:exact_match",
+   "key_b": "L:O14x-S44-bbh:exact_match",
+   "printed": null,
+   "n": 1620,
+   "a": 59.0,
+   "b": 64.4,
+   "diff": -5.5,
+   "lo": -8.0,
+   "hi": -3.1
   },
   {
    "section": "Fewer prefill loops",
@@ -2710,6 +2762,32 @@
   },
   {
    "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 GSM8K",
+   "key_a": "T:T26-S42-gsm8k_think:math_verify",
+   "key_b": "T:T26-D-gsm8k_think:math_verify",
+   "printed": null,
+   "n": 330,
+   "a": 91.5,
+   "b": 91.8,
+   "diff": -0.3,
+   "lo": -3.0,
+   "hi": 2.4
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 MATH-500",
+   "key_a": "T:T26-S42-math500_think:math_verify",
+   "key_b": "T:T26-D-math500_think:math_verify",
+   "printed": null,
+   "n": 500,
+   "a": 85.0,
+   "b": 84.2,
+   "diff": 0.8,
+   "lo": -2.4,
+   "hi": 3.8
+  },
+  {
+   "section": "Distillation baseline",
    "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 MMLU-Pro",
    "key_a": "L:T26x-S42-mmlupro:exact_match",
    "key_b": "L:T26x-D-mmlupro:exact_match",
@@ -2749,6 +2827,32 @@
   },
   {
    "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 HumanEval",
+   "key_a": "L:T26x-S42-code:pass@1",
+   "key_b": "L:T26x-D-code:pass@1",
+   "printed": null,
+   "n": 164,
+   "a": 61.0,
+   "b": 55.5,
+   "diff": 5.5,
+   "lo": -1.8,
+   "hi": 12.8
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 MBPP+",
+   "key_a": "L:T26x-S42-code:pass_at_1",
+   "key_b": "L:T26x-D-code:pass_at_1",
+   "printed": null,
+   "n": 378,
+   "a": 79.1,
+   "b": 75.9,
+   "diff": 3.2,
+   "lo": -0.5,
+   "hi": 6.9
+  },
+  {
+   "section": "Distillation baseline",
    "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 HELMET",
    "key_a": "B:T26ne-S42-helmet:helmet",
    "key_b": "B:T26ne-D-helmet:helmet",
@@ -2759,6 +2863,32 @@
    "diff": 2.5,
    "lo": -3.6,
    "hi": 8.5
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 GSM8K",
+   "key_a": "T:T26-D-gsm8k_think:math_verify",
+   "key_b": "T:think-native2-gsm8k_think:math_verify",
+   "printed": null,
+   "n": 330,
+   "a": 91.8,
+   "b": 90.0,
+   "diff": 1.8,
+   "lo": -0.3,
+   "hi": 3.9
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 MATH-500",
+   "key_a": "T:T26-D-math500_think:math_verify",
+   "key_b": "T:think-native2-math500_think:math_verify",
+   "printed": null,
+   "n": 500,
+   "a": 84.2,
+   "b": 84.8,
+   "diff": -0.6,
+   "lo": -3.8,
+   "hi": 2.4
   },
   {
    "section": "Distillation baseline",
@@ -2798,6 +2928,32 @@
    "diff": 4.7,
    "lo": 2.7,
    "hi": 6.8
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 HumanEval",
+   "key_a": "L:T26x-D-code:pass@1",
+   "key_b": "L:T26x-native2-code:pass@1",
+   "printed": null,
+   "n": 164,
+   "a": 55.5,
+   "b": 60.4,
+   "diff": -4.9,
+   "lo": -11.0,
+   "hi": 1.2
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 MBPP+",
+   "key_a": "L:T26x-D-code:pass_at_1",
+   "key_b": "L:T26x-native2-code:pass_at_1",
+   "printed": null,
+   "n": 378,
+   "a": 75.9,
+   "b": 74.3,
+   "diff": 1.6,
+   "lo": -0.5,
+   "hi": 3.7
   },
   {
    "section": "Distillation baseline",
@@ -3585,6 +3741,13 @@
   },
   {
    "section": "Task map",
+   "label": "S34 BBH 3-shot",
+   "key": "L:o26x-S34-bbh:exact_match",
+   "n": 1620,
+   "mean": 78.6
+  },
+  {
+   "section": "Task map",
    "label": "S41 BBH 3-shot",
    "key": "L:o26x-S41-bbh:exact_match",
    "n": 6511,
@@ -3746,10 +3909,31 @@
   },
   {
    "section": "Task map",
+   "label": "S12 MMLU-Pro",
+   "key": "L:o26x-S12-mmlupro:exact_match",
+   "n": 420,
+   "mean": 33.1
+  },
+  {
+   "section": "Task map",
+   "label": "S14 MMLU-Pro",
+   "key": "L:o26x-S14-mmlupro:exact_match",
+   "n": 420,
+   "mean": 33.1
+  },
+  {
+   "section": "Task map",
    "label": "S22 MMLU-Pro",
    "key": "L:o26x-S22-mmlupro:exact_match",
    "n": 980,
    "mean": 46.5
+  },
+  {
+   "section": "Task map",
+   "label": "S31 MMLU-Pro",
+   "key": "L:o26x-S31-mmlupro:exact_match",
+   "n": 420,
+   "mean": 46.2
   },
   {
    "section": "Task map",
@@ -3816,6 +4000,13 @@
   },
   {
    "section": "Task map",
+   "label": "S12 HumanEval",
+   "key": "L:o26x-S12-code:pass@1",
+   "n": 164,
+   "mean": 17.1
+  },
+  {
+   "section": "Task map",
    "label": "S22 HumanEval",
    "key": "L:o26x-S22-code:pass@1",
    "n": 164,
@@ -3876,6 +4067,13 @@
    "key": "L:o26x-S11-code:pass_at_1",
    "n": 378,
    "mean": 67.2
+  },
+  {
+   "section": "Task map",
+   "label": "S12 MBPP+",
+   "key": "L:o26x-S12-code:pass_at_1",
+   "n": 378,
+   "mean": 74.6
   },
   {
    "section": "Task map",
@@ -4019,6 +4217,13 @@
   },
   {
    "section": "Task map",
+   "label": "S44 RULER-4K",
+   "key": "B:X26-S44f:ruler4k",
+   "n": 151,
+   "mean": 83.9
+  },
+  {
+   "section": "Task map",
    "label": "S11 RULER-8K",
    "key": "B:X26-S11f:ruler8k",
    "n": 520,
@@ -4035,8 +4240,8 @@
    "section": "Task map",
    "label": "S14 RULER-8K",
    "key": "B:X26-S14f:ruler8k",
-   "n": 300,
-   "mean": 75.8
+   "n": 520,
+   "mean": 70.1
   },
   {
    "section": "Task map",
@@ -4056,8 +4261,8 @@
    "section": "Task map",
    "label": "S24 RULER-8K",
    "key": "B:X26-S24f:ruler8k",
-   "n": 234,
-   "mean": 83.4
+   "n": 476,
+   "mean": 80.9
   },
   {
    "section": "Task map",
@@ -4112,8 +4317,15 @@
    "section": "Task map",
    "label": "S12 RULER-16K",
    "key": "B:X26-S12f:ruler16k",
-   "n": 396,
-   "mean": 62.0
+   "n": 520,
+   "mean": 57.6
+  },
+  {
+   "section": "Task map",
+   "label": "S14 RULER-16K",
+   "key": "B:X26-S14f:ruler16k",
+   "n": 46,
+   "mean": 97.8
   },
   {
    "section": "Task map",

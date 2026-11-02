@@ -43,3 +43,6 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   BBH +2.2 [0.0, 4.5], HELMET +2.5 (n.s.). Distilled 2/2 minus native 2/2: HELMET +10.5, BBH +4.7, MMLU-Pro +1.7 (n.s.),
   ARC-C +0.7 (n.s.). So the untied adapter adds knowledge accuracy that plain distillation does not; most of the HELMET
   gain over native 2/2 comes from distillation. GSM8K, MATH-500 and code still running.
+- Distillation baseline, remaining benchmarks (prefill 4 / decode 2 minus distilled 2/2): MATH-500 +0.8 (n.s.),
+  HumanEval +5.5 (n.s.), MBPP+ +3.2 [-0.5, 6.9]; GSM8K partial (330 of 1,319) -0.3. The adapter is at or above
+  plain distillation on all eight benchmarks, significantly on MMLU-Pro and ARC-C.
