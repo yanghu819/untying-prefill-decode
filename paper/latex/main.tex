@@ -135,11 +135,9 @@ pretraining and choose the prompt depth $p$ and answer depth $d$ per request.
 BeNice!~\citep{benice} and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c},
 HeteroFold~\citep{heterofold}, Swarm Telepathy~\citep{swat} and CacheLink~\citep{cachelink} transfer KV between models,
 and BellowsKV~\citep{bellows} shares one latent across layers. Like CacheLink, we train our maps through the receiver's
-output; within one model tokens, layers and positions align, so a RoPE-commuting scale and a value map suffice. In
-hybrid models that combine attention with linear recurrence, such as Gated DeltaNet~\citep{gdn} and
-Hymba~\citep{hymba}, state-swap interventions find exact retrieval relying on attention KV and generation shaped by the
-recurrent state~\citep{afendulev}, and LatentPort~\citep{latentport} transfers both kinds of state between models; we
-vary which prefill visit supplies each kind (Appendix~\ref{app:hybrid}).
+output; within one model tokens, layers and positions align, so a RoPE-commuting scale and a value map suffice. For hybrid attention / linear-recurrence
+models~\citep{gdn,hymba}, state-swap interventions~\citep{afendulev} and LatentPort~\citep{latentport} study the two
+kinds of state; Appendix~\ref{app:hybrid} relates them to reading depth.
 
 \section{Method}
 \label{sec:method}
@@ -315,23 +313,10 @@ write $d$ & MMLU & RULER-16K & GSM8K \\
 \label{tab:equal}
 \end{table}
 
-The same holds across models (Table~\ref{tab:models}). With the writer fixed at one loop, reading deeper improves
-knowledge and long-context tasks and the selected multi-step task on all five checkpoints; Ouro-1.4B is the exception on
-long context (RULER-16K $+1.4$, not significant). The gains are task-dependent: on both 1.4B checkpoints the same change
-sharply lowers 3-shot BBH (Limitations). On Nanbeige4.2-3B-Base separately trained connectors per $(p,d)$ pair point the
-same way but do not isolate reading depth (Appendix~\ref{app:eval}).
-
-
-
-
-Reading deep is not uniformly better. At one writing loop on Ouro-2.6B it lowers 4-shot MATH-500 by 11.2 points while
-raising zero-shot MATH-500 by 7.0; it sharply lowers 3-shot BBH on both 1.4B checkpoints ($-24.5$ and $-20.5$); on
-Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}); and on SenseNova-Loop-9B the trained connector
-loses ARC-Challenge points when it reads deeper ($-2.9$\ci{-4.8}{-1.0}). The division of labour is a tendency on the
-benchmarks we test, and it depends on how the task is prompted. In the hybrid SenseNova-Loop-9B, giving the writer the second visit's state only in the
-linear-attention (Gated-DeltaNet) layers, with first-visit attention KV, scores 5.6 points above the full second-visit
-state on HELMET but 3.5 below it on MMLU-Pro, and a connector retrained on that state shows the same trade-off
-(Appendix~\ref{app:hybrid}).
+The same holds across models (Table~\ref{tab:models}): with the writer fixed at one loop, reading deeper improves
+knowledge and long-context scores on all five checkpoints (the Ouro-1.4B RULER-16K gain is not significant). The effect
+depends on the task and its prompt; Appendix~\ref{app:hurt} lists where reading deep hurts, notably few-shot MATH-500
+and 3-shot BBH on the 1.4B models.
 
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
@@ -348,10 +333,9 @@ recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt})
 Part of the gain over \nat{2} comes from training the connector, not from depth. The same connector reading two loops
 (hollow circles; same weights, same training, same writing depth) isolates reading depth: reading four rather than two
 loops adds $+8.1$\ci{4.0}{12.1} on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge
-and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$). Against \nat{2},
-comparisons also include the effect of training the connector: on MBPP+ the gain over \nat{2} ($+4.8$) comes with no
-detectable reading-depth effect. On Ouro-1.4B-Thinking the effect of reading depth repeats on the
-same eight benchmarks, but that connector loses 3-shot BBH against native 2/2 (Appendix~\ref{app:t14}).
+and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$): the gains over \nat{2} on
+knowledge and long-context benchmarks track reading depth, the others do not. The same holds on Ouro-1.4B-Thinking
+(Appendix~\ref{app:t14}).
 
 
 
@@ -379,9 +363,8 @@ We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; T
 with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}. On all 1,319 problems, read 4 / write 2
 scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Reading 4 rather than 2 loops before writing two
 changes the answer time by $1.01\times$\ci{0.90}{1.11}: the saving comes from the shallower, adapted writer, including
-its shorter answers. On the 40 timed MATH-500 problems read 4 /
-write 2 scores 85.0, against 82.5 for \nat{4} and 85.0 for \nat{2}, at $0.63\times$ the time of \nat{4} but $1.22\times$
-the time of \nat{2}, because its solutions are not shorter. On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for
+its shorter answers. On MATH-500, whose answers it does not shorten, the
+saving is smaller: $0.63\times$ the time of \nat{4} but $1.22\times$ that of \nat{2} (Appendix~\ref{app:serve}). On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for
 \nat{2} on all 1,319 GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close to the ratio of layer
 executions per token (32 vs.\ 56).
 
@@ -391,25 +374,18 @@ executions per token (32 vs.\ 56).
 
 
 
-The split also serves looped decision models. Lev~\citep{lev} is a looped model that, given a context and a question
-with options, assigns probabilities to the options with a shared learned scoring head after every loop, without
-generating text. We read the context with four loops (two for Lev-3B, whose backbone has two) and let every decision
-loop attend to the last read loop's KV; we add no maps and continue training Lev's own LoRA and scoring head. The
-control continues the same released weights on the same data with Lev's own forward: both arms take 140 updates on the
-8,925-record public S31 training subset with Lev's hyperparameters. Our reference forward runs the full sequence through
-both the read and the decision loops, so training compute is not matched (we check this below). We evaluate on the 3,270 answerable questions
-of LevBench's public development set and never touch its locked test set; intervals resample record groups, as Lev does.
+The split also serves looped decision models. Lev~\citep{lev} reads a context, then scores the options of a question
+with a learned head after every loop, without generating text. We read the context with four loops (two for Lev-3B,
+whose backbone has two), let every decision loop attend to the last read loop's KV, and continue training Lev's own LoRA
+and scoring head; the control continues the same weights on the same data and number of updates with Lev's own forward.
+We evaluate on the 3,270 answerable questions of LevBench's public development set (never its locked test set), with
+intervals over record groups as Lev does; setup and further checks are in Appendix~\ref{app:lev}.
 
 With one decision loop, reading deep raises accuracy by $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on
-Lev-2.6B and $+4.4$\ci{2.8}{6.1} on Lev-3B (Figure~\ref{fig:lev}). The advantage shrinks as the decision deepens: at the
-full depth the Ouro intervals include zero, and Lev-3B is $1.8$ points worse. The control itself moves little at one
-loop ($+0.5$ on Lev-1.4B, $+1.3$ on Lev-2.6B against the released models), and without training, reading deep does not
-help ($-3.0$ on Lev-1.4B). The result holds across training seeds: repeating both arms with other seeds, the one-loop
-gain ranges from $+3.9$ to $+5.3$ on Lev-1.4B and from $+5.1$ to $+7.5$ on Lev-2.6B, with every interval excluding
-zero (four seeds each); on Lev-3B it is $+4.4$, $+5.1$, $+4.0$ and $+0.9$\ci{-0.8}{2.7} (mean $+3.6$), so one of its
-four seeds shows no clear gain. The gain persists against a control trained for two epochs (twice the updates, about the training
-compute of the read-deep arm), which still trails reading deep at one loop by
-$+4.0$\ci{2.1}{6.0} on Lev-1.4B, $+5.5$\ci{3.7}{7.4} on Lev-2.6B and $+4.0$\ci{2.3}{5.7} on Lev-3B.
+Lev-2.6B and $+4.4$\ci{2.8}{6.1} on Lev-3B (Figure~\ref{fig:lev}); the advantage shrinks as the decision deepens; at full depth it is gone on
+the Ouro backbones and negative on Lev-3B ($-1.8$). It holds across training seeds (four per backbone; all significant except one Lev-3B seed) and
+against a control trained for twice as many updates ($+4.0$, $+5.5$, $+4.0$), so it is not explained by the extra
+computation of our training forward.
 
 \section{Conclusion}
 
@@ -653,6 +629,19 @@ intervals including zero, but lowers RULER-16K by 11.4 points at read 4 / write 
 loops. Restricting the key map to a
 RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
 maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
+
+\section{Decision Models: Setup and Checks}
+\label{app:lev}
+
+Both arms continue each released Lev model for 140 updates on the 8,925-record public S31 training subset with Lev's
+hyperparameters, from the same weights. Our reference forward runs the full sequence through both the read and the
+decision loops, so its training computation is about twice the control's. Without training, reading deep does not help
+($-3.0$ on Lev-1.4B at one decision loop), and the control itself moves little against the released models at one loop
+($+0.5$ on Lev-1.4B, $+1.3$ on Lev-2.6B). Repeating both arms with other seeds, the one-loop gain ranges from $+3.9$ to
+$+5.3$ on Lev-1.4B and from $+5.1$ to $+7.5$ on Lev-2.6B, every interval excluding zero (four seeds each); on Lev-3B it is
+$+4.4$, $+5.1$, $+4.0$ and $+0.9$\ci{-0.8}{2.7} (mean $+3.6$). A control trained for two epochs (twice the updates, about
+the training computation of the read-deep arm) still trails reading deep at one loop by $+4.0$\ci{2.1}{6.0} on Lev-1.4B,
+$+5.5$\ci{3.7}{7.4} on Lev-2.6B and $+4.0$\ci{2.3}{5.7} on Lev-3B.
 
 \section{Reading Deep in a Hybrid Model}
 \label{app:hybrid}
