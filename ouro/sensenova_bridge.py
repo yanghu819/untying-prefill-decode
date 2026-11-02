@@ -83,8 +83,9 @@ def run(model, text, ids, cache):
     return out.last_hidden_state, out.past_key_values
 
 
-def sample_loss(model, text, state, prompt, target, p, teacher_loops=2):
-    """Summed KL over target positions and their count, for one (prompt, target) pair (batch 1)."""
+def sample_loss(model, text, state, prompt, target, p, teacher_loops=2, mix=""):
+    """Summed KL over target positions and their count, for one (prompt, target) pair (batch 1). mix: which deep state
+    the writer gets when p > 1 ("" both, "A" attention KV only, "G" Gated-DeltaNet state only; sensenova_runner.splice)."""
     ids = torch.tensor([prompt + target[:-1]], device="cuda")
     n = len(prompt)
     with torch.no_grad():
@@ -95,7 +96,7 @@ def sample_loss(model, text, state, prompt, target, p, teacher_loops=2):
         set_count(text, p)
         _, cache = run(model, text, ids[:, :n - 1], new_cache(text))
         if p != 1:
-            cache = splice(text, cache, p, 1)
+            cache = splice(text, cache, p, 1, mix)
     set_count(text, 1)
     cache._loop_execution_plan = text._loop_plan
     for layer in cache.layers:  # the GDN kernel saves the initial state for backward: replace, never copy_ into it
@@ -118,6 +119,8 @@ def main():
     ap.add_argument("--tokens-per-step", type=int, default=65536, help="global KL tokens per optimizer step (approx.)")
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--p-mix", default="2:0.5,1:0.5")
+    ap.add_argument("--mix", default="", choices=("", "A", "G"),
+                    help="deep state for p > 1: both (default), attention KV only (A), Gated-DeltaNet state only (G)")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args()
 
@@ -148,7 +151,7 @@ def main():
         while local_tokens * world < a.tokens_per_step:
             r = rows[i % len(rows)]; i += 1
             p = rng.choices([c for c, _ in cells], [w for _, w in cells])[0]
-            kl, n = sample_loss(model, text, state, r["prompt_ids"], r["target_ids"], p)
+            kl, n = sample_loss(model, text, state, r["prompt_ids"], r["target_ids"], p, mix=a.mix)
             (kl / (a.tokens_per_step / world)).backward()
             local_tokens += n; local_kl += kl.item()
         for prm in params:

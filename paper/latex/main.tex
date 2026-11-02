@@ -330,8 +330,8 @@ Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}); and 
 loses ARC-Challenge points when it reads deeper ($-2.9$\ci{-4.8}{-1.0}). The division of labour is a tendency on the
 benchmarks we test, and it depends on how the task is prompted. In the hybrid SenseNova-Loop-9B, giving the writer the second visit's state only in the
 linear-attention (Gated-DeltaNet) layers, with first-visit attention KV, scores 5.6 points above the full second-visit
-state on HELMET but 3.5 below it on MMLU-Pro; these task-dependent effects come from one connector evaluated on mixed
-states absent from its training (Appendix~\ref{app:hybrid}).
+state on HELMET but 3.5 below it on MMLU-Pro, and a connector retrained on that state shows the same trade-off
+(Appendix~\ref{app:hybrid}).
 
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
@@ -682,10 +682,10 @@ SenseNova-Loop-9B stacks three Gated-DeltaNet layers per full-attention layer. I
 parts: the attention KV, which the writer attends to, and each Gated-DeltaNet layer's convolution and recurrent state, a
 fixed-size summary of the prompt from which the writer continues and which it keeps updating with its own tokens (the
 prefill stops before the last prompt token, which the writer processes first). We give the one-visit writer the
-second visit's state for one kind of layer and the first visit's for the other (Table~\ref{tab:hybrid}). These are
-interventions on one checkpoint and one connector, which was trained only with jointly shallow or jointly deep states;
-the mixed states are outside its training, so the results describe how this writer responds to the substitution, not
-where information is stored.
+second visit's state for one kind of layer and the first visit's for the other (Table~\ref{tab:hybrid}). The
+connector was trained only with jointly shallow or jointly deep states, so we also retrain it, with the same recipe and
+seed, giving the writer the second visit's state only in the Gated-DeltaNet layers for read-2 samples (below). These are
+experiments on one checkpoint; they show how the writer responds to each state, not where information is stored.
 
 Without training, either part alone recovers most of the gain of the full second-visit state (RULER-16K $+50.2$ and
 $+50.5$ against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts behave
@@ -699,8 +699,11 @@ models~\citep{afendulev}; what improves is the recurrent state it continues from
 layers, deeper KV likewise helps knowledge and loses exact recall (Appendix~\ref{app:hurt}). The same trained connector,
 given the second-visit state only in its Gated-DeltaNet layers, scores above the full second-visit state on HELMET by
 $5.6$ points and on RULER-4K/8K/16K by $6.5$, $4.2$ and $3.7$, shows no detectable difference on ARC-Challenge, and
-scores below it on MMLU-Pro by $3.5$. These are task-dependent trade-offs, not a validated policy for choosing the state
-per task.
+scores below it on MMLU-Pro by $3.5$. The connector retrained on this mixed state confirms the pattern within its own training distribution: against its own
+read 1 / write 1 it gains on HELMET ($+7.2$\ci{4.7}{9.7}) and RULER-16K ($+6.1$\ci{3.2}{9.1}) and loses ARC-Challenge
+($-2.8$\ci{-4.7}{-0.9}); against the original connector at read 2 / write 1 it is better on HELMET ($+4.4$\ci{2.7}{6.2})
+and RULER-4K/8K/16K ($+6.7$, $+2.8$, $+2.9$) and worse on MMLU-Pro ($-2.7$\ci{-5.0}{-0.3}). Which state to give the
+writer is therefore a task-dependent trade-off that holds with and without training for it.
 
 \begin{table*}[t]
 \centering\small

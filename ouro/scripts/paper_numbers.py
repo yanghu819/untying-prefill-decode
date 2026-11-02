@@ -74,6 +74,11 @@ HYBRID_PRINTED = {("untrained", "A", "RULER-16K"): (50.2, None, None), ("untrain
                   ("trained", "A", "ARC-C"): (0.8, None, None), ("trained", "G", "HELMET"): (9.1, 6.5, 11.6),
                   ("trained", "A", "HELMET"): (-0.2, None, None), ("trained", "A", "RULER-16K"): (0.7, None, None)}
 
+SNG_KEYS = [("RULER-4K", "B:SNGnt-{c}:ruler4k"), ("RULER-8K", "B:SNGnt-{c}:ruler8k"), ("RULER-16K", "B:SNGnt-{c}:ruler16k"),
+            ("MMLU-Pro", "L:SNG-{c}-mmlupro:exact_match"), ("ARC-C", "L:SNG-{c}-arc:acc_norm"),
+            ("BBH", "B:SNGnt-{c}-bbh:bbh"), ("GSM8K", "T:SNG-{c}-gsm8k_think:math_verify"),
+            ("HELMET", "B:SNGnt-{c}-helmet:helmet")]
+
 CMP = []
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
              (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-1.7, -3.6, 0.2)]),
@@ -162,6 +167,21 @@ CMP += [
       for bench, key in SN_STATE],
     ("Hybrid state", "SenseNova trained deep GDN state only vs native 2/2 HELMET", "B:SNnt-C21G-helmet:helmet",
      "B:SNnt-native2-helmet:helmet", (-11.2, -13.0, -9.4)),
+    # SenseNova connector trained with the GDN-only deep state (SNG-*, --mix G): read depth within it, and against the
+    # original connector trained with both parts deep (SN-* C21)
+    *[("Hybrid G-trained", f"SenseNova G-trained {name} {bench}", key.format(c="C21G"), key.format(c=ref),
+       {"HELMET": (7.2, 4.7, 9.7), "RULER-16K": (6.1, 3.2, 9.1), "ARC-C": (-2.8, -4.7, -0.9)}.get(bench))
+      for name, ref in (("read 2 (GDN) vs read 1", "C11"),)
+      for bench, key in SNG_KEYS],
+    *[("Hybrid G-trained", f"SenseNova G-trained read 2 (GDN) vs original both-deep read 2 {bench}", key.format(c="C21G"),
+       key.replace("SNGnt-", "SNnt-").replace("SNG-", "SN-").format(c="C21"),
+       {"HELMET": (4.4, 2.7, 6.2), "RULER-4K": (6.7, None, None), "RULER-8K": (2.8, None, None),
+        "RULER-16K": (2.9, None, None), "MMLU-Pro": (-2.7, -5.0, -0.3)}.get(bench)) for bench, key in SNG_KEYS],
+    # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the connector)
+    *[("Distillation baseline", f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"), None)
+      for bench, ka, _ in EQUAL],
+    *[("Distillation baseline", f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {bench}", ka.replace("S42", "D"), kb.format(n=2), None)
+      for bench, ka, kb in EQUAL],
     # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
     *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"),
        {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3), "MMLU-Pro": (8.1, 4.0, 12.1)}.get(bench))
