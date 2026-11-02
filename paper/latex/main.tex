@@ -38,12 +38,12 @@
 Looped language models reuse one block of layers several times per token and, under fixed-depth inference, run the same
 number of loops when they prefill the prompt and when they decode each answer token. We untie the two. A small
 \emph{loop adapter} trained once on a frozen looped model lets it prefill with $m$ loops and decode with $n$, for all
-16 pairs up to four loops, from one stored prompt KV cache. Mapping accuracy over $(m,n)$ on fourteen benchmarks shows
+16 pairs up to four loops, from one stored prompt KV cache. Mapping accuracy over $(m,n)$ on thirteen benchmarks shows
 that the best prefill count depends on the benchmark, its prompt and the decode budget. Within one adapter, prefilling
 4-shot MATH-500 with one loop instead of four raises accuracy from 51.8 to 68.4 at four decode loops, while MMLU needs
 three or four prefill loops. Choosing $m$ for each benchmark on held-out halves of its items beats the native
-Ouro-2.6B with the same number of decode loops on nearly every benchmark at one and two decode loops, by up to 21
-points; at three or four decode loops results are mixed. On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point
+Ouro-2.6B with the same number of decode loops significantly on 12 of 13 benchmarks with one decode loop (by 5 to 21
+points) and on 10 of 13 with two; at three or four decode loops results are mixed. On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point
 estimates than the native two-loop model on eight benchmarks (significantly on five), scores above a LoRA distillation
 of that model trained with the same data and teacher, and answers GSM8K in $0.55\times$ the time of the native four-loop
 model. Untying the loops also makes looped decision models more accurate when they decide with one loop.
@@ -56,7 +56,7 @@ model. Untying the loops also makes looped decision models more accurate when th
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
 \caption{\textbf{The task map.} One loop adapter on frozen Ouro-2.6B evaluated at every pair (prefill $m$, decode $n$),
 with the native model ($n/n$) below each column; accuracy (\%), one colour scale per panel, best cell outlined. The best
-prefill count differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All fourteen
+prefill count differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All thirteen
 benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
 \label{fig:grid}
 \end{figure*}
@@ -93,8 +93,8 @@ The resulting map (Figure~\ref{fig:grid}) shows that the best prefill count depe
 the decode budget. Within one adapter, prefilling 4-shot MATH-500 with one loop instead of four raises accuracy from 51.8
 to 68.4 at four decode loops; MMLU instead needs three or four prefill loops, and GSM8K and HumanEval are best at two
 and four. A native model can only move along the diagonal of this map. Choosing $m$ for each benchmark on held-out
-halves of its items (Table~\ref{tab:select}) beats the native Ouro-2.6B with the same number of decode loops on nearly
-every benchmark at one and two decode loops; at three or four decode loops results are mixed, with 4-shot MATH-500
+halves of its items (Table~\ref{tab:select}) beats the native Ouro-2.6B with the same number of decode loops
+significantly on 12 of 13 benchmarks with one decode loop and on 10 of 13 with two; at three or four decode loops results are mixed, with 4-shot MATH-500
 still 14 points ahead.
 
 Untying is more than distillation. On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point estimates than native 2/2 on
@@ -300,10 +300,11 @@ and HumanEval with four. Decode loops matter most for multi-step math: GSM8K ris
 For each benchmark and number of decode loops we choose $m$ on half of its labeled items, score that choice on the other
 half, and swap (Table~\ref{tab:select}). This calibrates $m$ per benchmark; it is not routing per prompt, and it does not
 transfer to unseen tasks. Bootstrap intervals resample the held-out outcomes with the split and the chosen $m$ fixed, so
-they do not include the variability of the choice. With one decode loop the chosen $m$ beats \nat{1} by 5 to 21 points;
-with two it wins on most benchmarks. With three or four decode loops results are mixed: the native model, which also
-prefills with three or four loops, is about as good, slightly better on some benchmarks, while 4-shot MATH-500 stays
-about 14 points ahead. Comparisons with native models also include the effect of training the adapter; comparisons
+they do not include the variability of the choice. With one decode loop the chosen $m$ beats \nat{1} significantly on 12 of 13
+benchmarks, by 5 to 21 points, and ties on MBPP+, where \nat{1} is already strong; with two decode loops it wins
+significantly on 10 of 13, including HumanEval ($+18.3$) and MBPP+ ($+15.6$). With three or four decode loops results are mixed: the native model, which also
+prefills with three or four loops, is about as good on most benchmarks and better on long-context retrieval (RULER) and
+slightly on BBH, while 4-shot MATH-500 and MBPP+ stay 14--18 points ahead. Comparisons with native models also include the effect of training the adapter; comparisons
 within the adapter isolate the prefill loops. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}

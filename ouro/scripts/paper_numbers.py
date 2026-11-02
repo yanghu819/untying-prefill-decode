@@ -610,6 +610,12 @@ def taskmap_select():
             out.append(row)
             print(f"Select m     {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
                   f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]")
+    # counts quoted in the abstract, introduction and Section 4.2: (significant wins, benchmarks) at n = 1 and n = 2
+    for n, (wins, total) in {1: (12, 13), 2: (10, 13)}.items():
+        rows = [r for r in out if r["n"] == n]
+        got = (sum(r["diff"][1] > 0 for r in rows), len(rows))
+        flag = "" if got == (wins, total) else f"  !! paper: {wins} of {total}"
+        print(f"Select m     significant wins at n={n}: {got[0]} of {got[1]}{flag}")
     return out
 
 def throughput():
