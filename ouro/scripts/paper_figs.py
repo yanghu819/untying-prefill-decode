@@ -13,8 +13,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
-ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "paper" / "figs"
+ROOT = Path(__file__).resolve().parents[1]                 # ouro/
+OUT = ROOT.parent / "paper" / "figs"                       # paper/figs at the repository root
 D = json.loads((ROOT / "results" / "latest.json").read_text())
 OURS, OURS_LIGHT = "#D1495B", "#EDA4AE"
 NAT, NAT_LIGHT, INK, GRID = "#4D4D4D", "#B3B3B3", "#1A1A1A", "#E6E6E6"
@@ -24,7 +24,7 @@ plt.rcParams.update({
     "xtick.major.width": 0.6, "ytick.major.width": 0.6, "xtick.major.size": 2.5, "ytick.major.size": 2.5,
     "legend.frameon": False, "savefig.dpi": 300, "pdf.fonttype": 42})
 
-# Fig. 1 grid: one universal connector on Ouro-2.6B; rows = write loops 1..4, columns = read loops 1..4
+# Fig. 1 grid: one loop adapter on Ouro-2.6B; rows = decode loops 1..4, columns = prefill loops 1..4
 PN = json.loads((ROOT / "results" / "paper_numbers.json").read_text())
 _M = {m["label"]: m["mean"] for m in PN["means"]}
 CELLS = {name: [[_M[f"S{p}{d} {name} ({sub})"] for p in range(1, 5)] for d in range(1, 5)]
@@ -321,7 +321,7 @@ def tab_equal(model="1.4B-T"):
     rows = [e for e in PN["equal"] if e.get("model") == model]
     lines = [rf"{e['bench']} & {e['native2']:.1f} & {e.get('same22', float('nan')):.1f} & {e['ours']:.1f} & {e['native4']:.1f} & "
              rf"{pm(e['vs2'])} & {pm(e['vs22']) if 'vs22' in e else '--'} & {pm(e['vs4'])} \\" for e in rows]
-    (ROOT / "paper" / "figs" / f"tab_equal_{model.replace('.', '')}.tex").write_text("\n".join(lines) + "\n")
+    (OUT / f"tab_equal_{model.replace('.', '')}.tex").write_text("\n".join(lines) + "\n")
 
 
 def tab_hybrid():
@@ -335,7 +335,7 @@ def tab_hybrid():
         cells = [pm(C.get(f"SenseNova {k} deep {part} vs shallow {bench}"))
                  for k in ("untrained", "trained") for part in ("attention KV", "GDN state", "both")]
         lines.append(f"{bench} & " + " & ".join(cells) + r" \\")
-    (ROOT / "paper" / "figs" / "tab_hybrid.tex").write_text("\n".join(lines) + "\n")
+    (OUT / "tab_hybrid.tex").write_text("\n".join(lines) + "\n")
 
 
 def tab_sn():
@@ -343,7 +343,7 @@ def tab_sn():
     pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + r"\ci{%.1f}{%.1f}" % (v[1], v[2])
     lines = [rf"{e['bench']} & {e['native1']:.1f} & {e['C11']:.1f} & {e['C21']:.1f} & {e['native2']:.1f} & "
              rf"{pm(e['vs_C11'])} & {pm(e['vs_native2'])} \\" for e in PN.get("sn_equal", [])]
-    (ROOT / "paper" / "figs" / "tab_sn.tex").write_text("\n".join(lines) + "\n")
+    (OUT / "tab_sn.tex").write_text("\n".join(lines) + "\n")
 
 
 def fig_taskmap():

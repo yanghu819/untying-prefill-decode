@@ -93,3 +93,6 @@ Abstract (plain text):
 
 if __name__ == "__main__":
     main()
+    # the published copies: paper/untying-prefill-decode-loops.pdf and paper/ARXIV_SUBMISSION.md
+    shutil.copy(OUT / "main.pdf", P / "untying-prefill-decode-loops.pdf")
+    shutil.copy(OUT / "ARXIV_SUBMISSION.md", P / "ARXIV_SUBMISSION.md")
