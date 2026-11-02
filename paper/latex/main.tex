@@ -682,7 +682,8 @@ Without training, either part alone recovers most of the gain of the full deep s
 against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts do different
 things. The knowledge gain rides on the deep attention KV (MMLU-Pro $+4.6$\ci{2.0}{7.2}; deep GDN state alone
 $+2.0$\ci{-0.4}{4.5}). The deep GDN state helps exact retrieval (RULER-16K $+4.9$\ci{2.1}{7.7}), while the deep
-attention KV lowers it at short context (RULER-4K $-4.5$\ci{-7.2}{-2.0}). This is the trade-off we see on Ouro, where
+attention KV lowers it at short context (RULER-4K $-4.5$\ci{-7.2}{-2.0}); the ARC-Challenge loss of the full deep state
+(Section~\ref{sec:grid}) comes from the Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). This is the trade-off we see on Ouro, where
 deeper KV helps knowledge but loses exact recall (Appendix~\ref{app:hurt}); in a hybrid the two effects sit in
 different layers. The same trained connector, given the deep state only in its Gated-DeltaNet layers, beats the full deep
 state on RULER-4K/8K/16K by $6.5$, $4.2$ and $3.7$ points and trails it on MMLU-Pro by $3.5$, so the choice can be made

@@ -68,7 +68,8 @@ HYBRID_PRINTED = {("untrained", "A", "RULER-16K"): (50.2, None, None), ("untrain
                   ("untrained", "G", "MMLU-Pro"): (21.5, None, None), ("untrained", "", "MMLU-Pro"): (36.2, None, None),
                   ("trained", "A", "MMLU-Pro"): (4.6, 2.0, 7.2), ("trained", "G", "MMLU-Pro"): (2.0, -0.4, 4.5),
                   ("trained", "G", "RULER-16K"): (4.9, 2.1, 7.7), ("trained", "A", "RULER-4K"): (-4.5, -7.2, -2.0),
-                  ("trained", "", "ARC-C"): (-2.9, -4.8, -1.0)}
+                  ("trained", "", "ARC-C"): (-2.9, -4.8, -1.0), ("trained", "G", "ARC-C"): (-2.7, -4.5, -0.9),
+                  ("trained", "A", "ARC-C"): (0.8, None, None)}
 
 CMP = []
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
