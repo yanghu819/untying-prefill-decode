@@ -108,7 +108,7 @@ def fig0():
 
 def fig2():
     """End to end: accuracy vs seconds per answer (batch 1)."""
-    fig, axes = plt.subplots(1, 2, figsize=(6.9, 2.65), gridspec_kw=dict(width_ratios=[1.2, 1]))
+    fig, axes = plt.subplots(2, 1, figsize=(3.3, 4.3), gridspec_kw=dict(height_ratios=[1.35, 1]))   # one column
     names = {"native1st": "native 1/1", "native2st": "native 2/2", "native4st": "native 4/4", "S41sb": "read 4 / write 1",
              "S22sb": "read 2 / write 2", "S42sb": "read 4 / write 2", "native2": "native 2/2", "C11": "read 1 / write 1",
              "C21": "read 2 / write 1"}
@@ -152,7 +152,8 @@ def fig2():
     ax.set_xlabel("seconds per answer"); ax.set_xlim(20, 55); ax.set_ylim(90, 100.5)
     ax.set_title("SenseNova-Loop-9B", fontsize=9, color=INK, pad=3)
     ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    fig.subplots_adjust(wspace=0.22)
+    ax.set_ylabel("GSM8K accuracy (%)")
+    fig.subplots_adjust(hspace=0.55)
     save(fig, "fig2_frontier")
 
 

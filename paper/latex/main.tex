@@ -8,6 +8,9 @@
 \usepackage{inconsolata}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{placeins}
+\renewcommand{\dbltopfraction}{0.95}\renewcommand{\dblfloatpagefraction}{0.85}\setcounter{dbltopnumber}{3}
+\renewcommand{\topfraction}{0.9}\renewcommand{\textfraction}{0.07}\renewcommand{\floatpagefraction}{0.85}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{multirow}
@@ -32,15 +35,16 @@
 \maketitle
 
 \begin{abstract}
-Looped language models reuse one block of layers several times per token and spend the same number of loops on the
-prompt (prefill) and on every generated token (decoding). On the checkpoints and benchmarks we test, the two buy
+Looped language models reuse one block of layers several times per token and, under fixed-depth inference, spend the
+same number of loops on the prompt (prefill) and on every generated token (decoding). On the checkpoints and benchmarks we test, the two buy
 different things: \emph{prefill depth mainly buys knowledge and long-context accuracy, while decoding depth mainly buys
 multi-step reasoning}, with exceptions that depend on the prompting protocol. A small
 connector trained on a frozen looped model separates the two budgets: one set of parameters serves all 16 pairs of
 prefill and decoding depth up to four loops, and one stored prompt KV cache serves every decoding loop. On
 Ouro-2.6B-Thinking, reading the prompt with four loops and writing with two scores at least as high as the native two-loop
 model on all eight standard benchmarks we test (significantly higher on five), at the same decoding depth, and within two points of the native four-loop model on
-six; on GSM8K it is 1.0 point below the four-loop model on the full test set and answers in $0.55\times$ its time. The
+six; on GSM8K it is 1.0 point below the four-loop model on the full test set and, on 64 timed problems, answers in
+$0.55\times$ its time. The
 same split, with matched continued training, makes looped decision models more accurate when they decide with one loop.
 \end{abstract}
 
@@ -199,7 +203,8 @@ loop's prompt keys and values. The writer is the same frozen model with rank-16 
 projections, running $d$ loops per token.
 
 \paragraph{RoPE-commuting maps.} Writing loop $k$ reads the prompt KV cache through a map per (loop, layer, KV head). The
-key map is one complex scale $c_j$ per rotary frequency pair $j$~\citep{rope}. Writing a rotated key pair as a complex
+key map is one complex scale $c_j$ per rotary frequency pair $j$~\citep{rope}: viewing the pair of key coordinates
+$(k_{2j},k_{2j+1})$ as a 2-D vector, $c_j=r\,e^{i\phi}$ stretches it by $r$ and turns it by $\phi$. Writing a rotated key pair as a complex
 number $\tilde k_j = e^{im\theta_j}k_j$, scaling commutes with the rotation, $c_j\tilde k_j = e^{im\theta_j}(c_jk_j)$,
 and $\mathrm{Re}\langle q_j, c_j\tilde k_j\rangle = \mathrm{Re}\langle \bar c_jq_j, \tilde k_j\rangle$: the map is applied
 to the query and the stored cache is never rewritten. The value map is a full linear map $W_k$ per head; because
@@ -252,11 +257,41 @@ a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:models}
 \end{table*}
 
-\subsection{Reading buys knowledge and long context, writing buys reasoning}
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
+\caption{\textbf{Read deep, write shallow: the decode depth of two loops, close to the quality of four.} Ouro-2.6B-Thinking
+on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
+categories); read 4 / write 2 uses one connector and one stored prompt KV cache. Hollow circles: the same connector reading only two
+loops, which separates the effect of training from that of reading depth. All models are scored on identical evaluation sets.}
+\label{fig:equal}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_pareto.pdf}
+\caption{\textbf{Accuracy against decode throughput.} Native $d/d$ (grey) and the connector reading 4 loops and writing
+$d$ (red), $d=1$--4 (labels). Throughput: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
+base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $d$ grows.
+Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on all 1,319 GSM8K problems.}
+\label{fig:pareto}
+\end{figure*}
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
+\caption{\textbf{Read deep, decide shallow.} Lev looped decision models~\citep{lev} on the public LevBench development
+set (3,270 answerable questions): accuracy against the number of loops spent on the decision. Red: the context is read
+deep (four loops on Ouro, two on Nanbeige) and the question and options run $d$ loops on that deep KV; dark grey: the
+same continued training with Lev's own forward; dashed: the released model.}
+\label{fig:lev}
+\end{figure*}
+
+\subsection{What reading depth and writing depth buy}
 \label{sec:grid}
 
 Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
-four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 8 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
+four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 9 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
 depth. Table~\ref{tab:equal} confirms the pattern on full sets: at one writing loop, reading four loops instead of one
 adds 15.2 MMLU, 8.6 RULER-16K and 8.0 GSM8K points; the gain shrinks as writing deepens. A second training seed
 reproduces these numbers (Appendix~\ref{app:seed}).
@@ -295,15 +330,6 @@ benchmarks we test, and it depends on how the task is prompted.
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
-\caption{\textbf{Read deep, write shallow: the decode depth of two loops, close to the quality of four.} Ouro-2.6B-Thinking
-on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
-categories); read 4 / write 2 uses one connector and one stored prompt KV cache. Hollow circles: the same connector reading only two
-loops, which separates the effect of training from that of reading depth. All models are scored on the full benchmarks.}
-\label{fig:equal}
-\end{figure*}
 
 Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: read four loops, write two. At the decode
 depth of \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
@@ -316,19 +342,11 @@ recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt})
 Part of the gain over \nat{2} comes from training the connector, not from depth. The same connector reading two loops
 (hollow circles; same weights, same training, same writing depth) isolates reading depth: reading four rather than two
 loops adds $+8.1$\ci{4.0}{12.1} on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge
-and $+2.2$\ci{0.1}{4.3} on BBH, and leaves GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$) unchanged. The knowledge gain (MMLU-Pro)
-is all reading depth; the MBPP+ gain is all training. On Ouro-1.4B-Thinking the effect of reading depth repeats on the
+and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$). On MMLU-Pro the gain
+over \nat{2} is accounted for by reading depth; on MBPP+, by training. On Ouro-1.4B-Thinking the effect of reading depth repeats on the
 same eight benchmarks, but that connector loses 3-shot BBH against native 2/2 (Appendix~\ref{app:t14}).
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig_pareto.pdf}
-\caption{\textbf{Accuracy against decode throughput.} Native $d/d$ (grey) and the connector reading 4 loops and writing
-$d$ (red), $d=1$--4 (labels). Throughput: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
-base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $d$ grows.
-Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on all 1,319 GSM8K problems.}
-\label{fig:pareto}
-\end{figure*}
+
 
 Figure~\ref{fig:pareto} shows the same trade-off across all writing depths, against measured decode throughput. For
 every writing depth, reading four loops moves the model up (more accurate at one or two writing loops: MMLU $+18.4$ and
@@ -339,16 +357,16 @@ $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
 \subsection{Writing shallow is fast end to end}
 \label{sec:fast}
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=0.94\textwidth]{../figs/fig2_frontier.pdf}
+\includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
 \caption{\textbf{Writing shallow saves time end to end.} Accuracy vs.\ seconds per answer at batch 1 (prefill included,
-real greedy answers, the same 64 GSM8K problems for every point). Left: writing with two loops takes $0.55\times$ the
+real greedy answers, the same 64 GSM8K problems for every point). Top: writing with two loops takes $0.55\times$ the
 time of native 4/4, whether the prompt is read with 2 or 4 loops; on all 1,319 problems read 4 / write 2 is 1.0 point below
-native 4/4 (Section~\ref{sec:fast}). Right: on SenseNova-Loop-9B, whose native one-loop model solves 2.2\% of all GSM8K
+native 4/4 (Section~\ref{sec:fast}). Bottom: on SenseNova-Loop-9B, whose native one-loop model solves 2.2\% of all GSM8K
 problems, read 1 / write 1 is 1.6 points below native 2/2 at $0.59\times$ the time (y axis zoomed).}
 \label{fig:frontier}
-\end{figure*}
+\end{figure}
 
 We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}). On Ouro-2.6B-Thinking a connector that writes
 with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}. On all 1,319 problems, read 4 / write 2
@@ -364,15 +382,7 @@ executions per token (32 vs.\ 56).
 \subsection{Decision models}
 \label{sec:lev}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{Read deep, decide shallow.} Lev looped decision models~\citep{lev} on the public LevBench development
-set (3,270 answerable questions): accuracy against the number of loops spent on the decision. Red: the context is read
-deep (four loops on Ouro, two on Nanbeige) and the question and options run $d$ loops on that deep KV; dark grey: the
-same continued training with Lev's own forward; dashed: the released model.}
-\label{fig:lev}
-\end{figure*}
+
 
 The split also serves looped decision models. Lev~\citep{lev} is a looped model that, given a context and a question
 with options, assigns probabilities to the options with a shared learned scoring head after every loop, without
@@ -390,8 +400,8 @@ loop ($+0.5$ on Lev-1.4B, $+1.3$ on Lev-2.6B against the released models), and w
 help ($-3.0$ on Lev-1.4B). The result holds across training seeds: repeating both arms with other seeds, the one-loop
 gain ranges from $+3.9$ to $+5.3$ on Lev-1.4B and from $+5.1$ to $+7.5$ on Lev-2.6B, with every interval excluding
 zero (four seeds each); on Lev-3B it is $+4.4$, $+5.1$, $+4.0$ and $+0.9$\ci{-0.8}{2.7} (mean $+3.6$), so one of its
-four seeds shows no clear gain. Extra training does not explain the gain: a control trained for two epochs
-(twice the updates, about the training compute of the read-deep arm) still trails reading deep at one loop, by
+four seeds shows no clear gain. The gain persists against a control trained for two epochs (twice the updates, about the training
+compute of the read-deep arm), which still trails reading deep at one loop by
 $+4.0$\ci{2.1}{6.0} on Lev-1.4B, $+5.5$\ci{3.7}{7.4} on Lev-2.6B and $+4.0$\ci{2.3}{5.7} on Lev-3B.
 
 \section{Conclusion}
@@ -410,7 +420,7 @@ key--value recall in HELMET (Tables~\ref{tab:hurt} and~\ref{tab:helmet}); at thr
 or more writing loops, one deep prompt KV cache trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, write 3).
 Deeper prefill raises time to first token, so it pays when answers are long or quality requires it. Both 1.4B checkpoints
 degenerate at \rw{4}{1} on 3-shot BBH (Ouro-1.4B: $-24.5$, Ouro-1.4B-Thinking: $-20.5$ against \rw{1}{1}); with two
-writing loops, reading four instead of two helps (Ouro-1.4B-Thinking: $+8.9$).
+writing loops, reading four instead of two helps (Ouro-1.4B-Thinking: $+8.8$, Table~\ref{tab:t14}).
 On Nanbeige4.2-3B-Base our shared-connector recipes trail connectors trained per $(p,d)$ pair, so Appendix~\ref{app:eval} reports per-pair
 results.
 Gains against native models include the adaptation of the connector. Throughput is a controlled decode benchmark and
@@ -533,11 +543,11 @@ brackets are paired 95\% bootstrap intervals.}
 
 Table~\ref{tab:t14} repeats the comparison of Figure~\ref{fig:equal} on the smaller Thinking checkpoint. The effect of
 reading depth replicates: with the same connector, reading four loops instead of two raises MMLU-Pro ($+8.6$), HELMET ($+7.3$),
-ARC-Challenge ($+2.7$) and BBH ($+8.8$) and leaves GSM8K, MATH-500, HumanEval and MBPP+ unchanged within noise. Against
+ARC-Challenge ($+2.7$) and BBH ($+8.8$) and shows no detectable difference on GSM8K, MATH-500, HumanEval and MBPP+. Against
 native 2/2 the result is weaker than on Ouro-2.6B-Thinking: read 4 / write 2 is significantly better on GSM8K ($+3.0$)
 and ARC-Challenge ($+4.3$), within noise on five benchmarks, and much worse on 3-shot BBH ($-15.9$), where this
 checkpoint's connector degenerates at both read depths (Limitations). Against native 4/4 the gap is larger than on
-Ouro-2.6B-Thinking, most of all on HELMET ($-18.3$).
+Ouro-2.6B-Thinking, most of all on BBH ($-37.2$) and HELMET ($-18.3$).
 
 \section{End-to-End Time and Decode Throughput}
 \label{app:serve}
@@ -750,7 +760,7 @@ held out; 2,048 most frequent training tokens).}
 
 \texttt{python ouro/scripts/paper\_numbers.py compute} recomputes the paired differences, intervals, means, timing
 ratios and Section~4.3 statistics of this paper from the accompanying per-item records (1\,MB) in seconds on a laptop,
-and compares them with the values printed here, which it lists. \texttt{REPRODUCE.md} maps the remaining results (throughput, probes) to their
+and compares them with expected values hard-coded in the script, which mirror the numbers printed here. \texttt{REPRODUCE.md} maps the remaining results (throughput, probes) to their
 scripts and gives the training and evaluation commands that regenerate the per-item records.
 
 \end{document}
