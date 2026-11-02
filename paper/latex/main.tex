@@ -328,7 +328,7 @@ raising zero-shot MATH-500 by 7.0; it sharply lowers 3-shot BBH on both 1.4B che
 Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}); and on SenseNova-Loop-9B the trained connector
 loses ARC-Challenge points when it reads deeper ($-2.9$\ci{-4.8}{-1.0}). The division of labour is a tendency on the
 benchmarks we test, and it depends on how the task is prompted. In the hybrid SenseNova-Loop-9B the gain splits by
-layer type: deep attention KV carries the knowledge gain, the deep linear-attention state the exact-retrieval gain
+layer type: deep attention KV carries the knowledge gain, the deep linear-attention state the long-context gain
 (Appendix~\ref{app:hybrid}).
 
 \subsection{Read deep, write shallow}
@@ -680,14 +680,43 @@ which the writer continues and which it keeps updating with its own tokens. Whic
 the one-visit writer the deep state for one kind of layer and the shallow state for the other (Table~\ref{tab:hybrid}).
 Without training, either part alone recovers most of the gain of the full deep state (RULER-16K $+50.2$ and $+50.5$
 against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts do different
-things. The knowledge gain rides on the deep attention KV (MMLU-Pro $+4.6$\ci{2.0}{7.2}; deep GDN state alone
-$+2.0$\ci{-0.4}{4.5}). The deep GDN state helps exact retrieval (RULER-16K $+4.9$\ci{2.1}{7.7}), while the deep
-attention KV lowers it at short context (RULER-4K $-4.5$\ci{-7.2}{-2.0}); the ARC-Challenge loss of the full deep state
-(Section~\ref{sec:grid}) comes from the Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). This is the trade-off we see on Ouro, where
-deeper KV helps knowledge but loses exact recall (Appendix~\ref{app:hurt}); in a hybrid the two effects sit in
-different layers. The same trained connector, given the deep state only in its Gated-DeltaNet layers, beats the full deep
-state on RULER-4K/8K/16K by $6.5$, $4.2$ and $3.7$ points and trails it on MMLU-Pro by $3.5$, so the choice can be made
-per task without retraining.
+things. The deep Gated-DeltaNet state carries the long-context gain: HELMET $+9.1$\ci{6.5}{11.6} and RULER-16K
+$+4.9$\ci{2.1}{7.7}, against $-0.2$ and $+0.7$ for the deep attention KV, which even lowers RULER-4K
+($-4.5$\ci{-7.2}{-2.0}). The deep attention KV carries the knowledge gain (MMLU-Pro $+4.6$\ci{2.0}{7.2}; deep
+Gated-DeltaNet state alone $+2.0$\ci{-0.4}{4.5}). The ARC-Challenge loss of the full deep state (Section~\ref{sec:grid})
+comes from the Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). On Ouro, which has only attention
+layers, deeper KV likewise helps knowledge and loses exact recall (Appendix~\ref{app:hurt}); in the hybrid, the
+long-context benefit moves to the linear-attention layers. The same trained connector, given the deep state only in its
+Gated-DeltaNet layers, beats the full deep state on HELMET by $5.6$ points and on RULER-4K/8K/16K by $6.5$, $4.2$ and
+$3.7$, ties it on ARC-Challenge, and trails it on MMLU-Pro by $3.5$: without retraining, the deep state can be routed per
+task.
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{4pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{4}{c}{score} & \multicolumn{2}{c}{read 2 / write 1 minus} \\
+\cmidrule(lr){2-5}\cmidrule(l){6-7}
+benchmark & native 1/1 & read 1 / write 1 & read 2 / write 1 & native 2/2 & read 1 / write 1 & native 2/2 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_sn.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{SenseNova-Loop-9B at one writing visit.} One connector serves read 1 / write 1 and read 2 / write 1;
+native 2/2 decodes with twice the depth. Same protocols as Table~\ref{tab:models} (MMLU-Pro 980, HELMET 6,646, BBH
+6,511 items). MBPP+ is omitted: its prompt forces the answer to start with code, and this thinking model then opens a
+reasoning block inside the code in nearly every answer (375 of 378 for native 2/2), for every configuration.
+Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\label{tab:sn}
+\end{table*}
+
+Table~\ref{tab:sn} is the SenseNova-Loop-9B counterpart of Figure~\ref{fig:equal}, at one writing visit, half the
+native decode depth. With the same connector, reading two visits instead of one raises MMLU-Pro ($+5.5$), BBH ($+7.0$)
+and HELMET ($+3.5$), lowers ARC-Challenge ($-2.9$), and leaves GSM8K, MATH-500 and HumanEval within noise. Against
+native 2/2, which writes with twice the depth, read 2 / write 1 matches GSM8K ($-0.6$\ci{-1.6}{0.4}) in $0.59\times$ the
+time (Section~\ref{sec:fast}) and trails on the other benchmarks, most on HELMET ($-16.8$); routing only the deep
+Gated-DeltaNet state to the writer narrows that HELMET gap to $-11.2$\ci{-13.0}{-9.4}. The native one-visit model fails on all of them.
 
 \section{SenseNova-Loop-9B Without Training}
 \label{app:sn}

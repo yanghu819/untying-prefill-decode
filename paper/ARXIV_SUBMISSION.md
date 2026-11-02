@@ -12,7 +12,7 @@ Primary category: cs.CL (Computation and Language)
 Cross-list: cs.LG (Machine Learning)
 
 Comments:
-15 pages, 8 figures. Code, per-item results and a script that recomputes every number: https://github.com/yanghu819/read-deep-write-shallow
+16 pages, 8 figures. Code, per-item results and a script that recomputes every number: https://github.com/yanghu819/read-deep-write-shallow
 
 License: CC BY 4.0
 

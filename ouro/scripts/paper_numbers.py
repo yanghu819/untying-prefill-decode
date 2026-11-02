@@ -55,8 +55,10 @@ EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k
 # SenseNova-Loop-9B headline at write 1 ({c}: native1, C11, C21, native2)
 SN_EQUAL = [("GSM8K", "T:SN-{c}-gsm8k_think:math_verify"), ("MATH-500", "T:SN-{c}-math500_think:math_verify"),
             ("MMLU-Pro", "L:SN-{c}-mmlupro:exact_match"), ("ARC-C", "L:SN-{c}-arc:acc_norm"), ("BBH", "B:SNnt-{c}-bbh:bbh"),
-            ("HumanEval", "L:SN-{c}-code:pass@1"), ("MBPP+", "L:SN-{c}-code:pass_at_1"),
-            ("HELMET", "B:SNnt-{c}-helmet:helmet")]
+            ("HumanEval", "L:SN-{c}-code:pass@1"), ("HELMET", "B:SNnt-{c}-helmet:helmet")]
+# MBPP+ is left out for SenseNova: its instruct prompt forces a code prefix, and this thinking model then opens a <think>
+# block inside the code in nearly every answer (native 2/2: 375 of 378), so the score measures that format failure for
+# every condition (native 2/2 44.4, read 2 / write 1 64.0). HumanEval (completion prompt) has no such answers.
 # where deep reading lives in the hybrid: deep attention KV only (A), deep Gated-DeltaNet state only (G), both ("")
 SN_STATE = [("RULER-4K", "B:SNnt-{c}:ruler4k"), ("RULER-8K", "B:SNnt-{c}:ruler8k"), ("RULER-16K", "B:SNnt-{c}:ruler16k"),
             ("MMLU-Pro", "L:SN-{c}-mmlupro:exact_match"), ("ARC-C", "L:SN-{c}-arc:acc_norm"),
@@ -69,7 +71,8 @@ HYBRID_PRINTED = {("untrained", "A", "RULER-16K"): (50.2, None, None), ("untrain
                   ("trained", "A", "MMLU-Pro"): (4.6, 2.0, 7.2), ("trained", "G", "MMLU-Pro"): (2.0, -0.4, 4.5),
                   ("trained", "G", "RULER-16K"): (4.9, 2.1, 7.7), ("trained", "A", "RULER-4K"): (-4.5, -7.2, -2.0),
                   ("trained", "", "ARC-C"): (-2.9, -4.8, -1.0), ("trained", "G", "ARC-C"): (-2.7, -4.5, -0.9),
-                  ("trained", "A", "ARC-C"): (0.8, None, None)}
+                  ("trained", "A", "ARC-C"): (0.8, None, None), ("trained", "G", "HELMET"): (9.1, 6.5, 11.6),
+                  ("trained", "A", "HELMET"): (-0.2, None, None), ("trained", "A", "RULER-16K"): (0.7, None, None)}
 
 CMP = []
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
@@ -155,8 +158,10 @@ CMP += [
       for bench, key in SN_STATE],
     *[("Hybrid state", f"SenseNova trained deep GDN state only vs both deep {bench}", key.format(c="C21G"), key.format(c="C21"),
        {"RULER-4K": (6.5, None, None), "RULER-8K": (4.2, None, None), "RULER-16K": (3.7, None, None),
-        "MMLU-Pro": (-3.5, None, None)}.get(bench))
+        "MMLU-Pro": (-3.5, None, None), "HELMET": (5.6, None, None)}.get(bench))
       for bench, key in SN_STATE],
+    ("Hybrid state", "SenseNova trained deep GDN state only vs native 2/2 HELMET", "B:SNnt-C21G-helmet:helmet",
+     "B:SNnt-native2-helmet:helmet", (-11.2, -13.0, -9.4)),
     # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
     *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"),
        {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3), "MMLU-Pro": (8.1, 4.0, 12.1)}.get(bench))

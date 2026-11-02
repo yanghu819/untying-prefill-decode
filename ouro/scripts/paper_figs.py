@@ -337,6 +337,14 @@ def tab_hybrid():
     (ROOT / "paper" / "figs" / "tab_hybrid.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_sn():
+    """Appendix table: SenseNova-Loop-9B at one writing visit (LaTeX rows from paper_numbers.json, sn_equal)."""
+    pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + r"\ci{%.1f}{%.1f}" % (v[1], v[2])
+    lines = [rf"{e['bench']} & {e['native1']:.1f} & {e['C11']:.1f} & {e['C21']:.1f} & {e['native2']:.1f} & "
+             rf"{pm(e['vs_C11'])} & {pm(e['vs_native2'])} \\" for e in PN.get("sn_equal", [])]
+    (ROOT / "paper" / "figs" / "tab_sn.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

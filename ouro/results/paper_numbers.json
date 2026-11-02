@@ -1636,6 +1636,19 @@
   },
   {
    "section": "Hybrid state",
+   "label": "SenseNova untrained deep both vs shallow ARC-C",
+   "key_a": "L:SN-splice21-arc:acc_norm",
+   "key_b": "L:SN-native1-arc:acc_norm",
+   "printed": null,
+   "n": 1172,
+   "a": 62.0,
+   "b": 52.4,
+   "diff": 9.6,
+   "lo": 6.7,
+   "hi": 12.5
+  },
+  {
+   "section": "Hybrid state",
    "label": "SenseNova untrained deep both vs shallow HELMET",
    "key_a": "B:SNnt-splice21-helmet:helmet",
    "key_b": "B:SNnt-native1-helmet:helmet",
@@ -1726,12 +1739,12 @@
    "key_a": "B:SNnt-splice21A-helmet:helmet",
    "key_b": "B:SNnt-native1-helmet:helmet",
    "printed": null,
-   "n": 5431,
-   "a": 42.3,
-   "b": 7.5,
-   "diff": 34.8,
-   "lo": 32.1,
-   "hi": 37.6
+   "n": 6646,
+   "a": 39.3,
+   "b": 7.2,
+   "diff": 32.1,
+   "lo": 30.1,
+   "hi": 34.1
   },
   {
    "section": "Hybrid state",
@@ -1795,16 +1808,29 @@
   },
   {
    "section": "Hybrid state",
+   "label": "SenseNova untrained deep GDN state vs shallow ARC-C",
+   "key_a": "L:SN-splice21G-arc:acc_norm",
+   "key_b": "L:SN-native1-arc:acc_norm",
+   "printed": null,
+   "n": 1172,
+   "a": 60.1,
+   "b": 52.4,
+   "diff": 7.7,
+   "lo": 4.9,
+   "hi": 10.4
+  },
+  {
+   "section": "Hybrid state",
    "label": "SenseNova untrained deep GDN state vs shallow HELMET",
    "key_a": "B:SNnt-splice21G-helmet:helmet",
    "key_b": "B:SNnt-native1-helmet:helmet",
    "printed": null,
-   "n": 5577,
-   "a": 45.0,
-   "b": 7.3,
-   "diff": 37.7,
-   "lo": 35.1,
-   "hi": 40.3
+   "n": 6646,
+   "a": 44.6,
+   "b": 7.2,
+   "diff": 37.4,
+   "lo": 35.5,
+   "hi": 39.3
   },
   {
    "section": "Hybrid state",
@@ -1923,7 +1949,11 @@
    "label": "SenseNova trained deep attention KV vs shallow RULER-16K",
    "key_a": "B:SNnt-C21A:ruler16k",
    "key_b": "B:SNnt-C11:ruler16k",
-   "printed": null,
+   "printed": [
+    0.7,
+    null,
+    null
+   ],
    "n": 520,
    "a": 82.2,
    "b": 81.5,
@@ -1970,13 +2000,17 @@
    "label": "SenseNova trained deep attention KV vs shallow HELMET",
    "key_a": "B:SNnt-C21A-helmet:helmet",
    "key_b": "B:SNnt-C11-helmet:helmet",
-   "printed": null,
-   "n": 4844,
-   "a": 59.7,
-   "b": 58.2,
-   "diff": 1.5,
-   "lo": -2.0,
-   "hi": 4.9
+   "printed": [
+    -0.2,
+    null,
+    null
+   ],
+   "n": 6646,
+   "a": 56.6,
+   "b": 56.9,
+   "diff": -0.2,
+   "lo": -2.7,
+   "hi": 2.2
   },
   {
    "section": "Hybrid state",
@@ -2060,13 +2094,17 @@
    "label": "SenseNova trained deep GDN state vs shallow HELMET",
    "key_a": "B:SNnt-C21G-helmet:helmet",
    "key_b": "B:SNnt-C11-helmet:helmet",
-   "printed": null,
-   "n": 5050,
-   "a": 66.8,
-   "b": 57.9,
-   "diff": 8.8,
-   "lo": 5.6,
-   "hi": 12.0
+   "printed": [
+    9.1,
+    6.5,
+    11.6
+   ],
+   "n": 6646,
+   "a": 66.0,
+   "b": 56.9,
+   "diff": 9.1,
+   "lo": 6.5,
+   "hi": 11.6
   },
   {
    "section": "Hybrid state",
@@ -2154,13 +2192,34 @@
    "label": "SenseNova trained deep GDN state only vs both deep HELMET",
    "key_a": "B:SNnt-C21G-helmet:helmet",
    "key_b": "B:SNnt-C21-helmet:helmet",
-   "printed": null,
-   "n": 5050,
-   "a": 66.8,
-   "b": 61.4,
-   "diff": 5.4,
-   "lo": 3.3,
-   "hi": 7.4
+   "printed": [
+    5.6,
+    null,
+    null
+   ],
+   "n": 6646,
+   "a": 66.0,
+   "b": 60.3,
+   "diff": 5.6,
+   "lo": 3.8,
+   "hi": 7.5
+  },
+  {
+   "section": "Hybrid state",
+   "label": "SenseNova trained deep GDN state only vs native 2/2 HELMET",
+   "key_a": "B:SNnt-C21G-helmet:helmet",
+   "key_b": "B:SNnt-native2-helmet:helmet",
+   "printed": [
+    -11.2,
+    -13.0,
+    -9.4
+   ],
+   "n": 6646,
+   "a": 66.0,
+   "b": 77.1,
+   "diff": -11.2,
+   "lo": -13.0,
+   "hi": -9.4
   },
   {
    "section": "Same connector",
@@ -4685,25 +4744,25 @@
   },
   {
    "bench": "MATH-500",
-   "n": 200,
-   "C21": 89.5,
-   "native1": 3.0,
+   "n": 500,
+   "C21": 89.8,
+   "native1": 3.2,
    "vs_native1": [
-    86.5,
-    81.5,
-    91.0
+    86.6,
+    83.6,
+    89.6
    ],
-   "C11": 87.5,
+   "C11": 88.0,
    "vs_C11": [
-    2.0,
-    -1.5,
-    5.5
+    1.8,
+    -1.0,
+    4.6
    ],
-   "native2": 95.5,
+   "native2": 94.8,
    "vs_native2": [
-    -6.0,
-    -10.0,
-    -2.5
+    -5.0,
+    -7.2,
+    -2.8
    ]
   },
   {
@@ -4796,29 +4855,6 @@
     -5.5,
     -11.0,
     0.0
-   ]
-  },
-  {
-   "bench": "MBPP+",
-   "n": 378,
-   "C21": 64.0,
-   "native1": 0.0,
-   "vs_native1": [
-    64.0,
-    59.3,
-    68.8
-   ],
-   "C11": 61.6,
-   "vs_C11": [
-    2.4,
-    -2.9,
-    7.4
-   ],
-   "native2": 44.4,
-   "vs_native2": [
-    19.6,
-    14.6,
-    24.6
    ]
   },
   {
