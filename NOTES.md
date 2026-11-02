@@ -59,3 +59,9 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   choice of m per benchmark and n vs native n/n, then Ouro-2.6B-Thinking at decode 2 (with the distillation control),
   end-to-end time, decision models. Old cross-model table moved to the appendix (Other Checkpoints); the fixed-n table
   removed. Abstract, introduction and conclusion rewritten. Bibliography script added (GPQA, IFEval).
+- Codex review of the restructured draft (paper/codex_review_untie.md): weak reject as written; the headline generalized
+  too far. Fixed: "property of the task" -> depends on benchmark, prompt and decode budget (HumanEval best at m = 4, GSM8K
+  at m = 2); lead with the within-adapter 4-shot MATH contrast (+16.6 [12.4, 21.0]); "same decode cost" -> same number of
+  decode loops, with the latency caveat; cross-fitting described as per-benchmark calibration (not per-prompt routing,
+  intervals exclude selection variability); full 14-panel task map added to the appendix. Coverage claims ("nearly every
+  benchmark", ranges) to be re-checked when the last cells land.

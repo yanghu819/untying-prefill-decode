@@ -179,7 +179,7 @@ CMP += [
         "RULER-16K": (2.9, None, None), "MMLU-Pro": (-2.7, -5.0, -0.3)}.get(bench)) for bench, key in SNG_KEYS],
     # fewer prefill than decode loops (m < n) on the tasks where more prefill loops hurt: same adapter, same n
     *[("Fewer prefill loops", f"{model} prefill {lo} vs {hi} (decode {n}) {bench}", key.format(c=f"S{lo}{n}"),
-       key.format(c=f"S{hi}{n}"), None)
+       key.format(c=f"S{hi}{n}"), (16.6, 12.4, 21.0) if (bench, lo, hi, n) == ("MATH-500 4-shot", 1, 4, 4) else None)
       for model, bench, key in (("Ouro-2.6B", "MATH-500 4-shot", "L:o26x-{c}-math:mvfull"),
                                 ("Ouro-2.6B", "RULER-4K", "B:X26-{c}f:ruler4k"), ("Ouro-2.6B", "RULER-8K", "B:X26-{c}f:ruler8k"),
                                 ("Ouro-2.6B", "RULER-16K", "B:X26-{c}f:ruler16k"),
