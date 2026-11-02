@@ -50,3 +50,8 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   best native 68; 4-shot MATH prefill 1 / decode 3: 69 vs 55); knowledge and retrieval prefer more prefill loops (MMLU and
   MMLU-Pro m >= 3; GPQA-Diamond best at prefill 4 / decode 1, 38 vs best native 34; RULER best at m = 2-3, n = 4).
   HumanEval best at prefill 4 / decode 2 (44 vs best native 38). BBH: native 4/4 (81) slightly above the best cell so far.
+- Cross-fitted choice of m per task (`taskmap_select` in paper_numbers.py): pick m on one half of the items, score it on
+  the other half, swap; compare with native n/n on the same items. Interim (some cells still running): at n = 1 the chosen
+  m beats native 1/1 on every benchmark so far (+5 to +21 points); at n = 2 it still wins clearly (MATH 4-shot +13.8,
+  BBH +6.5, RULER-4K +5.7, ARC-C +2.7); at n >= 3 it is roughly on par (BBH -2.3, RULER-4K -2.9), except 4-shot MATH
+  (+13.6/+14.4). Untying helps most when decoding is cheap.

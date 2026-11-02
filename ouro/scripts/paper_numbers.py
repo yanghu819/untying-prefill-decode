@@ -578,6 +578,39 @@ def sn_equal():
               f"{row['vs_native2'][2]:+.1f}]")
     return out
 
+def taskmap_select():
+    """Choose the prefill loops m per task without selection bias: for every benchmark and decode loops n, split the
+    items in two halves (by a hash of the item id), pick the m with the best mean on one half, score it on the other
+    half, and swap; every item is scored once by an m chosen without it. Compared with native n/n on the same items
+    (paired bootstrap, 5,000 draws, seed 0)."""
+    import hashlib
+    half = lambda i: int(hashlib.md5(str(i).encode()).hexdigest(), 16) % 2
+    out = []
+    for bench, key in TASK_MAP:
+        for n in range(1, 5):
+            cells = {m: load(key.format(c=f"S{m}{n}")) for m in range(1, 5)}
+            nat = load(key.format(c=f"native{n}"))
+            if nat is None or any(v is None for v in cells.values()):
+                continue
+            ids = set(nat).intersection(*(set(v) for v in cells.values()))
+            if bench.startswith("RULER") or bench == "HELMET":
+                pass
+            folds = [[i for i in ids if half(i) == h] for h in (0, 1)]
+            chosen, picked = [], {}
+            for h in (0, 1):
+                train, test = folds[h], folds[1 - h]
+                m_best = max(range(1, 5), key=lambda m: (np.mean([cells[m][i] for i in train]), -m))
+                chosen.append(m_best)
+                for i in test:
+                    picked[i] = cells[m_best][i]
+            r = boot(picked, {i: nat[i] for i in picked})
+            row = dict(bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
+                       native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")])
+            out.append(row)
+            print(f"Select m     {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
+                  f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]")
+    return out
+
 def throughput():
     """Table in Appendix (decode throughput) and the ratios in Sec 4.2: best tokens/s over batch sizes, 8K context."""
     d = Path(__file__).resolve().parents[1] / "results" / "throughput-sb4"
@@ -620,7 +653,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
