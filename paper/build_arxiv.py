@@ -63,6 +63,7 @@ def plain(t):
     t = re.sub(r"\$(\d)\\times(\d)\$", r"\1x\2", t)
     t = re.sub(r"\\emph\{([^}]*)\}", r"\1", t)
     t = re.sub(r"\$([a-z])\$", r"\1", t)
+    t = re.sub(r"\$(\([a-z],\s*[a-z]\))\$", r"\1", t)        # $(m,n)$
     t = t.replace("--", "-").replace("~", " ")
     assert "\\" not in t and "$" not in t, t
     return " ".join(t.split()) + f" Code: {URL}"
