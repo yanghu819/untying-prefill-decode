@@ -46,3 +46,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Distillation baseline, remaining benchmarks (prefill 4 / decode 2 minus distilled 2/2): MATH-500 +0.8 (n.s.),
   HumanEval +5.5 (n.s.), MBPP+ +3.2 [-0.5, 6.9], GSM8K +0.8 [-0.4, 2.0] (all 1,319). The adapter is at or above
   plain distillation on all eight benchmarks, significantly on MMLU-Pro and ARC-C.
+- Task map at 147/220 cells. Pattern: generating code and math prefers prefill 1 (MBPP+ prefill 1 / decode 2: 75 vs
+  best native 68; 4-shot MATH prefill 1 / decode 3: 69 vs 55); knowledge and retrieval prefer more prefill loops (MMLU and
+  MMLU-Pro m >= 3; GPQA-Diamond best at prefill 4 / decode 1, 38 vs best native 34; RULER best at m = 2-3, n = 4).
+  HumanEval best at prefill 4 / decode 2 (44 vs best native 38). BBH: native 4/4 (81) slightly above the best cell so far.
