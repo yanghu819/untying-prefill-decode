@@ -2300,12 +2300,12 @@
    "key_a": "B:SNGnt-C21G-bbh:bbh",
    "key_b": "B:SNGnt-C11-bbh:bbh",
    "printed": null,
-   "n": 6013,
-   "a": 50.5,
-   "b": 44.9,
-   "diff": 5.6,
-   "lo": 4.5,
-   "hi": 6.7
+   "n": 6511,
+   "a": 48.0,
+   "b": 41.7,
+   "diff": 6.2,
+   "lo": 5.2,
+   "hi": 7.3
   },
   {
    "section": "Hybrid G-trained",
@@ -2571,12 +2571,12 @@
    "key_a": "B:X26-S12f:ruler16k",
    "key_b": "B:X26-S22f:ruler16k",
    "printed": null,
-   "n": 153,
-   "a": 73.9,
-   "b": 82.4,
-   "diff": -8.5,
-   "lo": -13.4,
-   "hi": -3.9
+   "n": 396,
+   "a": 62.0,
+   "b": 72.2,
+   "diff": -10.2,
+   "lo": -13.6,
+   "hi": -6.8
   },
   {
    "section": "Fewer prefill loops",
@@ -2584,12 +2584,12 @@
    "key_a": "B:X26-S12f:ruler16k",
    "key_b": "B:X26-S42f:ruler16k",
    "printed": null,
-   "n": 153,
-   "a": 73.9,
-   "b": 76.6,
-   "diff": -2.8,
-   "lo": -10.5,
-   "hi": 4.6
+   "n": 396,
+   "a": 62.0,
+   "b": 73.1,
+   "diff": -11.1,
+   "lo": -16.4,
+   "hi": -6.0
   },
   {
    "section": "Fewer prefill loops",
@@ -2710,16 +2710,94 @@
   },
   {
    "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 MMLU-Pro",
+   "key_a": "L:T26x-S42-mmlupro:exact_match",
+   "key_b": "L:T26x-D-mmlupro:exact_match",
+   "printed": null,
+   "n": 420,
+   "a": 50.0,
+   "b": 44.8,
+   "diff": 5.2,
+   "lo": 1.2,
+   "hi": 9.3
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 ARC-C",
+   "key_a": "L:T26x-S42-arc:acc_norm",
+   "key_b": "L:T26x-D-arc:acc_norm",
+   "printed": null,
+   "n": 1172,
+   "a": 66.1,
+   "b": 63.2,
+   "diff": 2.9,
+   "lo": 1.4,
+   "hi": 4.4
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 BBH",
+   "key_a": "L:T26x-S42-bbh:exact_match",
+   "key_b": "L:T26x-D-bbh:exact_match",
+   "printed": null,
+   "n": 1620,
+   "a": 73.5,
+   "b": 71.3,
+   "diff": 2.2,
+   "lo": 0.0,
+   "hi": 4.5
+  },
+  {
+   "section": "Distillation baseline",
    "label": "2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 HELMET",
    "key_a": "B:T26ne-S42-helmet:helmet",
    "key_b": "B:T26ne-D-helmet:helmet",
    "printed": null,
-   "n": 857,
-   "a": 57.7,
-   "b": 57.1,
-   "diff": 0.6,
-   "lo": -7.5,
-   "hi": 9.0
+   "n": 1108,
+   "a": 57.0,
+   "b": 54.5,
+   "diff": 2.5,
+   "lo": -3.6,
+   "hi": 8.5
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 MMLU-Pro",
+   "key_a": "L:T26x-D-mmlupro:exact_match",
+   "key_b": "L:T26x-native2-mmlupro:exact_match",
+   "printed": null,
+   "n": 420,
+   "a": 44.8,
+   "b": 43.1,
+   "diff": 1.7,
+   "lo": -2.1,
+   "hi": 5.2
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 ARC-C",
+   "key_a": "L:T26x-D-arc:acc_norm",
+   "key_b": "L:T26x-native2-arc:acc_norm",
+   "printed": null,
+   "n": 1172,
+   "a": 63.2,
+   "b": 62.5,
+   "diff": 0.7,
+   "lo": -0.4,
+   "hi": 1.8
+  },
+  {
+   "section": "Distillation baseline",
+   "label": "2.6B-T LoRA-distilled native 2/2 vs native 2/2 BBH",
+   "key_a": "L:T26x-D-bbh:exact_match",
+   "key_b": "L:T26x-native2-bbh:exact_match",
+   "printed": null,
+   "n": 1620,
+   "a": 71.3,
+   "b": 66.6,
+   "diff": 4.7,
+   "lo": 2.7,
+   "hi": 6.8
   },
   {
    "section": "Distillation baseline",
@@ -2727,12 +2805,12 @@
    "key_a": "B:T26ne-D-helmet:helmet",
    "key_b": "B:T26ne-native2-helmet:helmet",
    "printed": null,
-   "n": 857,
-   "a": 57.1,
-   "b": 46.1,
-   "diff": 11.0,
-   "lo": 6.9,
-   "hi": 15.7
+   "n": 1108,
+   "a": 54.5,
+   "b": 44.0,
+   "diff": 10.5,
+   "lo": 7.6,
+   "hi": 13.7
   },
   {
    "section": "Same connector",
@@ -3458,6 +3536,20 @@
   },
   {
    "section": "Task map",
+   "label": "S13 BBH 3-shot",
+   "key": "L:o26x-S13-bbh:exact_match",
+   "n": 1620,
+   "mean": 64.0
+  },
+  {
+   "section": "Task map",
+   "label": "S14 BBH 3-shot",
+   "key": "L:o26x-S14-bbh:exact_match",
+   "n": 1620,
+   "mean": 64.5
+  },
+  {
+   "section": "Task map",
    "label": "S21 BBH 3-shot",
    "key": "L:o26x-S21-bbh:exact_match",
    "n": 1620,
@@ -3469,6 +3561,13 @@
    "key": "L:o26x-S22-bbh:exact_match",
    "n": 1620,
    "mean": 71.4
+  },
+  {
+   "section": "Task map",
+   "label": "S24 BBH 3-shot",
+   "key": "L:o26x-S24-bbh:exact_match",
+   "n": 1620,
+   "mean": 77.0
   },
   {
    "section": "Task map",
@@ -3570,10 +3669,24 @@
   },
   {
    "section": "Task map",
+   "label": "S31 ARC-C",
+   "key": "L:o26x-S31-arc:acc_norm",
+   "n": 1172,
+   "mean": 61.5
+  },
+  {
+   "section": "Task map",
    "label": "S33 ARC-C",
    "key": "L:o26x-S33-arc:acc_norm",
    "n": 1172,
    "mean": 66.0
+  },
+  {
+   "section": "Task map",
+   "label": "S34 ARC-C",
+   "key": "L:o26x-S34-arc:acc_norm",
+   "n": 1172,
+   "mean": 66.3
   },
   {
    "section": "Task map",
@@ -3922,8 +4035,8 @@
    "section": "Task map",
    "label": "S14 RULER-8K",
    "key": "B:X26-S14f:ruler8k",
-   "n": 140,
-   "mean": 83.2
+   "n": 300,
+   "mean": 75.8
   },
   {
    "section": "Task map",
@@ -3943,8 +4056,8 @@
    "section": "Task map",
    "label": "S24 RULER-8K",
    "key": "B:X26-S24f:ruler8k",
-   "n": 102,
-   "mean": 95.1
+   "n": 234,
+   "mean": 83.4
   },
   {
    "section": "Task map",
@@ -3999,8 +4112,8 @@
    "section": "Task map",
    "label": "S12 RULER-16K",
    "key": "B:X26-S12f:ruler16k",
-   "n": 153,
-   "mean": 73.9
+   "n": 396,
+   "mean": 62.0
   },
   {
    "section": "Task map",

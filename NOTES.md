@@ -38,3 +38,8 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   map, with local task definitions (`ouro/lmeval_tasks/ifeval_local`, `gpqa_n_shot_local`). GPQA questions are not
   redistributed; only per-item scores keyed by index are released.
 - Reframed the paper as untying prefill and decode loops (title, notation prefill m / decode n, "loop adapter").
+- Distillation baseline (arm D: native 2/2 layout, LoRA only, same data, teacher and 48M tokens as the adapter), on
+  Ouro-2.6B-Thinking. Prefill 4 / decode 2 minus distilled 2/2: MMLU-Pro +5.2 [1.2, 9.3], ARC-C +2.9 [1.4, 4.4],
+  BBH +2.2 [0.0, 4.5], HELMET +2.5 (n.s.). Distilled 2/2 minus native 2/2: HELMET +10.5, BBH +4.7, MMLU-Pro +1.7 (n.s.),
+  ARC-C +0.7 (n.s.). So the untied adapter adds knowledge accuracy that plain distillation does not; most of the HELMET
+  gain over native 2/2 comes from distillation. GSM8K, MATH-500 and code still running.
