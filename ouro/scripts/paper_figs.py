@@ -89,7 +89,7 @@ def fig0():
     arrow(11, 7.4, 11, 9.6); arrow(11, 13.4, 11, 15.6)
     box(24, 15.4, 21, 6.4, "prompt KV cache", fc=LIGHT, ec=OURS, lw=1.0, color=OURS, weight="bold", size=8,
         sub="last loop, stored once")
-    box(24, 2.5, 21, 6.2, "answer KV cache", size=8, sub="generated tokens")
+    box(24, 2.5, 21, 6.2, "answer KV cache", size=8, sub="one per writing loop")
     arrow(20.4, 18.3, 23.6, 18.3, OURS)
     box(53, 15.6, 15, 4.4, r"query $\times\,\bar c_k$", fc=LIGHT, ec=OURS)
     box(72, 15.6, 15, 4.4, r"attend $\to W_k$", fc=LIGHT, ec=OURS)
@@ -324,5 +324,5 @@ def tab_equal(model="1.4B-T"):
 
 
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal("2.6B-T"); tab_equal("1.4B-T")
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

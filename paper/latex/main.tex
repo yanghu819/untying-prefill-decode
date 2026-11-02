@@ -263,7 +263,8 @@ a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \caption{\textbf{Read deep, write shallow: the decode depth of two loops, close to the quality of four.} Ouro-2.6B-Thinking
 on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
 categories); read 4 / write 2 uses one connector and one stored prompt KV cache. Hollow circles: the same connector reading only two
-loops, which separates the effect of training from that of reading depth. All models are scored on identical evaluation sets.}
+loops, which separates the effect of training from that of reading depth. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
+interval.}
 \label{fig:equal}
 \end{figure*}
 
@@ -520,7 +521,7 @@ resamples; every interval in the paper is recomputed from released per-item scor
 seed, full sets.}
 \end{table}
 
-\section{Read Deep, Write Shallow on Ouro-1.4B-Thinking}
+\section{Read Deep, Write Shallow in Numbers, and on Ouro-1.4B-Thinking}
 \label{app:t14}
 
 \begin{table*}[t]
@@ -532,16 +533,21 @@ seed, full sets.}
 \cmidrule(lr){2-5}\cmidrule(l){6-8}
 benchmark & native 2/2 & read 2 / write 2 & read 4 / write 2 & native 4/4 & native 2/2 & read 2 / write 2 & native 4/4 \\
 \midrule
+\multicolumn{8}{@{}l}{\emph{Ouro-2.6B-Thinking (Figure~\ref{fig:equal})}} \\
+\csname @@input\endcsname ../figs/tab_equal_26B-T.tex
+\midrule
+\multicolumn{8}{@{}l}{\emph{Ouro-1.4B-Thinking}} \\
 \csname @@input\endcsname ../figs/tab_equal_14B-T.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Figure~\ref{fig:equal} on Ouro-1.4B-Thinking.} One connector serves read 2 / write 2 and read 4 / write 2;
-same benchmarks, protocols and items as Figure~\ref{fig:equal}. Differences are score points on a 0--100 scale;
+\caption{\textbf{Figure~\ref{fig:equal} in numbers, and on Ouro-1.4B-Thinking.} Per checkpoint, one connector serves
+read 2 / write 2 and read 4 / write 2; same benchmarks, protocols and items for both checkpoints. Differences are score points on a 0--100 scale;
 brackets are paired 95\% bootstrap intervals.}
 \label{tab:t14}
 \end{table*}
 
-Table~\ref{tab:t14} repeats the comparison of Figure~\ref{fig:equal} on the smaller Thinking checkpoint. The effect of
+Table~\ref{tab:t14} lists the scores and paired intervals behind Figure~\ref{fig:equal} and repeats the comparison on
+the smaller Thinking checkpoint. The effect of
 reading depth replicates: with the same connector, reading four loops instead of two raises MMLU-Pro ($+8.6$), HELMET ($+7.3$),
 ARC-Challenge ($+2.7$) and BBH ($+8.8$) and shows no detectable difference on GSM8K, MATH-500, HumanEval and MBPP+. Against
 native 2/2 the result is weaker than on Ouro-2.6B-Thinking: read 4 / write 2 is significantly better on GSM8K ($+3.0$)
