@@ -1,7 +1,7 @@
 """Paper figures (PDF for LaTeX, PNG for README) from results/latest.json and results/paper_numbers.json (Fig. 1 grid).
 
 usage: python scripts/paper_figs.py  ->  paper/figs/fig{0..4}_*.{pdf,png}
-One palette everywhere: our connector in red, native models in greys; no in-plot titles (captions carry the message).
+One palette everywhere: our loop adapter in red, native models in greys; no in-plot titles (captions carry the message).
 """
 
 import json
@@ -56,9 +56,9 @@ def fig1():
         ax.tick_params(length=0)
         for sp in ax.spines.values():
             sp.set_visible(False)
-    axes[0].set_ylabel("write loops")
+    axes[0].set_ylabel("decode loops n")
     fig.subplots_adjust(left=.07, right=.99, bottom=.18, top=.90, wspace=.10)
-    fig.supxlabel("read loops", fontsize=9, y=.03)
+    fig.supxlabel("prefill loops m", fontsize=9, y=.03)
     save(fig, "fig1_grid")
 
 
@@ -81,15 +81,15 @@ def fig0():
         ax.annotate("", xy=(x1, y1), xytext=(x0, y0),
                     arrowprops=dict(arrowstyle="-|>", lw=0.8, color=c, mutation_scale=8, shrinkA=1, shrinkB=1))
 
-    ax.text(11, 27.8, "Read: p loops, once", ha="center", fontsize=9, color=INK, fontweight="bold")
-    ax.text(72, 27.8, "Write: repeat d times per token", ha="center", fontsize=9, color=INK, fontweight="bold")
+    ax.text(11, 27.8, "Prefill: m loops, once", ha="center", fontsize=9, color=INK, fontweight="bold")
+    ax.text(72, 27.8, "Decode: n loops per token", ha="center", fontsize=9, color=INK, fontweight="bold")
     box(2, 2.5, 18, 4.6, "loop 1", fc="#F2F2F2")
     ax.text(11, 11.6, "$\\vdots$", ha="center", va="center", fontsize=11, color=NAT)
-    box(2, 16.0, 18, 4.6, "loop p", fc=LIGHT, ec=OURS)
+    box(2, 16.0, 18, 4.6, "loop m", fc=LIGHT, ec=OURS)
     arrow(11, 7.4, 11, 9.6); arrow(11, 13.4, 11, 15.6)
     box(24, 15.4, 21, 6.4, "prompt KV cache", fc=LIGHT, ec=OURS, lw=1.0, color=OURS, weight="bold", size=8,
         sub="last loop, stored once")
-    box(24, 2.5, 21, 6.2, "answer KV cache", size=8, sub="one per writing loop")
+    box(24, 2.5, 21, 6.2, "answer KV cache", size=8, sub="one per decode loop")
     arrow(20.4, 18.3, 23.6, 18.3, OURS)
     box(53, 15.6, 15, 4.4, r"query $\times\,\bar c_k$", fc=LIGHT, ec=OURS)
     box(72, 15.6, 15, 4.4, r"attend $\to W_k$", fc=LIGHT, ec=OURS)
@@ -109,9 +109,9 @@ def fig0():
 def fig2():
     """End to end: accuracy vs seconds per answer (batch 1)."""
     fig, axes = plt.subplots(2, 1, figsize=(3.3, 4.3), gridspec_kw=dict(height_ratios=[1.35, 1]))   # one column
-    names = {"native1st": "native 1/1", "native2st": "native 2/2", "native4st": "native 4/4", "S41sb": "read 4 / write 1",
-             "S22sb": "read 2 / write 2", "S42sb": "read 4 / write 2", "native2": "native 2/2", "C11": "read 1 / write 1",
-             "C21": "read 2 / write 1"}
+    names = {"native1st": "native 1/1", "native2st": "native 2/2", "native4st": "native 4/4", "S41sb": "prefill 4 / decode 1",
+             "S22sb": "prefill 2 / decode 2", "S42sb": "prefill 4 / decode 2", "native2": "native 2/2", "C11": "prefill 1 / decode 1",
+             "C21": "prefill 2 / decode 1"}
     E = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm" and r["cond"] in names}
     S = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "sn" and r["task"] == "gsm" and r["cond"] in names}
     ratio = {r["label"]: r["ratio"] for r in PN["e2e_ratios"]}
@@ -131,11 +131,11 @@ def fig2():
     ax = axes[0]
     for n, dx, dy, ha in (("native 1/1", 6, 0, "left"), ("native 2/2", 6, 0, "left"), ("native 4/4", 0, -9, "center")):
         point(ax, E, n, False, dx, dy, ha)
-    point(ax, E, "read 4 / write 1", True, 6, 6, "left")
-    point(ax, E, "read 4 / write 2", True, 0, 0, "left")
-    point(ax, E, "read 2 / write 2", True, 0, 0, "left", hollow=True)
+    point(ax, E, "prefill 4 / decode 1", True, 6, 6, "left")
+    point(ax, E, "prefill 4 / decode 2", True, 0, 0, "left")
+    point(ax, E, "prefill 2 / decode 2", True, 0, 0, "left", hollow=True)
     r = ratio['2.6B-T GSM8K read 4/write 2 vs native 4/4']
-    ax.annotate(f"read 2 or 4 / write 2\n{r:.2f}× the time of native 4/4", (E["read 4 / write 2"][1], E["read 4 / write 2"][0]),
+    ax.annotate(f"prefill 2 or 4 / decode 2\n{r:.2f}× the time of native 4/4", (E["prefill 4 / decode 2"][1], E["prefill 4 / decode 2"][0]),
                 xytext=(-2, -12), textcoords="offset points", fontsize=8, color=OURS, ha="left", va="top")
     ax.set_xlabel("seconds per answer"); ax.set_ylabel("GSM8K accuracy (%)")
     ax.set_xlim(40, 125); ax.set_ylim(55, 104)
@@ -143,10 +143,10 @@ def fig2():
     ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
     ax = axes[1]
     point(ax, S, "native 2/2", False, -6, 0, "right")
-    point(ax, S, "read 2 / write 1", True, 6, -6, "left")
-    point(ax, S, "read 1 / write 1", True, 0, 0, "left")
+    point(ax, S, "prefill 2 / decode 1", True, 6, -6, "left")
+    point(ax, S, "prefill 1 / decode 1", True, 0, 0, "left")
     r = ratio['SenseNova GSM8K read 1/write 1 vs native 2/2']
-    ax.annotate(f"read 1 / write 1\n{r:.2f}× the time of native 2/2", (S["read 1 / write 1"][1], S["read 1 / write 1"][0]),
+    ax.annotate(f"prefill 1 / decode 1\n{r:.2f}× the time of native 2/2", (S["prefill 1 / decode 1"][1], S["prefill 1 / decode 1"][0]),
                 xytext=(8, 0), textcoords="offset points", fontsize=8, color=OURS, ha="left", va="center")
     ax.text(0.97, 0.04, "y: 90–100%", transform=ax.transAxes, fontsize=7.5, color=NAT, ha="right")
     ax.set_xlabel("seconds per answer"); ax.set_xlim(20, 55); ax.set_ylim(90, 100.5)
@@ -163,21 +163,22 @@ def fig3():
     W = PN["wander"]
     buckets = ["≤2", "3–4", "5+"]
     ax = axes[0]
-    for name, c, ls in (("native 1/1", NAT_LIGHT, "--"), ("read 1 / write 1", OURS_LIGHT, "-"), ("read 4 / write 1", OURS, "-")):
-        v = W[name]["no_answer_by_steps"]
+    keys = {"native 1/1": "native 1/1", "prefill 1 / decode 1": "read 1 / write 1", "prefill 4 / decode 1": "read 4 / write 1"}
+    for name, c, ls in (("native 1/1", NAT_LIGHT, "--"), ("prefill 1 / decode 1", OURS_LIGHT, "-"), ("prefill 4 / decode 1", OURS, "-")):
+        v = W[keys[name]]["no_answer_by_steps"]   # paper_numbers.json keeps the original labels
         ax.plot(range(3), v, ls, color=c, marker="o", ms=3.5, lw=1.4)
-        ax.text(2.12, v[-1], name, fontsize=7, color=OURS if name.startswith("read") else NAT, va="center")
+        ax.text(2.12, v[-1], name, fontsize=7, color=OURS if name.startswith("prefill") else NAT, va="center")
     ax.set_xticks(range(3), buckets); ax.set_xlim(-0.2, 3.1)
     ax.set_ylabel("no final answer (%)"); ax.set_xlabel("reference solution steps (GSM8K)")
     ax.set_ylim(0, 60)
-    ax.set_title("Ouro-2.6B-Thinking, one writing loop", fontsize=8, color=INK, pad=3)
+    ax.set_title("Ouro-2.6B-Thinking, one decode loop", fontsize=8, color=INK, pad=3)
     ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
     ax = axes[1]
     metrics = ["GSM8K:\ngives an answer", "RULER-4K\naccuracy", "MMLU-Pro\naccuracy"]
     mean = lambda c, what: _M[f"SenseNova {c} {what}"]  # noqa: E731
     vals = {lab: [100 - mean(c, "GSM8K no final answer"), mean(c, "RULER-4K"), mean(c, "MMLU-Pro")]
-            for lab, c in (("native 1/1", "native1"), ("read 2 / write 1", "splice21"), ("native 2/2", "native2"))}
-    cols = {"native 1/1": NAT_LIGHT, "read 2 / write 1": OURS, "native 2/2": NAT}
+            for lab, c in (("native 1/1", "native1"), ("prefill 2 / decode 1", "splice21"), ("native 2/2", "native2"))}
+    cols = {"native 1/1": NAT_LIGHT, "prefill 2 / decode 1": OURS, "native 2/2": NAT}
     x = np.arange(3); wbar = 0.26
     for j, (n, v) in enumerate(vals.items()):
         bars = ax.bar(x + (j - 1) * wbar, v, wbar * 0.92, color=cols[n], label=n)
@@ -230,10 +231,10 @@ def fig_equal():
     s22 = [(yi, E[b]["same22"]) for yi, b in zip(y, benches) if "same22" in E[b]]
     if s22:   # the same connector reading 2 loops: separates adaptation from reading depth
         ax.scatter([v for _, v in s22], [yi for yi, _ in s22], s=26, facecolors="white", edgecolors=OURS, linewidths=1.1,
-                   zorder=3.5, label="read 2 / write 2 (same connector)")
+                   zorder=3.5, label="prefill 2 / decode 2 (same adapter)")
     ax.scatter(rows[:, 0], y, s=22, color="#A6A6A6", zorder=2, label="native 2/2")
     ax.scatter(rows[:, 2], y, s=65, marker="|", color=NAT, linewidths=1.6, zorder=3, label="native 4/4")
-    ax.scatter(rows[:, 1], y, s=32, color=OURS, zorder=4, label="read 4 / write 2")
+    ax.scatter(rows[:, 1], y, s=32, color=OURS, zorder=4, label="prefill 4 / decode 2")
     for yi, v in zip(y, rows[:, 1]):
         ax.annotate(f"{v:.0f}", (v, yi), xytext=(5, 5), textcoords="offset points", fontsize=8, color=OURS)
     ax.set_yticks(y, benches, fontsize=8.5)
@@ -243,7 +244,7 @@ def fig_equal():
         ax.spines[sp].set_visible(False)
     ax.tick_params(axis="y", length=0)
     h, l = ax.get_legend_handles_labels()
-    order = [l.index(x) for x in ("native 2/2", "read 2 / write 2 (same connector)", "read 4 / write 2", "native 4/4") if x in l]
+    order = [l.index(x) for x in ("native 2/2", "prefill 2 / decode 2 (same adapter)", "prefill 4 / decode 2", "native 4/4") if x in l]
     ax.legend([h[k] for k in order], [l[k] for k in order], loc="lower center", ncol=len(order), fontsize=8,
               bbox_to_anchor=(0.45, 1.0), columnspacing=1.2, handletextpad=0.4)
     save(fig, "fig_equal")
@@ -268,7 +269,7 @@ def fig_pareto():
                 nat.append((_tput(f"native{d}st"), c["b"], d)); ours.append((_tput(f"S4{d}sb"), c["a"], d))
             elif key.startswith("GSM8K Thinking"):  # read 4 / write 4 not evaluated on the Thinking model
                 nat.append((_tput(f"native{d}st"), _M[f"GSM8K full think-native{d}"], d))
-        for pts, col, lab, mk in ((nat, NAT_LIGHT, "native d/d", "o"), (ours, OURS, "read 4 / write d", "o")):
+        for pts, col, lab, mk in ((nat, NAT_LIGHT, "native n/n", "o"), (ours, OURS, "prefill 4 / decode n", "o")):
             x, y = [p[0] for p in pts], [p[1] for p in pts]
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
             ax.scatter(x, y, s=18, color=col, zorder=3, label=lab)
@@ -304,8 +305,8 @@ def fig_lev():
         if orig:
             ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="Lev (released)")
         ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="Lev, same continued training")
-        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="read deep, decide with d loops")
-        ax.set_xticks(d); ax.set_xlabel("decision loops d"); ax.set_title(m + (" (Nanbeige, read 2)" if m == "Lev-3B" else " (Ouro, read 4)"), fontsize=8.5, color=INK, pad=3)
+        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="prefill 4 (Lev-3B: 2), decide with n loops")
+        ax.set_xticks(d); ax.set_xlabel("decision loops n"); ax.set_title(m + (" (Nanbeige, prefill 2)" if m == "Lev-3B" else " (Ouro, prefill 4)"), fontsize=8.5, color=INK, pad=3)
         ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
     axes[0][0].set_ylabel("accuracy (%)")
     h, l = axes[0][0].get_legend_handles_labels()

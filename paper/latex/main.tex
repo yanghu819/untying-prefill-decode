@@ -22,12 +22,12 @@
   aboveskip=2pt,belowskip=2pt,xleftmargin=2pt}
 
 \newcommand{\ci}[2]{\,{\scriptsize\ensuremath{[#1,\,#2]}}}
-\newcommand{\rw}[2]{read~#1\,/\,write~#2}
+\newcommand{\rw}[2]{prefill~#1\,/\,decode~#2}
 \newcommand{\nat}[1]{native~#1/#1}
 \newcommand{\up}[1]{$+#1$}
 \newcommand{\dn}[1]{$-#1$}
 
-\title{Read Deep, Write Shallow:\\ How Looped Language Models Should Spend Their Depth}
+\title{Untying Prefill and Decode Loops\\ in Looped Language Models}
 
 \author{Anonymous ACL submission}
 
@@ -35,19 +35,18 @@
 \maketitle
 
 \begin{abstract}
-Looped language models reuse one block of layers several times per token and, under fixed-depth inference, spend the
-same number of loops on the prompt (prefill) and on every generated token (decoding). On the checkpoints and benchmarks we test, the two buy
-different things: \emph{prefill depth mainly raises knowledge and long-context benchmarks (MMLU, MMLU-Pro, RULER,
-HELMET), while decoding depth mainly raises multi-step math benchmarks (GSM8K, MATH-500)}, with exceptions that depend on
-the task and the prompting protocol. A small
-connector trained on a frozen looped model separates the two budgets: one set of parameters serves all 16 pairs of
-prefill and decoding depth up to four loops, and one stored prompt KV cache serves every decoding loop. On
-Ouro-2.6B-Thinking, reading the prompt with four loops and writing with two scores at least as high as the native two-loop
-model on all eight standard benchmarks we test (significantly higher on five), at the same decoding depth, and within two points of the native four-loop model on
-six; on GSM8K it is 1.0 point below the four-loop model on the full test set and, on 64 timed problems, answers in
-$0.55\times$ its time. The
-same split makes looped decision models more accurate when they decide with one loop, against a control continued with
-the same data and updates.
+Looped language models reuse one block of layers several times per token and, under fixed-depth inference, run the same
+number of loops when they prefill the prompt and when they decode each answer token. We untie the two. A small
+\emph{loop adapter} trained on a frozen looped model lets it prefill with $m$ loops and decode with $n$: one set of
+parameters serves all 16 pairs up to four loops, and one stored prompt KV cache serves every decode loop. On the
+checkpoints and benchmarks we test, the two counts buy different things: \emph{prefill loops mainly raise knowledge and
+long-context benchmarks (MMLU, MMLU-Pro, RULER, HELMET), decode loops mainly raise multi-step math (GSM8K, MATH-500)},
+with exceptions that depend on the task and its prompt. On Ouro-2.6B-Thinking, prefill 4 / decode 2 scores at least as
+high as the native two-loop model on all eight standard benchmarks we test (significantly higher on five), at the same
+decode cost, and within two points of the native four-loop model on six; on GSM8K it is 1.0 point below the four-loop
+model on the full test set and, on 64 timed problems, answers in $0.55\times$ its time. Untying the loops also makes
+looped decision models more accurate when they decide with one loop, against a control continued with the same data
+and updates.
 \end{abstract}
 
 \section{Introduction}
@@ -55,9 +54,9 @@ the same data and updates.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig1_grid.pdf}
-\caption{\textbf{Reading deeper improves knowledge and long-context accuracy; writing deeper improves multi-step reasoning.} One connector on frozen Ouro-2.6B evaluated at
-all 16 (read, write) pairs. Knowledge (MMLU) and long-context reading (RULER-16K) improve along the read axis; multi-step
-reasoning (GSM8K) improves along the write axis. Grid subsets: MMLU 20 questions per subject, RULER-16K 260 rows, GSM8K
+\caption{\textbf{Prefill loops raise knowledge and long-context accuracy; decode loops raise multi-step math.} One loop
+adapter on frozen Ouro-2.6B evaluated at all 16 (prefill $m$, decode $n$) pairs. Knowledge (MMLU) and long-context
+retrieval (RULER-16K) improve with $m$; multi-step math (GSM8K) improves with $n$. Grid subsets: MMLU 20 questions per subject, RULER-16K 260 rows, GSM8K
 400 problems; cells show accuracy (\%), one colour scale for all panels; full-set comparisons are in Table~\ref{tab:equal}.}
 \label{fig:grid}
 \end{figure*}
@@ -65,12 +64,12 @@ reasoning (GSM8K) improves along the write axis. Grid subsets: MMLU 20 questions
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig0_method.pdf}
-\caption{\textbf{The depth-split connector.} The frozen model reads the prompt with $p$ loops and keeps one prompt KV
-cache. Each of the $d$ writing loops reads that cache through its own map: a learned scale on each rotary
+\caption{\textbf{The loop adapter.} The frozen model prefills the prompt with $m$ loops and keeps one prompt KV
+cache. Each of the $n$ decode loops reads that cache through its own map: a learned scale on each rotary
 (RoPE) pair of the keys, which can be moved onto the query so the cache is never rewritten, and a value map applied
 after attention. Attention over the prompt and over the generated tokens is computed separately and combined into one
-softmax, as in blockwise (FlashAttention-style) attention. The prompt KV is stored once for every $d$: total
-KV $b(n+d\,t)$ instead of $b\,d(n+t)$, with $b$ bytes per token and loop and $n$, $t$ the prompt and answer length.}
+softmax, as in blockwise (FlashAttention-style) attention. The prompt KV is stored once for every $n$: total
+KV $b(\ell+n\,t)$ instead of $b\,n(\ell+t)$, with $b$ bytes per token and loop and $\ell$, $t$ the prompt and answer length.}
 \label{fig:method}
 \end{figure*}
 
@@ -80,33 +79,33 @@ depth without adding parameters by running a shared block of layers several time
 fixed-depth inference we study, the price is paid twice: every generated token runs every loop, and every loop keeps
 its own key--value (KV) cache.
 
-Yet the two phases of inference are not alike. Reading the prompt (prefill) is parallel and paid once per request;
-writing the answer (decoding) is sequential and paid for every token. A looped model nevertheless spends the same depth on
-both. What does depth buy when reading, and what does it buy when writing? If the answers differ, a model could read
-deep and write shallow.
+Yet the two phases of inference are not alike. Prefill is parallel and paid once per request; decoding is sequential
+and paid for every token. A looped model nevertheless runs the same number of loops in both. What do prefill loops buy,
+and what do decode loops buy? If the answers differ, the two counts should be chosen separately.
 
-We write \rw{p}{d} for prefilling the prompt with $p$ loops and generating every answer token with $d$ loops, and
-\nat{d} for the unmodified model, which uses $d$ loops for both. Answering the question needs a model that writes with
-fewer loops than it read with, so its shallow writing loops must attend to KV produced by a deeper loop. Our
-\emph{depth-split connector} combines LoRA on the frozen model with a learned map on the prompt KV for every writing loop
-(Figure~\ref{fig:method}); one stored prompt cache serves every writing loop. We train one connector and evaluate it at
-all 16 pairs of read and write depth with its parameters fixed.
+We write \rw{m}{n} for prefilling the prompt with $m$ loops and decoding every answer token with $n$ loops, and
+\nat{n} for the unmodified model, which uses $n$ loops for both. When $m\neq n$, the decode loops must attend to prompt
+KV produced by a different loop than their own. Our \emph{loop adapter} combines LoRA on the frozen model with a learned
+map on the prompt KV for every decode loop (Figure~\ref{fig:method}); one stored prompt cache serves every decode loop.
+We train one loop adapter and evaluate it at all 16 pairs $(m,n)$ with its parameters fixed.
 
-The resulting map shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, reading depth mainly
-moves knowledge and long-context scores (MMLU, RULER-16K), and writing depth mainly moves multi-step math (GSM8K). With the writer held
-fixed, reading deeper helps on five checkpoints from two model families (Table~\ref{tab:models}).
+The resulting grid shows a division of labour (Figure~\ref{fig:grid}). On the benchmarks we test, prefill loops mainly
+move knowledge and long-context scores (MMLU, RULER-16K), and decode loops mainly move multi-step math (GSM8K). With
+the decode loops held fixed, more prefill loops help on five checkpoints from two model families
+(Table~\ref{tab:models}).
 
-Reading deep and writing shallow puts the two findings together (Figure~\ref{fig:equal}): on Ouro-2.6B-Thinking,
-reading four loops and writing two scores at least as high as native 2/2 on all eight benchmarks at the same decode
-depth (significantly higher on five), and within two points of native 4/4 on six. On full GSM8K it scores 93.3 against 94.2 for native 4/4; on 64 timed problems its
-answer time, prefill included, is $0.55\times$ that of native 4/4 (Figure~\ref{fig:frontier}). Against measured decode
-throughput, the connector is more accurate than native models at one and two writing loops and faster at three and four
-(Figure~\ref{fig:pareto}). The split carries over to looped decision models: against a control continued with the same data and
-updates, Lev models that read their context deep are 4.4--7.5 points more accurate at one decision loop on three
+The best pair therefore depends on the task, and an untied model can spend its loops where they pay
+(Figure~\ref{fig:equal}): on Ouro-2.6B-Thinking, prefill 4 / decode 2 scores at least as high as native 2/2 on all eight
+benchmarks at the same decode cost (significantly higher on five), and within two points of native 4/4 on six. On full
+GSM8K it scores 93.3 against 94.2 for native 4/4; on 64 timed problems its answer time, prefill included, is
+$0.55\times$ that of native 4/4 (Figure~\ref{fig:frontier}). Against measured decode throughput, the loop adapter is
+more accurate than native models at one and two decode loops and faster at three and four (Figure~\ref{fig:pareto}).
+The same untying carries over to looped decision models: against a control continued with the same data and updates,
+Lev models that prefill their context with more loops are 4.4--7.5 points more accurate at one decision loop on three
 backbones (Figure~\ref{fig:lev}).
 
-Our contributions are a measurement of what reading and writing depth each buy in looped language models, a connector
-that makes the split usable on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
+Our contributions are a measurement of what prefill loops and decode loops each buy in looped language models, a loop
+adapter that unties them on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
 of the time it saves. Code, per-item results and a script that recomputes the paper's statistics accompany it.
 
 
@@ -115,21 +114,21 @@ of the time it saves. Code, per-item results and a script that recomputes the pa
 \paragraph{Looped and elastic depth.} Accordion~\citep{accordion} and Elastic Latent Recurrence~\citep{elr} train one
 model for several depth budgets; ELR also finds that keeping only the last loop's KV retains most of the gain. The
 Parallel Loop Transformer~\citep{plt}, LoopCoder-v2~\citep{loopcoder2} and shared-memory looped
-transformers~\citep{sharedmem} let later loops read the first loop's KV plus a short local window. All spend the same
-depth on prompt and answer.
+transformers~\citep{sharedmem} let later loops read the first loop's KV plus a short local window. All run the same
+number of loops for prefill and decode.
 
 \paragraph{Phase-specific computation.} Continuous Depth Batching~\citep{cdb} exits early during decode; Position-Aware
 Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill} decodes with a width-pruned model;
 Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop} and SPEED~\citep{speed}
 prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
-State-Prediction Separation~\citep{sps} add decode-side computation. We instead vary prompt and answer depth
-independently within one connector and measure what each buys.
+State-Prediction Separation~\citep{sps} add decode-side computation. We instead vary prefill and decode loops
+independently within one loop adapter and measure what each buys.
 
 \paragraph{Asymmetric KV producers and consumers.} YOCO~\citep{yoco} has a self-decoder produce one global KV cache that
 a cross-decoder reads; YOCO-U~\citep{yocou} loops the self-decoder, keeping KV storage independent of the loop count
 while every token still runs the loops; KITE~\citep{kite} expands a checkpoint into two towers so that bulk prefill runs
 only the KV-producing tower. These architectures are built for the split; we adapt an existing looped model after
-pretraining and choose the prompt depth $p$ and answer depth $d$ per request.
+pretraining and choose the prefill loops $m$ and decode loops $n$ per request.
 
 \paragraph{Sharing and transferring state.} Looped Latent Attention~\citep{lla} compresses KV across loops;
 BeNice!~\citep{benice} and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c},
@@ -137,30 +136,30 @@ HeteroFold~\citep{heterofold}, Swarm Telepathy~\citep{swat} and CacheLink~\citep
 and BellowsKV~\citep{bellows} shares one latent across layers. Like CacheLink, we train our maps through the receiver's
 output; within one model tokens, layers and positions align, so a RoPE-commuting scale and a value map suffice. For hybrid attention / linear-recurrence
 models~\citep{gdn,hymba}, state-swap interventions~\citep{afendulev} and LatentPort~\citep{latentport} study the two
-kinds of state; Appendix~\ref{app:hybrid} relates them to reading depth.
+kinds of state; Appendix~\ref{app:hybrid} relates them to prefill loops.
 
 \section{Method}
 \label{sec:method}
 
 
-We describe the connector for Ouro; SenseNova-Loop-9B uses a lighter variant without maps (Appendix~\ref{app:training}).
+We describe the loop adapter for Ouro; SenseNova-Loop-9B uses a lighter variant without maps (Appendix~\ref{app:training}).
 
 \begin{figure*}[t]
 \centering
 \begin{minipage}[t]{0.555\textwidth}
 \begin{lstlisting}
-# blocks: frozen looped block, L layers; p/d: read/write loops
+# blocks: frozen looped block, L layers; m/n: prefill/decode loops
 # c[k][l] = 1+a+1j*b per RoPE pair; W[k][l] = I+delta (init: I)
-# LoRA on q, k, v, o is active only while writing.
+# LoRA on q, k, v, o is active only while decoding.
 
-def read(prompt, p):                      # prompt minus its last token
+def prefill(prompt, m):                   # prompt minus its last token
     h = embed(prompt)
-    for _ in range(p):
+    for _ in range(m):
         for l in range(L):
             h, K[l], V[l] = blocks[l](h)  # last loop's K, V kept
     return K, V                           # one prompt KV cache
 
-def attend(q, K, V, kv_answer, c, W):     # layer l, writing loop k
+def attend(q, K, V, kv_answer, c, W):     # layer l, decode loop k
     qc = complex_mul(q, c.conj())         # key scale moved to the query
     o_p, lse_p = flash_attn(qc, K, V)     # prompt part
     o_p = o_p @ W.T                       # attention is linear in V
@@ -168,9 +167,9 @@ def attend(q, K, V, kv_answer, c, W):     # layer l, writing loop k
     g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
     return g * o_p + (1 - g) * o_a
 
-def write(token, K, V, d):  # last prompt token, then answer
+def decode(token, K, V, n): # last prompt token, then answer
     h = embed(token)
-    for k in range(d):
+    for k in range(n):
         for l in range(L):
             h = blocks[l](h, attn=lambda q, kv: attend(
                     q, K[l], V[l], kv, c[k][l], W[k][l]))
@@ -179,48 +178,48 @@ def write(token, K, V, d):  # last prompt token, then answer
 \end{minipage}\hfill
 \begin{minipage}[t]{0.425\textwidth}
 \begin{lstlisting}
-# training: one (p, d) per micro-batch,
+# training: one (m, n) per micro-batch,
 # teacher = the native 4/4 model
-p, d = randint(1, 4), randint(1, 4)
-with torch.no_grad(): t = model(x, read=4, write=4)
-s = model(x, read=p, write=d)             # LoRA + maps
+m, n = randint(1, 4), randint(1, 4)
+with torch.no_grad(): t = model(x, prefill=4, decode=4)
+s = model(x, prefill=m, decode=n)         # LoRA + maps
 kl = kl_div(s.log_softmax(-1),
             t.log_softmax(-1), log_target=True,
             reduction="none").sum(-1)
 loss = kl[answer].sum() / answer.sum()
 \end{lstlisting}
 \end{minipage}
-\caption{\textbf{The depth-split connector in PyTorch-style pseudocode.} The prompt KV cache is written once by the
-last of $p$ read loops; every writing loop reads it through its own key scale (applied to the query) and value map
+\caption{\textbf{The loop adapter in PyTorch-style pseudocode.} The prompt KV cache is written once by the
+last of $m$ prefill loops; every decode loop reads it through its own key scale (applied to the query) and value map
 (applied to the attention output), and the prompt and answer attention are combined exactly through their log-sum-exp.}
-\label{alg:connector}
+\label{alg:adapter}
 \end{figure*}
 
-\paragraph{Reading and writing.} ``\rw{p}{d}'' prefills the prompt with $p$ loops and decodes every answer token with
-$d$ loops; \nat{d} is the unmodified model. The frozen model reads the prompt with $p$ loops and keeps only the last
-loop's prompt keys and values. The writer is the same frozen model with rank-16 LoRA~\citep{lora} on its attention
-projections, running $d$ loops per token.
+\paragraph{Prefill and decode.} ``\rw{m}{n}'' prefills the prompt with $m$ loops and decodes every answer token with
+$n$ loops; \nat{n} is the unmodified model. The frozen model prefills the prompt with $m$ loops and keeps only the last
+loop's prompt keys and values. The decoder is the same frozen model with rank-16 LoRA~\citep{lora} on its attention
+projections, running $n$ loops per token.
 
-\paragraph{RoPE-commuting maps.} Writing loop $k$ reads the prompt KV cache through a map per (loop, layer, KV head). The
+\paragraph{RoPE-commuting maps.} Decode loop $k$ reads the prompt KV cache through a map per (loop, layer, KV head). The
 key map is one complex scale $c_j$ per rotary frequency pair $j$~\citep{rope}: viewing the pair of key coordinates
-$(k_{2j},k_{2j+1})$ as a 2-D vector, $c_j=r\,e^{i\phi}$ stretches it by $r$ and turns it by $\phi$. Writing a rotated key pair as a complex
-number $\tilde k_j = e^{im\theta_j}k_j$, scaling commutes with the rotation, $c_j\tilde k_j = e^{im\theta_j}(c_jk_j)$,
+$(k_{2j},k_{2j+1})$ as a 2-D vector, $c_j=r\,e^{i\phi}$ stretches it by $r$ and turns it by $\phi$. Writing a key pair rotated for position $s$ as a complex
+number $\tilde k_j = e^{is\theta_j}k_j$, scaling commutes with the rotation, $c_j\tilde k_j = e^{is\theta_j}(c_jk_j)$,
 and $\mathrm{Re}\langle q_j, c_j\tilde k_j\rangle = \mathrm{Re}\langle \bar c_jq_j, \tilde k_j\rangle$: the map is applied
 to the query and the stored cache is never rewritten. The value map is a full linear map $W_k$ per head; because
 attention is linear in the values, $\sum_i a_iW_kv_i = W_k\sum_i a_iv_i$ is applied once to the attention output over the
 prompt. Prompt and generated tokens share one softmax: the two parts are computed by two attention calls with outputs
-$o_P, o_A$ and log-sum-exps $\ell_P, \ell_A$ of their attention logits, and merged as $g\,o_P+(1-g)\,o_A$ with
-$g=\sigma(\ell_P-\ell_A)$, which equals one softmax over both (the blockwise softmax of FlashAttention~\citep{flashattn2}). The prompt KV is therefore stored once for every $d$, and total KV is $b(n+d\,t)$
-instead of $b\,d(n+t)$. Serving from one cache equals materialising a mapped prompt cache per loop; in bfloat16 all 512
+$o_P, o_A$ and log-sum-exps $\lambda_P, \lambda_A$ of their attention logits, and merged as $g\,o_P+(1-g)\,o_A$ with
+$g=\sigma(\lambda_P-\lambda_A)$, which equals one softmax over both (the blockwise softmax of FlashAttention~\citep{flashattn2}). The prompt KV is therefore stored once for every $n$, and total KV is $b(\ell+n\,t)$
+instead of $b\,n(\ell+t)$. Serving from one cache equals materialising a mapped prompt cache per loop; in bfloat16 all 512
 checked greedy tokens agree.
 
-\paragraph{What the maps do.} With the same training and the maps frozen at the identity, the writer loses little on
-short-context reasoning and knowledge but 11.4 points on RULER-16K at read 4 / write 1 (Appendix~\ref{sec:ablation}):
+\paragraph{What the maps do.} With the same training and the maps frozen at the identity, the decoder loses little on
+short-context reasoning and knowledge but 11.4 points on RULER-16K at prefill 4 / decode 1 (Appendix~\ref{sec:ablation}):
 the maps matter mainly for long prompts.
 
 \paragraph{Training.} We minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
 native 4/4 model as teacher, on 48M answer tokens of reasoning traces, instruction data, long-context data and web text.
-One $(p,d)$ pair is sampled per micro-batch, so one set of parameters (63M, 2.4\% of Ouro-2.6B) serves all 16 pairs.
+One $(m,n)$ pair is sampled per micro-batch, so one set of parameters (63M, 2.4\% of Ouro-2.6B) serves all 16 pairs.
 Details are in Appendix~\ref{app:training}.
 
 \section{Experiments}
@@ -230,24 +229,24 @@ Details are in Appendix~\ref{app:training}.
 visited twice. Benchmarks: GSM8K~\citep{gsm8k}, MATH-500~\citep{math,lightman2023lets}, MMLU~\citep{mmlu}, MMLU-Pro~\citep{mmlupro},
 ARC-Challenge~\citep{arc}, BBH~\citep{bbh}, RULER~\citep{ruler} at 4K/8K/16K and HELMET~\citep{helmet}; protocols and set
 sizes are in Appendix~\ref{app:eval}. Every comparison is paired over items with 95\% bootstrap intervals. To isolate
-reading depth from adaptation we compare \rw{p}{d} with \rw{d}{d} of the \emph{same} connector; comparisons with native
-models include the effect of training the connector.
+prefill loops from adaptation we compare \rw{m}{n} with \rw{n}{n} of the \emph{same} loop adapter; comparisons with native
+models include the effect of training the loop adapter.
 
 \begin{table*}[!t]
 \centering\small
 \setlength\tabcolsep{2.5pt}
 \begin{tabular}{@{}llll@{}}
 \toprule
-model (same writer, write 1) & knowledge & long context & multi-step \\
+model (same decoder, decode 1) & knowledge & long context & multi-step \\
 \midrule
-Ouro-2.6B, read 4 vs.\ 1 & MMLU \up{15.2}\ci{14.3}{16.1} & RULER-16K \up{8.6}\ci{4.3}{12.8} & GSM8K \up{8.0}\ci{5.3}{10.5} \\
-Ouro-1.4B, read 4 vs.\ 1 & ARC-C \up{10.8}\ci{8.4}{13.1} & RULER-16K \up{1.4}\ci{-2.6}{5.4} & GSM8K \up{6.2}\ci{3.6}{8.7} \\
-Ouro-2.6B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{18.6}\ci{13.6}{23.8} & HELMET \up{7.7}\ci{2.1}{13.6} & GSM8K \up{6.6}\ci{4.2}{9.2} \\
-Ouro-1.4B-Thinking, read 4 vs.\ 1 & MMLU-Pro \up{17.1}\ci{12.4}{22.4} & HELMET \up{4.6}\ci{0.1}{8.6} & GSM8K \up{13.6}\ci{10.5}{16.6} \\
-SenseNova-Loop-9B, read 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{3.5}\ci{0.8}{6.1} & BBH \up{7.0}\ci{5.9}{8.0} \\
+Ouro-2.6B, prefill 4 vs.\ 1 & MMLU \up{15.2}\ci{14.3}{16.1} & RULER-16K \up{8.6}\ci{4.3}{12.8} & GSM8K \up{8.0}\ci{5.3}{10.5} \\
+Ouro-1.4B, prefill 4 vs.\ 1 & ARC-C \up{10.8}\ci{8.4}{13.1} & RULER-16K \up{1.4}\ci{-2.6}{5.4} & GSM8K \up{6.2}\ci{3.6}{8.7} \\
+Ouro-2.6B-Thinking, prefill 4 vs.\ 1 & MMLU-Pro \up{18.6}\ci{13.6}{23.8} & HELMET \up{7.7}\ci{2.1}{13.6} & GSM8K \up{6.6}\ci{4.2}{9.2} \\
+Ouro-1.4B-Thinking, prefill 4 vs.\ 1 & MMLU-Pro \up{17.1}\ci{12.4}{22.4} & HELMET \up{4.6}\ci{0.1}{8.6} & GSM8K \up{13.6}\ci{10.5}{16.6} \\
+SenseNova-Loop-9B, prefill 2 vs.\ 1 & MMLU-Pro \up{5.5}\ci{2.9}{8.1} & HELMET \up{3.5}\ci{0.8}{6.1} & BBH \up{7.0}\ci{5.9}{8.0} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Reading depth with the writer held fixed} across five checkpoints (paired, within one connector). Set
+\caption{\textbf{Prefill loops with the decoder held fixed} across five checkpoints (paired, within one loop adapter). Set
 sizes: MMLU 14,042, ARC-C 1,172, MMLU-Pro 420 (Ouro) and 980 (SenseNova), RULER 520, HELMET 1,108 (Ouro) and 6,646
 (SenseNova), GSM8K 1,319, BBH 6,511. HELMET is averaged as its authors do (mean per dataset, then per category, then
 over its four categories). Each column shows one benchmark of that kind per checkpoint;
@@ -259,10 +258,10 @@ a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
-\caption{\textbf{Read deep, write shallow: the decode depth of two loops, close to the quality of four.} Ouro-2.6B-Thinking
+\caption{\textbf{Prefill 4 / decode 2: the decode cost of two loops, close to the quality of four.} Ouro-2.6B-Thinking
 on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
-categories); read 4 / write 2 uses one connector and one stored prompt KV cache. Hollow circles: the same connector reading only two
-loops, which separates the effect of training from that of reading depth. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
+categories); prefill 4 / decode 2 uses one loop adapter and one stored prompt KV cache. Hollow circles: the same loop adapter prefilling with only two
+loops, which separates the effect of training from that of prefill loops. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
 interval.}
 \label{fig:equal}
 \end{figure*}
@@ -270,9 +269,9 @@ interval.}
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_pareto.pdf}
-\caption{\textbf{Accuracy against decode throughput.} Native $d/d$ (grey) and the connector reading 4 loops and writing
-$d$ (red), $d=1$--4 (labels). Throughput: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
-base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $d$ grows.
+\caption{\textbf{Accuracy against decode throughput.} Native $n/n$ (grey) and the loop adapter with prefill 4 / decode
+$n$ (red), $n=1$--4 (labels). Throughput: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
+base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $n$ grows.
 Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on all 1,319 GSM8K problems.}
 \label{fig:pareto}
 \end{figure*}
@@ -280,20 +279,20 @@ Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on al
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{Read deep, decide shallow.} Lev looped decision models~\citep{lev} on the public LevBench development
-set (3,270 answerable questions): accuracy against the number of loops spent on the decision. Red: the context is read
-deep (four loops on Ouro, two on Nanbeige) and the question and options run $d$ loops on that deep KV; dark grey: the
+\caption{\textbf{More prefill loops, fewer decision loops.} Lev looped decision models~\citep{lev} on the public LevBench development
+set (3,270 answerable questions): accuracy against the number of loops spent on the decision. Red: the context is prefilled
+with four loops (two on Nanbeige) and the question and options run $n$ loops on that KV; dark grey: the
 same continued training with Lev's own forward; dashed: the released model.}
 \label{fig:lev}
 \end{figure*}
 
-\subsection{What reading depth and writing depth buy}
+\subsection{What prefill loops and decode loops buy}
 \label{sec:grid}
 
-Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one read loop to 70 at three or
-four with a one-loop writer and to 74--75 with deeper writers; GSM8K gains 9 points along the read axis at one write loop but rises from 46--55 to 78--88 with writing
-depth. Table~\ref{tab:equal} confirms the pattern on full sets: at one writing loop, reading four loops instead of one
-adds 15.2 MMLU, 8.6 RULER-16K and 8.0 GSM8K points; the gain shrinks as writing deepens. A second training seed
+Figure~\ref{fig:grid} shows the full grid on Ouro-2.6B. MMLU rises from 52--53 at one prefill loop to 70 at three or
+four with one decode loop and to 74--75 with more decode loops; GSM8K gains 9 points along the prefill axis at one decode loop but rises from 46--55 to 78--88 with decode
+loops. Table~\ref{tab:equal} confirms the pattern on full sets: at one decode loop, prefilling with four loops instead of one
+adds 15.2 MMLU, 8.6 RULER-16K and 8.0 GSM8K points; the gain shrinks as decode loops are added. A second training seed
 reproduces these numbers (Appendix~\ref{app:seed}).
 
 \begin{table}[t]
@@ -301,68 +300,68 @@ reproduces these numbers (Appendix~\ref{app:seed}).
 \setlength\tabcolsep{2pt}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-write $d$ & MMLU & RULER-16K & GSM8K \\
+decode $n$ & MMLU & RULER-16K & GSM8K \\
 \midrule
 1 & \up{15.2}\ci{14.3}{16.1} & \up{8.6}\ci{4.3}{12.8} & \up{8.0}\ci{5.3}{10.5} \\
 2 & \up{6.0}\ci{5.4}{6.7} & \up{5.3}\ci{1.3}{9.4} & \dn{1.7}\ci{-3.6}{0.2} \\
 3 & \up{0.6}\ci{0.2}{1.1} & \dn{0.4}\ci{-3.0}{2.2} & \dn{0.8}\ci{-2.4}{0.8} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Reading depth at fixed writing depth} (Ouro-2.6B, one connector, full sets): \rw{4}{d} minus
-\rw{d}{d}. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\caption{\textbf{Prefill loops at fixed decode loops} (Ouro-2.6B, one loop adapter, full sets): \rw{4}{d} minus
+\rw{n}{n}. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:equal}
 \end{table}
 
-The same holds across models (Table~\ref{tab:models}): with the writer fixed at one loop, reading deeper improves
+The same holds across models (Table~\ref{tab:models}): with one decode loop, more prefill loops improve
 knowledge and long-context scores on all five checkpoints (the Ouro-1.4B RULER-16K gain is not significant). The effect
-depends on the task and its prompt; Appendix~\ref{app:hurt} lists where reading deep hurts, notably few-shot MATH-500
+depends on the task and its prompt; Appendix~\ref{app:hurt} lists where more prefill loops hurt, notably few-shot MATH-500
 and 3-shot BBH on the 1.4B models.
 
-\subsection{Read deep, write shallow}
+\subsection{More prefill loops, fewer decode loops}
 \label{sec:rdws}
 
 
-Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: read four loops, write two. At the decode
-depth of \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
+Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: prefill 4 / decode 2. At the decode
+cost of \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
 BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}), MBPP+ ($+4.8$\ci{1.3}{8.2}) and HELMET
-($+13.0$\ci{6.7}{19.5}); on GSM8K, MATH-500 ($+0.2$\ci{-2.6}{3.0}) and HumanEval the gains are within noise. Against \nat{4}, which writes with
-twice the depth, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), where native 4/4
-recalls exact key--value pairs that deep reading loses (Appendix~\ref{app:hurt}), and on MATH-500
+($+13.0$\ci{6.7}{19.5}); on GSM8K, MATH-500 ($+0.2$\ci{-2.6}{3.0}) and HumanEval the gains are within noise. Against \nat{4}, which decodes with
+twice the loops, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), where native 4/4
+recalls exact key--value pairs that more prefill loops lose (Appendix~\ref{app:hurt}), and on MATH-500
 ($-4.8$\ci{-7.8}{-2.0}).
 
-Part of the gain over \nat{2} comes from training the connector, not from depth. The same connector reading two loops
-(hollow circles; same weights, same training, same writing depth) isolates reading depth: reading four rather than two
+Part of the gain over \nat{2} comes from training the loop adapter, not from the loop counts. The same loop adapter prefilling with two loops
+(hollow circles; same weights, same training, same decode loops) isolates prefill loops: prefilling with four rather than two
 loops adds $+8.1$\ci{4.0}{12.1} on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge
 and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$): the gains over \nat{2} on
-knowledge and long-context benchmarks track reading depth, the others do not. The same holds on Ouro-1.4B-Thinking
+knowledge and long-context benchmarks track prefill loops, the others do not. The same holds on Ouro-1.4B-Thinking
 (Appendix~\ref{app:t14}).
 
 
 
-Figure~\ref{fig:pareto} shows the same trade-off across all writing depths, against measured decode throughput. For
-every writing depth, reading four loops moves the model up (more accurate at one or two writing loops: MMLU $+18.4$ and
-$+5.9$, RULER-16K $+22.2$ and $+11.6$ on the grid subsets) or right (faster at three or four writing loops, because one
-stored prompt cache admits larger batches: 271 and 203 against 200 and 125 tokens/s). Read 4 / write 2 runs at
+Figure~\ref{fig:pareto} shows the same trade-off for every number of decode loops, against measured decode throughput. For
+every $n$, prefilling with four loops moves the model up (more accurate at one or two decode loops: MMLU $+18.4$ and
+$+5.9$, RULER-16K $+22.2$ and $+11.6$ on the grid subsets) or right (faster at three or four decode loops, because one
+stored prompt cache admits larger batches: 271 and 203 against 200 and 125 tokens/s). Prefill 4 / decode 2 runs at
 $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
 
-\subsection{Writing shallow is fast end to end}
+\subsection{Fewer decode loops are faster end to end}
 \label{sec:fast}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Writing shallow saves time end to end.} Accuracy vs.\ seconds per answer at batch 1 (prefill included,
-real greedy answers, the same 64 GSM8K problems for every point). Top: writing with two loops takes $0.55\times$ the
-time of native 4/4, whether the prompt is read with 2 or 4 loops; on all 1,319 problems read 4 / write 2 is 1.0 point below
+\caption{\textbf{Fewer decode loops save time end to end.} Accuracy vs.\ seconds per answer at batch 1 (prefill included,
+real greedy answers, the same 64 GSM8K problems for every point). Top: decoding with two loops takes $0.55\times$ the
+time of native 4/4, whether the prompt is prefilled with 2 or 4 loops; on all 1,319 problems prefill 4 / decode 2 is 1.0 point below
 native 4/4 (Section~\ref{sec:fast}). Bottom: on SenseNova-Loop-9B, whose native one-loop model solves 2.2\% of all GSM8K
-problems, read 1 / write 1 is 1.6 points below native 2/2 at $0.59\times$ the time (y axis zoomed).}
+problems, prefill 1 / decode 1 is 1.6 points below native 2/2 at $0.59\times$ the time (y axis zoomed).}
 \label{fig:frontier}
 \end{figure}
 
-We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}). On Ouro-2.6B-Thinking a connector that writes
-with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}. On all 1,319 problems, read 4 / write 2
-scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Reading 4 rather than 2 loops before writing two
-changes the answer time by $1.01\times$\ci{0.90}{1.11}: the saving comes from the shallower, adapted writer, including
+We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}). On Ouro-2.6B-Thinking a loop adapter that writes
+with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}. On all 1,319 problems, prefill 4 / decode 2
+scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Prefilling with 4 rather than 2 loops before decoding with two
+changes the answer time by $1.01\times$\ci{0.90}{1.11}: the saving comes from the adapted decoder with fewer loops, including
 its shorter answers. On MATH-500, whose answers it does not shorten, the
 saving is smaller: $0.63\times$ the time of \nat{4} but $1.22\times$ that of \nat{2} (Appendix~\ref{app:serve}). On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for
 \nat{2} on all 1,319 GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close to the ratio of layer
@@ -375,38 +374,38 @@ executions per token (32 vs.\ 56).
 
 
 The split also serves looped decision models. Lev~\citep{lev} reads a context, then scores the options of a question
-with a learned head after every loop, without generating text. We read the context with four loops (two for Lev-3B,
-whose backbone has two), let every decision loop attend to the last read loop's KV, and continue training Lev's own LoRA
+with a learned head after every loop, without generating text. We prefill the context with four loops (two for Lev-3B,
+whose backbone has two), let every decision loop attend to the last prefill loop's KV, and continue training Lev's own LoRA
 and scoring head; the control continues the same weights on the same data and number of updates with Lev's own forward.
 We evaluate on the 3,270 answerable questions of LevBench's public development set (never its locked test set), with
 intervals over record groups as Lev does; setup and further checks are in Appendix~\ref{app:lev}.
 
-With one decision loop, reading deep raises accuracy by $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on
-Lev-2.6B and $+4.4$\ci{2.8}{6.1} on Lev-3B (Figure~\ref{fig:lev}); the advantage shrinks as the decision deepens; at full depth it is gone on
+With one decision loop, prefilling with more loops raises accuracy by $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on
+Lev-2.6B and $+4.4$\ci{2.8}{6.1} on Lev-3B (Figure~\ref{fig:lev}); the advantage shrinks as decision loops are added; with all of them it is gone on
 the Ouro backbones and negative on Lev-3B ($-1.8$). It holds across training seeds (four per backbone; all significant except one Lev-3B seed) and
 against a control trained for twice as many updates ($+4.0$, $+5.5$, $+4.0$), so it is not explained by the extra
 computation of our training forward.
 
 \section{Conclusion}
 
-Depth in a looped language model is two budgets, not one. On the checkpoints and benchmarks we test, reading depth is
-paid once and mainly buys knowledge and long-context accuracy, while writing depth is paid per token and mainly buys
-multi-step reasoning; both effects depend on the task. A small connector makes the two separable on existing
-checkpoints with one exact prompt cache, and a shallower adapted writer cuts the measured time per answer at a small
-accuracy cost.
+A looped language model need not run the same number of loops for prefill and decode. On the checkpoints and benchmarks
+we test, prefill loops mainly buy knowledge and long-context accuracy and decode loops mainly buy multi-step math, so the
+best pair depends on the task. A small loop adapter unties the two on existing checkpoints with one exact prompt cache;
+with more prefill than decode loops it reaches near-native quality at a lower decode cost and answer time, and the same
+untying helps looped decision models.
 
 \section*{Limitations}
 \label{sec:limits}
 
-Reading deep lowers 4-shot MATH-500, gives a negative but inconclusive estimate on RULER-4K and, on Ouro, lowers exact
+More prefill loops lower 4-shot MATH-500, give a negative but inconclusive estimate on RULER-4K and, on Ouro, lower exact
 key--value recall in HELMET (Tables~\ref{tab:hurt} and~\ref{tab:helmet}); at three
-or more writing loops, one deep prompt KV cache trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, write 3).
-Deeper prefill raises time to first token, so it pays when answers are long or quality requires it. Both 1.4B checkpoints
+or more decode loops, one prompt KV cache from the fourth loop trails the native model on RULER ($-10.4/-9.5/-5.3$ at 4K/8K/16K, decode 3).
+More prefill loops raise time to first token, so it pays when answers are long or quality requires it. Both 1.4B checkpoints
 degenerate at \rw{4}{1} on 3-shot BBH (Ouro-1.4B: $-24.5$, Ouro-1.4B-Thinking: $-20.5$ against \rw{1}{1}); with two
-writing loops, reading four instead of two helps (Ouro-1.4B-Thinking: $+8.8$, Table~\ref{tab:t14}).
-On Nanbeige4.2-3B-Base our shared-connector recipes trail connectors trained per $(p,d)$ pair, so Appendix~\ref{app:eval} reports per-pair
+decode loops, prefilling with four instead of two helps (Ouro-1.4B-Thinking: $+8.8$, Table~\ref{tab:t14}).
+On Nanbeige4.2-3B-Base our shared-loop adapter recipes trail loop adapters trained per $(m,n)$ pair, so Appendix~\ref{app:eval} reports per-pair
 results.
-Gains against native models include the adaptation of the connector. Throughput is a controlled decode benchmark and
+Gains against native models include the adaptation of the loop adapter. Throughput is a controlled decode benchmark and
 end-to-end time is measured at batch 1 on one GPU type. Thinking checkpoints on raw HELMET prompts can stop at once; we
 decode them so that an answer cannot be empty, for every configuration (Appendix~\ref{app:eval}). Probes measure linear
 decodability, not causal use. All models are 1.4B--9B, decoding is greedy and benchmarks are English.
@@ -418,13 +417,13 @@ decodability, not causal use. All models are 1.4B--9B, decoding is greedy and be
 \section{Training Details}
 \label{app:training}
 
-\paragraph{Connector.} Rank-16 LoRA ($\alpha=16$, no dropout) on the query, key, value and output projections, active
-only when writing; per (writing loop, layer, KV head) a complex scale for each rotary frequency pair on keys and a full
+\paragraph{Loop adapter.} Rank-16 LoRA ($\alpha=16$, no dropout) on the query, key, value and output projections, active
+only when decoding; per (decode loop, layer, KV head) a complex scale for each rotary frequency pair on keys and a full
 $D\times D$ value map, both initialised to the identity. Trainable parameters: 63,307,776 for Ouro-2.6B. The backbone is
 frozen.
 
 \paragraph{Objective and data.} $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ summed over answer positions and
-normalised by the answer tokens in the global batch; teacher = native 4/4 with the same weights; one pair $(p,d)$ sampled per
+normalised by the answer tokens in the global batch; teacher = native 4/4 with the same weights; one pair $(m,n)$ sampled per
 micro-batch. 48M answer tokens: OpenThoughts reasoning traces 45\%, Tulu SFT responses 40\%, LongAlpaca long-context answers
 5\% and FineWeb-Edu windows 10\% (fractions of answer tokens); prompts up to 7,680 tokens, answers up to 1,024. Base models see
 a plain ``User: \ldots\ Assistant:'' format; thinking models see the same samples in their chat template. No benchmark
@@ -434,8 +433,8 @@ data was deliberately included; we did not decontaminate the training corpora.
 warm-up and cosine decay to $10^{-5}$, gradient clipping at 1.0, global batch 24 sequences on 4 B300 GPUs (6.75 hours for
 Ouro-2.6B), bfloat16 backbone.
 
-\paragraph{Answer stored once.} Generated tokens keep one KV cache per layer shared by all writing loops; at inference
-the last writing loop commits each token, and earlier loops read that history plus the current token's KV computed live
+\paragraph{Answer stored once.} Generated tokens keep one KV cache per layer shared by all decode loops; at inference
+the last decode loop commits each token, and earlier loops read that history plus the current token's KV computed live
 in their own loop (\emph{self-live}, a layout also used by LSTM-style looped transformers~\citep{lstmloop}). For
 example, when loop 1 processes token 5, it attends to tokens 1--4 through the last loop's stored KV and to token 5
 through its own, freshly computed KV. Training
@@ -444,15 +443,15 @@ reads, at every loop, the prompt KV cache, that recorded history strictly before
 token's KV computed live on the diagonal. Training thus approximates, but does not exactly reproduce, inference, where
 the history is generated recursively in the shared cache. With prompt and answer each stored once, total KV is $b(n+t)$, that
 of a one-loop model; with 1K-token prompts and 2,048 generated tokens the largest batch that fits grows from 32
-(\nat{4}) to 192 and write-4 decode throughput from 219 to 476 tokens/s (759 vs.\ 586 at $d{=}2$), at a cost of 4.8
-GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer caches). On Ouro-2.6B-Thinking, a connector
+(\nat{4}) to 192 and decode-4 throughput from 219 to 476 tokens/s (759 vs.\ 586 at $n{=}2$), at a cost of 4.8
+GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer caches). On Ouro-2.6B-Thinking, a loop adapter
 trained the same way changes full-set GSM8K at \rw{4}{2} by $+0.5$\ci{-0.5}{1.6} against per-loop answer caches; at batch 1
 its cost per generated token is the same (82.5 vs.\ 83.1\,ms) but its answers are longer (1,166 vs.\ 741 tokens), so it
 takes $1.53\times$\ci{1.27}{1.84} the time per answer. Its benefit is memory and batch size, not batch-1 latency.
 
 \paragraph{SenseNova-Loop-9B.} Rank-16 LoRA on the attention projections of the looped layers (full attention: q/k/v/o;
-Gated-DeltaNet: input and output projections), active only when writing; no maps. The one-visit writer reads the prefill
-state of the last of $p\in\{1,2\}$ visits (sampled 50/50), so the same writer serves read~1 and read~2. The untrained
+Gated-DeltaNet: input and output projections), active only when decoding; no maps. The one-visit decoder reads the prefill
+state of the last of $m\in\{1,2\}$ visits (sampled 50/50), so the same decoder serves prefill~1 and prefill~2. The untrained
 condition passes the last visit's full-attention KV and Gated-DeltaNet convolution and recurrent states. Teacher: native
 2/2; 20M answer tokens of the same mixture in the SenseNova chat template; peak learning rate $2\times10^{-4}$.
 
@@ -469,12 +468,12 @@ CoT with 60 per subtask. SenseNova-Loop-9B uses MMLU-Pro with 70 questions per s
 BBH (6,511) through our own scripts. For base models, MATH-500 answers are scored with math-verify on the full
 generated answer, with and without exemplars. The harness's own math-verify extraction gives $-9.8$ instead of $-11.2$ for
 the 4-shot comparison on Ouro-2.6B; Minerva's strict ``Final Answer'' match would reverse it (19.6 vs.\ 9.8) because the
-read-1 writer drops the required format more often. On raw HELMET prompts thinking checkpoints can emit a newline and
+prefill-1 decoder drops the required format more often. On raw HELMET prompts thinking checkpoints can emit a newline and
 stop; for thinking models we therefore mask the stop tokens until an answer has a non-whitespace token, for every
 configuration. SenseNova RULER uses a non-thinking prefill for
 every configuration. Native throughput baselines: static per-loop caches with the same two-call flash attention (fastest),
-the standard dynamic cache (500 / 245 / 105 tokens/s at $d=1/2/4$), and a preallocated contiguous cache with one attention
-call (267 / 130 / 57); all produce identical greedy tokens. Nanbeige4.2-3B-Base connectors trained per $(p,d)$ pair, \rw{2}{1} minus
+the standard dynamic cache (500 / 245 / 105 tokens/s at $n=1/2/4$), and a preallocated contiguous cache with one attention
+call (267 / 130 / 57); all produce identical greedy tokens. Nanbeige4.2-3B-Base loop adapters trained per $(m,n)$ pair, \rw{2}{1} minus
 \rw{1}{1}: RULER 4K/8K/16K $+11.8/+11.7/+14.2$, MMLU $+12.2$, GSM8K $+5.2$. Intervals: paired bootstrap over items, 5,000
 resamples; every interval in the paper is recomputed from released per-item scores by one script
 (Appendix~\ref{app:repro}).
@@ -489,21 +488,21 @@ resamples; every interval in the paper is recomputed from released per-item scor
 \toprule
  & task & seed 1 & seed 2 \\
 \midrule
-\multirow{5}{*}{\shortstack[l]{read 4\\$-$ read 1\\(write 1)}} & GSM8K & \up{8.0} & \up{7.2} \\
+\multirow{5}{*}{\shortstack[l]{prefill 4\\$-$ prefill 1\\(decode 1)}} & GSM8K & \up{8.0} & \up{7.2} \\
  & MMLU & \up{15.2} & \up{15.2} \\
  & RULER-4K & \dn{3.8} & \dn{3.5} \\
  & RULER-8K & \up{2.5} & \up{2.0} \\
  & RULER-16K & \up{8.6} & \up{8.6} \\
 \midrule
-\multirow{2}{*}{\shortstack[l]{read 4 $-$ read 2\\(write 2)}} & GSM8K & \dn{1.7} & \dn{2.9} \\
+\multirow{2}{*}{\shortstack[l]{prefill 4 $-$ 2\\(decode 2)}} & GSM8K & \dn{1.7} & \dn{2.9} \\
  & RULER-4K & \dn{7.2} & \dn{6.8} \\
 \bottomrule
 \end{tabular}
-\caption{Ouro-2.6B connector trained with two seeds (initialisation and $(p,d)$ sampling); paired differences within each
+\caption{Ouro-2.6B loop adapter trained with two seeds (initialisation and $(m,n)$ sampling); paired differences within each
 seed, full sets.}
 \end{table}
 
-\section{Read Deep, Write Shallow in Numbers, and on Ouro-1.4B-Thinking}
+\section{Prefill 4 / Decode 2 in Numbers, and on Ouro-1.4B-Thinking}
 \label{app:t14}
 
 \begin{table*}[t]
@@ -511,9 +510,9 @@ seed, full sets.}
 \setlength\tabcolsep{4pt}
 \begin{tabular}{@{}lcccccccc@{}}
 \toprule
- & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{read 4 / write 2 minus} \\
+ & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{prefill 4 / decode 2 minus} \\
 \cmidrule(lr){2-5}\cmidrule(l){6-8}
-benchmark & native 2/2 & read 2 / write 2 & read 4 / write 2 & native 4/4 & native 2/2 & read 2 / write 2 & native 4/4 \\
+benchmark & native 2/2 & prefill 2 / decode 2 & prefill 4 / decode 2 & native 4/4 & native 2/2 & prefill 2 / decode 2 & native 4/4 \\
 \midrule
 \multicolumn{8}{@{}l}{\emph{Ouro-2.6B-Thinking (Figure~\ref{fig:equal})}} \\
 \csname @@input\endcsname ../figs/tab_equal_26B-T.tex
@@ -522,19 +521,19 @@ benchmark & native 2/2 & read 2 / write 2 & read 4 / write 2 & native 4/4 & nati
 \csname @@input\endcsname ../figs/tab_equal_14B-T.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Figure~\ref{fig:equal} in numbers, and on Ouro-1.4B-Thinking.} Per checkpoint, one connector serves
-read 2 / write 2 and read 4 / write 2; same benchmarks, protocols and items for both checkpoints. Differences are score points on a 0--100 scale;
+\caption{\textbf{Figure~\ref{fig:equal} in numbers, and on Ouro-1.4B-Thinking.} Per checkpoint, one loop adapter serves
+prefill 2 / decode 2 and prefill 4 / decode 2; same benchmarks, protocols and items for both checkpoints. Differences are score points on a 0--100 scale;
 brackets are paired 95\% bootstrap intervals.}
 \label{tab:t14}
 \end{table*}
 
 Table~\ref{tab:t14} lists the scores and paired intervals behind Figure~\ref{fig:equal} and repeats the comparison on
 the smaller Thinking checkpoint. The effect of
-reading depth replicates: with the same connector, reading four loops instead of two raises MMLU-Pro ($+8.6$), HELMET ($+7.3$),
+prefill loops replicates: with the same loop adapter, prefilling with four loops instead of two raises MMLU-Pro ($+8.6$), HELMET ($+7.3$),
 ARC-Challenge ($+2.7$) and BBH ($+8.8$) and shows no detectable difference on GSM8K, MATH-500, HumanEval and MBPP+. Against
-native 2/2 the result is weaker than on Ouro-2.6B-Thinking: read 4 / write 2 is significantly better on GSM8K ($+3.0$)
+native 2/2 the result is weaker than on Ouro-2.6B-Thinking: prefill 4 / decode 2 is significantly better on GSM8K ($+3.0$)
 and ARC-Challenge ($+4.3$), within noise on five benchmarks, and much worse on 3-shot BBH ($-15.9$), where this
-checkpoint's connector degenerates at both read depths (Limitations). Against native 4/4 the gap is larger than on
+checkpoint's loop adapter degenerates at both prefill loop counts (Limitations). Against native 4/4 the gap is larger than on
 Ouro-2.6B-Thinking, most of all on BBH ($-37.2$) and HELMET ($-18.3$).
 
 \section{End-to-End Time and Decode Throughput}
@@ -562,17 +561,17 @@ task / model & config & acc.\ (\%) & time (s) \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; Ouro-2.6B-Thinking and
-SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, read 4 / write 2 spends $1.27\times$ the decode time per generated token of \nat{2} at batch 1, but its answers are
+SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, prefill 4 / decode 2 spends $1.27\times$ the decode time per generated token of \nat{2} at batch 1, but its answers are
 shorter.}
 \label{tab:e2e}
 \end{table}
 
 \paragraph{Serving.} Storing the prompt once also changes throughput (Figure~\ref{fig:pareto}; Table~\ref{tab:serve} in Appendix~\ref{app:serve}). In a controlled decode
 benchmark (8K context, 32 repeated decode steps, largest batch that fits on one B300), one prompt KV cache decodes
-$0.97\times$ as fast as the fastest native implementation we measured at one writing loop and $1.19$--$1.62\times$ at
-two to four, because it admits larger batches as $d$ grows; this native baseline uses the same flash attention and is
+$0.97\times$ as fast as the fastest native implementation we measured at one decode loop and $1.19$--$1.62\times$ at
+two to four, because it admits larger batches as $n$ grows; this native baseline uses the same flash attention and is
 faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
-generated tokens) one prompt KV cache decodes $0.97\times$ native at $d{=}2$ and $1.16\times$ at $d{=}4$.
+generated tokens) one prompt KV cache decodes $0.97\times$ native at $n{=}2$ and $1.16\times$ at $n{=}4$.
 
 
 \begin{table}[h]
@@ -580,19 +579,19 @@ generated tokens) one prompt KV cache decodes $0.97\times$ native at $d{=}2$ and
 \setlength\tabcolsep{3pt}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-8K context, 32 steps & $d{=}1$ & $d{=}2$ & $d{=}3$ & $d{=}4$ \\
+8K context, 32 steps & $n{=}1$ & $n{=}2$ & $n{=}3$ & $n{=}4$ \\
 \midrule
-native $d/d$ & 834 & 342 & 200 & 125 \\
+native $n/n$ & 834 & 342 & 200 & 125 \\
 \rw{4}{d}, one prompt cache & 813 & 406 & 271 & 203 \\
 \midrule
-1K context, 2{,}048 steps & & $d{=}2$ & & $d{=}4$ \\
+1K context, 2{,}048 steps & & $n{=}2$ & & $n{=}4$ \\
 \midrule
-native $d/d$ & & 586 & & 219 \\
+native $n/n$ & & 586 & & 219 \\
 \rw{4}{d}, one prompt cache & & 570 & & 253 \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Decode throughput} of Ouro-2.6B (tokens/s, best over tested batch sizes, one B300): native model
-against the connector reading 4 loops with one stored prompt KV cache.}
+against the loop adapter prefilling with 4 loops with one stored prompt KV cache.}
 \label{tab:serve}
 \end{table}
 
@@ -615,35 +614,35 @@ variant & $p/d$ & task & difference \\
 unrestricted keys$^\ddagger$ & -- & RULER-16K & all CIs include 0 \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Design variants} on Ouro-2.6B: variant minus our connector at read $p$ / write $d$ (full sets,
-paired). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals. $^\dagger$Same data, budget, seed and $(p,d)$ sampling; only the maps are not trained (LoRA only, the writer
-reads the last read loop's KV directly).
-$^\ddagger$Unrestricted key maps with one prompt KV cache per writing loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
+\caption{\textbf{Design variants} on Ouro-2.6B: variant minus our loop adapter at prefill $m$ / decode $n$ (full sets,
+paired). Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals. $^\dagger$Same data, budget, seed and $(m,n)$ sampling; only the maps are not trained (LoRA only, the decoder
+reads the last prefill loop's KV directly).
+$^\ddagger$Unrestricted key maps with one prompt KV cache per decode loop, at \rw{1}{1}, 2/2, 3/1, 3/2 and 4/2.}
 \label{tab:ablation}
 \end{table}
 
 
-Table~\ref{tab:ablation} compares design variants. Training the same connector with its maps frozen at the identity,
-so that a LoRA writer reads the last read loop's KV directly, gives small estimated losses on GSM8K and MMLU, with
-intervals including zero, but lowers RULER-16K by 11.4 points at read 4 / write 1 and by 2.6--3.4 points at two writing
+Table~\ref{tab:ablation} compares design variants. Training the same loop adapter with its maps frozen at the identity,
+so that a LoRA decoder reads the last prefill loop's KV directly, gives small estimated losses on GSM8K and MMLU, with
+intervals including zero, but lowers RULER-16K by 11.4 points at prefill 4 / decode 1 and by 2.6--3.4 points at two decode
 loops. Restricting the key map to a
 RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
-maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
+maps with one cache per loop (RULER-16K, five $(m,n)$ pairs).
 
 \section{Decision Models: Setup and Checks}
 \label{app:lev}
 
 Both arms continue each released Lev model for 140 updates on the 8,925-record public S31 training subset with Lev's
-hyperparameters, from the same weights. Our reference forward runs the full sequence through both the read and the
-decision loops, so its training computation is about twice the control's. Without training, reading deep does not help
+hyperparameters, from the same weights. Our reference forward runs the full sequence through both the prefill and the
+decision loops, so its training computation is about twice the control's. Without training, more prefill loops do not help
 ($-3.0$ on Lev-1.4B at one decision loop), and the control itself moves little against the released models at one loop
 ($+0.5$ on Lev-1.4B, $+1.3$ on Lev-2.6B). Repeating both arms with other seeds, the one-loop gain ranges from $+3.9$ to
 $+5.3$ on Lev-1.4B and from $+5.1$ to $+7.5$ on Lev-2.6B, every interval excluding zero (four seeds each); on Lev-3B it is
 $+4.4$, $+5.1$, $+4.0$ and $+0.9$\ci{-0.8}{2.7} (mean $+3.6$). A control trained for two epochs (twice the updates, about
-the training computation of the read-deep arm) still trails reading deep at one loop by $+4.0$\ci{2.1}{6.0} on Lev-1.4B,
+the training computation of the other arm) still trails it at one decision loop by $+4.0$\ci{2.1}{6.0} on Lev-1.4B,
 $+5.5$\ci{3.7}{7.4} on Lev-2.6B and $+4.0$\ci{2.3}{5.7} on Lev-3B.
 
-\section{Reading Deep in a Hybrid Model}
+\section{Prefill Loops in a Hybrid Model}
 \label{app:hybrid}
 
 \begin{table*}[t]
@@ -651,92 +650,92 @@ $+5.5$\ci{3.7}{7.4} on Lev-2.6B and $+4.0$\ci{2.3}{5.7} on Lev-3B.
 \setlength\tabcolsep{2pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
- & \multicolumn{3}{c}{untrained one-visit writer} & \multicolumn{3}{c}{trained connector} \\
+ & \multicolumn{3}{c}{untrained one-visit decoder} & \multicolumn{3}{c}{trained loop adapter} \\
 \cmidrule(lr){2-4}\cmidrule(l){5-7}
 benchmark & attention KV & GDN state & both & attention KV & GDN state & both \\
 \midrule
 \csname @@input\endcsname ../figs/tab_hybrid.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Which part of a hybrid model's prompt state benefits from reading deep.} SenseNova-Loop-9B, one
-writing visit, after a two-visit prefill. Within the repeated block, ``attention KV'' gives the writer the second visit's
+\caption{\textbf{Which part of a hybrid model's prompt state benefits from a second prefill visit.} SenseNova-Loop-9B, one
+decode visit, after a two-visit prefill. Within the repeated block, ``attention KV'' gives the decoder the second visit's
 attention KV and the first visit's Gated-DeltaNet (GDN) convolution and recurrent states; ``GDN state'' the reverse;
 ``both'' the second visit's states throughout. Layers outside the block keep the two-visit prefill's states.
-Differences are to the one-visit prefill with the same writer, in score points; brackets are paired 95\% bootstrap
+Differences are to the one-visit prefill with the same decoder, in score points; brackets are paired 95\% bootstrap
 intervals.}
 \label{tab:hybrid}
 \end{table*}
 
 SenseNova-Loop-9B stacks three Gated-DeltaNet layers per full-attention layer. Its prompt state therefore has two
-parts: the attention KV, which the writer attends to, and each Gated-DeltaNet layer's convolution and recurrent state, a
-fixed-size summary of the prompt from which the writer continues and which it keeps updating with its own tokens (the
-prefill stops before the last prompt token, which the writer processes first). We give the one-visit writer the
+parts: the attention KV, which the decoder attends to, and each Gated-DeltaNet layer's convolution and recurrent state, a
+fixed-size summary of the prompt from which the decoder continues and which it keeps updating with its own tokens (the
+prefill stops before the last prompt token, which the decoder processes first). We give the one-visit decoder the
 second visit's state for one kind of layer and the first visit's for the other (Table~\ref{tab:hybrid}). The
-connector was trained only with jointly shallow or jointly deep states, so we also retrain it, with the same recipe and
-seed, giving the writer the second visit's state only in the Gated-DeltaNet layers for read-2 samples (below). These are
-experiments on one checkpoint; they show how the writer responds to each state, not where information is stored.
+loop adapter was trained only with both states from the first or both from the second visit, so we also retrain it, with the same recipe and
+seed, giving the decoder the second visit's state only in the Gated-DeltaNet layers for prefill-2 samples (below). These are
+experiments on one checkpoint; they show how the decoder responds to each state, not where information is stored.
 
 Without training, either part alone recovers most of the gain of the full second-visit state (RULER-16K $+50.2$ and
-$+50.5$ against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts behave
+$+50.5$ against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained loop adapter the two parts behave
 differently. The second-visit Gated-DeltaNet state raises long-context scores: HELMET $+9.1$\ci{6.5}{11.6} and
 RULER-16K $+4.9$\ci{2.1}{7.7}, against $-0.2$ and $+0.7$ for the second-visit attention KV, which lowers RULER-4K
 ($-4.5$\ci{-7.2}{-2.0}). The second-visit attention KV raises MMLU-Pro ($+4.6$\ci{2.0}{7.2}; Gated-DeltaNet state alone
 $+2.0$\ci{-0.4}{4.5}). The ARC-Challenge loss of the full second-visit state (Section~\ref{sec:grid}) appears with the
-Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). In the ``GDN state'' condition the writer still
+Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; attention KV alone $+0.8$). In the ``GDN state'' condition the decoder still
 attends to the first visit's KV, consistent with exact retrieval relying on attention in hybrid
 models~\citep{afendulev}; what improves is the recurrent state it continues from. On Ouro, which has only attention
-layers, deeper KV likewise helps knowledge and loses exact recall (Appendix~\ref{app:hurt}). The same trained connector,
+layers, KV from more prefill loops likewise helps knowledge and loses exact recall (Appendix~\ref{app:hurt}). The same trained loop adapter,
 given the second-visit state only in its Gated-DeltaNet layers, scores above the full second-visit state on HELMET by
 $5.6$ points and on RULER-4K/8K/16K by $6.5$, $4.2$ and $3.7$, shows no detectable difference on ARC-Challenge, and
-scores below it on MMLU-Pro by $3.5$. The connector retrained on this mixed state confirms the pattern within its own training distribution: against its own
-read 1 / write 1 it gains on HELMET ($+7.2$\ci{4.7}{9.7}) and RULER-16K ($+6.1$\ci{3.2}{9.1}) and loses ARC-Challenge
-($-2.8$\ci{-4.7}{-0.9}); against the original connector at read 2 / write 1 it is better on HELMET ($+4.4$\ci{2.7}{6.2})
+scores below it on MMLU-Pro by $3.5$. The loop adapter retrained on this mixed state confirms the pattern within its own training distribution: against its own
+prefill 1 / decode 1 it gains on HELMET ($+7.2$\ci{4.7}{9.7}) and RULER-16K ($+6.1$\ci{3.2}{9.1}) and loses ARC-Challenge
+($-2.8$\ci{-4.7}{-0.9}); against the original loop adapter at prefill 2 / decode 1 it is better on HELMET ($+4.4$\ci{2.7}{6.2})
 and RULER-4K/8K/16K ($+6.7$, $+2.8$, $+2.9$) and worse on MMLU-Pro ($-2.7$\ci{-5.0}{-0.3}). Which state to give the
-writer is therefore a task-dependent trade-off that holds with and without training for it.
+decoder is therefore a task-dependent trade-off that holds with and without training for it.
 
 \begin{table*}[t]
 \centering\small
 \setlength\tabcolsep{4pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
- & \multicolumn{4}{c}{score} & \multicolumn{2}{c}{read 2 / write 1 minus} \\
+ & \multicolumn{4}{c}{score} & \multicolumn{2}{c}{prefill 2 / decode 1 minus} \\
 \cmidrule(lr){2-5}\cmidrule(l){6-7}
-benchmark & native 1/1 & read 1 / write 1 & read 2 / write 1 & native 2/2 & read 1 / write 1 & native 2/2 \\
+benchmark & native 1/1 & prefill 1 / decode 1 & prefill 2 / decode 1 & native 2/2 & prefill 1 / decode 1 & native 2/2 \\
 \midrule
 \csname @@input\endcsname ../figs/tab_sn.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{SenseNova-Loop-9B at one writing visit.} One connector serves read 1 / write 1 and read 2 / write 1;
+\caption{\textbf{SenseNova-Loop-9B at one decode visit.} One loop adapter serves prefill 1 / decode 1 and prefill 2 / decode 1;
 native 2/2 runs the repeated block twice per token (56 layer executions instead of 32). Same protocols as Table~\ref{tab:models} (MMLU-Pro 980, HELMET 6,646, BBH
 6,511 items). MBPP+ is omitted: its prompt forces the answer to start with code, and this thinking model then opens a
-reasoning block inside the code (native 1/1: 294, read 1 / write 1: 236, read 2 / write 1: 372, native 2/2: 375 of 378
+reasoning block inside the code (native 1/1: 294, prefill 1 / decode 1: 236, prefill 2 / decode 1: 372, native 2/2: 375 of 378
 answers), so its score measures this format failure.
 Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:sn}
 \end{table*}
 
-Table~\ref{tab:sn} is the SenseNova-Loop-9B counterpart of Figure~\ref{fig:equal}, at one writing visit through the
-repeated block instead of two. With the same connector, reading two visits instead of one raises MMLU-Pro ($+5.5$), BBH ($+7.0$)
+Table~\ref{tab:sn} is the SenseNova-Loop-9B counterpart of Figure~\ref{fig:equal}, at one decode visit through the
+repeated block instead of two. With the same loop adapter, prefilling with two visits instead of one raises MMLU-Pro ($+5.5$), BBH ($+7.0$)
 and HELMET ($+3.5$), lowers ARC-Challenge ($-2.9$), and leaves GSM8K, MATH-500 and HumanEval within noise. Against
-native 2/2, read 2 / write 1 shows no detectable difference on GSM8K ($-0.6$\ci{-1.6}{0.4}; the $0.59\times$ answer time
-of Section~\ref{sec:fast} is measured for read 1 / write 1) and scores lower on the other benchmarks, most on HELMET
-($-16.8$); giving the writer the second-visit state only in the Gated-DeltaNet layers narrows that HELMET gap to
+native 2/2, prefill 2 / decode 1 shows no detectable difference on GSM8K ($-0.6$\ci{-1.6}{0.4}; the $0.59\times$ answer time
+of Section~\ref{sec:fast} is measured for prefill 1 / decode 1) and scores lower on the other benchmarks, most on HELMET
+($-16.8$); giving the decoder the second-visit state only in the Gated-DeltaNet layers narrows that HELMET gap to
 $-11.2$\ci{-13.0}{-9.4}. The native one-visit model scores far lower on every benchmark.
 
 \section{SenseNova-Loop-9B Without Training}
 \label{app:sn}
 
-SenseNova-Loop-9B's one-loop writer collapses on its own. Handing that unchanged
-writer the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
+SenseNova-Loop-9B's one-loop decoder collapses on its own. Handing that unchanged
+decoder the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
 parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
-from 2.2 to 10.9, far below the 95.8 of \nat{2}: deeper reading recovers knowledge and long-context accuracy, not
+from 2.2 to 10.9, far below the 95.8 of \nat{2}: a second prefill visit recovers knowledge and long-context accuracy, not
 multi-step reasoning.
 
-\section{Where Reading Deep Does Not Help}
+\section{Where More Prefill Loops Do Not Help}
 \label{app:hurt}
 
-HELMET shows where reading deep helps and where it hurts (Table~\ref{tab:helmet}). On both Ouro reasoning models,
-reading four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
+HELMET shows where more prefill loops help and where they hurt (Table~\ref{tab:helmet}). On both Ouro reasoning models,
+prefilling with four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
 exact recall from a JSON key--value store on Ouro-1.4B-Thinking ($-23.5$); against \nat{4}, \rw{4}{2} gains on
 retrieval-augmented QA and in-context learning ($+6.1$, $+6.6$) and loses exact recall ($58.8$ vs.\ $100$), so its
 HELMET average is lower ($-8.7$\ci{-13.3}{-4.1}). SenseNova-Loop-9B does not follow the Ouro pattern on recall and
@@ -749,23 +748,23 @@ re-ranking. The recall category is small (34 items on Ouro).
 \toprule
 comparison & RAG & re-rank & ICL & recall \\
 \midrule
-2.6B-T, read 4 $-$ 1 & \up{15.4} & \up{13.4} & \up{5.1} & \dn{2.9} \\
-1.4B-T, read 4 $-$ 1 & \up{14.5} & \up{18.0} & \up{9.3} & \dn{23.5} \\
-SenseNova, read 2 $-$ 1 & \up{1.2} & \dn{32.9} & \up{21.6} & \up{24.0} \\
+2.6B-T, prefill 4 $-$ 1 & \up{15.4} & \up{13.4} & \up{5.1} & \dn{2.9} \\
+1.4B-T, prefill 4 $-$ 1 & \up{14.5} & \up{18.0} & \up{9.3} & \dn{23.5} \\
+SenseNova, prefill 2 $-$ 1 & \up{1.2} & \dn{32.9} & \up{21.6} & \up{24.0} \\
 \midrule
 2.6B-T, 4/2 $-$ native 4/4 & \up{6.1} & \dn{6.3} & \up{6.6} & \dn{41.2} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{HELMET by category} (score differences on a 0--100 scale; reading comparisons at one writing loop,
-same connector). Reading deep helps retrieval-augmented QA (RAG), re-ranking and in-context learning (ICL) on Ouro but
+\caption{\textbf{HELMET by category} (score differences on a 0--100 scale; prefill comparisons at one decode loop,
+same loop adapter). More prefill loops help retrieval-augmented QA (RAG), re-ranking and in-context learning (ICL) on Ouro but
 can lose exact key--value recall. Items: 700 / 41 / 333 / 34 per category on Ouro, 4,200 / 246 / 2,000 / 200 on
 SenseNova; intervals are in \texttt{paper\_numbers.json}.}
 \label{tab:helmet}
 \end{table}
 
-Reading deeper does not help everywhere (Table~\ref{tab:hurt}). At one writing loop it gives a negative but inconclusive
+More prefill loops do not help everywhere (Table~\ref{tab:hurt}). At one decode loop it gives a negative but inconclusive
 estimate on RULER-4K, where answers are copied verbatim, and clearly lowers 4-shot MATH-500 on Ouro-2.6B; without
-exemplars the same comparison turns positive on two model sizes and two writing depths. Removing exemplars also changes length and format, so we read this as a
+exemplars the same comparison turns positive on two model sizes and two decode loop counts. Removing exemplars also changes length and format, so we read this as a
 prompting interaction rather than as evidence that literal information is lost; linear probes of the cache, which find the
 next token more and (in Ouro) the previous token less linearly decodable after more loops, are consistent with it
 (Appendix~\ref{app:analyses}).
@@ -775,7 +774,7 @@ next token more and (in Ouro) the previous token less linearly decodable after m
 \setlength\tabcolsep{3pt}
 \begin{tabular}{@{}lclr@{}}
 \toprule
-model & write $d$ & task & read 4 $-$ read $d$ \\
+model & decode $n$ & task & prefill 4 $-$ prefill $n$ \\
 \midrule
 Ouro-2.6B & 1 & RULER-4K & \dn{3.8}\ci{-8.2}{0.3} \\
  & 1 & MATH, 4-shot & \dn{11.2}\ci{-15.4}{-6.8} \\
@@ -785,35 +784,34 @@ Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
  & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{Reading deep depends on context length and prompting.} Same connector, base models, read 4 / write $d$ minus read $d$ / write $d$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\caption{\textbf{The effect of prefill loops depends on context length and prompting.} Same loop adapter, base models, prefill 4 / decode $n$ minus prefill $n$ / decode $n$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:hurt}
 \end{table}
 
-\paragraph{Other design variants.} Sharing generated-token KV across writing loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three writing loops and
-costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at read 4
-/ write 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit. (Ouro-2.6B, full sets: shared answer KV at 4/2, 3/3, 4/4:
+\paragraph{Other design variants.} Sharing generated-token KV across decode loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three decode loops and
+costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at prefill 4 / decode 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit. (Ouro-2.6B, full sets: shared answer KV at 4/2, 3/3, 4/4:
 $+0.3$\ci{-1.5}{2.1}, $-0.8$\ci{-2.4}{0.8}, $-2.6$\ci{-4.2}{-1.1}; first-loop branch at 4/1: RULER-4K $+2.3$\ci{1.0}{3.6},
 GSM8K $+0.7$\ci{-0.8}{2.2}.)
 
 \section{Additional Analyses}
 \label{app:analyses}
 
-\paragraph{Unfinished answers of a one-loop writer.} A reasoning model written with one loop often gives no answer. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
-on 43.1\% of GSM8K problems; 43.5\% of its answers approach the 4,096-token budget. Training the connector at \rw{1}{1}
-reduces answers without a boxed answer to 19.5\%; with the same writer, reading four loops reduces them further to
+\paragraph{Unfinished answers of a one-loop decoder.} A reasoning model written with one loop often gives no answer. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
+on 43.1\% of GSM8K problems; 43.5\% of its answers approach the 4,096-token budget. Training the loop adapter at \rw{1}{1}
+reduces answers without a boxed answer to 19.5\%; with the same decoder, prefilling with four loops reduces them further to
 12.7\% overall, lower in every difficulty bucket (Figure~\ref{fig:wander}, left), and shortens answers by 20\% overall. A lexical
 hesitation-marker rate does not fall (12.2 vs.\ 13.8 per 1,000 tokens), so shorter answers do not come from fewer
-markers of hesitation; these counts do not identify the underlying reasoning process. The same writer on SenseNova-Loop-9B, handed the
+markers of hesitation; these counts do not identify the underlying reasoning process. The same decoder on SenseNova-Loop-9B, handed the
 two-visit prompt state without training, leaves no boxed answer on 43.7\% of GSM8K problems instead of 96.8\%
 (Figure~\ref{fig:wander}, right).
 
 \begin{figure*}[h]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig3_wandering.pdf}
-\caption{\textbf{Deep reading helps a shallow writer.} Left: Ouro-2.6B-Thinking at one writing loop, GSM8K problems
+\caption{\textbf{More prefill loops help a one-loop decoder.} Left: Ouro-2.6B-Thinking at one decode loop, GSM8K problems
 bucketed by the number of lines in the reference solution (326 / 668 / 325 problems). Answers without a boxed answer
-grow with difficulty; reading four loops instead of one lowers them by 5.5--7.7 points in every bucket. Right:
-SenseNova-Loop-9B without any training: the native one-loop writer reads the prompt state of a two-visit prefill.}
+grow with difficulty; prefilling with four loops instead of one lowers them by 5.5--7.7 points in every bucket. Right:
+SenseNova-Loop-9B without any training: the native one-loop decoder reads the prompt state of a two-visit prefill.}
 \label{fig:wander}
 \end{figure*}
 
@@ -824,7 +822,7 @@ attention reads back from the prompt---at the same layer and with the same weigh
 Ouro-1.4B and Ouro-2.6B-Thinking agree. In SenseNova-Loop-9B the next-token gain replicates in all six attention layers
 (24.1\% $\to$ 29.1\%) while the previous token is about as decodable at both visits (56.8\% vs.\ 56.5\%). These are
 decodability results, not proof of information loss or causal use~\citep{presenthard}, and the probes read the native
-model, not the adapted writer; they resemble the across-layer trend of \citet{voita2019bottom}, and per-loop probes of looped transformers go back to
+model, not the adapted decoder; they resemble the across-layer trend of \citet{voita2019bottom}, and per-loop probes of looped transformers go back to
 \citet{loopedicl}.
 
 \begin{figure*}[h]
