@@ -346,6 +346,62 @@ def tab_sn():
     (ROOT / "paper" / "figs" / "tab_sn.tex").write_text("\n".join(lines) + "\n")
 
 
+def fig_taskmap():
+    """Task map: Ouro-2.6B, one loop adapter, accuracy at every (prefill m, decode n), with native n/n below each column.
+    Per-panel colour scale; the best cell is outlined."""
+    M = {x["label"]: x["mean"] for x in (PN["means"].values() if isinstance(PN["means"], dict) else PN["means"])
+         if x.get("section") in ("Task map", "Figure 1")}
+    panels = [("MMLU", "MMLU (20/subject)", "{c} MMLU (20/subject)"), ("MMLU-Pro", "MMLU-Pro", "{c} MMLU-Pro"),
+              ("ARC-C", "ARC-C", "{c} ARC-C"), ("GPQA-Diamond", "GPQA-Diamond", "{c} GPQA-Diamond"),
+              ("RULER-4K", "RULER-4K", "{c} RULER-4K"), ("RULER-16K", "RULER-16K", "{c} RULER-16K"),
+              ("BBH", "BBH 3-shot", "{c} BBH 3-shot"), ("IFEval", "IFEval", "{c} IFEval"),
+              ("GSM8K", "GSM8K (400)", "{c} GSM8K (400)"), ("MATH-500 4-shot", "MATH-500 4-shot", "{c} MATH-500 4-shot"),
+              ("HumanEval", "HumanEval", "{c} HumanEval"), ("MBPP+", "MBPP+", "{c} MBPP+")]
+    PAR = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Pareto"}
+    def val(fmt, c):
+        k = fmt.format(c=c)
+        if k in M:
+            return M[k]
+        if c.startswith("native"):   # grid-subset natives are stored with the Pareto comparisons
+            n, sub = c[6:], fmt.split(" ", 1)[1]
+            r = PAR.get(f"read 4/write {n} vs native {n}/{n} {sub}")
+            return r["b"] if r else np.nan
+        return np.nan
+    fig, axes = plt.subplots(3, 4, figsize=(6.9, 6.2))
+    for ax, (title, _, fmt) in zip(axes.flat, panels):
+        A = np.full((5, 4), np.nan)
+        for m in range(1, 5):
+            for n in range(1, 5):
+                A[m - 1, n - 1] = val(fmt, f"S{m}{n}")
+        for n in range(1, 5):
+            A[4, n - 1] = val(fmt, f"native{n}")
+        lo, hi = np.nanmin(A) if np.isfinite(A).any() else 0, np.nanmax(A) if np.isfinite(A).any() else 1
+        norm = plt.Normalize(lo - 0.15 * (hi - lo + 1e-9), hi)
+        from matplotlib.colors import LinearSegmentedColormap
+        cmap = LinearSegmentedColormap.from_list("w2r", ["#FFFFFF", OURS])
+        for i in range(5):
+            for j in range(4):
+                v = A[i, j]; y = 4 - i + (0 if i < 4 else -0.25)
+                fc = "#F2F2F2" if not np.isfinite(v) else (cmap(norm(v)) if i < 4 else "#E6E6E6")
+                ax.add_patch(plt.Rectangle((j, y), 1, 1 if i < 4 else 0.9, fc=fc, ec="white", lw=1.2))
+                if np.isfinite(v):
+                    ax.text(j + 0.5, y + (0.5 if i < 4 else 0.45), f"{v:.0f}", ha="center", va="center", fontsize=6.6,
+                            color="white" if (i < 4 and norm(v) > 0.65) else INK)
+        if np.isfinite(A[:4]).any():
+            bi, bj = np.unravel_index(np.nanargmax(A[:4]), (4, 4))
+            ax.add_patch(plt.Rectangle((bj + 0.04, 4 - bi + 0.04), 0.92, 0.92, fc="none", ec="#7A1020", lw=1.6))
+        ax.set_xlim(0, 4); ax.set_ylim(-0.3, 5); ax.set_aspect("equal")
+        ax.set_xticks([0.5, 1.5, 2.5, 3.5], ["1", "2", "3", "4"], fontsize=6.5)
+        ax.set_yticks([0.15, 1.5, 2.5, 3.5, 4.5], ["native", "4", "3", "2", "1"], fontsize=6.5)
+        ax.tick_params(length=0, pad=1.5)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        ax.set_title(title, fontsize=8, color=INK, pad=2)
+    fig.supxlabel("decode loops n", fontsize=8.5, y=0.02); fig.supylabel("prefill loops m", fontsize=8.5, x=0.01)
+    fig.subplots_adjust(wspace=0.18, hspace=0.32, left=0.07, right=0.99, top=0.96, bottom=0.07)
+    save(fig, "fig_taskmap")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

@@ -177,6 +177,17 @@ CMP += [
        key.replace("SNGnt-", "SNnt-").replace("SNG-", "SN-").format(c="C21"),
        {"HELMET": (4.4, 2.7, 6.2), "RULER-4K": (6.7, None, None), "RULER-8K": (2.8, None, None),
         "RULER-16K": (2.9, None, None), "MMLU-Pro": (-2.7, -5.0, -0.3)}.get(bench)) for bench, key in SNG_KEYS],
+    # fewer prefill than decode loops (m < n) on the tasks where more prefill loops hurt: same adapter, same n
+    *[("Fewer prefill loops", f"{model} prefill {lo} vs {hi} (decode {n}) {bench}", key.format(c=f"S{lo}{n}"),
+       key.format(c=f"S{hi}{n}"), None)
+      for model, bench, key in (("Ouro-2.6B", "MATH-500 4-shot", "L:o26x-{c}-math:mvfull"),
+                                ("Ouro-2.6B", "RULER-4K", "B:X26-{c}f:ruler4k"), ("Ouro-2.6B", "RULER-8K", "B:X26-{c}f:ruler8k"),
+                                ("Ouro-2.6B", "RULER-16K", "B:X26-{c}f:ruler16k"),
+                                ("Ouro-1.4B", "BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
+                                ("Ouro-1.4B-T", "BBH 3-shot", "L:T14x-{c}-bbh:exact_match"))
+      for lo, hi, n in ((1, 2, 2), (1, 4, 4), (2, 4, 4), (1, 4, 2))],
+    *[("Fewer prefill loops", f"Ouro-2.6B prefill {m} / decode {n} vs native {k}/{k} MATH-500 4-shot", f"L:o26x-S{m}{n}-math:mvfull",
+       f"L:o26x-native{k}-math:mvfull", None) for m, n, k in ((1, 2, 2), (1, 2, 4), (1, 4, 4), (2, 4, 4), (1, 3, 4))],
     # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the connector)
     *[("Distillation baseline", f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"), None)
       for bench, ka, _ in EQUAL],
@@ -217,6 +228,14 @@ WKEYS = [f"T:{p}-gsm8k_think:{m}" for p in WANDER.values() for m in ("noanswer",
 SN_NOANS = {c: f"T:SN-{c}-gsm8k_think:noanswer" for c in ("native1", "splice21", "native2")}
 # means (Figure 1 grid on evaluation subsets, Sec 4.3 SenseNova without training)
 MEANS = [("Sec 4.3", f"SenseNova {c} RULER-4K", f"B:SNnt-{c}:ruler4k") for c in ("native1", "splice21", "native2")]
+# task map: Ouro-2.6B, one loop adapter (X26-S-universal), every (prefill m, decode n) cell and native n/n
+TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:mvfull"), ("BBH 3-shot", "L:o26x-{c}-bbh:exact_match"),
+            ("ARC-C", "L:o26x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:o26x-{c}-mmlupro:exact_match"),
+            ("HumanEval", "L:o26x-{c}-code:pass@1"), ("MBPP+", "L:o26x-{c}-code:pass_at_1"),
+            ("GPQA-Diamond", "L:o26x-{c}-gpqa:acc_norm"), ("IFEval", "L:o26x-{c}-ifeval:prompt_level_strict_acc"),
+            ("RULER-4K", "B:X26-{c}f:ruler4k"), ("RULER-8K", "B:X26-{c}f:ruler8k"), ("RULER-16K", "B:X26-{c}f:ruler16k")]
+MEANS += [("Task map", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP
+          for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Sec 4.3", f"SenseNova {c} MMLU-Pro", f"L:SN-{c}-mmlupro:exact_match") for c in ("native1", "splice21", "native2")]
 MEANS += [("Sec 4.3", f"SenseNova {c} GSM8K no final answer", k) for c, k in SN_NOANS.items()]
 MEANS += [("Sec 4.2", f"GSM8K full {c}", f"T:{c}-gsm8k_think:math_verify")
