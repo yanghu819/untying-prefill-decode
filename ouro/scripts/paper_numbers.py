@@ -52,6 +52,24 @@ EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k
          ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
          ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet")]
 
+# SenseNova-Loop-9B headline at write 1 ({c}: native1, C11, C21, native2)
+SN_EQUAL = [("GSM8K", "T:SN-{c}-gsm8k_think:math_verify"), ("MATH-500", "T:SN-{c}-math500_think:math_verify"),
+            ("MMLU-Pro", "L:SN-{c}-mmlupro:exact_match"), ("ARC-C", "L:SN-{c}-arc:acc_norm"), ("BBH", "B:SNnt-{c}-bbh:bbh"),
+            ("HumanEval", "L:SN-{c}-code:pass@1"), ("MBPP+", "L:SN-{c}-code:pass_at_1"),
+            ("HELMET", "B:SNnt-{c}-helmet:helmet")]
+# where deep reading lives in the hybrid: deep attention KV only (A), deep Gated-DeltaNet state only (G), both ("")
+SN_STATE = [("RULER-4K", "B:SNnt-{c}:ruler4k"), ("RULER-8K", "B:SNnt-{c}:ruler8k"), ("RULER-16K", "B:SNnt-{c}:ruler16k"),
+            ("MMLU-Pro", "L:SN-{c}-mmlupro:exact_match"), ("ARC-C", "L:SN-{c}-arc:acc_norm"),
+            ("HELMET", "B:SNnt-{c}-helmet:helmet")]
+
+# hybrid-state numbers quoted in Appendix "Reading Deep in a Hybrid Model": (kind, mix, benchmark) -> printed
+HYBRID_PRINTED = {("untrained", "A", "RULER-16K"): (50.2, None, None), ("untrained", "G", "RULER-16K"): (50.5, None, None),
+                  ("untrained", "", "RULER-16K"): (66.6, None, None), ("untrained", "A", "MMLU-Pro"): (23.7, None, None),
+                  ("untrained", "G", "MMLU-Pro"): (21.5, None, None), ("untrained", "", "MMLU-Pro"): (36.2, None, None),
+                  ("trained", "A", "MMLU-Pro"): (4.6, 2.0, 7.2), ("trained", "G", "MMLU-Pro"): (2.0, -0.4, 4.5),
+                  ("trained", "G", "RULER-16K"): (4.9, 2.1, 7.7), ("trained", "A", "RULER-4K"): (-4.5, -7.2, -2.0),
+                  ("trained", "", "ARC-C"): (-2.9, -4.8, -1.0)}
+
 CMP = []
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
              (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-1.7, -3.6, 0.2)]),
@@ -129,6 +147,15 @@ CMP += [
           ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
           ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
+    *[("Hybrid state", f"SenseNova {kind} deep {part} vs shallow {bench}", key.format(c=deep + mix), key.format(c=shallow),
+       HYBRID_PRINTED.get((kind, mix, bench)))
+      for kind, deep, shallow in (("untrained", "splice21", "native1"), ("trained", "C21", "C11"))
+      for mix, part in (("", "both"), ("A", "attention KV"), ("G", "GDN state"))
+      for bench, key in SN_STATE],
+    *[("Hybrid state", f"SenseNova trained deep GDN state only vs both deep {bench}", key.format(c="C21G"), key.format(c="C21"),
+       {"RULER-4K": (6.5, None, None), "RULER-8K": (4.2, None, None), "RULER-16K": (3.7, None, None),
+        "MMLU-Pro": (-3.5, None, None)}.get(bench))
+      for bench, key in SN_STATE],
     # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
     *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"),
        {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3), "MMLU-Pro": (8.1, 4.0, 12.1)}.get(bench))
@@ -247,6 +274,7 @@ def load_raw(runs, key):
 def keys():
     ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS} | set(WKEYS)
     ks |= {k for _, _, ka, kb in equal_specs() for k in (ka, ka.replace("S42", "S22"), kb.format(n=2), kb.format(n=4))}
+    ks |= {k.format(c=c) for _, k in SN_EQUAL for c in ("native1", "C11", "C21", "native2")}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -483,6 +511,28 @@ def equal():
     return out
 
 
+def sn_equal():
+    """SenseNova-Loop-9B at the decode depth of one visit: connector read 2 / write 1 (C21) against native 1/1, the same
+    connector reading one visit (C11) and native 2/2, all four on the items every one of them has."""
+    out = []
+    for bench, key in SN_EQUAL:
+        d = {c: load(key.format(c=c)) for c in ("native1", "C11", "C21", "native2")}
+        if any(v is None for v in d.values()):
+            print(f"SN equal     {bench:12s} MISSING {[c for c, v in d.items() if v is None]}"); continue
+        ids = set.intersection(*(set(v) for v in d.values()))
+        d = {c: {i: v[i] for i in ids} for c, v in d.items()}
+        row = dict(bench=bench, n=len(ids))
+        for c in ("native1", "C11", "native2"):
+            r = boot(d["C21"], d[c])
+            row["C21"], row[c] = round(r["a"], 1), round(r["b"], 1)
+            row[f"vs_{c}"] = [round(r[k], 1) for k in ("diff", "lo", "hi")]
+        out.append(row)
+        print(f"SN equal     {bench:12s} n={len(ids):5d} read2/write1 {row['C21']:5.1f} | 1/1 {row['native1']:5.1f} "
+              f"{row['vs_native1'][0]:+5.1f} | C11 {row['C11']:5.1f} {row['vs_C11'][0]:+5.1f} [{row['vs_C11'][1]:+.1f}, "
+              f"{row['vs_C11'][2]:+.1f}] | 2/2 {row['native2']:5.1f} {row['vs_native2'][0]:+5.1f} [{row['vs_native2'][1]:+.1f}, "
+              f"{row['vs_native2'][2]:+.1f}]")
+    return out
+
 def throughput():
     """Table in Appendix (decode throughput) and the ratios in Sec 4.2: best tokens/s over batch sizes, 8K context."""
     d = Path(__file__).resolve().parents[1] / "results" / "throughput-sb4"
@@ -525,7 +575,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev(), equal=equal()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

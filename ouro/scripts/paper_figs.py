@@ -323,6 +323,20 @@ def tab_equal(model="1.4B-T"):
     (ROOT / "paper" / "figs" / f"tab_equal_{model.replace('.', '')}.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_hybrid():
+    """Appendix table: SenseNova-Loop-9B, deep reading through attention KV only, Gated-DeltaNet state only, or both
+    (difference to the shallow prompt state; LaTeX rows from paper_numbers.json)."""
+    C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Hybrid state"}
+    pm = lambda c: "--" if c is None else ((r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"])
+                                           + r"\ci{%.1f}{%.1f}" % (c["lo"], c["hi"]))
+    lines = []
+    for bench in ("RULER-4K", "RULER-8K", "RULER-16K", "MMLU-Pro", "ARC-C", "HELMET"):
+        cells = [pm(C.get(f"SenseNova {k} deep {part} vs shallow {bench}"))
+                 for k in ("untrained", "trained") for part in ("attention KV", "GDN state", "both")]
+        lines.append(f"{bench} & " + " & ".join(cells) + r" \\")
+    (ROOT / "paper" / "figs" / "tab_hybrid.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal("2.6B-T"); tab_equal("1.4B-T")
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

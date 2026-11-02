@@ -324,9 +324,12 @@ same way but do not isolate reading depth (Appendix~\ref{app:eval}).
 
 
 Reading deep is not uniformly better. At one writing loop on Ouro-2.6B it lowers 4-shot MATH-500 by 11.2 points while
-raising zero-shot MATH-500 by 7.0; it sharply lowers 3-shot BBH on both 1.4B checkpoints ($-24.5$ and $-20.5$); and on
-Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}). The division of labour is a tendency on the
-benchmarks we test, and it depends on how the task is prompted.
+raising zero-shot MATH-500 by 7.0; it sharply lowers 3-shot BBH on both 1.4B checkpoints ($-24.5$ and $-20.5$); on
+Ouro it lowers exact key--value recall in HELMET (Appendix~\ref{app:hurt}); and on SenseNova-Loop-9B the trained connector
+loses ARC-Challenge points when it reads deeper ($-2.9$\ci{-4.8}{-1.0}). The division of labour is a tendency on the
+benchmarks we test, and it depends on how the task is prompted. In the hybrid SenseNova-Loop-9B the gain splits by
+layer type: deep attention KV carries the knowledge gain, the deep linear-attention state the exact-retrieval gain
+(Appendix~\ref{app:hybrid}).
 
 \subsection{Read deep, write shallow}
 \label{sec:rdws}
@@ -647,6 +650,43 @@ intervals including zero, but lowers RULER-16K by 11.4 points at read 4 / write 
 loops. Restricting the key map to a
 RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
 maps with one cache per loop (RULER-16K, five $(p,d)$ pairs).
+
+\section{Reading Deep in a Hybrid Model}
+\label{app:hybrid}
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{4pt}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{untrained one-visit writer} & \multicolumn{3}{c}{trained connector} \\
+\cmidrule(lr){2-4}\cmidrule(l){5-7}
+deep state given to the writer & attention KV & GDN state & both & attention KV & GDN state & both \\
+\midrule
+\csname @@input\endcsname ../figs/tab_hybrid.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Where reading depth lives in a hybrid model.} SenseNova-Loop-9B, one writing visit. The writer receives
+the second (deep) prefill visit's state for the full-attention layers only, for the Gated-DeltaNet (GDN) layers only, or
+for both; the other layers receive the first visit's state. Differences to the first-visit state for every layer, in
+score points; brackets are paired 95\% bootstrap intervals.}
+\label{tab:hybrid}
+\end{table*}
+
+SenseNova-Loop-9B stacks three Gated-DeltaNet layers per full-attention layer. Its prompt state therefore has two
+parts: the attention KV, which the writer attends to, and each Gated-DeltaNet layer's convolution and recurrent state, a
+fixed-size summary of the prompt (per layer and sequence, $32\times128\times128$ numbers whatever the prompt length) from
+which the writer continues and which it keeps updating with its own tokens. Which part carries reading depth? We give
+the one-visit writer the deep state for one kind of layer and the shallow state for the other (Table~\ref{tab:hybrid}).
+Without training, either part alone recovers most of the gain of the full deep state (RULER-16K $+50.2$ and $+50.5$
+against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained connector the two parts do different
+things. The knowledge gain rides on the deep attention KV (MMLU-Pro $+4.6$\ci{2.0}{7.2}; deep GDN state alone
+$+2.0$\ci{-0.4}{4.5}). The deep GDN state helps exact retrieval (RULER-16K $+4.9$\ci{2.1}{7.7}), while the deep
+attention KV lowers it at short context (RULER-4K $-4.5$\ci{-7.2}{-2.0}). This is the trade-off we see on Ouro, where
+deeper KV helps knowledge but loses exact recall (Appendix~\ref{app:hurt}); in a hybrid the two effects sit in
+different layers. The same trained connector, given the deep state only in its Gated-DeltaNet layers, beats the full deep
+state on RULER-4K/8K/16K by $6.5$, $4.2$ and $3.7$ points and trails it on MMLU-Pro by $3.5$, so the choice can be made
+per task without retraining.
 
 \section{SenseNova-Loop-9B Without Training}
 \label{app:sn}

@@ -8,6 +8,9 @@ layers, conv + recurrent state for GDN layers), indexed by execution order. Cond
   of prefill visit p - d + k + 1 (the last d prefill visits), outside the loop the slots are shared. Untrained.
 - C<p>1 (+ checkpoint): the trained connector of ouro/sensenova_bridge.py — prefill p visits (LoRA off), splice, decode
   with 1 visit and LoRA on; the decoder always runs the last prompt token.
+- Suffix A or G (splice21A, C21G, ...): where the deep state lives. A: full-attention layers of the looped block read the
+  deep prefill visit's KV, Gated-DeltaNet layers start from the shallow visit's (same-depth) conv + recurrent state;
+  G: the reverse. Without a suffix both come from the deep visit.
 """
 
 import copy
@@ -70,18 +73,24 @@ def new_cache(text):
     return cache
 
 
-def splice(text, cache, p, d):
-    """Build a d-visit decode cache from a p-visit prefill cache (slot objects shared, not copied)."""
+def splice(text, cache, p, d, mix=""):
+    """Build a d-visit decode cache from a p-visit prefill cache (slot objects shared, not copied). mix "A" / "G": only
+    the full-attention ("A") or only the Gated-DeltaNet ("G") layers of the looped block read the deep visit; the other
+    kind reads the same-depth visit k."""
     start, end = text._loop_bounds
     width = end - start
+    types = text.config.layer_types  # physical layers
     set_count(text, d)
     out = new_cache(text)
     src = []
     for j in range(start):
         src.append(j)
     for k in range(d):
-        visit = p - d + k  # 0-based prefill visit read by decode visit k
-        src += [start + visit * width + i for i in range(width)]
+        deep = p - d + k  # 0-based prefill visit read by decode visit k
+        for i in range(width):
+            attn = types[start + i] == "full_attention"
+            visit = k if (mix == "A" and not attn) or (mix == "G" and attn) else deep
+            src.append(start + visit * width + i)
     src += [start + p * width + i for i in range(text.config.num_hidden_layers - end)]
     assert len(src) == len(out.layers)
     out.layers = [cache.layers[i] for i in src]
@@ -98,13 +107,15 @@ class SenseNovaRunner:
             from ouro.sensenova_bridge import add_lora, load_lora
             self.lora = {"on": False}
             load_lora(add_lora(self.text, self.lora), checkpoint)
-            self.p, self.d = int(condition[1]), int(condition[2])
+            self.p, self.d, self.mix = int(condition[1]), int(condition[2]), condition[3:]
         elif condition.startswith("native"):
             self.p = self.d = int(condition[6:])
         elif condition.startswith("splice"):
-            self.p, self.d = int(condition[6]), int(condition[7])
+            self.p, self.d, self.mix = int(condition[6]), int(condition[7]), condition[8:]
         else:
             raise ValueError(condition)
+        self.mix = getattr(self, "mix", "")
+        assert self.mix in ("", "A", "G"), condition
         self.loops = self.d
 
     def _run(self, ids, cache, mask=None):
@@ -122,7 +133,7 @@ class SenseNovaRunner:
         # so every output token, including the first, comes from the d-visit decoder
         _, cache = self._run(ids[:, :-1], new_cache(self.text), None if mask is None else mask[:, :-1])
         if self.p != self.d:
-            cache = splice(self.text, cache, self.p, self.d)
+            cache = splice(self.text, cache, self.p, self.d, self.mix)
         return self.decode(ids[:, -1:], cache, mask)
 
     @torch.inference_mode()
