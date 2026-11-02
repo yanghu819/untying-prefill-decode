@@ -188,6 +188,11 @@ CMP += [
       for lo, hi, n in ((1, 2, 2), (1, 4, 4), (2, 4, 4), (1, 4, 2))],
     *[("Fewer prefill loops", f"Ouro-2.6B prefill {m} / decode {n} vs native {k}/{k} MATH-500 4-shot", f"L:o26x-S{m}{n}-math:mvfull",
        f"L:o26x-native{k}-math:mvfull", None) for m, n, k in ((1, 2, 2), (1, 2, 4), (1, 4, 4), (2, 4, 4), (1, 3, 4))],
+    # Ouro-2.6B-Thinking at decode 2: prefill 1 against prefill 4 (same adapter) and against native 2/2
+    *[("Thinking decode 2", f"2.6B-T prefill 1 / decode 2 vs prefill 4 / decode 2 {bench}", ka.replace("S42", "S12"), ka, None)
+      for bench, ka, _ in EQUAL],
+    *[("Thinking decode 2", f"2.6B-T prefill 1 / decode 2 vs native 2/2 {bench}", ka.replace("S42", "S12"), kb.format(n=2), None)
+      for bench, ka, kb in EQUAL],
     # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the connector)
     *[("Distillation baseline", f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"),
        {"MMLU-Pro": (5.2, 1.2, 9.3), "ARC-C": (2.9, 1.4, 4.4)}.get(bench))
@@ -321,6 +326,7 @@ def keys():
     ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS} | set(WKEYS)
     ks |= {k for _, _, ka, kb in equal_specs() for k in (ka, ka.replace("S42", "S22"), kb.format(n=2), kb.format(n=4))}
     ks |= {k.format(c=c) for _, k in SN_EQUAL for c in ("native1", "C11", "C21", "native2")}
+    ks |= {ka.replace("S42", "S12") for _, _, ka, _ in equal_specs() if "T26" in ka}
     return sorted({k.partition("#")[0] for k in ks})
 
 
