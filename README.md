@@ -75,6 +75,6 @@ cache serves every decode loop.
   title  = {Untying Prefill and Decode Loops in Looped Language Models},
   author = {Hu, Yang},
   year   = {2026},
-  note   = {https://github.com/yanghu819/read-deep-write-shallow}
+  note   = {https://github.com/yanghu819/untying-prefill-decode}
 }
 ```

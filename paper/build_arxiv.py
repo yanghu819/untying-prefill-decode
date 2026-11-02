@@ -14,7 +14,7 @@ from pathlib import Path
 
 P = Path(__file__).resolve().parent
 SRC, OUT = P / "latex", P / "arxiv"
-URL = "https://github.com/yanghu819/read-deep-write-shallow"
+URL = "https://github.com/yanghu819/untying-prefill-decode"
 
 SUBS = [
     (r"\usepackage[review]{acl}", r"\usepackage[preprint]{acl}"),
