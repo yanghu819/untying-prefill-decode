@@ -208,9 +208,9 @@ def fig_lev():
         frontier(ax, [(n, nat[n], "") for n in ns], ours, m)
         ax.set_xticks(ns); ax.set_xlim(ns[0] - 0.4, ns[-1] + 0.4)
     axes[0][0].set_ylabel("accuracy (%)", fontsize=8.5)
-    fig.supxlabel("decision loops n", fontsize=8.5, y=-0.02)
-    legend(fig, "untied, best prefill m", "labels: prefill loops m", y=1.08)
-    fig.subplots_adjust(wspace=0.28)
+    fig.supxlabel("decision loops n", fontsize=8.5, y=0.0)
+    legend(fig, "loop adapter, best prefill m", "labels: prefill loops m", y=1.0)
+    fig.subplots_adjust(wspace=0.28, bottom=0.2, top=0.8)
     save(fig, "fig_lev")
 
 

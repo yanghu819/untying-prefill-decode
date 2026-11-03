@@ -54,7 +54,7 @@ model.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
-\caption{\textbf{The task map.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$. Grey: the native model
+\caption{\textbf{The best prefill count depends on the task.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$. Grey: the native model
 with $n$ loops for prefill and decode ($n/n$). Red: one loop adapter with the best prefill count $m$ at that $n$ (labels).
 The best $m$ differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All
 thirteen benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
@@ -264,7 +264,7 @@ intervals and the same adapter at prefill 2 / decode 2.}
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_pareto.pdf}
-\caption{\textbf{Accuracy against decode throughput.} Native $n/n$ (grey) and the loop adapter with prefill 4 / decode
+\caption{\textbf{Cutting decode loops costs less accuracy with the loop adapter.} Native $n/n$ (grey) and the loop adapter with prefill 4 / decode
 $n$ (red), $n=1$--4 (labels). Throughput: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
 base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $n$ grows.
 Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on all 1,319 GSM8K problems.}
@@ -678,11 +678,10 @@ unchanged ($+0.7$\ci{-0.8}{2.2}).
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{More prefill loops, fewer decision loops.} Lev looped decision models~\citep{lev} on the public LevBench
-development set (3,270 answerable questions), accuracy at each number of decision loops $n$. Red: the context is prefilled
-with four loops (two on Lev-3B, whose backbone has two) and the question and options run $n$ loops on that KV, i.e.\
-prefill 4 / decision $n$. Grey: the native model with $n$ loops for both, released (light) and continued with the same data
-and updates as ours (dark).}
+\caption{\textbf{Untying also helps looped decision models.} Lev looped decision models~\citep{lev} on the public LevBench
+development set (3,270 answerable questions), accuracy against the number of decision loops $n$. Grey: the native model
+with $n$ loops for context and decision, continued with the same data and updates as ours. Red: the context is prefilled
+with $m$ loops and the question and options run $n$ loops on that KV; labels give the best $m$ at each $n$.}
 \label{fig:lev}
 \end{figure*}
 
