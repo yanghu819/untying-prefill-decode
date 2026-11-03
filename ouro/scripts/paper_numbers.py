@@ -684,8 +684,8 @@ def taskmap_select():
                        diff_adapter_select_aware=[round(ra["diff"], 1), *select_aware(cells, cells[n], ids, half)])
             # same-training control: LoRA distillation of native n/n (native 4/4 is the teacher itself)
             dist = None if dkey is None else nat if n == 4 else load(dkey.format(d=DISTILLED[n]))
-            if dist is not None:
-                shared = {i: v for i, v in picked.items() if i in dist}
+            if dist is not None and set(picked) <= set(dist):    # only a complete run (partial exports are skipped)
+                shared = picked
                 r = boot(shared, {i: dist[i] for i in shared})
                 row.update(distilled=round(r["b"], 1), distilled_items=len(shared),
                            diff_distilled=[round(r[k], 3) for k in ("diff", "lo", "hi")])
