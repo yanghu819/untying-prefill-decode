@@ -8,22 +8,21 @@
 > paper is recomputed from released per-item scores by ouro/scripts/paper_numbers.py.
 
 Main findings (95% paired bootstrap intervals in the paper):
-- Prefill loops mainly buy knowledge and long-context accuracy; decode loops mainly buy multi-step math (on the tested
-  benchmarks; task- and prompt-dependent). Ouro-2.6B, one decode loop, prefill 4 vs prefill 1 within one adapter:
-  MMLU +15.2, RULER-16K +8.6.
-- Prefill 4 / decode 2 on Ouro-2.6B-Thinking scores at least as high as native 2/2 on all eight benchmarks tested
-  (significantly higher on five) and within two points of native 4/4 on six; it answers GSM8K in 0.55x the time of
-  native 4/4 (batch 1, prefill included) and is 1.0 point below it on all 1,319 problems (93.3 vs 94.2).
-- With the same adapter at prefill 2 / decode 2 as control, the prefill loops account for the MMLU-Pro (+8.1) and
-  HELMET (+7.5) gains over native 2/2, not for GSM8K, MATH-500 or MBPP+.
-- Lev looped decision models prefilled with more loops are 4.4-7.5 points more accurate at one decision loop on three
-  backbones (LevBench public development set), across four seeds and against a control trained twice as long.
-- A per-frequency complex key scale commutes with RoPE, so one stored prompt KV cache serves every decode loop exactly
-  (512/512 greedy tokens identical).
+- The best prefill count depends on the benchmark, its prompt and the decode budget (task map over 16 (m, n) pairs on 13
+  benchmarks, Ouro-2.6B). Within one adapter, 4-shot MATH-500 with one prefill loop instead of four: 51.8 -> 68.4 at four
+  decode loops; MMLU needs three or four prefill loops.
+- Choosing m per benchmark on held-out halves beats native Ouro-2.6B with the same number of decode loops significantly
+  on 12 of 13 benchmarks with one decode loop (+5 to +21) and 10 of 13 with two; mixed with three or four. Ouro-1.4B:
+  5 of 5 and 3 of 5.
+- Ouro-2.6B-Thinking: prefill 4 / decode 2 above native 2/2 on eight benchmarks (significant on five) and above a LoRA
+  distillation of native 2/2 with the same data and teacher (MMLU-Pro +5.2, ARC-C +2.9); 0.55x the GSM8K answer time of
+  native 4/4.
+- Lev looped decision models: +4.4 to +7.5 points at one decision loop on three backbones.
+- One stored prompt KV cache serves every decode loop exactly (RoPE-commuting key scale applied to the query).
 
-Limitations stated by the author: more prefill loops hurt few-shot MATH, short-context retrieval and (1.4B) 3-shot BBH;
-at three or more decode loops one prompt KV cache trails the native model on retrieval; more prefill loops raise time to
-first token; gains against native models include training the adapter; the 1.4B adapters lose 3-shot BBH.
+Limitations stated by the author: the prefill count is calibrated per benchmark, not routed per prompt; the best count
+depends on prompt format and checkpoint; with three or four decode loops native models are better on long-context
+retrieval; comparisons with native models include adapter training; equal decode loops do not mean equal latency.
 
 ## Docs
 - README.md: findings, when to use, repository map

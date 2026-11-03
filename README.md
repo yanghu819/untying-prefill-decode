@@ -15,26 +15,27 @@ cache serves every decode loop.
 
 ## Key findings
 
-1. **Prefill loops and decode loops buy different things.** On Ouro-2.6B, with one loop adapter evaluated at all 16
-   (m, n) pairs, knowledge (MMLU) and long-context retrieval (RULER-16K) change mainly with the prefill loops *m* and
-   multi-step math (GSM8K) mainly with the decode loops *n*. At one decode loop, prefilling with 4 loops instead of 1
-   adds **+15.2 MMLU** [14.3, 16.1] and **+8.6 RULER-16K** [4.3, 12.8] (full test sets, paired bootstrap 95% intervals).
-   The effect depends on the task and its prompt (it hurts few-shot MATH and 3-shot BBH on the 1.4B models).
-2. **Prefill 4 / decode 2 on Ouro-2.6B-Thinking** scores at least as high as native 2/2 on all eight standard
-   benchmarks we test (significantly higher on five: MMLU-Pro, BBH, ARC-C, MBPP+, HELMET), at the same decode cost, and
-   is within two points of native 4/4 on six. With the same adapter at prefill 2 / decode 2 as control, the prefill
-   loops account for the MMLU-Pro (+8.1) and HELMET (+7.5) gains, not for GSM8K, MATH-500 or MBPP+.
-3. **Fewer decode loops are faster end to end.** On 64 timed GSM8K problems (batch 1, prefill included) prefill 4 /
-   decode 2 answers in **0.55×** [0.45, 0.67] the time of native 4/4; on all 1,319 problems it is 1.0 point below it
-   (93.3 vs 94.2). On SenseNova-Loop-9B, prefill 1 / decode 1 scores 95.6 vs 95.8 for native 2/2 at **0.59×** the time.
-4. **Looped decision models (Lev).** Prefilling the context with more loops than the decision uses makes Lev models
-   4.4–7.5 points more accurate at one decision loop on three backbones (LevBench public development set), across four
-   training seeds per backbone and against a control trained for twice as many updates.
-5. **One KV cache serves every loop exactly.** A per-frequency complex key scale commutes with RoPE, so it can be
-   applied to the query; with a post-attention value map, one stored prompt cache serves every decode loop (512/512
-   greedy tokens identical to materialised per-loop caches).
+1. **The best prefill count depends on the benchmark.** One loop adapter on Ouro-2.6B, evaluated at all 16 (prefill
+   *m*, decode *n*) pairs on 13 benchmarks (the *task map*, Figure 1). Within the same adapter, prefilling 4-shot
+   MATH-500 with one loop instead of four raises accuracy from 51.8 to 68.4 at four decode loops (+16.6 [12.4, 21.0]);
+   MMLU instead needs three or four prefill loops, GSM8K is best with two and HumanEval with four.
+2. **Choosing *m* per benchmark pays most when decoding is cheap.** Choosing *m* on one half of each benchmark's items
+   and scoring it on the other half beats native Ouro-2.6B with the same number of decode loops significantly on
+   **12 of 13** benchmarks with one decode loop (+5 to +21 points) and **10 of 13** with two; with three or four decode
+   loops the native model is about as good, except on long-context retrieval where it is better. Ouro-1.4B shows the
+   same pattern (5 of 5 and 3 of 5 benchmarks).
+3. **Untying is more than distillation.** On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point estimates than
+   native 2/2 on eight benchmarks (significantly on five) and scores above a LoRA distillation of native 2/2 trained
+   with the same data, teacher and tokens (significantly on MMLU-Pro +5.2 and ARC-C +2.9).
+4. **Fewer decode loops are faster end to end.** On 64 timed GSM8K problems (batch 1, prefill included) prefill 4 /
+   decode 2 answers in **0.55×** [0.45, 0.67] the time of native 4/4; on all 1,319 problems it is 1.0 point below it.
+5. **Looped decision models (Lev).** Prefilling the context with more loops than the decision uses makes Lev models
+   4.4–7.5 points more accurate at one decision loop on three backbones, across seeds and against a control trained
+   for twice as many updates.
+6. **One KV cache serves every loop exactly.** A per-frequency complex key scale commutes with RoPE, so it can be
+   applied to the query; with a post-attention value map, one stored prompt cache serves every decode loop.
 
-![Prefill x decode grid on Ouro-2.6B](paper/figs/fig1_grid.png)
+![Task map on Ouro-2.6B](paper/figs/fig_taskmap.png)
 
 ![The loop adapter](paper/figs/fig0_method.png)
 
@@ -46,12 +47,11 @@ cache serves every decode loop.
 
 ## When to use it, and when not
 
-- More prefill loops for knowledge and long-context tasks; fewer decode loops when answers are long and latency matters.
-- Gains against native models include training the adapter; prefill-loop effects are measured within one adapter
-  (prefill m / decode n vs prefill n / decode n).
-- For short verbatim retrieval or few-shot prompts that must be imitated, use fewer prefill loops.
-- At three or more decode loops, one prompt KV cache from the fourth loop trails the native model on retrieval.
-- The 1.4B adapters lose 3-shot CoT BBH.
+- Choose the prefill count per benchmark (or task family) on a small labeled set; it matters most with one or two
+  decode loops. It is not a per-prompt router and the choice need not transfer to unseen tasks.
+- The best count depends on the prompt format (few-shot vs zero-shot) and the checkpoint.
+- Comparisons with native models include training the adapter; within-adapter comparisons isolate the prefill loops.
+- More prefill loops raise time to first token; equal decode loops do not mean equal latency.
 
 ## Repository map
 
