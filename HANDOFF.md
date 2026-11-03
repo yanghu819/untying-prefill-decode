@@ -32,8 +32,8 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
     `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
 - **Next, in order of value** (open Codex objections, paper/codex_review_untie6.md):
-  1. distillation controls into Table 1 (E48/D48/H48 now; corrected E48f/D48f/H48f with `--first-target` chained on a1
-     by `controls_first_chain.sh`; then also a corrected Thinking control T26-Df);
+  1. distillation controls into Table 1 (E48/D48/H48 now; corrected E48f/D48f/H48f with `--first-target` on a1 (E) and a2
+     (D on GPUs 0-3, H on 4-7) by `controls_first_chain.sh`; then also a corrected Thinking control T26-Df);
   2. time the distilled 2/2 Thinking control with `ouro/scripts/e2e_latency.py` on the same 64 GSM8K problems
      (and a larger fixed random sample; report TTFT, tokens, cap rates);
   3. MATH-500 parser adjudication: responses where full-response math_verify and strict extraction disagree, S14 vs
