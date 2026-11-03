@@ -354,7 +354,7 @@ problems, prefill 1 / decode 1 is 1.6 points below native 2/2 at $0.59\times$ th
 \label{fig:frontier}
 \end{figure}
 
-We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}). On Ouro-2.6B-Thinking a loop adapter that writes
+We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}). On Ouro-2.6B-Thinking a loop adapter that decodes
 with two loops answers GSM8K in $0.55\times$\ci{0.45}{0.67} the time of \nat{4}. On all 1,319 problems, prefill 4 / decode 2
 scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Prefilling with 4 rather than 2 loops before decoding with two
 changes the answer time by $1.01\times$\ci{0.90}{1.11}: the saving comes from the adapted decoder with fewer loops, including
