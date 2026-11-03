@@ -408,11 +408,12 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
     save(fig, name)
 
 
-def tab_select():
+def tab_select(model="Ouro-2.6B", name="tab_select"):
     """Main table: per benchmark and decode loops n, prefill loops m chosen on one half of the items and scored on the
     other (cross-fitted), minus native n/n on the same items (LaTeX rows from paper_numbers.json, taskmap_select)."""
-    R = {(r["bench"], r["n"]): r for r in PN.get("taskmap_select", [])}
-    benches = [b for b in dict.fromkeys(r["bench"] for r in PN.get("taskmap_select", []))]
+    rows = [r for r in PN.get("taskmap_select", []) if r.get("model", "Ouro-2.6B") == model]
+    R = {(r["bench"], r["n"]): r for r in rows}
+    benches = list(dict.fromkeys(r["bench"] for r in rows))
     def cell(r):
         if r is None:
             return "--"
@@ -423,7 +424,7 @@ def tab_select():
         sig = "$^*$" if lo > 0 or hi < 0 else ""          # paired 95% interval excludes zero
         return rf"{v}{sig}\ci{{{lo:.1f}}}{{{hi:.1f}}}\,{{\scriptsize ($m$={mm})}}"
     lines = [f"{b} & " + " & ".join(cell(R.get((b, n))) for n in range(1, 5)) + r" \\" for b in benches]
-    (OUT / "tab_select.tex").write_text("\n".join(lines) + "\n")
+    (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":

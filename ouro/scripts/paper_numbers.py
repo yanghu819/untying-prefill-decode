@@ -240,6 +240,12 @@ TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:mvfull"), ("BBH 3-shot", "L:o26
             ("HumanEval", "L:o26x-{c}-code:pass@1"), ("MBPP+", "L:o26x-{c}-code:pass_at_1"),
             ("GPQA-Diamond", "L:o26x-{c}-gpqa:acc_norm"), ("IFEval", "L:o26x-{c}-ifeval:prompt_level_strict_acc"),
             ("RULER-4K", "B:X26-{c}f:ruler4k"), ("RULER-8K", "B:X26-{c}f:ruler8k"), ("RULER-16K", "B:X26-{c}f:ruler16k")]
+# replication on Ouro-1.4B (its own adapter, O14-S-universal) for four benchmarks
+TASK_MAP_14 = [("MATH-500 4-shot", "L:O14x-{c}-math:mvfull"), ("MBPP+", "L:O14x-{c}-code:pass_at_1"),
+               ("HumanEval", "L:O14x-{c}-code:pass@1"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
+               ("ARC-C", "L:O14x-{c}-arc:acc_norm"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match")]
+MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
+          for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Task map", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Sec 4.3", f"SenseNova {c} MMLU-Pro", f"L:SN-{c}-mmlupro:exact_match") for c in ("native1", "splice21", "native2")]
@@ -327,6 +333,8 @@ def keys():
     ks |= {k for _, _, ka, kb in equal_specs() for k in (ka, ka.replace("S42", "S22"), kb.format(n=2), kb.format(n=4))}
     ks |= {k.format(c=c) for _, k in SN_EQUAL for c in ("native1", "C11", "C21", "native2")}
     ks |= {ka.replace("S42", "S12") for _, _, ka, _ in equal_specs() if "T26" in ka}
+    ks |= {k.format(c=c) for _, k in TASK_MAP_14 for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)]
+           + [f"native{n}" for n in range(1, 5)]}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -595,7 +603,9 @@ def taskmap_select():
     out = []
     specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc"), ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF)]
     specs += [(bench, key, key.replace("{c}", "native{n}")) for bench, key in TASK_MAP]
-    for bench, key, nkey in specs:
+    specs = [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"))
+                                                  for bench, key in TASK_MAP_14]
+    for model, bench, key, nkey in specs:
         for n in range(1, 5):
             cells = {m: load(key.format(c=f"S{m}{n}")) for m in range(1, 5)}
             nat = load(nkey.format(n=n))
@@ -611,14 +621,14 @@ def taskmap_select():
                 for i in test:
                     picked[i] = cells[m_best][i]
             r = boot(picked, {i: nat[i] for i in picked})
-            row = dict(bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
+            row = dict(model=model, bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
                        native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")])
             out.append(row)
-            print(f"Select m     {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
+            print(f"Select m     {model} {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
                   f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]")
     # counts quoted in the abstract, introduction and Section 4.2: (significant wins, benchmarks) at n = 1 and n = 2
     for n, (wins, total) in {1: (12, 13), 2: (10, 13)}.items():
-        rows = [r for r in out if r["n"] == n]
+        rows = [r for r in out if r["n"] == n and r["model"] == "Ouro-2.6B"]
         got = (sum(r["diff"][1] > 0 for r in rows), len(rows))
         flag = "" if got == (wins, total) else f"  !! paper: {wins} of {total}"
         print(f"Select m     significant wins at n={n}: {got[0]} of {got[1]}{flag}")
