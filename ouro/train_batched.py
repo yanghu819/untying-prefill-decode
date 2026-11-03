@@ -34,7 +34,7 @@ class Batched(nn.Module):
     def forward(self, samples, blocks):
         device = next(p for p in self.system.parameters() if p.requires_grad).device
         if self.system.arm in ("D", "E", "H"):
-            return native_lora_forward(self.system, samples, device)
+            return native_lora_forward(self.system, samples, device, self.system.first_target)
         if self.system.arm == "O":
             return loopmap_selflive_forward(self.system, samples, device)
         if self.system.arm == "P":  # original self-live recipe: main per-loop loss + 0.1 x self-live view, fixed-point history
@@ -50,7 +50,7 @@ class Batched(nn.Module):
         if self.refresh:
             return refresh_forward(self.system, samples, blocks, device)
         return adapter_forward(self.system, samples, device)
-from ouro.model import MODEL_REVISION, load_model
+from ouro.model import load_model
 from ouro.prepare_adapter_data import AdapterDataset
 
 
@@ -86,6 +86,8 @@ def main():
     parser.add_argument("--full-ft", action="store_true", help="train every reader weight (fp32 master, bf16 autocast)")
     parser.add_argument("--reader-lr-scale", type=float, default=0.1)
     parser.add_argument("--start-sample", type=int, default=0, help="fresh run: begin the schedule here")
+    parser.add_argument("--first-target", action="store_true",
+                        help="arms D/E/H: also supervise the first answer token, as the loop adapter does")
     parser.add_argument("--freeze-maps", action="store_true",
                         help="ablation: keep the per-loop KV maps at their identity initialisation (LoRA only, direct sharing)")
     args = parser.parse_args()
@@ -109,6 +111,7 @@ def main():
     writer = load_model(args.model_path, device=device)
     reader = load_model(args.model_path, device=device, dtype=torch.float32 if args.full_ft else torch.bfloat16)
     system = RefreshSystem(writer, reader) if args.arm == "R" else AdapterSystem(writer, reader, args.arm, full_ft=args.full_ft)
+    system.first_target = args.first_target
     trainable = [p for p in system.parameters() if p.requires_grad]
     if args.freeze_maps:  # maps stay in the checkpoint (as identity) so evaluation is unchanged, but are never updated
         frozen = {id(p) for p in system.loop_adapter.parameters()}
@@ -144,11 +147,11 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     if rank == 0:
         setup = {
-            "event": "start", "arm": args.arm, "freeze_maps": args.freeze_maps, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
+            "event": "start", "arm": args.arm, "first_target": args.first_target, "freeze_maps": args.freeze_maps, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
             "global_batch": args.global_batch, "microbatch": 1,
             "gradient_accumulation": args.global_batch // world,
             "trainable_parameters": sum(p.numel() for p in trainable),
-            "model_revision": MODEL_REVISION, "planned_kl_tokens": args.planned_tokens,
+            "model_path": str(args.model_path), "planned_kl_tokens": args.planned_tokens,
             "stop_kl_tokens": args.stop_tokens, "resume": str(args.resume) if args.resume else None, "start_sample": args.start_sample,
             "data_manifest": data.manifest,
         }
@@ -215,7 +218,7 @@ def main():
         if args.full_ft:  # bf16 reader weights; optimizer dropped (no resume) to fit storage
             state = {k: v.to(torch.bfloat16) if k.startswith("reader.") else v for k, v in state.items()}
         checkpoint = {
-            "arm": "B" if args.arm == "R" else args.arm, "trained_as": args.arm, "model_revision": MODEL_REVISION,
+            "arm": "B" if args.arm == "R" else args.arm, "trained_as": args.arm, "model_path": str(args.model_path),
             "full_ft": args.full_ft,
             "trainable_state": state, "optimizer": None if args.full_ft else optimizer.state_dict(),
             "optimizer_steps": update, "kl_tokens": consumed, "next_sample": next_sample,

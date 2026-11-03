@@ -1,10 +1,10 @@
 #!/bin/bash
-# after_x26_distill.sh ARM: when the distilled native n/n control (launch_x26_distill.sh) has finished training, queue its
+# after_x26_distill.sh ARM [first]: when the distilled native n/n control (launch_x26_distill.sh) has finished training, queue its
 # evaluation on all 13 Table 1 benchmarks with exactly the task-map settings, then start one grid_worker per idle GPU.
-# Keys: L:o26x-<C>-<bench> (lm-eval) and B:X26-<C>f:ruler{4,8,16}k (RULER), C = E48 / D48 / H48.
-ARM=$1
-case $ARM in E) NAME=X26-E48-p1d1 ;; D) NAME=X26-D48-p2d2 ;; H) NAME=X26-H48-p3d3 ;; *) exit 2 ;; esac
-M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/distill_q.txt; C=${ARM}48; cd $R
+# Keys: L:o26x-<C>-<bench> (lm-eval) and B:X26-<C>f:ruler{4,8,16}k (RULER), C = E48 / D48 / H48 (E48f ... with first).
+ARM=$1; F=$([ "$2" = first ] && echo f)
+case $ARM in E) NAME=X26-E48$F-p1d1 ;; D) NAME=X26-D48$F-p2d2 ;; H) NAME=X26-H48$F-p3d3 ;; *) exit 2 ;; esac
+M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/distill_q.txt; C=${ARM}48$F; cd $R
 until [ -f $R/$NAME/TRAIN_DONE ]; do sleep 300; done
 CK=$R/$NAME/checkpoint-48m.pt; [ -f $CK ] || CK=$(ls $R/$NAME/checkpoint*.pt | tail -1)
 MA="path=$M/model-2.6b,condition=$ARM,checkpoint=$CK,max_length=16384"

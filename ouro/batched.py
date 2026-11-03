@@ -176,17 +176,30 @@ def loopmap_selflive_forward(system, samples, device, faithful=False, gamma=0.1)
     return kl_sum, torch.stack((kl_sum.detach(), ce, tce, keep.sum().to(ce.dtype)))
 
 
-def native_lora_forward(system, samples, device):
-    """Arms D/E: native 2/2 or 1/1 Ouro with reader LoRA on prompt and continuation."""
+def native_lora_forward(system, samples, device, first_target=False):
+    """Arms D/E/H: native 2/2, 1/1 or 3/3 Ouro with reader LoRA on prompt and continuation. first_target also supervises
+    the first answer token (predicted at the last prompt position), as the loop adapter does; the runs reported so far
+    were trained without it."""
     prefix, pmask, suffix, smask = pad_batch(samples, device)
     suffix_input = suffix[:, :-1]
     full = torch.cat((pmask, smask[:, :-1]), dim=1)
-    _, _, teacher_logp, _ = _teacher(system, prefix, pmask, suffix_input, full, False)
+    first, _, teacher_logp, _ = _teacher(system, prefix, pmask, suffix_input, full, False)
     depth, steps = system.reader.config.num_hidden_layers, system.prefill_steps
-    _, cache = backbone(system.reader, prefix, NativeCache(steps * depth), steps, pmask.long())
+    prompt_hidden, cache = backbone(system.reader, prefix, NativeCache(steps * depth), steps, pmask.long())
     hidden, _ = backbone(system.reader, suffix_input, cache, steps, full.long())
     student_logp = system.reader.lm_head(hidden).float().log_softmax(-1)
-    return _kl(student_logp, teacher_logp, suffix, smask[:, 1:])
+    if not first_target:
+        return _kl(student_logp, teacher_logp, suffix, smask[:, 1:])
+    student_all = torch.cat((system.reader.lm_head(prompt_hidden[:, -1:]).float().log_softmax(-1), student_logp), dim=1)
+    teacher_all = torch.cat((first.float().log_softmax(-1)[:, None], teacher_logp), dim=1)
+    keep = smask.bool()
+    kl = F.kl_div(student_all, teacher_all, reduction="none", log_target=True).sum(-1)
+    kl_sum = kl[keep].sum()
+    with torch.no_grad():
+        target = suffix[:, :, None]
+        ce = -student_all.gather(-1, target)[..., 0][keep].sum()
+        tce = -teacher_all.gather(-1, target)[..., 0][keep].sum()
+    return kl_sum, torch.stack((kl_sum.detach(), ce, tce, keep.sum().to(ce.dtype)))
 
 
 def delta_forward(system, samples, device):

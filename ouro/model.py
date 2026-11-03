@@ -12,6 +12,7 @@ from third_party.ouro.modeling_ouro import (
 )
 
 
+# default checkpoint of the single-model evaluation scripts; training and lm-eval runs take --model-path / path=
 MODEL_ID = "ByteDance/Ouro-1.4B"
 MODEL_REVISION = "574fa66cb8bf5abdc979642d01cf2b79b16bfab1"
 
