@@ -233,12 +233,15 @@ TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:mvfull"), ("BBH 3-shot", "L:o26
             ("GPQA-Diamond", "L:o26x-{c}-gpqa:acc_norm"), ("IFEval", "L:o26x-{c}-ifeval:prompt_level_strict_acc"),
             ("RULER-4K", "B:X26-{c}f:ruler4k"), ("RULER-8K", "B:X26-{c}f:ruler8k"), ("RULER-16K", "B:X26-{c}f:ruler16k")]
 # replication on Ouro-1.4B (its own adapter, O14-S-universal) for five benchmarks
-TASK_MAP_14 = [("MATH-500 4-shot", "L:O14x-{c}-math:mvfull"), ("MBPP+", "L:O14x-{c}-code:pass_at_1"),
-               ("HumanEval", "L:O14x-{c}-code:pass@1"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
-               ("ARC-C", "L:O14x-{c}-arc:acc_norm")]
+TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF),
+               ("MATH-500 4-shot", "L:O14x-{c}-math:mvfull"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
+               ("ARC-C", "L:O14x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
+               ("HumanEval", "L:O14x-{c}-code:pass@1"), ("MBPP+", "L:O14x-{c}-code:pass_at_1"),
+               ("GPQA-Diamond", "L:O14x-{c}-gpqa:acc_norm"), ("IFEval", "L:O14x-{c}-ifeval:prompt_level_strict_acc"),
+               ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48", 2: "D48", 3: "H48"}
-DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlu:acc", "L:o26x-{d}-gsm:" + GF]
+DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Task map", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP
@@ -248,9 +251,9 @@ MEANS += [("Sec 4.2", f"GSM8K full {c}", f"T:{c}-gsm8k_think:math_verify")
 MEANS += [("Figure pareto", f"GSM8K full think-native{d}", f"T:think-native{d}-gsm8k_think:math_verify") for d in (1, 2, 3)]
 for p in range(1, 5):
     for d in range(1, 5):
-        MEANS += [("Figure 1", f"S{p}{d} MMLU (20/subject)", f"L:X26-S{p}{d}-mmlu:acc"),
-                  ("Figure 1", f"S{p}{d} RULER-16K (260)", f"B:X26-S{p}{d}:ruler16k"),
-                  ("Figure 1", f"S{p}{d} GSM8K (400)", f"L:X26-S{p}{d}-gsm:{GF}")]
+        MEANS += [("Figure pareto", f"S{p}{d} MMLU (20/subject)", f"L:X26-S{p}{d}-mmlu:acc"),     # subsets timed in
+                  ("Figure pareto", f"S{p}{d} RULER-16K (260)", f"B:X26-S{p}{d}:ruler16k"),     # the Pareto figure
+                  ("Figure pareto", f"S{p}{d} GSM8K (400)", f"L:X26-S{p}{d}-gsm:{GF}")]
 
 
 def fname(key):
@@ -329,6 +332,8 @@ def keys():
     ks |= {k.format(c=c) for _, k in TASK_MAP_14 for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)]
            + [f"native{n}" for n in range(1, 5)]}
     ks |= {k.format(d=d) for k in DISTILLED_KEYS for d in DISTILLED.values()}
+    ks |= {k for _, _, key, nkey, _ in taskmap_specs() for n in range(1, 5)
+           for k in [key.format(c=f"S{m}{n}") for m in range(1, 5)] + [nkey.format(n=n)]}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -631,8 +636,8 @@ def sn_equal():
 
 def taskmap_specs():
     """(model, benchmark, cell key with {c}, native key with {n}, distilled key with {d} or None) for every task map."""
-    specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc", "L:o26x-{d}-mmlu:acc"),
-             ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF, "L:o26x-{d}-gsm:" + GF)]
+    specs = [("MMLU", "L:X26-{c}-mmlufull:acc", "L:o26n{n}-mmlufull:acc", "L:o26x-{d}-mmlufull:acc"),     # 14,042
+             ("GSM8K", "L:X26-{c}-gsmfull:" + GF, "L:X26-native{n}-gsmfull:" + GF, "L:o26x-{d}-gsmfull:" + GF)]  # 1,319
     specs += [(bench, key, key.replace("{c}", "native{n}"), key.replace("{c}", "{d}")) for bench, key in TASK_MAP]
     return [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"), None)
                                                  for bench, key in TASK_MAP_14]
