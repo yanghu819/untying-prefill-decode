@@ -6,11 +6,11 @@ Every number in the paper comes from one of three places, all in this commit:
    `python ouro/scripts/paper_numbers.py compute` recomputes every paired comparison, interval and mean in the tables
    and text (paired bootstrap, 5,000 resamples, seed 0) and writes `ouro/results/paper_numbers.json`. This takes seconds
    on a laptop and needs only numpy.
-2. **Per-answer timing records** (`ouro/results/e2e/`): Table 3 and the time ratios in Section 4.2, also recomputed by
+2. **Per-answer timing records** (`ouro/results/e2e/`): the end-to-end timing table and time ratios, also recomputed by
    `paper_numbers.py compute`.
 3. **Throughput and probe outputs** (`ouro/results/throughput-*`, `ouro/results/probe/`), summarised in
-   `ouro/results/latest.json`; `ouro/scripts/paper_figs.py` draws Figures 1–3 from `paper_numbers.json` and Figure 5 from
-   `latest.json`.
+   `ouro/results/latest.json`; `ouro/scripts/paper_figs.py` draws every figure and generated table from
+   `paper_numbers.json` and `latest.json`.
 
 To regenerate the per-item scores themselves you need GPUs: train the loop adapters, run the evaluations, then
 `python ouro/scripts/paper_numbers.py export RUNS_DIR` collects exactly the items the paper uses.
