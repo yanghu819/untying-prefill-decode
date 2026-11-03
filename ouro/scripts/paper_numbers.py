@@ -483,7 +483,7 @@ LEV_PRINTED = {(f"Lev-1.4B {U}", 1): (5.3, 3.4, 7.2), (f"Lev-2.6B {U}", 1): (7.5
                ("Lev-2.6B prefill 1 vs same-training control", 4): (-13.0, -14.7, -11.3),
                ("Lev-3B prefill 1 vs same-training control", 2): (-8.1, -9.7, -6.6)}
 # Section 4.5: (pairs, significantly above the control, significantly below, point estimate below) per direction
-LEV_COUNTS = {"m>n": (13, 12, 0, 0), "m<n": (13, 0, 10, 13)}
+LEV_COUNTS = {"m>n": (13, 12, 0, 0), "m<n": (13, 0, 11, 13)}
 
 
 def lev():
@@ -505,7 +505,7 @@ def lev():
         for k in range(1, len(A[ids[0]]["logits"]) + 1):
             ca = {i: float(int(np.argmax(A[i]["logits"][k - 1])) == A[i]["label"]) for i in ids}
             cb = {i: float(int(np.argmax(B[i]["logits"][k - 1])) == B[i]["label"]) for i in ids}
-            r = {x: (round(v, 1) if isinstance(v, float) else v) for x, v in boot(ca, cb, groups={i: A[i]["group"] for i in ids}).items()}
+            r = {x: (round(v, 3) if isinstance(v, float) else v) for x, v in boot(ca, cb, groups={i: A[i]["group"] for i in ids}).items()}
             out.append(dict(label=label, depth=k, **r))
             print(f"Lev          {label:52s} d={k} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f})")
     # both directions (Section 4.5, Table lev): every trained prefill count m against the control at every decision
@@ -527,7 +527,7 @@ def lev():
             print(f"Lev both     {name}: {counts.get(name)}  !! paper: {printed}")
     for (label, n), printed in LEV_PRINTED.items():
         got = next(((r["diff"], r["lo"], r["hi"]) for r in out if r["label"] == label and r["depth"] == n), None)
-        if got != printed:
+        if got is None or any(abs(p - g) > 0.051 for p, g in zip(printed, got)):
             print(f"Lev          {label} d={n}: {got}  !! paper: {printed}")
     out.append(dict(label="both directions", grid=grid, counts=counts))
     # training seeds (seed 0 = the unsuffixed runs): per-seed gain at each decision depth, mean and sample std
@@ -568,14 +568,14 @@ def equal():
         o, n2, n4 = ({i: x[i] for i in ids} for x in (o, n2, n4))
         r2, r4 = boot(o, n2), boot(o, n4)
         row = dict(model=model, bench=bench, n=len(ids), ours=round(r2["a"], 1), native2=round(r2["b"], 1), native4=round(r4["b"], 1),
-                   vs2=[round(r2[k], 1) for k in ("diff", "lo", "hi")], vs4=[round(r4[k], 1) for k in ("diff", "lo", "hi")])
+                   vs2=[round(r2[k], 3) for k in ("diff", "lo", "hi")], vs4=[round(r4[k], 3) for k in ("diff", "lo", "hi")])
         if s22 is not None:
             r22 = boot(o, {i: s22[i] for i in ids})
-            row.update(same22=round(r22["b"], 1), vs22=[round(r22[k], 1) for k in ("diff", "lo", "hi")])
+            row.update(same22=round(r22["b"], 1), vs22=[round(r22[k], 3) for k in ("diff", "lo", "hi")])
             r = boot({i: s22[i] for i in ids}, n2)   # figure: every bar is a difference to native 2/2
-            row["s22_vs2"] = [round(r[k], 1) for k in ("diff", "lo", "hi")]
+            row["s22_vs2"] = [round(r[k], 3) for k in ("diff", "lo", "hi")]
         r = boot(n4, n2)
-        row["n4_vs2"] = [round(r[k], 1) for k in ("diff", "lo", "hi")]
+        row["n4_vs2"] = [round(r[k], 3) for k in ("diff", "lo", "hi")]
         out.append(row)
         print(f"Equal        {model} {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
               f"{row['vs2'][0]:+5.1f} [{row['vs2'][1]:+.1f}, {row['vs2'][2]:+.1f}] | 4/4 {row['native4']:5.1f} "
@@ -599,7 +599,7 @@ def sn_equal():
         for c in ("native1", "C11", "native2"):
             r = boot(d["C21"], d[c])
             row["C21"], row[c] = round(r["a"], 1), round(r["b"], 1)
-            row[f"vs_{c}"] = [round(r[k], 1) for k in ("diff", "lo", "hi")]
+            row[f"vs_{c}"] = [round(r[k], 3) for k in ("diff", "lo", "hi")]
         out.append(row)
         print(f"SN equal     {bench:12s} n={len(ids):5d} read2/write1 {row['C21']:5.1f} | 1/1 {row['native1']:5.1f} "
               f"{row['vs_native1'][0]:+5.1f} | C11 {row['C11']:5.1f} {row['vs_C11'][0]:+5.1f} [{row['vs_C11'][1]:+.1f}, "
@@ -617,16 +617,19 @@ def taskmap_specs():
 
 
 def taskmap_cells():
-    """Appendix table of the full grid: mean of every (m, n) cell and of native n/n on each task-map benchmark."""
+    """Task map (Figure 1, appendix grid): every (m, n) cell and native n/n per benchmark, each mean over the items that
+    all 20 configurations share; best[n] is the best m at n, chosen before rounding (ties: the smaller m)."""
     out = []
     for model, bench, key, nkey, _ in taskmap_specs():
-        row = dict(model=model, bench=bench)
-        for n in range(1, 5):
-            for c, k in [(f"S{m}{n}", key.format(c=f"S{m}{n}")) for m in range(1, 5)] + [(f"native{n}", nkey.format(n=n))]:
-                v = load(k)
-                if v is not None:
-                    row[c] = round(100 * float(np.mean(list(v.values()))), 1)
-        out.append(row)
+        keys = {f"S{m}{n}": key.format(c=f"S{m}{n}") for n in range(1, 5) for m in range(1, 5)}
+        keys.update({f"native{n}": nkey.format(n=n) for n in range(1, 5)})
+        sets = {c: load(k) for c, k in keys.items()}
+        if any(v is None for v in sets.values()):
+            continue
+        ids = set.intersection(*(set(v) for v in sets.values()))
+        mean = {c: 100 * float(np.mean([v[i] for i in ids])) for c, v in sets.items()}
+        best = {n: max(range(1, 5), key=lambda m: (mean[f"S{m}{n}"], -m)) for n in range(1, 5)}
+        out.append(dict(model=model, bench=bench, items=len(ids), best=best, **{c: round(v, 3) for c, v in mean.items()}))
     return out
 
 
@@ -645,7 +648,7 @@ def select_aware(cells, nat, ids, half, reps=5000):
             m = int(np.argmax(A[:, train].mean(1)))        # ties: the smaller m, as in the main selection
             total += (A[m, test] - b[test]).sum()
         diffs.append(100 * total / len(x))
-    return [round(float(np.percentile(diffs, q)), 1) for q in (2.5, 97.5)]
+    return [round(float(np.percentile(diffs, q)), 3) for q in (2.5, 97.5)]
 
 
 def taskmap_select():
@@ -673,11 +676,11 @@ def taskmap_select():
                     picked[i] = cells[m_best][i]
             r = boot(picked, {i: nat[i] for i in picked})
             row = dict(model=model, bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
-                       native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")],
+                       native=round(r["b"], 1), diff=[round(r[k], 3) for k in ("diff", "lo", "hi")],
                        diff_select_aware=[round(r["diff"], 1), *select_aware(cells, nat, ids, half)])
             ra = boot(picked, {i: cells[n][i] for i in picked})
             # within the adapter: the chosen m against the same adapter's m = n (isolates the prefill loops)
-            row.update(adapter_nn=round(ra["b"], 1), diff_adapter=[round(ra[k], 1) for k in ("diff", "lo", "hi")],
+            row.update(adapter_nn=round(ra["b"], 1), diff_adapter=[round(ra[k], 3) for k in ("diff", "lo", "hi")],
                        diff_adapter_select_aware=[round(ra["diff"], 1), *select_aware(cells, cells[n], ids, half)])
             # same-training control: LoRA distillation of native n/n (native 4/4 is the teacher itself)
             dist = None if dkey is None else nat if n == 4 else load(dkey.format(d=DISTILLED[n]))
@@ -685,7 +688,7 @@ def taskmap_select():
                 shared = {i: v for i, v in picked.items() if i in dist}
                 r = boot(shared, {i: dist[i] for i in shared})
                 row.update(distilled=round(r["b"], 1), distilled_items=len(shared),
-                           diff_distilled=[round(r[k], 1) for k in ("diff", "lo", "hi")])
+                           diff_distilled=[round(r[k], 3) for k in ("diff", "lo", "hi")])
             out.append(row)
             vs_d = (f" | distilled {row['distilled']:5.1f} {row['diff_distilled'][0]:+5.1f} [{row['diff_distilled'][1]:+.1f}, "
                     f"{row['diff_distilled'][2]:+.1f}]") if "distilled" in row else ""
@@ -696,7 +699,7 @@ def taskmap_select():
               ("HumanEval", 2): 18.3}
     for (bench, n), v in quoted.items():
         got = next((r["diff"][0] for r in out if r["model"] == "Ouro-2.6B" and r["bench"] == bench and r["n"] == n), None)
-        if got != v:
+        if got is None or abs(got - v) > 0.051:
             print(f"Select m     {bench} n={n}: {got}  !! paper: {v}")
     # counts quoted in the abstract, introduction and Section 4.2: (significant wins, benchmarks) at n = 1 and n = 2
     for model, n, (wins, total) in (("Ouro-2.6B", 1, (12, 13)), ("Ouro-2.6B", 2, (10, 13)), ("Ouro-1.4B", 1, (5, 5)),
@@ -747,7 +750,7 @@ def compute():
             print(f"{sec:12s} {label:52s} MISSING {ka if a is None else kb}")
             continue
         r = boot(a, b)
-        r = {k: (round(v, 1) if isinstance(v, float) else v) for k, v in r.items()}
+        r = {k: (round(v, 3) if isinstance(v, float) else v) for k, v in r.items()}   # rounded only when printed
         flag = ""
         if printed:
             got = (r["diff"], r["lo"], r["hi"])

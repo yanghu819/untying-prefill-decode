@@ -38,6 +38,13 @@ def save(fig, name):
 
 
 
+def ci(lo, hi):
+    """95% interval in points: one decimal, two when one would round a nonzero endpoint to 0.0 (significance is decided
+    on the unrounded values)."""
+    f = lambda x: f"{x:.2f}" if x != 0 and abs(x) < 0.05 else f"{x + 0.0:.1f}"
+    return rf"\ci{{{f(lo)}}}{{{f(hi)}}}"
+
+
 def frontier(ax, nat, ours, title, xlog=False, lines=True):
     """The one figure style of the paper: native (grey) and loop adapter (red) as lines of (x, y, label) points."""
     for pts, col, dy, mk in ((nat, NAT_LIGHT, -10, "o"), (ours, OURS, 5, "s")):
@@ -48,9 +55,9 @@ def frontier(ax, nat, ours, title, xlog=False, lines=True):
         if lines:
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
         ax.scatter(x, y, s=18, color=col, marker=mk, zorder=3)
-        for xi, yi, lab in pts:
+        for xi, yi, lab, *off in pts:                 # optional 4th element: this label's vertical offset
             if lab:
-                ax.annotate(lab, (xi, yi), xytext=(0, dy), textcoords="offset points", fontsize=8,
+                ax.annotate(lab, (xi, yi), xytext=(0, off[0] if off else dy), textcoords="offset points", fontsize=8,
                             color=OURS if col == OURS else NAT, ha="center")
     ys = [p[1] for p in nat + ours if np.isfinite(p[1])]
     lo, hi = min(ys), max(ys); pad = 0.14 * (hi - lo + 1)
@@ -117,7 +124,7 @@ def fig2():
     """End to end (Ouro-2.6B-Thinking, GSM8K, batch 1): accuracy against seconds per answer."""
     E = {r["cond"]: (r["seconds"], r["acc"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"}
     nat = [(*E[f"native{n}st"], f"{n}/{n}") for n in (1, 2, 4) if f"native{n}st" in E]
-    ours = [(*E[c], lab) for c, lab in (("S41sb", "4/1"), ("S22sb", "2/2"), ("S42sb", "4/2")) if c in E]
+    ours = [(*E[c], lab, dy) for c, lab, dy in (("S41sb", "4/1", 5), ("S22sb", "2/2", -12), ("S42sb", "4/2", 5)) if c in E]
     fig, ax = plt.subplots(figsize=(3.3, 2.4))
     frontier(ax, nat, ours, "", lines=False)   # 1/1 answers run longer than 2/2: a line would fold back
     ax.set_xlabel("seconds per answer (batch 1)", fontsize=8); ax.set_ylabel("GSM8K accuracy (%)", fontsize=8)
@@ -178,7 +185,7 @@ def fig_pareto():
         ax.set_title(title, fontsize=8.5, color=INK, pad=4)
         ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     axes[0].set_ylabel("accuracy (%)")
-    fig.supxlabel("decode throughput (tokens/s, log scale)", fontsize=8.5, y=-0.04)
+    fig.supxlabel("8K decode microbenchmark throughput (tokens/s, log scale)", fontsize=8.5, y=-0.04)
     h, l = axes[0].get_legend_handles_labels()
     h.append(plt.Line2D([], [], ls="none")); l.append("point labels: decode loops n")
     fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.2)
@@ -216,7 +223,7 @@ def fig_lev():
 
 def tab_equal(model="1.4B-T"):
     """Appendix table: the headline comparison on another Thinking checkpoint (LaTeX rows from paper_numbers.json)."""
-    pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + r"\ci{%.1f}{%.1f}" % (v[1], v[2])
+    pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + ci(v[1], v[2])
     rows = [e for e in PN["equal"] if e.get("model") == model]
     lines = [rf"{e['bench']} & {e['native2']:.1f} & {e.get('same22', float('nan')):.1f} & {e['ours']:.1f} & {e['native4']:.1f} & "
              rf"{pm(e['vs2'])} & {pm(e['vs22']) if 'vs22' in e else '--'} & {pm(e['vs4'])} \\" for e in rows]
@@ -228,7 +235,7 @@ def tab_hybrid():
     (difference to prefill 1; LaTeX rows from paper_numbers.json)."""
     C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Hybrid state"}
     pm = lambda c: "--" if c is None else ((r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"])
-                                           + r"\ci{%.1f}{%.1f}" % (c["lo"], c["hi"]))
+                                           + ci(c["lo"], c["hi"]))
     lines = []
     for bench in ("RULER-4K", "RULER-8K", "RULER-16K", "MMLU-Pro", "ARC-C", "HELMET"):
         cells = [pm(C.get(f"SenseNova {k} prefill-2 state {part} vs prefill 1 {bench}"))
@@ -239,7 +246,7 @@ def tab_hybrid():
 
 def tab_sn():
     """Appendix table: SenseNova-Loop-9B at one writing visit (LaTeX rows from paper_numbers.json, sn_equal)."""
-    pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + r"\ci{%.1f}{%.1f}" % (v[1], v[2])
+    pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + ci(v[1], v[2])
     lines = [rf"{e['bench']} & {e['native1']:.1f} & {e['C11']:.1f} & {e['C21']:.1f} & {e['native2']:.1f} & "
              rf"{pm(e['vs_C11'])} & {pm(e['vs_native2'])} \\" for e in PN.get("sn_equal", [])]
     (OUT / "tab_sn.tex").write_text("\n".join(lines) + "\n")
@@ -247,36 +254,23 @@ def tab_sn():
 
 def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
     """Task map: Ouro-2.6B, one loop adapter. Per benchmark, native n/n against the adapter's best prefill count m
-    at each number of decode loops n (point labels: that m)."""
-    M = {x["label"]: x["mean"] for x in PN["means"] if x.get("section") in ("Task map", "Figure 1")}
-    PAR = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Pareto"}
-    panels = [("MMLU", "{c} MMLU (20/subject)"), ("MMLU-Pro", "{c} MMLU-Pro"), ("ARC-C", "{c} ARC-C"),
-              ("GPQA-Diamond", "{c} GPQA-Diamond"), ("BBH", "{c} BBH 3-shot"), ("IFEval", "{c} IFEval"),
-              ("GSM8K", "{c} GSM8K (400)"), ("MATH-500 4-shot", "{c} MATH-500 4-shot"), ("HumanEval", "{c} HumanEval"),
-              ("MBPP+", "{c} MBPP+"), ("RULER-4K", "{c} RULER-4K"), ("RULER-8K", "{c} RULER-8K"), ("RULER-16K", "{c} RULER-16K")]
+    at each number of decode loops n (point labels: that m); all points of a panel on the same items (taskmap_cells)."""
+    T = {r["bench"]: r for r in PN["taskmap_cells"] if r["model"] == "Ouro-2.6B"}
+    title = {"BBH 3-shot": "BBH"}
+    panels = [b for b in ("MMLU", "MMLU-Pro", "ARC-C", "GPQA-Diamond", "BBH 3-shot", "IFEval", "GSM8K", "MATH-500 4-shot",
+                          "HumanEval", "MBPP+", "RULER-4K", "RULER-8K", "RULER-16K") if b in T]
     if only:
-        panels = [p for t in only for p in panels if p[0] == t]
-    def val(fmt, c):
-        k = fmt.format(c=c)
-        if k in M:
-            return M[k]
-        if c.startswith("native"):   # grid-subset natives are stored with the Pareto comparisons
-            n, sub = c[6:], fmt.split(" ", 1)[1]
-            r = PAR.get(f"prefill 4/decode {n} vs native {n}/{n} {sub}")
-            return r["b"] if r else np.nan
-        return np.nan
+        panels = [b for t in only for b in panels if title.get(b, b) == t]
     nrows = -(-len(panels) // ncols)
     H = 1.6 * nrows + 0.3
     fig, axes = plt.subplots(nrows, ncols, figsize=(6.9, H), squeeze=False)
     for ax in axes.flat[len(panels):]:
         ax.axis("off")
-    for ax, (title, fmt) in zip(axes.flat, panels):
-        ours = []
-        for n in range(1, 5):
-            v = [val(fmt, f"S{m}{n}") for m in range(1, 5)]
-            b = int(np.nanargmax(v)); ours.append((n, v[b], f"m={b + 1}"))
-        nat = [(n, val(fmt, f"native{n}"), "") for n in range(1, 5)]
-        frontier(ax, nat, ours, title)
+    for ax, b in zip(axes.flat, panels):
+        r = T[b]
+        ours = [(n, r[f"S{r['best'][str(n)]}{n}"], f"m={r['best'][str(n)]}") for n in range(1, 5)]
+        nat = [(n, r[f"native{n}"], "") for n in range(1, 5)]
+        frontier(ax, nat, ours, title.get(b, b))
         ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
     legend(fig, "loop adapter, best prefill m", "labels: prefill loops m", y=1.0)
@@ -298,7 +292,7 @@ def tab_select(model="Ouro-2.6B", name="tab_select"):
         mm = str(m[0]) if m[0] == m[1] else f"{m[0]},{m[1]}"
         v = (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d)
         sig = "$^*$" if lo > 0 or hi < 0 else ""          # paired 95% interval excludes zero
-        return rf"{v}{sig}\ci{{{lo + 0.0:.1f}}}{{{hi + 0.0:.1f}}}\,{{\scriptsize ({mm})}}"
+        return rf"{v}{sig}{ci(lo, hi)}\,{{\scriptsize ({mm})}}"
     lines = [f"{b} & " + " & ".join(cell(R.get((b, n))) for n in range(1, 5)) + r" \\" for b in benches]
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
 
@@ -307,7 +301,7 @@ def tab_distill():
     """Appendix table: Ouro-2.6B-Thinking, LoRA distillation of native 2/2 (same data, teacher and tokens) against native
     2/2 and against prefill 4 / decode 2 (LaTeX rows from paper_numbers.json)."""
     C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Distillation baseline"}
-    pm = lambda c: (r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"]) + r"\ci{%.1f}{%.1f}" % (c["lo"], c["hi"])
+    pm = lambda c: (r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"]) + ci(c["lo"], c["hi"])
     lines = []
     for b in ("GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"):
         ours = C.get(f"2.6B-T prefill 4/decode 2 vs LoRA-distilled native 2/2 {b}")
@@ -331,7 +325,7 @@ def tab_lev():
             return "--"
         d, lo, hi = v
         sig = "$^*$" if lo > 0 or hi < 0 else ""
-        return (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d) + sig + r"\ci{%.1f}{%.1f}" % (lo + 0.0, hi + 0.0)
+        return (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d) + sig + ci(lo, hi)
     lines = []
     for model in dict.fromkeys(g["model"] for g in both["grid"]):
         ms = sorted({m for (mo, m, _) in G if mo == model})
@@ -348,16 +342,15 @@ def tab_taskmap(model="Ouro-2.6B"):
              "IFEval": "IFEv", "RULER-4K": "R-4K", "RULER-8K": "R-8K", "RULER-16K": "R-16K"}
     lines = [" & " + " & ".join(short.get(r["bench"], r["bench"]) for r in rows) + r" \\", r"\midrule"]
     for n in range(1, 5):
-        best = {r["bench"]: max((r.get(f"S{m}{n}", -1) for m in range(1, 5))) for r in rows}
         for c, name in [(f"native{n}", rf"native {n}/{n}")] + [(f"S{m}{n}", rf"{m}\,/\,{n}") for m in range(1, 5)]:
-            vals = [r.get(c) for r in rows]
-            cell = lambda v, b: "--" if v is None else (rf"\textbf{{{v:.1f}}}" if c[0] == "S" and v == best[b] else f"{v:.1f}")
-            lines.append(f"{name} & " + " & ".join(cell(v, r["bench"]) for v, r in zip(vals, rows)) + r" \\")
+            best = lambda r: c == f"S{r['best'][str(n)]}{n}"          # chosen before rounding (taskmap_cells)
+            cell = lambda r: rf"\textbf{{{r[c]:.1f}}}" if best(r) else f"{r[c]:.1f}"
+            lines.append(f"{name} & " + " & ".join(cell(r) for r in rows) + r" \\")
         if n < 4:
             lines.append(r"\midrule")
     (OUT / "tab_taskmap.tex").write_text("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "IFEval", "RULER-4K", "RULER-8K"], ncols=5); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

@@ -23,6 +23,15 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Codex round 6 (paper/codex_review_untie6.md, 8 objections). Fixed two real analysis bugs: (1) task-map means are now
+  over the items all 20 configurations share (`taskmap_cells`; Figures 1/8 and the grid table read it; MMLU-Pro's best
+  m at decode 1 is 4, not 3); (2) significance was decided on intervals rounded to one decimal; intervals are now kept
+  at three decimals and printed with two where one would hide a nonzero bound (Lev m < n: 11 of 13 significant, not 10;
+  two tiny no-map MMLU losses now stated). Found: the native-LoRA control (arms D/E/H) omits the KL on the first answer
+  token (about 0.2% of supervised positions); stated in the paper, corrected re-runs to follow. Also: LevBench named as
+  the rights-subset-v1 development export; matched-data/update control; hybrid conditions called mixed-state; 64 timed
+  GSM8K problems in the abstract; Figure 6 label collision; Figure 8 shows only the five settings not in Figure 1;
+  float barriers in the appendix; README/llms.txt/REPRODUCE counts updated.
 - Codex round 5 (PDF pages attached, paper/codex_review_untie5.md; 10 objections). Applied: Table 1 intervals now
   repeat the choice of m (5,000 draws): 11/13 and 9/13 (fixed choice: 12, 10); within the adapter 6/13 and 3/13; 1.4B
   3/5 and 1/5; native comparisons described as the complete trained method; Figure 6 adds the same-adapter 2/2 point and

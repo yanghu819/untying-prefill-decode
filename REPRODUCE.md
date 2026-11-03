@@ -1,8 +1,8 @@
 # Reproducing the paper
 
-Every number in the paper comes from one of three places, all in this commit:
+The paper's numbers come from these places, all in this commit:
 
-1. **Per-item scores** (`ouro/results/items/`, 1 MB): one file per evaluation run used by the paper (item id → score).
+1. **Per-item scores** (`ouro/results/items/`): one file per evaluation run used by the paper (item id → score).
    `python ouro/scripts/paper_numbers.py compute` recomputes every paired comparison, interval and mean in the tables
    and text (paired bootstrap, 5,000 resamples, seed 0) and writes `ouro/results/paper_numbers.json`. This takes seconds
    on a laptop and needs only numpy.
@@ -87,7 +87,8 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 | paper PDF and arXiv package | — | in order: `paper_numbers.py compute`, `paper_figs.py`, compile `paper/latex/main.tex`, `paper/build_arxiv.py` |
 
 `paper_numbers.py compute` also checks every number quoted in the text against hard-coded expectations (including the
-12-of-13 / 10-of-13 counts of Table 1) and reports any mismatch.
+11-of-13 / 9-of-13 counts of Table 1) and reports any mismatch with `!!`. Not covered: the long-answer throughput
+and batch-size measurements, the parser diagnostics and the MBPP+ format counts (reported as measured).
 
 ## What is not here
 
