@@ -161,7 +161,7 @@ class IndexedCache(NativeCache):
 
 
 class LiveCache(NativeCache):
-    """Arm O (read deep through maps + self-live shared answer history). Decode loop k, layer l reads
+    """Arm O (prompt KV through maps + self-live shared answer history). Decode loop k, layer l reads
     [mapped prompt bank (k, l) | shared answer history of layer l | the current token's live K/V]. The answer history is
     one bank per layer, written only by the final decode loop (the self-live view: earlier loops see the final loop's
     history of earlier tokens, and only their own live K/V for the current token). training=True: the answer history is

@@ -1,4 +1,4 @@
-"""LevBench development: read 4 / write k against native depth k, from Lev's scripts/depth_rows.py outputs.
+"""LevBench development: prefill 4 / decision k against native depth k, from Lev's scripts/depth_rows.py outputs.
 
     python ouro/lev/levbench_compare.py ROWS_DIR MODEL     (ROWS_DIR/<MODEL>-read0/*.json, <MODEL>-read4/*.json)
     python ouro/lev/levbench_compare.py ROWS_DIR A B         (any two row directories under ROWS_DIR: A minus B)

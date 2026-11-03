@@ -6,11 +6,11 @@ Every number in the paper comes from one of three places, all in this commit:
    `python ouro/scripts/paper_numbers.py compute` recomputes every paired comparison, interval and mean in the tables
    and text (paired bootstrap, 5,000 resamples, seed 0) and writes `ouro/results/paper_numbers.json`. This takes seconds
    on a laptop and needs only numpy.
-2. **Per-answer timing records** (`ouro/results/e2e/`): the end-to-end timing table and time ratios, also recomputed by
-   `paper_numbers.py compute`.
-3. **Throughput and probe outputs** (`ouro/results/throughput-*`, `ouro/results/probe/`), summarised in
-   `ouro/results/latest.json`; `ouro/scripts/paper_figs.py` draws every figure and generated table from
-   `paper_numbers.json` and `latest.json`.
+2. **Timing records** (`ouro/results/e2e/`, `ouro/results/throughput-sb4/`): the end-to-end timing table, time ratios
+   and decode throughput, also recomputed by `paper_numbers.py compute`.
+3. **Decision-model records** (`ouro/results/lev/`): per-depth LevBench development outputs for the Lev appendix.
+
+`ouro/scripts/paper_figs.py` draws every figure and generated table from `paper_numbers.json`.
 
 To regenerate the per-item scores themselves you need GPUs: train the loop adapters, run the evaluations, then
 `python ouro/scripts/paper_numbers.py export RUNS_DIR` collects exactly the items the paper uses.
@@ -50,7 +50,7 @@ from a local CSV (`$M/gpqa-data/`, not redistributed) and IFEval from `$M/ifeval
 | SenseNova-Loop-9B loop adapter `SN-C-universal`; GDN-state variant `SNG-C-universal` | SenseNova and hybrid appendices | `launch_sn.sh`; `launch_sng.sh` (`sensenova_bridge.py --mix G`) |
 | variants `X26-O`, `X26-M`, `X26-V`, `X26-Sfz` (maps frozen) | design-variant appendix | `launch_o.sh`, `launch_m.sh`, `launch_v.sh`, `launch_fz.sh` |
 | Nanbeige per-pair `NBX-p<m>d<n>` | evaluation appendix | `launch_nbs21.sh`, `nbs_cell.sh` |
-| Lev continuations (read-deep arm and control, four seeds, 2x control) | decision models | `ouro/lev/train_rd.sh`, `after_train.sh` |
+| Lev continuations (untied arm and control, four seeds, 2x control) | decision models | `ouro/lev/train_rd.sh`, `after_train.sh` |
 
 ## Evaluation
 
@@ -84,7 +84,6 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 | Ouro-1.4B-Thinking appendix | `t14_head.sh` | `paper_numbers.py` `equal` → `tab_equal` |
 | SenseNova and hybrid-state appendices | `sn_head.sh`, `sn_math_rest.sh`, `sn_rebalance*.sh`, `sn_arc_mix.sh`, `launch_sng.sh` | `paper_numbers.py` (`Hybrid state`, `sn_equal`) → `tab_hybrid`, `tab_sn` |
 | single-cache exactness (512/512 tokens) | `ouro/scripts/single_bank_check.py` | — |
-| answers without a boxed answer; probes | `ouro/scripts/wander_detail.py`; `said_meant_probe.py`, `said_meant_probe_sn.py` | `paper_numbers.py` (`wander`); `results/probe/` |
 | paper PDF and arXiv package | — | in order: `paper_numbers.py compute`, `paper_figs.py`, compile `paper/latex/main.tex`, `paper/build_arxiv.py` |
 
 `paper_numbers.py compute` also checks every number quoted in the text against hard-coded expectations (including the

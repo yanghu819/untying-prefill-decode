@@ -1,4 +1,6 @@
-"""Read deep, write shallow on Lev looped decision models (OpenLAIR/lev), training-free.
+"""Untied prefill and decision loops on Lev looped decision models (OpenLAIR/lev), training-free.
+
+(File name kept for the launchers.) READ = prefill loops for the state, k = decision loops for the branches.
 
 A Lev request is a state (the context) followed by branches (each question with its options); the pointer head reads
 the decide and option tokens of a branch after every loop. Here the state is read with READ loops and the branches are
@@ -6,7 +8,7 @@ computed with k = 1..steps loops, attending at every layer to the state's keys a
 (no new parameters; Lev's own LoRA and head unchanged). Equivalent reference construction: at each layer of a branch
 loop, the state rows are replaced by their inputs at the last of READ state loops.
 
-Sanity: READ = 1 reproduces native depth 1 at write 1 exactly. READ = steps at write k = steps is NOT native depth
+Sanity: READ = 1 reproduces native depth 1 at decision 1 exactly. READ = steps at decision k = steps is NOT native depth
 `steps`: in the split, branch loops 1..steps-1 already read the state's last-loop KV (native reads loop-k KV at loop k).
 Native depths are what Lev's scripts/jevbench_eval.py reports without LEV_READ.
 
@@ -78,7 +80,7 @@ kouro.OuroModel.forward = forward
 
 if __name__ == "__main__":
     # LEV_SCRIPT: the Lev script to run under the patch (default JevBench; scripts/depth_rows.py for LevBench rows)
-    if os.environ.get("LEV_MODULE"):   # e.g. kev.train: train under the read-deep forward
+    if os.environ.get("LEV_MODULE"):   # e.g. kev.train: train under the untied forward
         sys.argv[0] = os.environ["LEV_MODULE"]
         runpy.run_module(os.environ["LEV_MODULE"], run_name="__main__", alter_sys=True)
     else:

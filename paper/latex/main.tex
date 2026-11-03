@@ -401,8 +401,7 @@ on long-context retrieval (RULER) and slightly on BBH. Gains against native mode
 distillation control (Section~\ref{sec:rdws}) separates part of it. More prefill loops raise the time to first token,
 and equal decode loops do not mean equal latency; end-to-end time is measured at batch 1 on one GPU type, and throughput
 is a controlled decode benchmark. Thinking checkpoints on raw HELMET prompts can stop at once; we decode them so that an
-answer cannot be empty, for every configuration (Appendix~\ref{app:eval}). Probes measure linear decodability, not causal
-use. All models are 1.4B--9B, decoding is greedy and benchmarks are English.
+answer cannot be empty, for every configuration (Appendix~\ref{app:eval}). All models are 1.4B--9B, decoding is greedy and benchmarks are English.
 
 \bibliography{references}
 
@@ -698,6 +697,12 @@ loops. Restricting the key map to a
 RoPE-commuting scale, which is what allows one stored prompt KV cache, shows no measurable cost against unrestricted key
 maps with one cache per loop (RULER-16K, five $(m,n)$ pairs).
 
+\paragraph{Other design variants.} Sharing generated-token KV across decode loops (``shared answer KV'',
+Appendix~\ref{app:training}) shows no significant difference at two and three decode loops and costs 2.6 GSM8K points
+at four ($+0.3$\ci{-1.5}{2.1}, $-0.8$\ci{-2.4}{0.8}, $-2.6$\ci{-4.2}{-1.1} at 4/2, 3/3, 4/4). A gated branch over the
+first prefill loop's KV improves RULER-4K by $2.3$\ci{1.0}{3.6} points at prefill 4 / decode 1 and leaves GSM8K
+unchanged ($+0.7$\ci{-0.8}{2.2}).
+
 \section{Decision Models: Setup and Checks}
 \label{app:lev}
 
@@ -791,19 +796,10 @@ of Section~\ref{sec:fast} is measured for prefill 1 / decode 1) and scores lower
 ($-16.8$); giving the decoder the second-visit state only in the Gated-DeltaNet layers narrows that HELMET gap to
 $-11.2$\ci{-13.0}{-9.4}. The native one-visit model scores far lower on every benchmark.
 
-\section{SenseNova-Loop-9B Without Training}
-\label{app:sn}
-
-SenseNova-Loop-9B's one-loop decoder collapses on its own. Handing that unchanged
-decoder the prompt state of a two-visit prefill---attention KV and the recurrent state of its linear-attention layers, no
-parameter changed---lifts RULER-4K from 21.6 to 83.5 and MMLU-Pro from 18.9 to 55.1, whereas GSM8K accuracy only rises
-from 2.2 to 10.9, far below the 95.8 of \nat{2}: a second prefill visit recovers knowledge and long-context accuracy, not
-multi-step reasoning.
-
-\section{Where More Prefill Loops Do Not Help}
+\section{Prompt Format and HELMET Categories}
 \label{app:hurt}
 
-HELMET shows where more prefill loops help and where they hurt (Table~\ref{tab:helmet}). On both Ouro reasoning models,
+HELMET shows which kinds of long-context task depend on the prefill loops (Table~\ref{tab:helmet}). On both Ouro reasoning models,
 prefilling with four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
 exact recall from a JSON key--value store on Ouro-1.4B-Thinking ($-23.5$); against \nat{4}, \rw{4}{2} gains on
 retrieval-augmented QA and in-context learning ($+6.1$, $+6.6$) and loses exact recall ($58.8$ vs.\ $100$), so its
@@ -831,12 +827,10 @@ SenseNova; intervals are in \texttt{paper\_numbers.json}.}
 \label{tab:helmet}
 \end{table}
 
-More prefill loops do not help everywhere (Table~\ref{tab:hurt}). At one decode loop it gives a negative but inconclusive
-estimate on RULER-4K, where answers are copied verbatim, and clearly lowers 4-shot MATH-500 on Ouro-2.6B; without
-exemplars the same comparison turns positive on two model sizes and two decode loop counts. Removing exemplars also changes length and format, so we read this as a
-prompting interaction rather than as evidence that literal information is lost; linear probes of the cache, which find the
-next token more and (in Ouro) the previous token less linearly decodable after more loops, are consistent with it
-(Appendix~\ref{app:analyses}).
+The effect of the prefill loops depends on the prompt format (Table~\ref{tab:hurt}). At one decode loop, more
+prefill loops give a negative but inconclusive estimate on RULER-4K, where answers are copied verbatim, and lower 4-shot
+MATH-500 on Ouro-2.6B; without exemplars the same comparison turns positive on two model sizes and two decode loop
+counts. Removing exemplars also changes length and format, so we read this as an interaction with the prompt.
 
 \begin{table}[h]
 \centering\small
@@ -853,62 +847,18 @@ Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
  & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{The effect of prefill loops depends on context length and prompting.} Same loop adapter, base models, prefill 4 / decode $n$ minus prefill $n$ / decode $n$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\caption{\textbf{The effect of prefill loops depends on context length and prompt format.} Same loop adapter, base models, prefill 4 / decode $n$ minus prefill $n$ / decode $n$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:hurt}
 \end{table}
 
-\paragraph{Other design variants.} Sharing generated-token KV across decode loops (``shared answer KV'', Appendix~\ref{app:training}) shows no significant difference at two and three decode loops and
-costs 2.6 GSM8K points at four. A gated branch over the first prefill loop's KV improves RULER-4K by 2.3 points at prefill 4 / decode 1, leaves GSM8K unchanged within noise, and does not remove the 4-shot MATH deficit. (Ouro-2.6B, full sets: shared answer KV at 4/2, 3/3, 4/4:
-$+0.3$\ci{-1.5}{2.1}, $-0.8$\ci{-2.4}{0.8}, $-2.6$\ci{-4.2}{-1.1}; first-loop branch at 4/1: RULER-4K $+2.3$\ci{1.0}{3.6},
-GSM8K $+0.7$\ci{-0.8}{2.2}.)
 
-\section{Additional Analyses}
-\label{app:analyses}
-
-\paragraph{Unfinished answers of a one-loop decoder.} A reasoning model decoded with one loop often gives no answer. On Ouro-2.6B-Thinking, \nat{1} gives no boxed answer
-on 43.1\% of GSM8K problems; 43.5\% of its answers approach the 4,096-token budget. Training the loop adapter at \rw{1}{1}
-reduces answers without a boxed answer to 19.5\%; with the same decoder, prefilling with four loops reduces them further to
-12.7\% overall, lower in every difficulty bucket (Figure~\ref{fig:wander}, left), and shortens answers by 20\% overall. A lexical
-hesitation-marker rate does not fall (12.2 vs.\ 13.8 per 1,000 tokens), so shorter answers do not come from fewer
-markers of hesitation; these counts do not identify the underlying reasoning process. The same decoder on SenseNova-Loop-9B, handed the
-two-visit prompt state without training, leaves no boxed answer on 43.7\% of GSM8K problems instead of 96.8\%
-(Figure~\ref{fig:wander}, right).
-
-\begin{figure*}[h]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig3_wandering.pdf}
-\caption{\textbf{More prefill loops help a one-loop decoder.} Left: Ouro-2.6B-Thinking at one decode loop, GSM8K problems
-bucketed by the number of lines in the reference solution (326 / 668 / 325 problems). Answers without a boxed answer
-grow with difficulty; prefilling with four loops instead of one lowers them by 5.5--7.7 points in every bucket. Right:
-SenseNova-Loop-9B without any training: the native one-loop decoder reads the prompt state of a two-visit prefill.}
-\label{fig:wander}
-\end{figure*}
-
-\paragraph{What each loop stores.} What changes in the cache from loop to loop? We fit linear probes to the frozen native model's per-loop value cache---what
-attention reads back from the prompt---at the same layer and with the same weights, varying only the loop
-(Figure~\ref{fig:probe}). From loop 1 to loop 4 of Ouro-2.6B the previous token becomes less linearly decodable
-(57.7\% $\to$ 45.5\%, lower in 12 of 13 probed layers) and the next token more (26.0\% $\to$ 36.1\%, higher in all 13);
-Ouro-1.4B and Ouro-2.6B-Thinking agree. In SenseNova-Loop-9B the next-token gain replicates in all six attention layers
-(24.1\% $\to$ 29.1\%) while the previous token is about as decodable at both visits (56.8\% vs.\ 56.5\%). These are
-decodability results, not proof of information loss or causal use~\citep{presenthard}, and the probes read the native
-model, not the adapted decoder; they resemble the across-layer trend of \citet{voita2019bottom}, and per-loop probes of looped transformers go back to
-\citet{loopedicl}.
-
-\begin{figure*}[h]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig4_probe.pdf}
-\caption{\textbf{Later loops make the next token more decodable; in Ouro the previous token becomes less decodable.} Linear probes on the stored value
-cache, same weights and layer, change from loop 1 (mean over probed layers; 384 FineWeb windows of 1,024 tokens, 20\%
-held out; 2,048 most frequent training tokens).}
-\label{fig:probe}
-\end{figure*}
 
 \section{Reproducibility}
 \label{app:repro}
 
 \texttt{python ouro/scripts/paper\_numbers.py compute} recomputes the paired differences, intervals, means, timing
-ratios and Section~4.3 statistics of this paper from the accompanying per-item records (1\,MB) in seconds on a laptop,
-and compares them with expected values hard-coded in the script, which mirror the numbers printed here. \texttt{REPRODUCE.md} maps the remaining results (throughput, probes) to their
+ratios and throughput of this paper from the accompanying per-item records (1\,MB) in seconds on a laptop,
+and compares them with expected values hard-coded in the script, which mirror the numbers printed here. \texttt{REPRODUCE.md} maps every result to its
 scripts and gives the training and evaluation commands that regenerate the per-item records.
 
 \end{document}

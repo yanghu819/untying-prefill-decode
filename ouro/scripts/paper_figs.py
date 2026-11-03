@@ -1,6 +1,6 @@
-"""Paper figures (PDF for LaTeX, PNG for README) from results/latest.json and results/paper_numbers.json (Fig. 1 grid).
+"""Paper figures (PDF for LaTeX, PNG for README) and generated LaTeX tables, all from results/paper_numbers.json.
 
-usage: python scripts/paper_figs.py  ->  paper/figs/fig{0..4}_*.{pdf,png}
+usage: python scripts/paper_figs.py  ->  paper/figs/fig*.{pdf,png}, paper/figs/tab_*.tex
 One palette everywhere: our loop adapter in red, native models in greys; no in-plot titles (captions carry the message).
 """
 
@@ -15,7 +15,6 @@ import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]                 # ouro/
 OUT = ROOT.parent / "paper" / "figs"                       # paper/figs at the repository root
-D = json.loads((ROOT / "results" / "latest.json").read_text())
 OURS, OURS_LIGHT = "#D1495B", "#EDA4AE"
 NAT, NAT_LIGHT, INK, GRID = "#4D4D4D", "#B3B3B3", "#1A1A1A", "#E6E6E6"
 plt.rcParams.update({
@@ -38,32 +37,9 @@ def save(fig, name):
     plt.close(fig)
 
 
-def fig1():
-    """The division of labour: MMLU and RULER change along the read axis, GSM8K along the write axis."""
-    from matplotlib.colors import LinearSegmentedColormap, Normalize
-    cmap = LinearSegmentedColormap.from_list("ours", ["#FFFFFF", "#F6C9CF", OURS, "#7A1F2B"])
-    norm = Normalize(40, 90)
-    fig, axes = plt.subplots(1, 3, figsize=(6.9, 2.55))
-    for ax, (name, g) in zip(axes, CELLS.items()):
-        v = np.array(g)
-        im = ax.imshow(v, cmap=cmap, norm=norm, origin="lower", aspect="equal")
-        for w in range(4):
-            for r in range(4):
-                ax.text(r, w, f"{v[w, r]:.0f}", ha="center", va="center", fontsize=8.5,
-                        color="white" if v[w, r] > 70 else INK)
-        ax.set_xticks(range(4), [1, 2, 3, 4]); ax.set_yticks(range(4), [1, 2, 3, 4] if ax is axes[0] else [])
-        ax.set_title(name, fontsize=9, color=INK, pad=5)
-        ax.tick_params(length=0)
-        for sp in ax.spines.values():
-            sp.set_visible(False)
-    axes[0].set_ylabel("decode loops n")
-    fig.subplots_adjust(left=.07, right=.99, bottom=.18, top=.90, wspace=.10)
-    fig.supxlabel("prefill loops m", fontsize=9, y=.03)
-    save(fig, "fig1_grid")
-
 
 def fig0():
-    """Method: read p loops once and keep one prompt KV cache; every writing loop attends to it through its own key
+    """Method: prefill m loops once and keep one prompt KV cache; every decode loop attends to it through its own key
     scale (on the query) and value map, and to the answer's own KV, merged by log-sum-exp."""
     from matplotlib.patches import FancyBboxPatch
     fig, ax = plt.subplots(figsize=(6.9, 2.0))
@@ -134,7 +110,7 @@ def fig2():
     point(ax, E, "prefill 4 / decode 1", True, 6, 6, "left")
     point(ax, E, "prefill 4 / decode 2", True, 0, 0, "left")
     point(ax, E, "prefill 2 / decode 2", True, 0, 0, "left", hollow=True)
-    r = ratio['2.6B-T GSM8K read 4/write 2 vs native 4/4']
+    r = ratio['2.6B-T GSM8K prefill 4/decode 2 vs native 4/4']
     ax.annotate(f"prefill 2 or 4 / decode 2\n{r:.2f}× the time of native 4/4", (E["prefill 4 / decode 2"][1], E["prefill 4 / decode 2"][0]),
                 xytext=(-2, -12), textcoords="offset points", fontsize=8, color=OURS, ha="left", va="top")
     ax.set_xlabel("seconds per answer"); ax.set_ylabel("GSM8K accuracy (%)")
@@ -145,7 +121,7 @@ def fig2():
     point(ax, S, "native 2/2", False, -6, 0, "right")
     point(ax, S, "prefill 2 / decode 1", True, 6, -6, "left")
     point(ax, S, "prefill 1 / decode 1", True, 0, 0, "left")
-    r = ratio['SenseNova GSM8K read 1/write 1 vs native 2/2']
+    r = ratio['SenseNova GSM8K prefill 1/decode 1 vs native 2/2']
     ax.annotate(f"prefill 1 / decode 1\n{r:.2f}× the time of native 2/2", (S["prefill 1 / decode 1"][1], S["prefill 1 / decode 1"][0]),
                 xytext=(8, 0), textcoords="offset points", fontsize=8, color=OURS, ha="left", va="center")
     ax.text(0.97, 0.04, "y: 90–100%", transform=ax.transAxes, fontsize=7.5, color=NAT, ha="right")
@@ -156,67 +132,6 @@ def fig2():
     fig.subplots_adjust(hspace=0.55)
     save(fig, "fig2_frontier")
 
-
-def fig3():
-    """Deep reading helps a shallow writer: (a) Ouro-2.6B-Thinking by difficulty; (b) SenseNova without training."""
-    fig, axes = plt.subplots(1, 2, figsize=(6.9, 2.3), gridspec_kw=dict(width_ratios=[1, 1.15]))
-    W = PN["wander"]
-    buckets = ["≤2", "3–4", "5+"]
-    ax = axes[0]
-    keys = {"native 1/1": "native 1/1", "prefill 1 / decode 1": "read 1 / write 1", "prefill 4 / decode 1": "read 4 / write 1"}
-    for name, c, ls in (("native 1/1", NAT_LIGHT, "--"), ("prefill 1 / decode 1", OURS_LIGHT, "-"), ("prefill 4 / decode 1", OURS, "-")):
-        v = W[keys[name]]["no_answer_by_steps"]   # paper_numbers.json keeps the original labels
-        ax.plot(range(3), v, ls, color=c, marker="o", ms=3.5, lw=1.4)
-        ax.text(2.12, v[-1], name, fontsize=7, color=OURS if name.startswith("prefill") else NAT, va="center")
-    ax.set_xticks(range(3), buckets); ax.set_xlim(-0.2, 3.1)
-    ax.set_ylabel("no final answer (%)"); ax.set_xlabel("reference solution steps (GSM8K)")
-    ax.set_ylim(0, 60)
-    ax.set_title("Ouro-2.6B-Thinking, one decode loop", fontsize=8, color=INK, pad=3)
-    ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    ax = axes[1]
-    metrics = ["GSM8K:\ngives an answer", "RULER-4K\naccuracy", "MMLU-Pro\naccuracy"]
-    mean = lambda c, what: _M[f"SenseNova {c} {what}"]  # noqa: E731
-    vals = {lab: [100 - mean(c, "GSM8K no final answer"), mean(c, "RULER-4K"), mean(c, "MMLU-Pro")]
-            for lab, c in (("native 1/1", "native1"), ("prefill 2 / decode 1", "splice21"), ("native 2/2", "native2"))}
-    cols = {"native 1/1": NAT_LIGHT, "prefill 2 / decode 1": OURS, "native 2/2": NAT}
-    x = np.arange(3); wbar = 0.26
-    for j, (n, v) in enumerate(vals.items()):
-        bars = ax.bar(x + (j - 1) * wbar, v, wbar * 0.92, color=cols[n], label=n)
-        for b, val in zip(bars, v):
-            ax.text(b.get_x() + b.get_width() / 2, val + 1.5, f"{val:.0f}" if val < 99.5 else f"{val:.1f}", ha="center", fontsize=6.8, color=INK)
-    ax.set_xticks(x, metrics, fontsize=7); ax.set_ylim(0, 128); ax.set_yticks(range(0, 101, 20)); ax.set_ylabel("%")
-    ax.legend(fontsize=6.8, loc="upper center", ncol=3, handlelength=1.0, columnspacing=0.8, bbox_to_anchor=(0.5, 1.01))
-    ax.set_title("SenseNova-Loop-9B, no training", fontsize=8, color=INK, pad=3)
-    ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    fig.subplots_adjust(wspace=0.3)
-    save(fig, "fig3_wandering")
-
-
-def fig4():
-    """Linear probes on the stored value cache, same weights and layer: the literal token fades, the next token emerges."""
-    P = D["probe"]
-    fig, axes = plt.subplots(1, 4, figsize=(6.9, 2.0), sharey=True)
-    series = (("next", OURS, "-", "next token (i+1)"), ("tok-1", NAT, "-", "previous token (i−1)"),
-              ("tok-2", NAT_LIGHT, "--", "token i−2"))
-    panels = [("2.6b", "Ouro-2.6B"), ("2.6b-think", "Ouro-2.6B-Thinking"), ("1.4b", "Ouro-1.4B")]
-    for ax, (m, title) in zip(axes, panels):
-        for t, c, ls, lab in series:
-            v = np.array(P[m]["mean"][t])
-            ax.plot([1, 2, 3, 4], v - v[0], ls, color=c, marker="o", ms=2.8, lw=1.2, label=lab)
-        ax.set_title(title, fontsize=7.5, color=INK, pad=3)
-    sn = D["probe_sn"]
-    for t, c, ls, lab in series:
-        v = np.array(sn[t]); axes[3].plot([1, 2], v - v[0], ls, color=c, marker="o", ms=2.8, lw=1.2)
-    axes[3].set_title("SenseNova-Loop-9B", fontsize=7.5, color=INK, pad=3)
-    for ax in axes:
-        ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.7, 4.3)
-        ax.axhline(0, color=GRID, lw=0.8, zorder=0)
-    axes[0].set_ylabel("Δ probe accuracy vs\nloop 1 (points)")
-    fig.supxlabel("loop (visit) whose value cache is probed", fontsize=8, y=-0.09)
-    h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="upper center", ncol=3, fontsize=7.5, bbox_to_anchor=(0.5, 1.1))
-    fig.subplots_adjust(wspace=0.12)
-    save(fig, "fig4_probe")
 
 
 def fig_equal():
@@ -229,7 +144,7 @@ def fig_equal():
     for yi, (n2, ours, n4) in zip(y, rows):
         ax.plot([n2, ours], [yi, yi], color="#D4D4D4", lw=1.0, zorder=1)
     s22 = [(yi, E[b]["same22"]) for yi, b in zip(y, benches) if "same22" in E[b]]
-    if s22:   # the same connector reading 2 loops: separates adaptation from reading depth
+    if s22:   # the same adapter reading 2 loops: separates adaptation from reading depth
         ax.scatter([v for _, v in s22], [yi - 0.12 for yi, _ in s22], s=30, facecolors="white", edgecolors=OURS,
                    linewidths=1.2, zorder=3.5, label="adapter 2/2")
     ax.scatter(rows[:, 0], y, s=26, color="#A6A6A6", zorder=2, label="native 2/2")
@@ -256,7 +171,7 @@ def _tput(cond):
 
 
 def fig_pareto():
-    """Accuracy vs decode throughput: native d/d against read 4 / write d, d = 1..4."""
+    """Accuracy vs decode throughput: native d/d against prefill 4 / decode d, d = 1..4."""
     C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Pareto"}
     panels = [("MMLU (20/subject)", "MMLU"), ("RULER-16K (260)", "RULER-16K"), ("GSM8K (400)", "GSM8K"),
               ("GSM8K Thinking (full)", "GSM8K (Thinking)")]
@@ -264,17 +179,17 @@ def fig_pareto():
     for ax, (key, title) in zip(axes, panels):
         nat, ours = [], []
         for d in range(1, 5):
-            c = C.get(f"read 4/write {d} vs native {d}/{d} {key}")
+            c = C.get(f"prefill 4/decode {d} vs native {d}/{d} {key}")
             if c is not None and c.get("n", 0):
                 nat.append((_tput(f"native{d}st"), c["b"], d)); ours.append((_tput(f"S4{d}sb"), c["a"], d))
-            elif key.startswith("GSM8K Thinking"):  # read 4 / write 4 not evaluated on the Thinking model
+            elif key.startswith("GSM8K Thinking"):  # prefill 4 / decode 4 not evaluated on the Thinking model
                 nat.append((_tput(f"native{d}st"), _M[f"GSM8K full think-native{d}"], d))
         for pts, col, lab, mk in ((nat, NAT_LIGHT, "native n/n", "o"), (ours, OURS, "prefill 4 / decode n", "o")):
             x, y = [p[0] for p in pts], [p[1] for p in pts]
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
             ax.scatter(x, y, s=18, color=col, zorder=3, label=lab)
             for xi, yi, d in pts:
-                dx = {4: -4, 3: 4}.get(d, 0) if col == OURS else 0   # read 4 / write 3 and 4 sit close: split labels
+                dx = {4: -4, 3: 4}.get(d, 0) if col == OURS else 0   # prefill 4 / decode 3 and 4 sit close: split labels
                 ax.annotate(f"{d}", (xi, yi), xytext=(dx, 5 if col == OURS else -9), textcoords="offset points",
                             fontsize=6.8, color=OURS if col == OURS else NAT,
                             ha="center" if dx == 0 else ("right" if dx < 0 else "left"))
@@ -300,11 +215,11 @@ def fig_lev():
     def series(label, which):
         pts = sorted((r["depth"], r[which]) for r in L if r["label"] == label)
         return [p[0] for p in pts], [p[1] for p in pts]
-    models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if any(r["label"] == f"{m} read-deep trained vs same-training control" for r in L)]
+    models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if any(r["label"] == f"{m} untied vs same-training control" for r in L)]
     fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.2), squeeze=False, sharey=False)
     for ax, m in zip(axes[0], models):
-        d, ours = series(f"{m} read-deep trained vs same-training control", "a")
-        _, ctl = series(f"{m} read-deep trained vs same-training control", "b")
+        d, ours = series(f"{m} untied vs same-training control", "a")
+        _, ctl = series(f"{m} untied vs same-training control", "b")
         _, orig = series(f"{m} control vs original", "b") if any(r["label"] == f"{m} control vs original" for r in L) else (d, None)
         if orig:
             ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="released")
@@ -329,14 +244,14 @@ def tab_equal(model="1.4B-T"):
 
 
 def tab_hybrid():
-    """Appendix table: SenseNova-Loop-9B, deep reading through attention KV only, Gated-DeltaNet state only, or both
-    (difference to the shallow prompt state; LaTeX rows from paper_numbers.json)."""
+    """Appendix table: SenseNova-Loop-9B, the second prefill visit's state in attention KV only, Gated-DeltaNet state only, or both
+    (difference to prefill 1; LaTeX rows from paper_numbers.json)."""
     C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Hybrid state"}
     pm = lambda c: "--" if c is None else ((r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"])
                                            + r"\ci{%.1f}{%.1f}" % (c["lo"], c["hi"]))
     lines = []
     for bench in ("RULER-4K", "RULER-8K", "RULER-16K", "MMLU-Pro", "ARC-C", "HELMET"):
-        cells = [pm(C.get(f"SenseNova {k} deep {part} vs shallow {bench}"))
+        cells = [pm(C.get(f"SenseNova {k} prefill-2 state {part} vs prefill 1 {bench}"))
                  for k in ("untrained", "trained") for part in ("attention KV", "GDN state", "both")]
         lines.append(f"{bench} & " + " & ".join(cells) + r" \\")
     (OUT / "tab_hybrid.tex").write_text("\n".join(lines) + "\n")
@@ -371,7 +286,7 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
             return M[k]
         if c.startswith("native"):   # grid-subset natives are stored with the Pareto comparisons
             n, sub = c[6:], fmt.split(" ", 1)[1]
-            r = PAR.get(f"read 4/write {n} vs native {n}/{n} {sub}")
+            r = PAR.get(f"prefill 4/decode {n} vs native {n}/{n} {sub}")
             return r["b"] if r else np.nan
         return np.nan
     nrows = -(-len(panels) // ncols)
@@ -440,7 +355,7 @@ def tab_distill():
     pm = lambda c: (r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"]) + r"\ci{%.1f}{%.1f}" % (c["lo"], c["hi"])
     lines = []
     for b in ("GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"):
-        ours = C.get(f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {b}")
+        ours = C.get(f"2.6B-T prefill 4/decode 2 vs LoRA-distilled native 2/2 {b}")
         dist = C.get(f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {b}")
         if not ours or not dist:
             continue
@@ -449,5 +364,5 @@ def tab_distill():
 
 
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

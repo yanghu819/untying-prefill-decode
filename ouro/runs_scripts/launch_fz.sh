@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage: launch_fz.sh [NUM_GPUS=3]
-# Control for "the map is what makes shallow writing over deep KV work": the universal single-bank connector (arm S, same
+# Control for "the map is what makes shallow writing over deep KV work": the universal single-bank loop adapter (arm S, same
 # data, budget, seed and cell sampling) with the per-loop KV maps frozen at identity (--freeze-maps), i.e. LoRA-only direct
 # sharing of the last prefill loop's KV. Then GSM8K / MMLU full and RULER 4K-16K (520) for S41 S11 S42 S22.
 NEED=${1:-3}; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; N=X26-Sfz-universal

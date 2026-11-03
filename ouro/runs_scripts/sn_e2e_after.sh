@@ -1,5 +1,5 @@
 #!/bin/bash
-# after SenseNova connector training: end-to-end batch-1 timing on GSM8K (65 problems) for native2, C11, C21, native1
+# after SenseNova loop adapter training: end-to-end batch-1 timing on GSM8K (65 problems) for native2, C11, C21, native1
 until [ -f /dev/shm/big-small-ouro/runs/SN-C-universal/TRAIN_DONE ]; do sleep 120; done
 CK=/dev/shm/big-small-ouro/runs/SN-C-universal/checkpoint.pt
 for c in native2 C11 C21; do k=-; case $c in C*) k=$CK;; esac

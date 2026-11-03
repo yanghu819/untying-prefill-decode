@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ouro-1.4B-Thinking headline set: read 4/write 2 (S42), same connector read 2/write 2 (S22), native 2/2, native 4/4.
+# Ouro-1.4B-Thinking headline set: prefill 4 / decode 2 (S42), same loop adapter prefill 2 / decode 2 (S22), native 2/2, native 4/4.
 # usage: t14_head.sh a1|a2   (one sequential queue per GPU; lm1.sh / bench3.sh are resumable)
 M=/dev/shm/big-small-ouro; R=$M/runs; CK=$R/T14-S-universal/checkpoint-48m.pt; MP=$M/model-1.4b-think
 cd $R

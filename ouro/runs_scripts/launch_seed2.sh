@@ -1,7 +1,7 @@
 #!/bin/bash
 # usage: launch_seed2.sh [NUM_GPUS=4]
-# Training-seed robustness of the universal single-bank connector (arm S, Ouro-2.6B): same data and recipe as
-# X26-S-universal, --seed 2 (LoRA init + per-micro-batch cell sampling). Then the paper's key within-connector
+# Training-seed robustness of the universal single-bank loop adapter (arm S, Ouro-2.6B): same data and recipe as
+# X26-S-universal, --seed 2 (LoRA init + per-micro-batch cell sampling). Then the paper's key within-loop adapter
 # comparisons on full sets: GSM8K (1,319, 3-shot CoT), MMLU (14,042, 5-shot), RULER 4K/8K/16K (520 each) for S41 S11 S42 S22.
 NEED=${1:-4}; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; N=X26-S-seed2
 got=""

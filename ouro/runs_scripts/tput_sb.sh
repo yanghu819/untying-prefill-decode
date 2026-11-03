@@ -1,7 +1,7 @@
 #!/bin/bash
 # tput_sb.sh GPU COND [CTX]   (env: BATCHES, STEPS = decode steps per trial, TPUT_DIR, CKPT) : decode throughput / memory vs batch at CTX (default 8K) context (exclusive GPU), merged LoRA;
 # COND = native<d> | S<p><d>sb (single-bank) | O<p><d>sb (single prompt bank + shared answer bank; CKPT=arm O) | S<p><d>
-# (same connector, one materialised bank per decode loop)
+# (same loop adapter, one materialised bank per decode loop)
 G=$1 C=$2 X=${3:-8192}; M=/dev/shm/big-small-ouro; O=$M/runs/${TPUT_DIR:-throughput-sb2}; mkdir -p $O; cd /root/big-small
 CK=""; [ "${C#native}" = "$C" ] && CK="--checkpoint ${CKPT:-$M/runs/X26-S-universal/checkpoint-48m.pt} --merge-lora"
 T=$C; [ $X != 8192 ] && T=$C-$X

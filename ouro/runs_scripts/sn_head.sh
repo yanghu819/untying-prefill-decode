@@ -1,7 +1,7 @@
 #!/bin/bash
-# SenseNova-Loop-9B: (B) where deep reading lives in a hybrid — the writer gets deep attention KV only (A) or deep
-# Gated-DeltaNet conv + recurrent state only (G), untrained (splice21A/G) and with the trained connector (C21A/G);
-# (A) headline set at write 1: native 1/1, connector read 1 / write 1 (C11) and read 2 / write 1 (C21), native 2/2.
+# SenseNova-Loop-9B: (B) which part of the hybrid gets the prefill-2 state — decoder gets the attention KV only (A) or the
+# Gated-DeltaNet conv + recurrent state only (G), untrained (splice21A/G) and with the trained loop adapter (C21A/G);
+# (A) headline set at decode 1: native 1/1, adapter prefill 1 / decode 1 (C11) and prefill 2 / decode 1 (C21), native 2/2.
 # One sequential queue per GPU on a1 (lm1.sh / bench3.sh are resumable).
 M=/dev/shm/big-small-ouro; R=$M/runs; CK=$R/SN-C-universal/checkpoint.pt; MP=$M/model-sn9b
 cd $R

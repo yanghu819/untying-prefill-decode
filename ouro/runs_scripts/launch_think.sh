@@ -1,5 +1,5 @@
 #!/bin/bash
-# Ouro-2.6B-Thinking single-bank universal connector (arm S, 48M KL tokens on the chat-template mix, teacher = native
+# Ouro-2.6B-Thinking single-bank universal loop adapter (arm S, 48M KL tokens on the chat-template mix, teacher = native
 # 4/4 Thinking). Reserves GPUS (dispatcher skips them), waits until they are idle, trains, then frees them and queues
 # the reasoning evals (zero-shot chat template: MATH-500, GSM8K) for S4d / Sdd, d = 1..3.
 GPUS=$1; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; N=T26-S-universal

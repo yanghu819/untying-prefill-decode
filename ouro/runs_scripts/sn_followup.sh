@@ -1,7 +1,7 @@
 #!/bin/bash
 # sn_followup.sh: SenseNova read-depth tests where the thesis predicts an effect (long context, knowledge):
 # RULER 4K/8K/16K (520 each) and MMLU-Pro (5-shot CoT, 70 per subject) for native1/native2/splice21 now, and for the
-# trained connector C21 / C11 (same decoder, read 2 vs read 1) once launch_sn.sh has finished training.
+# trained loop adapter C21 / C11 (same decoder, read 2 vs read 1) once launch_sn.sh has finished training.
 M=/dev/shm/big-small-ouro; R=$M/runs; cd $R
 line() {  # NAME COND CKPT
   echo "MODEL=$M/model-sn9b PP=$M/tf518:/root/big-small DATA=$M/bench BENCHES='ruler4k ruler8k ruler16k' BATCH=24576 OURO_NO_CUDNN_SDP=1 ./bench3.sh SN-$1 $2 $3 \$GPU 1"

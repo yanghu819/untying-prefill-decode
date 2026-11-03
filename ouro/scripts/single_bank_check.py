@@ -1,4 +1,4 @@
-"""Check that single-bank decoding equals the materialised-bank S connector: same prompts, greedy decode, compare the
+"""Check that single-bank decoding equals the materialised-bank S loop adapter: same prompts, greedy decode, compare the
 logits at every step and the generated tokens.  usage: single_bank_check.py MODEL CKPT PROMPTS.jsonl [CTX STEPS]"""
 import json
 from pathlib import Path

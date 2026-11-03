@@ -1,5 +1,5 @@
 #!/bin/bash
-# Single-bank universal loop-map connector (arm S): like V, but the key map commutes with RoPE, so the prompt keeps ONE
+# Single-bank universal loop-map loop adapter (arm S): like V, but the key map commutes with RoPE, so the prompt keeps ONE
 # KV bank for every decode loop (prompt KV memory = 1 loop at any d). Waits for 4 free GPUs, trains 48M KL tokens, then
 # evaluates all 16 cells on RULER 16K (bench-mini), GSM8K (400), MMLU (20/subject).
 M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; rm -rf $R/smoke-S

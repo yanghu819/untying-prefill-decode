@@ -1,5 +1,5 @@
 #!/bin/bash
-# Diagnostic: Nanbeige single-bank connector trained on the read 2 / write 1 cell only (24M tokens, = specialist NBX-p2d1
+# Diagnostic: Nanbeige single-bank loop adapter trained on the prefill 2 / decode 1 cell only (24M tokens, = specialist NBX-p2d1
 # budget). Matches NBX-p2d1 -> the universal run is short of data per cell; falls short -> the single-bank key map
 # (complex scale) is too restrictive for Nanbeige. Reserves GPUS from the dispatcher, then RULER 4K/8K/16K (520) + GSM8K/MMLU.
 GPUS=$1; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; N=NBS21-spec; G=${GPUS%%,*}

@@ -23,7 +23,7 @@ SUBS = [
     ("\\end{abstract}", f"Code, results and per-item outputs: \\url{{{URL}}}.\n\\end{{abstract}}"),
     (r"(\emph{self-live},",
      r"(\emph{self-live}\footnote{Self-live was developed by the author in separate work on shared KV caches for looped"
-     r" models; here it is applied to the connector's answer tokens.},"),
+     r" models; here it is applied to the loop adapter's answer tokens.},"),
 ]
 
 

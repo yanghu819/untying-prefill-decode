@@ -1,5 +1,5 @@
 #!/bin/bash
-# Continue Lev's LoRA under the read-deep forward (state: READ loops; branches: 1..4 loops reading the deep state KV)
+# Continue Lev's LoRA under the untied forward (state: READ prefill loops; branches: 1..4 loops reading the state's last-loop KV)
 M=$1; BASE=$2; REV=$3; G=$4; STEPS=$5; OUT=$6; READ=${7:-4}; SEED=${8:-0}
 cd /root/levwork/lev
 export HF_HUB_OFFLINE=1 HF_ENDPOINT=https://hf-mirror.com HF_HOME=/dev/shm/levwork/hf CUDA_VISIBLE_DEVICES=$G LEV_ROOT=/root/levwork/lev PYTHONPATH=/root/levwork/lev LEV_MODULE=kev.train LEV_READ=$READ

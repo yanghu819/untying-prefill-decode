@@ -1,9 +1,9 @@
 """End-to-end per-request measurement (batch 1, one idle GPU): time to first token (includes the p-loop prefill and, for
-the connector, the decoder's pass over the last prompt token), per-step decode time, total answer time, generated tokens,
+the loop adapter, the decoder's pass over the last prompt token), per-step decode time, total answer time, generated tokens,
 stop reason and correctness — for real greedy answers, not a fixed-token replay.
 
 usage: e2e_latency.py MODEL_DIR COND [CKPT|-] TASK N OUT.jsonl   (env START=k: items k .. k+N-1, default 0)
-  COND: native<d>st (static-cache native baseline) | S<p><d>sb (fused single-bank connector)
+  COND: native<d>st (static-cache native baseline) | S<p><d>sb (fused single-bank loop adapter)
   TASK: gsm8k_think | math500_think (chat template, zero-shot, \\boxed{} answer, math_verify; caps 4,096 / 8,192) | ruler16k (long prompt, short answer;
         timing only — accuracy comes from the full-set evaluations)
 """

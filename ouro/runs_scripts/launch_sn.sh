@@ -1,8 +1,8 @@
 #!/bin/bash
 # usage: launch_sn.sh [NUM_GPUS=4]
-# SenseNova-Loop-9B depth-split connector (ouro/sensenova_bridge.py): one 1-visit decoder + LoRA reading a 1- or
+# SenseNova-Loop-9B depth-split loop adapter (ouro/sensenova_bridge.py): one 1-visit decoder + LoRA reading a 1- or
 # 2-visit prefill state (p sampled 50/50), KL to native 2/2, 20M KL tokens of the re-tokenised thinking mix. Then GSM8K
-# (zero-shot chat, 4 shards) for C21 (read 2 / write 1) and C11 (read 1 / write 1, same decoder) on the dispatcher.
+# (zero-shot chat, 4 shards) for C21 (prefill 2 / decode 1) and C11 (prefill 1 / decode 1, same decoder) on the dispatcher.
 # GPUs are claimed one by one as they become idle (reserved from the dispatcher the moment they are claimed).
 NEED=${1:-4}; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; N=SN-C-universal
 until [ "$(wc -l < $M/sn-mix/train.jsonl)" -ge 60000 ]; do sleep 60; done

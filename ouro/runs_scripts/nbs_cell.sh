@@ -1,5 +1,5 @@
 #!/bin/bash
-# nbs_cell.sh GPUS NAME PORT : Nanbeige4.2-3B universal single-bank connector (arm S, one map set for every prefill p /
+# nbs_cell.sh GPUS NAME PORT : Nanbeige4.2-3B universal single-bank loop adapter (arm S, one map set for every prefill p /
 # decode d in 1..2, cell sampled per global batch). Train 24M KL tokens on GPUS, then evaluate the four cells
 # S11 S21 S12 S22 one per GPU of GPUS (needs >= 4 GPUs): RULER 4K/8K/16K (520 rows), full GSM8K, full MMLU.
 GPUS=$1 NAME=$2 PORT=$3

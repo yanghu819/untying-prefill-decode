@@ -52,14 +52,14 @@ EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k
          ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
          ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet")]
 
-# SenseNova-Loop-9B headline at write 1 ({c}: native1, C11, C21, native2)
+# SenseNova-Loop-9B headline at decode 1 ({c}: native1, C11, C21, native2)
 SN_EQUAL = [("GSM8K", "T:SN-{c}-gsm8k_think:math_verify"), ("MATH-500", "T:SN-{c}-math500_think:math_verify"),
             ("MMLU-Pro", "L:SN-{c}-mmlupro:exact_match"), ("ARC-C", "L:SN-{c}-arc:acc_norm"), ("BBH", "B:SNnt-{c}-bbh:bbh"),
             ("HumanEval", "L:SN-{c}-code:pass@1"), ("HELMET", "B:SNnt-{c}-helmet:helmet")]
 # MBPP+ is left out for SenseNova: its instruct prompt forces a code prefix, and this thinking model then opens a <think>
 # block inside the code in nearly every answer (native 2/2: 375 of 378), so the score measures that format failure for
-# every condition (native 2/2 44.4, read 2 / write 1 64.0). HumanEval (completion prompt) has no such answers.
-# where deep reading lives in the hybrid: deep attention KV only (A), deep Gated-DeltaNet state only (G), both ("")
+# every condition (native 2/2 44.4, prefill 2 / decode 1 64.0). HumanEval (completion prompt) has no such answers.
+# which part of the hybrid gets the prefill-2 state: attention KV only (A), Gated-DeltaNet state only (G), both ("")
 SN_STATE = [("RULER-4K", "B:SNnt-{c}:ruler4k"), ("RULER-8K", "B:SNnt-{c}:ruler8k"), ("RULER-16K", "B:SNnt-{c}:ruler16k"),
             ("MMLU-Pro", "L:SN-{c}-mmlupro:exact_match"), ("ARC-C", "L:SN-{c}-arc:acc_norm"),
             ("HELMET", "B:SNnt-{c}-helmet:helmet")]
@@ -83,9 +83,9 @@ CMP = []
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
              (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-1.7, -3.6, 0.2)]),
              (3, [(0.6, 0.2, 1.1), (-0.4, -3.0, 2.2), (-0.8, -2.4, 0.8)])):
-    CMP += [("Table 1", f"write {d} MMLU", mmlu(f"X26-S4{d}"), mmlu(f"X26-S{d}{d}"), v[0]),
-            ("Table 1", f"write {d} RULER-16K", ruler(f"X26-S4{d}", 16), ruler(f"X26-S{d}{d}", 16), v[1]),
-            ("Table 1", f"write {d} GSM8K", gsm(f"X26-S4{d}"), gsm(f"X26-S{d}{d}"), v[2])]
+    CMP += [("Table 1", f"decode {d} MMLU", mmlu(f"X26-S4{d}"), mmlu(f"X26-S{d}{d}"), v[0]),
+            ("Table 1", f"decode {d} RULER-16K", ruler(f"X26-S4{d}", 16), ruler(f"X26-S{d}{d}", 16), v[1]),
+            ("Table 1", f"decode {d} GSM8K", gsm(f"X26-S4{d}"), gsm(f"X26-S{d}{d}"), v[2])]
 CMP += [
     ("Table 2", "Ouro-1.4B ARC-C", "L:O14x-S41-arc:acc_norm", "L:O14x-S11-arc:acc_norm", (10.8, 8.4, 13.1)),
     ("Table 2", "Ouro-1.4B RULER-16K", ruler("O14-S41", 16), ruler("O14-S11", 16), (1.4, -2.6, 5.4)),
@@ -99,13 +99,13 @@ CMP += [
     ("Table 2", "SenseNova MMLU-Pro", "L:SN-C21-mmlupro:exact_match", "L:SN-C11-mmlupro:exact_match", (5.5, 2.9, 8.1)),
     ("Table 2", "SenseNova HELMET", "B:SNnt-C21-helmet:helmet", "B:SNnt-C11-helmet:helmet", (3.5, 0.8, 6.1)),
     ("Table 2", "SenseNova BBH", "B:SNnt-C21-bbh:bbh", "B:SNnt-C11-bbh:bbh", (7.0, 5.9, 8.0)),
-    ("Table 5", "2.6B write 1 RULER-4K", ruler("X26-S41", 4), ruler("X26-S11", 4), (-3.8, -8.2, 0.3)),
-    ("Table 5", "2.6B write 1 MATH 4-shot", "L:o26x-S41-math:mvfull", "L:o26x-S11-math:mvfull", (-11.2, -15.4, -6.8)),
-    ("Table 5", "2.6B write 1 MATH 0-shot", "L:o26x-S41-math0shot:mvfull", "L:o26x-S11-math0shot:mvfull", (7.0, 3.0, 10.8)),
-    ("Table 5", "2.6B write 2 MATH 4-shot", "L:o26x-S42-math:mvfull", "L:o26x-S22-math:mvfull", None),
-    ("Table 5", "2.6B write 2 MATH 0-shot", "L:o26x-S42-math0shot:mvfull", "L:o26x-S22-math0shot:mvfull", (7.0, 3.0, 11.2)),
-    ("Table 5", "1.4B write 1 MATH 4-shot", "L:o14x-S41-math4shot:mvfull", "L:o14x-S11-math4shot:mvfull", (-4.0, -8.2, 0.0)),
-    ("Table 5", "1.4B write 1 MATH 0-shot", "L:o14x-S41-math0shot:mvfull", "L:o14x-S11-math0shot:mvfull", (4.8, 1.4, 8.4)),
+    ("Table 5", "2.6B decode 1 RULER-4K", ruler("X26-S41", 4), ruler("X26-S11", 4), (-3.8, -8.2, 0.3)),
+    ("Table 5", "2.6B decode 1 MATH 4-shot", "L:o26x-S41-math:mvfull", "L:o26x-S11-math:mvfull", (-11.2, -15.4, -6.8)),
+    ("Table 5", "2.6B decode 1 MATH 0-shot", "L:o26x-S41-math0shot:mvfull", "L:o26x-S11-math0shot:mvfull", (7.0, 3.0, 10.8)),
+    ("Table 5", "2.6B decode 2 MATH 4-shot", "L:o26x-S42-math:mvfull", "L:o26x-S22-math:mvfull", None),
+    ("Table 5", "2.6B decode 2 MATH 0-shot", "L:o26x-S42-math0shot:mvfull", "L:o26x-S22-math0shot:mvfull", (7.0, 3.0, 11.2)),
+    ("Table 5", "1.4B decode 1 MATH 4-shot", "L:o14x-S41-math4shot:mvfull", "L:o14x-S11-math4shot:mvfull", (-4.0, -8.2, 0.0)),
+    ("Table 5", "1.4B decode 1 MATH 0-shot", "L:o14x-S41-math0shot:mvfull", "L:o14x-S11-math0shot:mvfull", (4.8, 1.4, 8.4)),
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), None)
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
@@ -124,27 +124,27 @@ CMP += [
 for c in ("11", "22", "31", "32", "42"):
     CMP.append(("Table 6", f"bank per loop {c[0]}/{c[1]} RULER-16K", ruler(f"X26-V{c}", 16), ruler(f"X26-S{c}", 16), None))
 for seed, run in ((1, "X26"), (2, "X26s2")):
-    CMP += [("Table 7", f"seed {seed} write 1 GSM8K", gsm(f"{run}-S41"), gsm(f"{run}-S11"), None),
-            ("Table 7", f"seed {seed} write 1 MMLU", mmlu(f"{run}-S41"), mmlu(f"{run}-S11"), None),
-            ("Table 7", f"seed {seed} write 2 GSM8K", gsm(f"{run}-S42"), gsm(f"{run}-S22"), None)]
+    CMP += [("Table 7", f"seed {seed} decode 1 GSM8K", gsm(f"{run}-S41"), gsm(f"{run}-S11"), None),
+            ("Table 7", f"seed {seed} decode 1 MMLU", mmlu(f"{run}-S41"), mmlu(f"{run}-S11"), None),
+            ("Table 7", f"seed {seed} decode 2 GSM8K", gsm(f"{run}-S42"), gsm(f"{run}-S22"), None)]
     for k in (4, 8, 16):
-        CMP.append(("Table 7", f"seed {seed} write 1 RULER-{k}K", ruler(f"{run}-S41", k), ruler(f"{run}-S11", k), None))
-    CMP.append(("Table 7", f"seed {seed} write 2 RULER-4K", ruler(f"{run}-S42", 4), ruler(f"{run}-S22", 4), None))
+        CMP.append(("Table 7", f"seed {seed} decode 1 RULER-{k}K", ruler(f"{run}-S41", k), ruler(f"{run}-S11", k), None))
+    CMP.append(("Table 7", f"seed {seed} decode 2 RULER-4K", ruler(f"{run}-S42", 4), ruler(f"{run}-S22", 4), None))
 CMP += [
-    ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 4/4", "B:T26ne-S42-helmet:helmet", "B:T26ne-native4-helmet:helmet",
+    ("Sec 4.1", "2.6B-T HELMET prefill 4/decode 2 vs native 4/4", "B:T26ne-S42-helmet:helmet", "B:T26ne-native4-helmet:helmet",
      (-8.7, -13.3, -4.1)),
-    ("Sec 4.1", "2.6B-T HELMET read 4/write 2 vs native 2/2", "B:T26ne-S42-helmet:helmet", "B:T26ne-native2-helmet:helmet",
+    ("Sec 4.1", "2.6B-T HELMET prefill 4/decode 2 vs native 2/2", "B:T26ne-S42-helmet:helmet", "B:T26ne-native2-helmet:helmet",
      None),
-    ("App A", "2.6B-T answer once vs per-loop answer banks, read 4/write 2 GSM8K (full)",
+    ("App A", "2.6B-T answer once vs per-loop answer banks, prefill 4/decode 2 GSM8K (full)",
      "T:T26-O-universal-O42-gsm8k_think:math_verify", "T:T26-S42-gsm8k_think:math_verify", (0.5, -0.5, 1.6)),
     *[("HELMET by category", f"{lab} {cat}", f"B:{x}:helmet#{cat}", f"B:{y}:helmet#{cat}", None)
-      for lab, x, y in (("2.6B-T read 4/write 2 vs native 4/4", "T26ne-S42-helmet", "T26ne-native4-helmet"),
-                        ("2.6B-T read 4/write 2 vs native 2/2", "T26ne-S42-helmet", "T26ne-native2-helmet"),
-                        ("2.6B-T read 4 vs 1 (write 1)", "T26ne-S41-helmet", "T26ne-S11-helmet"),
-                        ("1.4B-T read 4 vs 1 (write 1)", "T14ne-S41-helmet", "T14ne-S11-helmet"),
-                        ("SenseNova read 2 vs 1 (write 1)", "SNnt-C21-helmet", "SNnt-C11-helmet"))
+      for lab, x, y in (("2.6B-T prefill 4/decode 2 vs native 4/4", "T26ne-S42-helmet", "T26ne-native4-helmet"),
+                        ("2.6B-T prefill 4/decode 2 vs native 2/2", "T26ne-S42-helmet", "T26ne-native2-helmet"),
+                        ("2.6B-T prefill 4 vs 1 (decode 1)", "T26ne-S41-helmet", "T26ne-S11-helmet"),
+                        ("1.4B-T prefill 4 vs 1 (decode 1)", "T14ne-S41-helmet", "T14ne-S11-helmet"),
+                        ("SenseNova prefill 2 vs 1 (decode 1)", "SNnt-C21-helmet", "SNnt-C11-helmet"))
       for cat in ("rag", "rerank", "icl", "recall")],
-    *[("Equal decode cost", f"2.6B-T read 4/write 2 vs native {n}/{n} {bench}", ka.format(c="S42", r=f"T26x"),
+    *[("Equal decode cost", f"2.6B-T prefill 4/decode 2 vs native {n}/{n} {bench}", ka.format(c="S42", r=f"T26x"),
        kb.format(n=n), None)
       for n in (2, 4)
       for bench, ka, kb in (
@@ -156,24 +156,24 @@ CMP += [
           ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
           ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
-    *[("Hybrid state", f"SenseNova {kind} deep {part} vs shallow {bench}", key.format(c=deep + mix), key.format(c=shallow),
+    *[("Hybrid state", f"SenseNova {kind} prefill-2 state {part} vs prefill 1 {bench}", key.format(c=deep + mix), key.format(c=shallow),
        HYBRID_PRINTED.get((kind, mix, bench)))
       for kind, deep, shallow in (("untrained", "splice21", "native1"), ("trained", "C21", "C11"))
       for mix, part in (("", "both"), ("A", "attention KV"), ("G", "GDN state"))
       for bench, key in SN_STATE],
-    *[("Hybrid state", f"SenseNova trained deep GDN state only vs both deep {bench}", key.format(c="C21G"), key.format(c="C21"),
+    *[("Hybrid state", f"SenseNova trained prefill-2 GDN state only vs both {bench}", key.format(c="C21G"), key.format(c="C21"),
        {"RULER-4K": (6.5, None, None), "RULER-8K": (4.2, None, None), "RULER-16K": (3.7, None, None),
         "MMLU-Pro": (-3.5, None, None), "HELMET": (5.6, None, None)}.get(bench))
       for bench, key in SN_STATE],
-    ("Hybrid state", "SenseNova trained deep GDN state only vs native 2/2 HELMET", "B:SNnt-C21G-helmet:helmet",
+    ("Hybrid state", "SenseNova trained prefill-2 GDN state only vs native 2/2 HELMET", "B:SNnt-C21G-helmet:helmet",
      "B:SNnt-native2-helmet:helmet", (-11.2, -13.0, -9.4)),
-    # SenseNova connector trained with the GDN-only deep state (SNG-*, --mix G): read depth within it, and against the
-    # original connector trained with both parts deep (SN-* C21)
+    # SenseNova adapter trained with the GDN-only prefill-2 state (SNG-*, --mix G): prefill loops within it, and against the
+    # original adapter trained with both parts at prefill 2 (SN-* C21)
     *[("Hybrid G-trained", f"SenseNova G-trained {name} {bench}", key.format(c="C21G"), key.format(c=ref),
        {"HELMET": (7.2, 4.7, 9.7), "RULER-16K": (6.1, 3.2, 9.1), "ARC-C": (-2.8, -4.7, -0.9)}.get(bench))
-      for name, ref in (("read 2 (GDN) vs read 1", "C11"),)
+      for name, ref in (("prefill 2 (GDN) vs prefill 1", "C11"),)
       for bench, key in SNG_KEYS],
-    *[("Hybrid G-trained", f"SenseNova G-trained read 2 (GDN) vs original both-deep read 2 {bench}", key.format(c="C21G"),
+    *[("Hybrid G-trained", f"SenseNova G-trained prefill 2 (GDN) vs original both-layer prefill 2 {bench}", key.format(c="C21G"),
        key.replace("SNGnt-", "SNnt-").replace("SNG-", "SN-").format(c="C21"),
        {"HELMET": (4.4, 2.7, 6.2), "RULER-4K": (6.7, None, None), "RULER-8K": (2.8, None, None),
         "RULER-16K": (2.9, None, None), "MMLU-Pro": (-2.7, -5.0, -0.3)}.get(bench)) for bench, key in SNG_KEYS],
@@ -183,7 +183,6 @@ CMP += [
       for model, bench, key in (("Ouro-2.6B", "MATH-500 4-shot", "L:o26x-{c}-math:mvfull"),
                                 ("Ouro-2.6B", "RULER-4K", "B:X26-{c}f:ruler4k"), ("Ouro-2.6B", "RULER-8K", "B:X26-{c}f:ruler8k"),
                                 ("Ouro-2.6B", "RULER-16K", "B:X26-{c}f:ruler16k"),
-                                ("Ouro-1.4B", "BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
                                 ("Ouro-1.4B-T", "BBH 3-shot", "L:T14x-{c}-bbh:exact_match"))
       for lo, hi, n in ((1, 2, 2), (1, 4, 4), (2, 4, 4), (1, 4, 2))],
     *[("Fewer prefill loops", f"Ouro-2.6B prefill {m} / decode {n} vs native {k}/{k} MATH-500 4-shot", f"L:o26x-S{m}{n}-math:mvfull",
@@ -193,63 +192,52 @@ CMP += [
       for bench, ka, _ in EQUAL],
     *[("Thinking decode 2", f"2.6B-T prefill 1 / decode 2 vs native 2/2 {bench}", ka.replace("S42", "S12"), kb.format(n=2), None)
       for bench, ka, kb in EQUAL],
-    # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the connector)
-    *[("Distillation baseline", f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"),
+    # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the adapter)
+    *[("Distillation baseline", f"2.6B-T prefill 4/decode 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"),
        {"MMLU-Pro": (5.2, 1.2, 9.3), "ARC-C": (2.9, 1.4, 4.4)}.get(bench))
       for bench, ka, _ in EQUAL],
     *[("Distillation baseline", f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {bench}", ka.replace("S42", "D"), kb.format(n=2), None)
       for bench, ka, kb in EQUAL],
-    # the control for the headline: the same connector (same weights, same training) at read 2 / write 2
-    *[("Same connector", f"2.6B-T read 4/write 2 vs read 2/write 2 {bench}", ka, ka.replace("S42", "S22"),
+    # the control for the headline: the same adapter (same weights, same training) at prefill 2 / decode 2
+    *[("Same adapter", f"2.6B-T prefill 4/decode 2 vs prefill 2/decode 2 {bench}", ka, ka.replace("S42", "S22"),
        {"HELMET": (7.5, 1.4, 13.8), "ARC-C": (2.3, 0.9, 3.7), "BBH": (2.2, 0.1, 4.3), "MMLU-Pro": (8.1, 4.0, 12.1)}.get(bench))
       for bench, ka, _ in EQUAL],
-    *[("Pareto", f"read 4/write {d} vs native {d}/{d} {name}", ka.format(d=d), kb.format(d=d), None)
+    *[("Pareto", f"prefill 4/decode {d} vs native {d}/{d} {name}", ka.format(d=d), kb.format(d=d), None)
       for d in range(1, 5)
       for name, ka, kb in (("MMLU (20/subject)", "L:X26-S4{d}-mmlu:acc", "L:o26n{d}-mmlu:acc"),
                            ("RULER-16K (260)", "B:X26-S4{d}:ruler16k", "B:X26-n{d}:ruler16k"),
                            ("GSM8K (400)", f"L:X26-S4{{d}}-gsm:{GF}", f"L:o26n{{d}}-gsm:{GF}"),
                            ("GSM8K Thinking (full)", "T:T26-S4{d}-gsm8k_think:math_verify",
                             "T:think-native{d}-gsm8k_think:math_verify"))],
-    ("Sec 4.2", "2.6B-T read 4/write 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
+    ("Sec 4.2", "2.6B-T prefill 4/decode 2 vs native 4/4 GSM8K (full)", "T:T26-S42-gsm8k_think:math_verify",
      "T:think-native4-gsm8k_think:math_verify", (-1.0, -2.0, 0.1)),
-    ("Sec 4.2", "SenseNova read 1/write 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",
+    ("Sec 4.2", "SenseNova prefill 1/decode 1 vs native 2/2 GSM8K (full)", "T:SN-C11-gsm8k_think:math_verify",
      "T:SN-native2-gsm8k_think:math_verify", None),
-    ("Limitations", "write 3 RULER-4K vs native 3/3", ruler("X26-S43", 4), "B:X26-n3f:ruler4k", (-10.4, None, None)),
-    ("Limitations", "write 3 RULER-8K vs native 3/3", ruler("X26-S43", 8), "B:X26-n3f:ruler8k", (-9.5, None, None)),
-    ("Limitations", "write 3 RULER-16K vs native 3/3", ruler("X26-S43", 16), "B:X26-n3f:ruler16k", (-5.3, None, None)),
-    ("Limitations", "1.4B-T BBH read 4 vs read 1 (write 1)", "L:T14x-S41-bbh:exact_match", "L:T14x-S11-bbh:exact_match",
-     (-20.5, None, None)),
-    ("Limitations", "1.4B BBH read 4 vs read 1 (write 1)", "L:O14x-S41-bbh:exact_match", "L:O14x-S11-bbh:exact_match",
-     (-24.5, None, None)),
-    ("Limitations", "1.4B-T BBH read 4 vs read 2 (write 2)", "L:T14x-S42-bbh:exact_match", "L:T14x-S22-bbh:exact_match",
-     (8.8, None, None)),
-    ("App B", "Nanbeige RULER-4K read 2 vs 1 (write 1)", "B:NBX-p2d1:ruler4k", "B:NBX-p1d1:ruler4k", (11.8, None, None)),
+    ("Limitations", "decode 3 RULER-4K vs native 3/3", ruler("X26-S43", 4), "B:X26-n3f:ruler4k", (-10.4, None, None)),
+    ("Limitations", "decode 3 RULER-8K vs native 3/3", ruler("X26-S43", 8), "B:X26-n3f:ruler8k", (-9.5, None, None)),
+    ("Limitations", "decode 3 RULER-16K vs native 3/3", ruler("X26-S43", 16), "B:X26-n3f:ruler16k", (-5.3, None, None)),
+    ("App B", "Nanbeige RULER-4K prefill 2 vs 1 (decode 1)", "B:NBX-p2d1:ruler4k", "B:NBX-p1d1:ruler4k", (11.8, None, None)),
     ("App B", "Nanbeige RULER-8K", "B:NBX-p2d1:ruler8k", "B:NBX-p1d1:ruler8k", (11.7, None, None)),
     ("App B", "Nanbeige RULER-16K", "B:NBX-p2d1:ruler16k", "B:NBX-p1d1:ruler16k", (14.2, None, None)),
     ("App B", "Nanbeige MMLU", "L:NBX-p2d1-mmlufull:acc", "L:NBX-p1d1-mmlufull:acc", (12.2, None, None)),
     ("App B", "Nanbeige GSM8K", f"L:NBX-p2d1-gsmfull:{GF}", f"L:NBX-p1d1-gsmfull:{GF}", (5.2, None, None)),
 ]
-WANDER = {"native 1/1": "think-native1", "read 1 / write 1": "T26-S11", "read 4 / write 1": "T26-S41"}
-WKEYS = [f"T:{p}-gsm8k_think:{m}" for p in WANDER.values() for m in ("noanswer", "ntok", "marks", "steps", "math_verify")]
-SN_NOANS = {c: f"T:SN-{c}-gsm8k_think:noanswer" for c in ("native1", "splice21", "native2")}
-# means (Figure 1 grid on evaluation subsets, Sec 4.3 SenseNova without training)
-MEANS = [("Sec 4.3", f"SenseNova {c} RULER-4K", f"B:SNnt-{c}:ruler4k") for c in ("native1", "splice21", "native2")]
+# means (Figure 1 grid on evaluation subsets)
+MEANS = []
 # task map: Ouro-2.6B, one loop adapter (X26-S-universal), every (prefill m, decode n) cell and native n/n
 TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:mvfull"), ("BBH 3-shot", "L:o26x-{c}-bbh:exact_match"),
             ("ARC-C", "L:o26x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:o26x-{c}-mmlupro:exact_match"),
             ("HumanEval", "L:o26x-{c}-code:pass@1"), ("MBPP+", "L:o26x-{c}-code:pass_at_1"),
             ("GPQA-Diamond", "L:o26x-{c}-gpqa:acc_norm"), ("IFEval", "L:o26x-{c}-ifeval:prompt_level_strict_acc"),
             ("RULER-4K", "B:X26-{c}f:ruler4k"), ("RULER-8K", "B:X26-{c}f:ruler8k"), ("RULER-16K", "B:X26-{c}f:ruler16k")]
-# replication on Ouro-1.4B (its own adapter, O14-S-universal) for four benchmarks
+# replication on Ouro-1.4B (its own adapter, O14-S-universal) for five benchmarks
 TASK_MAP_14 = [("MATH-500 4-shot", "L:O14x-{c}-math:mvfull"), ("MBPP+", "L:O14x-{c}-code:pass_at_1"),
                ("HumanEval", "L:O14x-{c}-code:pass@1"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
-               ("ARC-C", "L:O14x-{c}-arc:acc_norm"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match")]
+               ("ARC-C", "L:O14x-{c}-arc:acc_norm")]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Task map", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
-MEANS += [("Sec 4.3", f"SenseNova {c} MMLU-Pro", f"L:SN-{c}-mmlupro:exact_match") for c in ("native1", "splice21", "native2")]
-MEANS += [("Sec 4.3", f"SenseNova {c} GSM8K no final answer", k) for c, k in SN_NOANS.items()]
 MEANS += [("Sec 4.2", f"GSM8K full {c}", f"T:{c}-gsm8k_think:math_verify")
           for c in ("T26-S42", "think-native4", "SN-C11", "SN-C21", "SN-native2", "SN-native1", "SN-splice21")]
 MEANS += [("Figure pareto", f"GSM8K full think-native{d}", f"T:think-native{d}-gsm8k_think:math_verify") for d in (1, 2, 3)]
@@ -329,7 +317,7 @@ def load_raw(runs, key):
 
 
 def keys():
-    ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS} | set(WKEYS)
+    ks = {a for _, _, a, b, _ in CMP} | {b for _, _, a, b, _ in CMP} | {k for _, _, k in MEANS}
     ks |= {k for _, _, ka, kb in equal_specs() for k in (ka, ka.replace("S42", "S22"), kb.format(n=2), kb.format(n=4))}
     ks |= {k.format(c=c) for _, k in SN_EQUAL for c in ("native1", "C11", "C21", "native2")}
     ks |= {ka.replace("S42", "S12") for _, _, ka, _ in equal_specs() if "T26" in ka}
@@ -407,12 +395,12 @@ def boot(a, b, reps=5000, groups=None):
 
 E2E = Path(__file__).resolve().parents[1] / "results" / "e2e"
 # (label, model prefix, task, A, B, printed ratio of mean seconds per answer A / B)
-RATIOS = [("2.6B-T GSM8K read 4/write 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.46, 0.64)),
-          ("2.6B-T GSM8K read 4/write 2 vs read 2/write 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.91, 1.11)),
-          ("2.6B-T MATH read 4/write 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
-          ("2.6B-T MATH read 4/write 2 vs native 2/2", "think", "math", "S42sb", "native2st", (1.22, None, None)),
-          ("SenseNova GSM8K read 1/write 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
-          ("2.6B-T GSM8K answer once vs per-loop answer banks (read 4/write 2, batch 1)", "think", "gsm", "O42sb", "S42sb", None)]
+RATIOS = [("2.6B-T GSM8K prefill 4/decode 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.46, 0.64)),
+          ("2.6B-T GSM8K prefill 4/decode 2 vs prefill 2/decode 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.91, 1.11)),
+          ("2.6B-T MATH prefill 4/decode 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
+          ("2.6B-T MATH prefill 4/decode 2 vs native 2/2", "think", "math", "S42sb", "native2st", (1.22, None, None)),
+          ("SenseNova GSM8K prefill 1/decode 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
+          ("2.6B-T GSM8K answer once vs per-loop answer banks (prefill 4/decode 2, batch 1)", "think", "gsm", "O42sb", "S42sb", None)]
 
 
 def e2e(model, task, cond):
@@ -455,47 +443,25 @@ def e2e_table():
     return rows, ratios
 
 
-def wander():
-    """Section 4.3 / Figure 3: answers without a final answer (overall and by reference-solution steps), length,
-    budget hits (>= 4,090 of 4,096 tokens) and hesitation markers per 1,000 generated tokens."""
-    out = {}
-    for name, p in WANDER.items():
-        m = {k: load(f"T:{p}-gsm8k_think:{k}") for k in ("noanswer", "ntok", "marks", "steps", "math_verify")}
-        if any(v is None for v in m.values()):
-            print(f"Sec 4.3      {name:52s} MISSING")
-            continue
-        ids = sorted(m["noanswer"])
-        bucket = lambda i: 0 if m["steps"][i] <= 2 else 1 if m["steps"][i] <= 4 else 2  # noqa: E731
-        by = [[i for i in ids if bucket(i) == b] for b in range(3)]
-        tok = sum(m["ntok"][i] for i in ids)
-        out[name] = dict(n=len(ids), acc=round(100 * np.mean([m["math_verify"][i] for i in ids]), 1),
-                         no_answer=round(100 * np.mean([m["noanswer"][i] for i in ids]), 1),
-                         budget_hit=round(100 * np.mean([m["ntok"][i] >= 4090 for i in ids]), 1),
-                         tokens=round(tok / len(ids)), markers_per_1k=round(1000 * sum(m["marks"][i] for i in ids) / tok, 1),
-                         bucket_n=[len(b) for b in by],
-                         no_answer_by_steps=[round(100 * np.mean([m["noanswer"][i] for i in b]), 1) for b in by])
-        print(f"Sec 4.3      {name:52s} {json.dumps(out[name])}")
-    return out
-
 
 LEV = Path(__file__).resolve().parents[1] / "results" / "lev" / "levbench"
 # (label, A rows dir, B rows dir): accuracy at every decision depth, A minus B (LevBench development, Lev's depth_rows)
-LEV_CMP = [("Lev-1.4B read-deep trained vs same-training control", "rd4-1.4B-read4", "ctl-1.4B-read0"),
+LEV_CMP = [("Lev-1.4B untied vs same-training control", "rd4-1.4B-read4", "ctl-1.4B-read0"),
            ("Lev-1.4B control vs original", "ctl-1.4B-read0", "Lev-1.4B-read0"),
-           ("Lev-1.4B training-free read 4 vs native", "Lev-1.4B-read4", "Lev-1.4B-read0"),
-           ("Lev-1.4B read-deep trained, read 4 vs read 2 (read 2 not trained)", "rd4-1.4B-read4", "rd4-1.4B-read2"),
-           ("Lev-2.6B read-deep trained vs same-training control", "rd4-2.6B-read4", "ctl-2.6B-read0"),
-           ("Lev-2.6B training-free read 4 vs native", "Lev-2.6B-read4", "Lev-2.6B-read0"),
+           ("Lev-1.4B training-free prefill 4 vs native", "Lev-1.4B-read4", "Lev-1.4B-read0"),
+           ("Lev-1.4B untied, prefill 4 vs prefill 2 (prefill 2 not trained)", "rd4-1.4B-read4", "rd4-1.4B-read2"),
+           ("Lev-2.6B untied vs same-training control", "rd4-2.6B-read4", "ctl-2.6B-read0"),
+           ("Lev-2.6B training-free prefill 4 vs native", "Lev-2.6B-read4", "Lev-2.6B-read0"),
            ("Lev-2.6B control vs original", "ctl-2.6B-read0", "Lev-2.6B-read0"),
-           ("Lev-3B read-deep trained vs same-training control", "rd2-3B-read2", "ctl-3B-read0"),
-           *[(f"{m} seed {k} read-deep trained vs same-training control", f"{a}-s{k}-read{r}", f"ctl-{b}-s{k}-read0")
+           ("Lev-3B untied vs same-training control", "rd2-3B-read2", "ctl-3B-read0"),
+           *[(f"{m} seed {k} untied vs same-training control", f"{a}-s{k}-read{r}", f"ctl-{b}-s{k}-read0")
              for m, a, b, r in (("Lev-1.4B", "rd4-1.4B", "1.4B", 4), ("Lev-2.6B", "rd4-2.6B", "2.6B", 4), ("Lev-3B", "rd2-3B", "3B", 2))
              for k in (1, 2, 3)],
-           # compute check: the control trained for two epochs (twice the updates; our read-deep training forward
+           # compute check: the control trained for two epochs (twice the updates; our untied training forward
            # costs about twice the control's per update)
-           ("Lev-1.4B read-deep trained vs control trained 2x", "rd4-1.4B-read4", "ctl2x-1.4B-read0"),  # d=1: +4.0 [2.1, 6.0]
-           ("Lev-2.6B read-deep trained vs control trained 2x", "rd4-2.6B-read4", "ctl2x-2.6B-read0"),
-           ("Lev-3B read-deep trained vs control trained 2x", "rd2-3B-read2", "ctl2x-3B-read0")]
+           ("Lev-1.4B untied vs control trained 2x", "rd4-1.4B-read4", "ctl2x-1.4B-read0"),  # d=1: +4.0 [2.1, 6.0]
+           ("Lev-2.6B untied vs control trained 2x", "rd4-2.6B-read4", "ctl2x-2.6B-read0"),
+           ("Lev-3B untied vs control trained 2x", "rd2-3B-read2", "ctl2x-3B-read0")]
 
 
 def lev():
@@ -522,8 +488,8 @@ def lev():
             print(f"Lev          {label:52s} d={k} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f})")
     # training seeds (seed 0 = the unsuffixed runs): per-seed gain at each decision depth, mean and sample std
     for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B"):
-        main = f"{m} read-deep trained vs same-training control"
-        labels = [main] + [f"{m} seed {k} read-deep trained vs same-training control" for k in (1, 2, 3)]
+        main = f"{m} untied vs same-training control"
+        labels = [main] + [f"{m} seed {k} untied vs same-training control" for k in (1, 2, 3)]
         for k in sorted({r["depth"] for r in out if r["label"] == main}):
             g = [r["diff"] for lb in labels for r in out if r["label"] == lb and r["depth"] == k]
             if len(g) > 1:
@@ -537,23 +503,23 @@ def lev():
 
 
 def equal_specs():
-    """(model, benchmark, read 4/write 2 key, native key with {n}) for Ouro-2.6B-Thinking and Ouro-1.4B-Thinking."""
+    """(model, benchmark, prefill 4/decode 2 key, native key with {n}) for Ouro-2.6B-Thinking and Ouro-1.4B-Thinking."""
     t14 = lambda k: k.replace("T26", "T14").replace("T:think-native", "T:T14-native")   # 2.6B natives are "think-native*"
     return [("2.6B-T", *e) for e in EQUAL] + [("1.4B-T", e[0], *(t14(k) for k in e[1:])) for e in EQUAL]
 
 
 def equal():
-    """Figure 4: read 4 / write 2 vs native 2/2 and native 4/4 (Ouro-2.6B-Thinking), all three on the items every one
+    """Figure 4: prefill 4 / decode 2 vs native 2/2 and native 4/4 (Ouro-2.6B-Thinking), all three on the items every one
     of them has, so the three scores and both paired differences share one item set."""
     out = []
     for model, bench, ka, kb in equal_specs():
         o, n2, n4 = load(ka), load(kb.format(n=2)), load(kb.format(n=4))
         if o is None or n2 is None or n4 is None:
             print(f"Equal        {model} {bench:12s} MISSING"); continue
-        s22 = load(ka.replace("S42", "S22"))   # the same connector reading 2 loops (same weights, same training)
+        s22 = load(ka.replace("S42", "S22"))   # the same adapter reading 2 loops (same weights, same training)
         ids = set(o) & set(n2) & set(n4)
         if s22 is not None and not ids <= set(s22):   # not yet on every shared item: report it alone, keep the triple
-            print(f"Equal        {model} {bench:12s} same connector 2/2 on {len(ids & set(s22))} of {len(ids)} shared items; not used")
+            print(f"Equal        {model} {bench:12s} same adapter 2/2 on {len(ids & set(s22))} of {len(ids)} shared items; not used")
             s22 = None
         o, n2, n4 = ({i: x[i] for i in ids} for x in (o, n2, n4))
         r2, r4 = boot(o, n2), boot(o, n4)
@@ -572,8 +538,8 @@ def equal():
 
 
 def sn_equal():
-    """SenseNova-Loop-9B at the decode depth of one visit: connector read 2 / write 1 (C21) against native 1/1, the same
-    connector reading one visit (C11) and native 2/2, all four on the items every one of them has."""
+    """SenseNova-Loop-9B at the decode depth of one visit: adapter prefill 2 / decode 1 (C21) against native 1/1, the same
+    adapter reading one visit (C11) and native 2/2, all four on the items every one of them has."""
     out = []
     for bench, key in SN_EQUAL:
         d = {c: load(key.format(c=c)) for c in ("native1", "C11", "C21", "native2")}
@@ -684,7 +650,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, wander=wander(), throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

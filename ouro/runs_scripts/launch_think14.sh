@@ -1,8 +1,8 @@
 #!/bin/bash
-# Ouro-1.4B-Thinking single-bank universal connector (arm S, 48M KL tokens, chat-template mix, teacher = native 4/4
+# Ouro-1.4B-Thinking single-bank universal loop adapter (arm S, 48M KL tokens, chat-template mix, teacher = native 4/4
 # Thinking 1.4B). Reuses mix-think-48m when the tokenizer is identical to 2.6B-Thinking's, else rebuilds it.
 # Reserves GPUS from the dispatcher, trains, frees them, then queues the thinking evals (GSM8K 4 shards + MATH-500 shard 0)
-# for native 1/1, 2/2, 4/4 and read 1 / write 1, read 4 / write 1, read 2 / write 2, read 4 / write 2.
+# for native 1/1, 2/2, 4/4 and prefill 1 / decode 1, prefill 4 / decode 1, prefill 2 / decode 2, prefill 4 / decode 2.
 GPUS=$1; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R; N=T14-S-universal; MOD=$M/model-1.4b-think
 echo " ${GPUS//,/ }" >> /dev/shm/reserved_gpus
 until grep -q THINK14_DONE /dev/shm/dlthink14.log; do sleep 60; done

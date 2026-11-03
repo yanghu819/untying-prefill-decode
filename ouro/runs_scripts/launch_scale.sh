@@ -1,5 +1,5 @@
 #!/bin/bash
-# Two 4-GPU trainings of the single-bank universal connector (arm S, 48M KL tokens, same recipe), started as GPUs free up:
+# Two 4-GPU trainings of the single-bank universal loop adapter (arm S, 48M KL tokens, same recipe), started as GPUs free up:
 # (1) Ouro-1.4B (second scale), (2) Ouro-2.6B seed 2 (variance). Each queues its full-set evals on the dispatcher when done:
 # GSM8K, MMLU, RULER 4K/8K/16K (520) for S4d / Sdd (d = 1..3) and, for 1.4B, natives 1/1..4/4.
 M=/dev/shm/big-small-ouro; R=$M/runs; cd $R

@@ -1,6 +1,6 @@
 #!/bin/bash
-# SenseNova-Loop-9B connector trained with the Gated-DeltaNet-only deep state (--mix G): same recipe as SN-C-universal
-# (launch_sn.sh: 3 GPUs, sn-mix, 20M KL tokens, p 1/2 at 50/50, seed 0) except that read-2 samples give the writer the
+# SenseNova-Loop-9B loop adapter trained with the Gated-DeltaNet-only deep state (--mix G): same recipe as SN-C-universal
+# (launch_sn.sh: 3 GPUs, sn-mix, 20M KL tokens, p 1/2 at 50/50, seed 0) except that read-2 samples give the decoder the
 # second visit's GDN state and the first visit's attention KV. Then evaluates C21G (in distribution) and C11.
 M=/dev/shm/big-small-ouro; R=$M/runs; N=SNG-C-universal; GPUS=${1:-4,5,6}
 cd /root/big-small

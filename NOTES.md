@@ -4,32 +4,29 @@ Running log of experiments behind *Untying Prefill and Decode Loops in Looped La
 the paper is recomputed by `ouro/scripts/paper_numbers.py` from `ouro/results/items/`; these notes record what was run,
 why, and what changed in the paper. Launchers for every run are in `ouro/runs_scripts/`.
 
-## State on 2026-11-02
+## State on 2026-11-03
 
 - **Method.** A loop adapter (rank-16 LoRA plus per-loop RoPE-commuting key scales and value maps on a frozen looped
   model) lets the model prefill with *m* loops and decode with *n*; one set of parameters is trained for all 16 pairs
   (KL distillation from native 4/4, one pair sampled per micro-batch). One stored prompt KV cache serves every decode loop.
-- **Framing.** The best (m, n) depends on the task. No claim that more prefill loops are always better; comparisons
-  are made at matched decode cost n.
-- **Task map (main result, in progress).** Ouro-2.6B, one adapter, all 16 cells plus native 1/1-4/4 on MMLU, MMLU-Pro,
-  ARC-C, GPQA-Diamond, BBH, IFEval, GSM8K, 4-shot MATH-500, HumanEval, MBPP+ and RULER 4K/8K/16K.
-  Interim: 4-shot MATH-500 is best at prefill 1 (prefill 1 / decode 3: 68.6 vs native 4/4 54.0); RULER-4K is best at
-  prefill 2 (prefill 2 / decode 4: 92.1); MMLU needs prefill >= 3; with one decode loop the adapter's best prefill beats
-  native 1/1 on every benchmark measured so far.
-- **Ouro-2.6B-Thinking.** Prefill 4 / decode 2 is at least as high as native 2/2 on eight benchmarks (significantly
-  higher on five) and answers GSM8K in 0.55x the time of native 4/4. Prefill 1 / decode 2 cells are running.
-- **Ouro-1.4B-Thinking.** The 3-shot BBH drop seen earlier is a prefill-loop effect: prefill 1 / decode 2 scores 46.4
-  against 24.0 at prefill 2 / decode 2.
-- **SenseNova-Loop-9B (hybrid Gated-DeltaNet / attention).** With a trained adapter, giving the decoder the second
-  prefill visit's state only in the Gated-DeltaNet layers raises HELMET and RULER over giving it in both kinds of layer
-  and lowers MMLU-Pro; an adapter retrained on that state shows the same trade-off.
-- **Lev looped decision models.** More prefill loops for the context: +4.4 to +7.5 points at one decision loop on three
-  backbones (LevBench public development set), across four seeds per backbone and against a control trained for twice
-  as many updates.
-- **Running.** Remaining task-map cells, native full-set RULER, a LoRA-only distillation baseline at native 2/2 on
-  Ouro-2.6B-Thinking (arm D), and the remaining m < n cells on 1.4B BBH.
+- **Framing.** The best (m, n) depends on the benchmark, prompt and decode budget. No claim that more prefill loops are
+  always better; comparisons are made at the same number of decode loops n.
+- **Task map (complete).** Ouro-2.6B, 13 benchmarks x 16 pairs + native 1/1-4/4 (220/220 cells). Choosing m per
+  benchmark on held-out halves beats native n/n significantly on 12/13 benchmarks at n = 1 and 10/13 at n = 2.
+  Within one adapter, 4-shot MATH-500 at decode 4: prefill 1 vs prefill 4 +16.6 [12.4, 21.0].
+  Ouro-1.4B replication (5 benchmarks): 5/5 and 3/5.
+- **Ouro-2.6B-Thinking at decode 2.** Prefill 4 beats prefill 1 on all 8 benchmarks (7 significant); against a LoRA
+  distillation baseline at native 2/2 the adapter adds MMLU-Pro +5.2 and ARC-C +2.9.
+- **Timing, hybrid model, decision models**: see the paper (Sections 4.4-4.5, appendices).
+- **Nothing running.** Paper package builds (`paper/build_arxiv.py`); remaining work is submission formalities.
 
 ## Log
+
+### 2026-11-03
+- Cleanup: removed the probe and "answers without a final answer" analyses (scripts, results, figures, appendix
+  sections), the unused SenseNova training-free appendix, the stale `latest.json` aggregate and long-context throughput
+  records, and the 1.4B BBH cells the paper does not use. Labels in `paper_numbers.py` / `paper_figs.py` and launcher
+  comments now use prefill m / decode n and loop adapter throughout. Paper numbers unchanged (0 printed values differ).
 
 ### 2026-11-02
 - Repository consolidated: this repository is now the only maintained one; the earlier private research repository

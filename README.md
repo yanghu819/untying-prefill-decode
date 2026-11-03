@@ -63,7 +63,7 @@ cache serves every decode loop.
 | `ouro/single_bank.py`, `ouro/bench_throughput.py` | exact single-bank decoding (two flash-attention calls merged by log-sum-exp), native baselines, throughput |
 | `ouro/evaluate_bench.py`, `ouro/lmeval_ouro.py`, `ouro/run_lmeval.py`, `ouro/lmeval_tasks/` | evaluation (RULER, HELMET; lm-evaluation-harness wrapper and zero-shot thinking tasks) |
 | `ouro/sensenova_runner.py`, `ouro/sensenova_bridge.py` | SenseNova-Loop-9B (hybrid Gated-DeltaNet) runner, state splicing and loop adapter |
-| `ouro/scripts/` | end-to-end latency, probes, figures |
+| `ouro/scripts/` | paper numbers, figures, end-to-end latency |
 | `ouro/runs_scripts/` | the launchers used for every run |
 | `third_party/ouro/` | Ouro modeling code (Apache-2.0, see its LICENSE) |
 | `paper/` | PDF, LaTeX source, figures, arXiv build script |
