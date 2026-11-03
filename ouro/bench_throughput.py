@@ -22,6 +22,9 @@ from ouro.single_bank import NativeContiguousRunner, NativeStaticRunner, SingleB
 
 
 def make(condition, model_path, checkpoint, merge=False):
+    if checkpoint and condition[0] in "DEH" and condition.endswith("st"):  # D2st: LoRA-distilled native 2/2, LoRA merged,
+        runner = load_adapter_runner(model_path, checkpoint)            # timed exactly like native<d>st
+        return NativeStaticRunner(merge_reader_lora(runner.system.reader), int(condition[1]))
     if checkpoint:
         runner = load_adapter_runner(model_path, checkpoint)
         if merge:
