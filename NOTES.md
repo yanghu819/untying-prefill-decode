@@ -74,3 +74,6 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   (always regenerate figures/tables, then compile); "decode cost" wording removed; HELMET deficit no longer attributed to
   prefill loops; Thinking claim narrowed (four beats one, not "optimal"; not all its benchmarks are zero-shot); conclusion
   without the code-and-math slogan; Appendix A formula b(l+t); MBPP+ at four decode loops marked pending.
+- Ouro-1.4B replication (interim): MMLU-Pro cross-fitted m vs native n/n +17.9 / +6.2 / +2.9 / +0.5 (n = 1..4), ARC-C
+  +17.2 / +4.2 / +1.1 / -0.1 - same shape as Ouro-2.6B. Code differs: MBPP+ best at prefill 2 (73-74) rather than 1.
+  4-shot MATH grid pending.
