@@ -427,6 +427,21 @@ def tab_select(model="Ouro-2.6B", name="tab_select"):
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_distill():
+    """Appendix table: Ouro-2.6B-Thinking, LoRA distillation of native 2/2 (same data, teacher and tokens) against native
+    2/2 and against prefill 4 / decode 2 (LaTeX rows from paper_numbers.json)."""
+    C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Distillation baseline"}
+    pm = lambda c: (r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"]) + r"\ci{%.1f}{%.1f}" % (c["lo"], c["hi"])
+    lines = []
+    for b in ("GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"):
+        ours = C.get(f"2.6B-T read 4/write 2 vs LoRA-distilled native 2/2 {b}")
+        dist = C.get(f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {b}")
+        if not ours or not dist:
+            continue
+        lines.append(rf"{b} & {dist['b']:.1f} & {dist['a']:.1f} & {ours['a']:.1f} & {pm(dist)} & {pm(ours)} \\")
+    (OUT / "tab_distill.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14")
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

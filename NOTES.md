@@ -80,3 +80,6 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Task maps complete. Ouro-2.6B: 220/220 cells; MBPP+ at four decode loops +18.5. Ouro-1.4B (own adapter; MATH 4-shot,
   MBPP+, HumanEval, MMLU-Pro, ARC-C): chosen m beats native 1/1 significantly on 5 of 5 and native 2/2 on 3 of 5; the large
   one-prefill-loop gains of 2.6B on math and code do not carry over (chosen m mostly 2-3). Appendix table tab:select14.
+- Codex third review (paper/codex_review_untie3.md): weak accept; "would defend acceptance". Applied: last decode-cost
+  phrase removed; conclusion rewritten to what the figures and tables show; distillation control now has its own table
+  (tab:distill, generated); Section 4.2 and the Pareto paragraph tightened (body ends on page 7).

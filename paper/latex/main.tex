@@ -305,17 +305,16 @@ benchmarks, by 5 to 21 points, and ties on MBPP+, where \nat{1} is already stron
 significantly on 10 of 13, including HumanEval ($+18.3$) and MBPP+ ($+15.6$). With three or four decode loops results are mixed: the native model, which also
 prefills with three or four loops, is about as good on most benchmarks and better on long-context retrieval (RULER) and
 slightly on BBH, while 4-shot MATH-500 gains 13.6 and 14.4 points at three and four decode loops and MBPP+ 18.0 and
-18.5. On Ouro-1.4B, with its own adapter, the chosen $m$ beats \nat{1} significantly on all five benchmarks we map
-there and \nat{2} on three of five, while the large one-prefill-loop gains on math and code do not carry over
-(Appendix~\ref{app:models}). Comparisons with native models also include the effect of training the adapter; comparisons
+18.5. Ouro-1.4B shows the same pattern (5 of 5 and 3 of 5
+benchmarks; Appendix~\ref{app:models}). Comparisons with native models also include the effect of training the adapter; comparisons
 within the adapter isolate the prefill loops. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}
 \label{sec:rdws}
 
 
-Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: prefill 4 / decode 2. At the decode
-cost of \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
+Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: prefill 4 / decode 2. With the same
+number of decode loops as \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
 BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}), MBPP+ ($+4.8$\ci{1.3}{8.2}) and HELMET
 ($+13.0$\ci{6.7}{19.5}); on GSM8K, MATH-500 ($+0.2$\ci{-2.6}{3.0}) and HumanEval the gains are within noise. Against \nat{4}, which decodes with
 twice the loops, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), a deficit concentrated in exact recall
@@ -326,8 +325,8 @@ The same adapter at \rw{2}{2} (hollow circles) isolates the prefill loops: four 
 on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge and $+2.2$\ci{0.1}{4.3} on BBH, with no
 detectable difference on GSM8K, MATH-500 and MBPP+; the same holds on Ouro-1.4B-Thinking (Appendix~\ref{app:t14}).
 
-Untying is not the same as distilling. A LoRA on native 2/2, trained with the same data, teacher and number of tokens
-as the loop adapter, gains on HELMET and BBH but not on knowledge; \rw{4}{2} scores above it on all eight benchmarks,
+Untying is not the same as distilling (Table~\ref{tab:distill}). A LoRA on native 2/2, trained with the same data,
+teacher and number of tokens as the loop adapter, gains on HELMET and BBH but not on knowledge; \rw{4}{2} scores above it on all eight benchmarks,
 significantly on MMLU-Pro ($+5.2$\ci{1.2}{9.3}) and ARC-Challenge ($+2.9$\ci{1.4}{4.4}). On this reasoning model
 four prefill loops beat one at two decode loops on all eight benchmarks, significantly on seven, which does not make four
 optimal (\rw{2}{2} is slightly higher on MBPP+); unlike 4-shot MATH-500 on the base model (Section~\ref{sec:taskmap}),
@@ -335,11 +334,9 @@ one prefill loop does not help here.
 
 
 
-Figure~\ref{fig:pareto} shows the same trade-off for every number of decode loops, against measured decode throughput. For
-every $n$, prefilling with four loops moves the model up (more accurate at one or two decode loops: MMLU $+18.4$ and
-$+5.9$, RULER-16K $+22.2$ and $+11.6$ on the grid subsets) or right (faster at three or four decode loops, because one
-stored prompt cache admits larger batches: 271 and 203 against 200 and 125 tokens/s). Prefill 4 / decode 2 runs at
-$1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
+Against measured decode throughput (Figure~\ref{fig:pareto}), prefilling with four loops makes the model more accurate
+at one or two decode loops and faster at three or four, because one stored prompt cache admits larger batches; prefill 4
+/ decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
 
 \subsection{Fewer decode loops are faster end to end}
 \label{sec:fast}
@@ -385,11 +382,10 @@ computation of our training forward.
 
 \section{Conclusion}
 
-A looped language model need not run the same number of loops for prefill and decode. Untied by a small loop adapter
-on an existing checkpoint, the best prefill count depends on the checkpoint, the benchmark, its prompt and the decode
-budget: one loop is best for 4-shot MATH-500 and MBPP+ on the base model, three or four for knowledge. Choosing the
-prefill count per benchmark gives most of a deeper model's accuracy with few decode loops, and untying also helps looped
-decision models.
+A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, with one
+stored prompt KV cache. The best prefill count depends on the checkpoint, the benchmark, its prompt and the decode
+budget; choosing it per benchmark pays most with one or two decode loops, where it beats native Ouro-2.6B on 12 and 10
+of 13 benchmarks, and untying also improves one-loop decisions of looped decision models.
 
 \section*{Limitations}
 \label{sec:limits}
@@ -579,6 +575,23 @@ benchmark & native 2/2 & prefill 2 / decode 2 & prefill 4 / decode 2 & native 4/
 prefill 2 / decode 2 and prefill 4 / decode 2; same benchmarks, protocols and items for both checkpoints. Differences are score points on a 0--100 scale;
 brackets are paired 95\% bootstrap intervals.}
 \label{tab:t14}
+\end{table*}
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{4pt}
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+ & \multicolumn{3}{c}{score} & distilled 2/2 & prefill 4 / decode 2 \\
+benchmark & native 2/2 & distilled 2/2 & prefill 4 / decode 2 & minus native 2/2 & minus distilled 2/2 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_distill.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Untying versus distillation} (Ouro-2.6B-Thinking). ``Distilled 2/2'': rank-16 LoRA on the native
+two-loop model, trained with the same data, teacher (native 4/4) and number of tokens as the loop adapter. Differences
+are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\label{tab:distill}
 \end{table*}
 
 Table~\ref{tab:t14} lists the scores and paired intervals behind Figure~\ref{fig:equal} and repeats the comparison on
