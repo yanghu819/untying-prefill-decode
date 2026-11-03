@@ -298,7 +298,7 @@ def tab_select(model="Ouro-2.6B", name="tab_select"):
         mm = str(m[0]) if m[0] == m[1] else f"{m[0]},{m[1]}"
         v = (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d)
         sig = "$^*$" if lo > 0 or hi < 0 else ""          # paired 95% interval excludes zero
-        return rf"{v}{sig}\ci{{{lo:.1f}}}{{{hi:.1f}}}\,{{\scriptsize ({mm})}}"
+        return rf"{v}{sig}\ci{{{lo + 0.0:.1f}}}{{{hi + 0.0:.1f}}}\,{{\scriptsize ({mm})}}"
     lines = [f"{b} & " + " & ".join(cell(R.get((b, n))) for n in range(1, 5)) + r" \\" for b in benches]
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
 
@@ -318,6 +318,28 @@ def tab_distill():
     (OUT / "tab_distill.tex").write_text("\n".join(lines) + "\n")
 
 
+
+def tab_lev():
+    """Appendix table: Lev decision models, every trained prefill count m minus the same-training control (native n/n)
+    at every number of decision loops n, both directions (LaTeX rows from paper_numbers.json, lev)."""
+    both = next((r for r in PN.get("lev", []) if r["label"] == "both directions"), None)
+    if not both:
+        return
+    G = {(g["model"], g["m"], g["n"]): g["diff"] for g in both["grid"]}
+    def cell(v):
+        if v is None:
+            return "--"
+        d, lo, hi = v
+        sig = "$^*$" if lo > 0 or hi < 0 else ""
+        return (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d) + sig + r"\ci{%.1f}{%.1f}" % (lo + 0.0, hi + 0.0)
+    lines = []
+    for model in dict.fromkeys(g["model"] for g in both["grid"]):
+        ms = sorted({m for (mo, m, _) in G if mo == model})
+        for m in ms:
+            lines.append(rf"{model} & {m} & " + " & ".join(cell(G.get((model, m, n))) for n in range(1, 5)) + r" \\")
+    (OUT / "tab_lev.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

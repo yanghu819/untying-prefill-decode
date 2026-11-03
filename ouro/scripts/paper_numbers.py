@@ -471,6 +471,16 @@ LEV_CMP = [("Lev-1.4B untied vs same-training control", "rd4-1.4B-read4", "ctl-1
              for m, s, ks in (("Lev-1.4B", "1.4B", (1, 2, 3)), ("Lev-2.6B", "2.6B", (1, 2, 3)), ("Lev-3B", "3B", (1,)))
              for k in ks]]
 
+# values quoted in Section 4.5 / Appendix (checked by lev()): (label, decision depth) -> (diff, lo, hi)
+U = "untied vs same-training control"
+LEV_PRINTED = {(f"Lev-1.4B {U}", 1): (5.3, 3.4, 7.2), (f"Lev-2.6B {U}", 1): (7.5, 5.7, 9.5), (f"Lev-3B {U}", 1): (4.4, 2.8, 6.1),
+               (f"Lev-3B {U}", 2): (-1.8, -3.0, -0.7),
+               ("Lev-1.4B prefill 1 vs same-training control", 4): (-9.6, -11.2, -7.9),
+               ("Lev-2.6B prefill 1 vs same-training control", 4): (-13.0, -14.7, -11.3),
+               ("Lev-3B prefill 1 vs same-training control", 2): (-8.1, -9.7, -6.6)}
+# Section 4.5: (pairs, significantly above the control, significantly below, point estimate below) per direction
+LEV_COUNTS = {"m>n": (13, 12, 0, 0), "m<n": (13, 0, 10, 13)}
+
 
 def lev():
     """Section on decision models: per-depth accuracy (argmax of the depth's logits == label) on LevBench's answerable
@@ -494,6 +504,28 @@ def lev():
             r = {x: (round(v, 1) if isinstance(v, float) else v) for x, v in boot(ca, cb, groups={i: A[i]["group"] for i in ids}).items()}
             out.append(dict(label=label, depth=k, **r))
             print(f"Lev          {label:52s} d={k} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f})")
+    # both directions (Section 4.5, Table lev): every trained prefill count m against the control at every decision
+    # depth n; counts of pairs significantly above / below the control for m > n, m = n and m < n
+    grid = []
+    for m, top in (("Lev-1.4B", 4), ("Lev-2.6B", 4), ("Lev-3B", 2)):
+        names = {f"{m} untied vs same-training control": top, **{f"{m} prefill {k} vs same-training control": k for k in range(1, top)}}
+        grid += [dict(model=m, m=names[r["label"]], n=r["depth"], diff=[float(r[k]) for k in ("diff", "lo", "hi")]) for r in out
+                 if r["label"] in names]
+    counts = {}
+    for name, sel in (("m>n", lambda g: g["m"] > g["n"]), ("m=n", lambda g: g["m"] == g["n"]), ("m<n", lambda g: g["m"] < g["n"])):
+        rows = [g for g in grid if sel(g)]
+        counts[name] = (len(rows), int(sum(g["diff"][1] > 0 for g in rows)), int(sum(g["diff"][2] < 0 for g in rows)),
+                        int(sum(g["diff"][0] < 0 for g in rows)))
+        print(f"Lev both     {name}: {counts[name][0]} pairs, significantly above the control {counts[name][1]}, "
+              f"significantly below {counts[name][2]}, point estimate below {counts[name][3]}")
+    for name, printed in LEV_COUNTS.items():
+        if counts.get(name) != printed:
+            print(f"Lev both     {name}: {counts.get(name)}  !! paper: {printed}")
+    for (label, n), printed in LEV_PRINTED.items():
+        got = next(((r["diff"], r["lo"], r["hi"]) for r in out if r["label"] == label and r["depth"] == n), None)
+        if got != printed:
+            print(f"Lev          {label} d={n}: {got}  !! paper: {printed}")
+    out.append(dict(label="both directions", grid=grid, counts=counts))
     # training seeds (seed 0 = the unsuffixed runs): per-seed gain at each decision depth, mean and sample std
     for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B"):
         main = f"{m} untied vs same-training control"

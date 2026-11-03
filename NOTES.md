@@ -31,7 +31,11 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   benchmarks at the distilled n/n, so the chosen m can be compared with distilled n/n as well as native n/n.
 - Ouro-1.4B replication extended from 5 to 10 lm-eval benchmarks (GSM8K, MMLU, BBH, GPQA-Diamond, IFEval added;
   `grid14b_q.txt`, 100 jobs on `grid_worker.sh`); RULER on 1.4B to follow.
-- Lev m < n (7 runs, `lev_mn.sh`) still running on a1.
+- Lev m < n done (7 runs). Both directions: with more prefill than decision loops the model is significantly above the
+  same-training control on 12 of 13 (m, n) pairs; with fewer it is below on all 13 (significantly on 10), down to
+  -13.0 [-14.7, -11.3] (Lev-2.6B prefill 1 at four decision loops). Lev moved back into the main text (Section 4.5,
+  user's request) with a generated both-directions table in the appendix (`tab_lev`); counts and quoted values are
+  guarded in `paper_numbers.py` (`LEV_COUNTS`, `LEV_PRINTED`).
 
 ### 2026-11-03
 - Handoff to a new agent: HANDOFF.md (state, rules, pipeline, pitfalls) and DEPRECATED.md (code kept only for

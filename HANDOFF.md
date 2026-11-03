@@ -18,18 +18,21 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
      at n=2 (Table 1; Ouro-1.4B: 5/5 and 3/5).
   3. Thinking model: prefill 4 / decode 2 is close to native 4/4, above a LoRA-distillation control.
   4. Fewer decode loops → 0.55× end-to-end time.
-  Appendix: Lev decision models, hybrid SenseNova-Loop-9B, seeds, design variants, prompt-format effects.
-- **In flight (a1, started 2026-11-03 ~15:00)**: Lev decision models with fewer prefill than decision loops (m < n),
-  `ouro/runs_scripts/lev_mn.sh` → runs `rd1/rd2/rd3-1.4B`, `rd1/rd2/rd3-2.6B`, `rd1-3B` (seed 0, one GPU each, ~40–60
-  min train + eval). Rows land in `/dev/shm/levwork/rows/<name>-read<m>/` with `DONE` at the end of
-  `<name>-read<m>.log`. To finish:
-  1. copy each finished rows dir into `ouro/results/lev/levbench/` (scp via the socket, see CLUSTER.md);
-  2. `paper_numbers.py compute` (the 7 `Lev-* prefill k vs same-training control` entries stop being MISSING);
-  3. `paper_figs.py` (fig_lev picks the best m per n automatically);
-  4. rewrite the Lev appendix (`app:lev` in main.tex): it currently says only m ≥ n was run — replace with what
-     both directions show, honestly; regenerate the group report.
-- **Next, in order of value**: finish Lev → Codex fact/figure review of the full PDF → ARR checklist TODOs with the user
-  → anonymized code mirror for review → final polish.
+  5. Looped decision models (Lev, Section 4.5): more prefill than decision loops beats a same-training control on 12/13
+     (m, n) pairs, fewer loses on all 13 (both directions, Table `tab:lev`). The user wants striking results in the
+     main text.
+  Appendix: Lev setup and checks, hybrid SenseNova-Loop-9B, seeds, design variants, prompt-format effects.
+- **In flight (2026-11-03)**:
+  - Same-training controls for Table 1: LoRA distillation of native 1/1, 2/2, 3/3 on base Ouro-2.6B
+    (`launch_x26_distill.sh`, runs `X26-{E,D,H}48-*`; E/D on a2, H on a1). `after_x26_distill.sh` queues their 13
+    benchmarks when training ends; `paper_numbers.py` `taskmap_select` then fills `distilled` / `diff_distilled`. Put
+    the result into Table 1 (a column or a second table), the abstract and Limitations — whatever it shows.
+  - Ouro-1.4B replication on 10 benchmarks (`grid14b_q.txt`) and full GSM8K / MMLU / 1.4B RULER (`fullsets_q.txt`) on
+    a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
+  - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
+    `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
+- **Next, in order of value**: distillation controls into Table 1 → Codex fact/figure review of the full PDF → ARR
+  checklist TODOs with the user → anonymized code mirror for review → final polish.
 
 ## 2. The user's rules (all still in force)
 

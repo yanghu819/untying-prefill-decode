@@ -1,0 +1,17 @@
+The repository ByteDance/Ouro-2.6B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+Loading weights:   0%|          | 0/530 [00:00<?, ?it/s]Loading weights:  10%|▉         | 52/530 [00:00<00:00, 519.93it/s]Loading weights:  20%|█▉        | 105/530 [00:00<00:00, 513.01it/s]Loading weights:  30%|██▉       | 157/530 [00:00<00:00, 496.06it/s]Loading weights:  39%|███▉      | 207/530 [00:00<00:00, 479.42it/s]Loading weights:  49%|████▉     | 259/530 [00:00<00:00, 469.70it/s]Loading weights:  58%|█████▊    | 308/530 [00:00<00:00, 476.07it/s]Loading weights:  67%|██████▋   | 356/530 [00:00<00:00, 435.53it/s]Loading weights:  76%|███████▌  | 401/530 [00:00<00:00, 331.96it/s]Loading weights:  83%|████████▎ | 438/530 [00:01<00:00, 296.47it/s]Loading weights:  89%|████████▉ | 471/530 [00:01<00:00, 270.43it/s]Loading weights:  94%|█████████▍| 500/530 [00:01<00:00, 254.44it/s]Loading weights:  99%|█████████▉| 527/530 [00:01<00:00, 255.57it/s]Loading weights: 100%|██████████| 530/530 [00:01<00:00, 343.62it/s]
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-2.6B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+lm_head.weight               | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+model.early_exit_gate.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+levwork-levbench-dev: 3570 records (0 skipped as overlong), 3570 questions, 4 depths, 904s
+DONE

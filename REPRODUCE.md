@@ -8,7 +8,7 @@ Every number in the paper comes from one of three places, all in this commit:
    on a laptop and needs only numpy.
 2. **Timing records** (`ouro/results/e2e/`, `ouro/results/throughput-sb4/`): the end-to-end timing table, time ratios
    and decode throughput, also recomputed by `paper_numbers.py compute`.
-3. **Decision-model records** (`ouro/results/lev/`): per-depth LevBench development outputs for the Lev appendix.
+3. **Decision-model records** (`ouro/results/lev/`): per-depth LevBench development outputs for Section 4.5 and the Lev appendix.
 
 `ouro/scripts/paper_figs.py` draws every figure and generated table from `paper_numbers.json`.
 
@@ -80,7 +80,7 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 | distillation table | `eval_t26d.sh` | `paper_numbers.py` (`Distillation baseline`) → `tab_distill` |
 | Pareto figure, throughput table | `tput_sb.sh` (`ouro/bench_throughput.py`) | `paper_numbers.py` `throughput`, `paper_figs.py fig_pareto` |
 | end-to-end time (Figure 7, timing table) | `ouro/scripts/e2e_latency.py` (batch 1, one idle GPU), `sn_e2e_after.sh` | `paper_numbers.py` (`RATIOS`) |
-| decision models (Lev) | `ouro/lev/` | `paper_numbers.py` `lev` → `fig_lev` |
+| decision models (Lev), both directions | `ouro/lev/`, `ouro/runs_scripts/lev_mn.sh` | `paper_numbers.py` `lev` → `fig_lev`, `tab_lev` |
 | Ouro-1.4B-Thinking appendix | `t14_head.sh` | `paper_numbers.py` `equal` → `tab_equal` |
 | SenseNova and hybrid-state appendices | `sn_head.sh`, `sn_math_rest.sh`, `sn_rebalance*.sh`, `sn_arc_mix.sh`, `launch_sng.sh` | `paper_numbers.py` (`Hybrid state`, `sn_equal`) → `tab_hybrid`, `tab_sn` |
 | single-cache exactness (512/512 tokens) | `ouro/scripts/single_bank_check.py` | — |
