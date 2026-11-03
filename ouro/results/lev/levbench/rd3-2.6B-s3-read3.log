@@ -1,0 +1,17 @@
+The repository ByteDance/Ouro-2.6B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+Loading weights:   0%|          | 0/530 [00:00<?, ?it/s]Loading weights:  10%|█         | 55/530 [00:00<00:00, 499.23it/s]Loading weights:  21%|██        | 111/530 [00:00<00:00, 528.46it/s]Loading weights:  31%|███▏      | 166/530 [00:00<00:00, 523.55it/s]Loading weights:  41%|████▏     | 219/530 [00:00<00:00, 523.19it/s]Loading weights:  51%|█████▏    | 272/530 [00:00<00:00, 516.50it/s]Loading weights:  61%|██████    | 324/530 [00:00<00:00, 493.14it/s]Loading weights:  71%|███████   | 374/530 [00:00<00:00, 491.06it/s]Loading weights:  80%|████████  | 424/530 [00:00<00:00, 481.61it/s]Loading weights:  90%|█████████ | 477/530 [00:00<00:00, 484.52it/s]Loading weights: 100%|██████████| 530/530 [00:01<00:00, 502.96it/s]
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-2.6B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+model.early_exit_gate.weight | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+lm_head.weight               | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+levwork-levbench-dev: 3570 records (0 skipped as overlong), 3570 questions, 4 depths, 1059s
+DONE

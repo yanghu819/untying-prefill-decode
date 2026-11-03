@@ -393,10 +393,12 @@ In these runs the sign of $m-n$ gives the direction of the difference (Figure~\r
 loops the model is significantly above the control on 12 of 13 $(m,n)$ pairs, most with one decision loop, where prefilling
 with all of the backbone's loops gains $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on Lev-2.6B and
 $+4.4$\ci{2.8}{6.1} on Lev-3B. With fewer prefill than decision loops it is below the control on all 13 pairs
-(significantly on 11), by up to 13.0 points ($-13.0$\ci{-14.7}{-11.3}; Lev-2.6B, prefill 1, four decision loops). In these
-seed-0 runs on LevBench's development set, the context gains from many loops and the decision can then stop early (the
-main comparison is replicated over four seeds in Appendix~\ref{app:lev}); on 4-shot MATH-500 the best prefill
-count was the smallest (Section~\ref{sec:taskmap}).
+(significantly on 11), by up to 13.0 points ($-13.0$\ci{-14.7}{-11.3}; Lev-2.6B, prefill 1, four decision loops). The
+fewer-prefill direction replicates over four training seeds: every seed is below the control on all 13 pairs, and on 10
+of them significantly in every seed; the more-prefill comparison at the backbone's full loop count is replicated over
+four seeds and against a control trained twice as long (Appendix~\ref{app:lev}). On LevBench's development set the
+context gains from many loops and the decision can then stop early; on 4-shot MATH-500 the best prefill count was the
+smallest (Section~\ref{sec:taskmap}).
 
 
 \section{Conclusion}

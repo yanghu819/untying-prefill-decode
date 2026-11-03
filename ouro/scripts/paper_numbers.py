@@ -473,7 +473,11 @@ LEV_CMP = [("Lev-1.4B untied vs same-training control", "rd4-1.4B-read4", "ctl-1
            # the other direction: fewer prefill loops (m < n), one continued training per prefill count m (lev_mn.sh)
            *[(f"{m} prefill {k} vs same-training control", f"rd{k}-{s}-read{k}", f"ctl-{s}-read0")
              for m, s, ks in (("Lev-1.4B", "1.4B", (1, 2, 3)), ("Lev-2.6B", "2.6B", (1, 2, 3)), ("Lev-3B", "3B", (1,)))
-             for k in ks]]
+             for k in ks],
+           # m < n replicated with seeds 1-3 (lev_mn_seeds.sh) against the control of the same seed
+           *[(f"{m} prefill {k} seed {e} vs same-training control", f"rd{k}-{s}-s{e}-read{k}", f"ctl-{s}-s{e}-read0")
+             for m, s, ks in (("Lev-1.4B", "1.4B", (1, 2, 3)), ("Lev-2.6B", "2.6B", (1, 2, 3)), ("Lev-3B", "3B", (1,)))
+             for k in ks for e in (1, 2, 3)]]
 
 # values quoted in Section 4.5 / Appendix (checked by lev()): (label, decision depth) -> (diff, lo, hi)
 U = "untied vs same-training control"
@@ -484,6 +488,8 @@ LEV_PRINTED = {(f"Lev-1.4B {U}", 1): (5.3, 3.4, 7.2), (f"Lev-2.6B {U}", 1): (7.5
                ("Lev-3B prefill 1 vs same-training control", 2): (-8.1, -9.7, -6.6)}
 # Section 4.5: (pairs, significantly above the control, significantly below, point estimate below) per direction
 LEV_COUNTS = {"m>n": (13, 12, 0, 0), "m<n": (13, 0, 11, 13)}
+# Section 4.5: m < n pairs with four seeds, below the control in every seed, significantly below in every seed
+LEV_SEEDS = (13, 13, 10)
 
 
 def lev():
@@ -530,6 +536,22 @@ def lev():
         if got is None or any(abs(p - g) > 0.051 for p, g in zip(printed, got)):
             print(f"Lev          {label} d={n}: {got}  !! paper: {printed}")
     out.append(dict(label="both directions", grid=grid, counts=counts))
+    # m < n over four seeds (seed 0 = the grid above): per pair, how many seeds are significantly below the control
+    seeds = []
+    for g in [g for g in grid if g["m"] < g["n"]]:
+        labels = [f"{g['model']} prefill {g['m']} seed {e} vs same-training control" for e in (1, 2, 3)]
+        d = [g["diff"]] + [[r["diff"], r["lo"], r["hi"]] for lb in labels for r in out if r.get("label") == lb and r.get("depth") == g["n"]]
+        seeds.append(dict(model=g["model"], m=g["m"], n=g["n"], seeds=len(d), mean=round(float(np.mean([x[0] for x in d])), 3),
+                          below=int(sum(x[2] < 0 for x in d)), negative=int(sum(x[0] < 0 for x in d))))
+    if seeds:
+        full = [x for x in seeds if x["seeds"] == 4]
+        print(f"Lev seeds    m<n: {len(full)} of {len(seeds)} pairs with 4 seeds; every seed below in point estimate "
+              f"{sum(x['negative'] == 4 for x in full)}, every seed significantly below {sum(x['below'] == 4 for x in full)}, "
+              f"mean below {sum(x['mean'] < 0 for x in full)}")
+        got = (len(full), sum(x["negative"] == 4 for x in full), sum(x["below"] == 4 for x in full))
+        if got != LEV_SEEDS:
+            print(f"Lev seeds    m<n: {got}  !! paper: {LEV_SEEDS}")
+        out.append(dict(label="m<n seeds", pairs=seeds))
     # training seeds (seed 0 = the unsuffixed runs): per-seed gain at each decision depth, mean and sample std
     for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B"):
         main = f"{m} untied vs same-training control"

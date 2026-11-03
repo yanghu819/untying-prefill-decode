@@ -23,6 +23,12 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Lev m < n replicated over seeds 1-3 (21 runs, `lev_mn_seeds.sh`): all 13 pairs below the control in every seed
+  (52/52 estimates), significantly in every seed on 10 of 13 (guard LEV_SEEDS). Section 4.5 no longer limited to seed 0.
+- Distilled controls (preliminary, first-token-uncorrected E48/D48): chosen m vs distilled 1/1 significantly above on 7
+  of 13, below on 1 (RULER-4K); vs distilled 2/2 above on 7 of 12, below on 2 (RULER-4K/8K). Gains over distillation
+  are in knowledge, code and 4-shot math; distillation alone recovers short-context retrieval. Paper text waits for
+  H48 and the corrected E48f/D48f/H48f.
 - Codex round 6 (paper/codex_review_untie6.md, 8 objections). Fixed two real analysis bugs: (1) task-map means are now
   over the items all 20 configurations share (`taskmap_cells`; Figures 1/8 and the grid table read it; MMLU-Pro's best
   m at decode 1 is 4, not 3); (2) significance was decided on intervals rounded to one decimal; intervals are now kept

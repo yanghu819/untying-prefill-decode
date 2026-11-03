@@ -1,0 +1,17 @@
+The repository ByteDance/Ouro-2.6B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+Loading weights:   0%|          | 0/530 [00:00<?, ?it/s]Loading weights:  10%|▉         | 51/530 [00:00<00:00, 507.64it/s]Loading weights:  19%|█▉        | 102/530 [00:00<00:01, 324.33it/s]Loading weights:  26%|██▌       | 139/530 [00:00<00:01, 277.05it/s]Loading weights:  32%|███▏      | 169/530 [00:00<00:01, 247.67it/s]Loading weights:  37%|███▋      | 195/530 [00:00<00:01, 246.57it/s]Loading weights:  43%|████▎     | 230/530 [00:00<00:01, 273.79it/s]Loading weights:  50%|█████     | 265/530 [00:00<00:00, 291.46it/s]Loading weights:  56%|█████▌    | 298/530 [00:01<00:00, 294.58it/s]Loading weights:  63%|██████▎   | 335/530 [00:01<00:00, 312.67it/s]Loading weights:  69%|██████▉   | 367/530 [00:01<00:00, 310.75it/s]Loading weights:  75%|███████▌  | 399/530 [00:01<00:00, 293.73it/s]Loading weights:  81%|████████  | 429/530 [00:01<00:00, 249.32it/s]Loading weights:  86%|████████▌ | 456/530 [00:01<00:00, 243.69it/s]Loading weights:  91%|█████████▏| 484/530 [00:01<00:00, 252.87it/s]Loading weights:  96%|█████████▋| 511/530 [00:01<00:00, 236.60it/s]Loading weights: 100%|██████████| 530/530 [00:01<00:00, 271.85it/s]
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-2.6B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+model.early_exit_gate.weight | UNEXPECTED |  | 
+lm_head.weight               | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+levwork-levbench-dev: 3570 records (0 skipped as overlong), 3570 questions, 4 depths, 902s
+DONE
