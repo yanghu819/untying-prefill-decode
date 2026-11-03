@@ -230,13 +230,13 @@ def fig_equal():
         ax.plot([n2, ours], [yi, yi], color="#D4D4D4", lw=1.0, zorder=1)
     s22 = [(yi, E[b]["same22"]) for yi, b in zip(y, benches) if "same22" in E[b]]
     if s22:   # the same connector reading 2 loops: separates adaptation from reading depth
-        ax.scatter([v for _, v in s22], [yi for yi, _ in s22], s=26, facecolors="white", edgecolors=OURS, linewidths=1.1,
-                   zorder=3.5, label="prefill 2 / decode 2 (same adapter)")
-    ax.scatter(rows[:, 0], y, s=22, color="#A6A6A6", zorder=2, label="native 2/2")
-    ax.scatter(rows[:, 2], y, s=65, marker="|", color=NAT, linewidths=1.6, zorder=3, label="native 4/4")
-    ax.scatter(rows[:, 1], y, s=32, color=OURS, zorder=4, label="prefill 4 / decode 2")
+        ax.scatter([v for _, v in s22], [yi - 0.12 for yi, _ in s22], s=30, facecolors="white", edgecolors=OURS,
+                   linewidths=1.2, zorder=3.5, label="adapter 2/2")
+    ax.scatter(rows[:, 0], y, s=26, color="#A6A6A6", zorder=2, label="native 2/2")
+    ax.scatter(rows[:, 2], y, s=70, marker="|", color=NAT, linewidths=1.6, zorder=3, label="native 4/4")
+    ax.scatter(rows[:, 1], y + 0.12, s=34, color=OURS, zorder=4, label="adapter 4/2")
     for yi, v in zip(y, rows[:, 1]):
-        ax.annotate(f"{v:.0f}", (v, yi), xytext=(5, 5), textcoords="offset points", fontsize=8, color=OURS)
+        ax.annotate(f"{v:.0f}", (v, yi + 0.12), xytext=(5, 3), textcoords="offset points", fontsize=8, color=OURS)
     ax.set_yticks(y, benches, fontsize=8.5)
     ax.set_xlim(40, 102); ax.set_xticks([40, 60, 80, 100]); ax.set_xlabel("score (%)")
     ax.grid(axis="x", color="#E8E8E8", lw=0.5, zorder=0); ax.set_axisbelow(True)
@@ -244,8 +244,8 @@ def fig_equal():
         ax.spines[sp].set_visible(False)
     ax.tick_params(axis="y", length=0)
     h, l = ax.get_legend_handles_labels()
-    order = [l.index(x) for x in ("native 2/2", "prefill 2 / decode 2 (same adapter)", "prefill 4 / decode 2", "native 4/4") if x in l]
-    ax.legend([h[k] for k in order], [l[k] for k in order], loc="lower center", ncol=len(order), fontsize=8,
+    order = [l.index(x) for x in ("native 2/2", "adapter 2/2", "adapter 4/2", "native 4/4") if x in l]
+    ax.legend([h[k] for k in order], [l[k] for k in order], loc="lower center", ncol=len(order), fontsize=8.5,
               bbox_to_anchor=(0.45, 1.0), columnspacing=1.2, handletextpad=0.4)
     save(fig, "fig_equal")
 
@@ -303,9 +303,9 @@ def fig_lev():
         _, ctl = series(f"{m} read-deep trained vs same-training control", "b")
         _, orig = series(f"{m} control vs original", "b") if any(r["label"] == f"{m} control vs original" for r in L) else (d, None)
         if orig:
-            ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="Lev (released)")
-        ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="Lev, same continued training")
-        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="prefill 4 (Lev-3B: 2), decide with n loops")
+            ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="released")
+        ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="continued training")
+        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="untied prefill / decision")
         ax.set_xticks(d); ax.set_xlabel("decision loops n"); ax.set_title(m + (" (Nanbeige, prefill 2)" if m == "Lev-3B" else " (Ouro, prefill 4)"), fontsize=8.5, color=INK, pad=3)
         ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
     axes[0][0].set_ylabel("accuracy (%)")
@@ -388,23 +388,25 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
         for i in range(5):
             for j in range(4):
                 v = A[i, j]; y = 4 - i + (0 if i < 4 else -0.25)
-                fc = "#F2F2F2" if not np.isfinite(v) else (cmap(norm(v)) if i < 4 else "#E6E6E6")
+                fc = "#F2F2F2" if not np.isfinite(v) else cmap(norm(v))      # native row: same scale as the grid
                 ax.add_patch(plt.Rectangle((j, y), 1, 1 if i < 4 else 0.9, fc=fc, ec="white", lw=1.2))
                 if np.isfinite(v):
-                    ax.text(j + 0.5, y + (0.5 if i < 4 else 0.45), f"{v:.0f}", ha="center", va="center", fontsize=6.6,
-                            color="white" if (i < 4 and norm(v) > 0.65) else INK)
-        if np.isfinite(A[:4]).any():
-            bi, bj = np.unravel_index(np.nanargmax(A[:4]), (4, 4))
-            ax.add_patch(plt.Rectangle((bj + 0.04, 4 - bi + 0.04), 0.92, 0.92, fc="none", ec="#7A1020", lw=1.6))
+                    ax.text(j + 0.5, y + (0.5 if i < 4 else 0.45), f"{v:.0f}", ha="center", va="center", fontsize=7.6,
+                            color="white" if norm(v) > 0.62 else INK)
+        for j in range(4):   # best prefill count m at each number of decode loops n (unrounded scores)
+            col = A[:4, j]
+            if np.isfinite(col).all():
+                bi = int(np.nanargmax(col))
+                ax.add_patch(plt.Rectangle((j + 0.05, 4 - bi + 0.05), 0.9, 0.9, fill=False, ec="#202020", lw=0.9))
         ax.set_xlim(0, 4); ax.set_ylim(-0.3, 5); ax.set_aspect("equal")
-        ax.set_xticks([0.5, 1.5, 2.5, 3.5], ["1", "2", "3", "4"], fontsize=6.5)
-        ax.set_yticks([0.15, 1.5, 2.5, 3.5, 4.5], ["native", "4", "3", "2", "1"], fontsize=6.5)
+        ax.set_xticks([0.5, 1.5, 2.5, 3.5], ["1", "2", "3", "4"], fontsize=7.5)
+        ax.set_yticks([0.15, 1.5, 2.5, 3.5, 4.5], ["native", "4", "3", "2", "1"], fontsize=7.5)
         ax.tick_params(length=0, pad=1.5)
         for sp in ax.spines.values():
             sp.set_visible(False)
-        ax.set_title(title, fontsize=8, color=INK, pad=2)
-    fig.supxlabel("decode loops n", fontsize=8.5, y=0.02); fig.supylabel("prefill loops m", fontsize=8.5, x=0.01)
-    fig.subplots_adjust(wspace=0.18, hspace=0.32, left=0.07, right=0.99, top=0.96, bottom=0.07 if nrows > 2 else 0.1)
+        ax.set_title(title, fontsize=9, color=INK, pad=2)
+    fig.supxlabel("decode loops n", fontsize=9.5, y=0.02); fig.supylabel("prefill loops m", fontsize=9.5, x=0.01)
+    fig.subplots_adjust(wspace=0.12, hspace=0.28, left=0.07, right=0.995, top=0.96, bottom=0.07 if nrows > 2 else 0.1)
     save(fig, name)
 
 

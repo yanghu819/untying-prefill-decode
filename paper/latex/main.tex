@@ -55,7 +55,8 @@ model. Untying the loops also makes looped decision models more accurate when th
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
 \caption{\textbf{The task map.} One loop adapter on frozen Ouro-2.6B evaluated at every pair (prefill $m$, decode $n$),
-with the native model ($n/n$) below each column; accuracy (\%), one colour scale per panel, best cell outlined. The best
+with the native model ($n/n$) below each column; accuracy (\%). Each panel has its own colour scale, shared by the
+grid and the native row; outlines mark the best prefill count $m$ at each number of decode loops $n$. The best
 prefill count differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All thirteen
 benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
 \label{fig:grid}
@@ -257,8 +258,8 @@ intervals ($^*$: interval excludes zero). Score points on a 0--100 scale.}
 \includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
 \caption{\textbf{Prefill 4 / decode 2: two decode loops, close to the quality of four.} Ouro-2.6B-Thinking
 on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
-categories); prefill 4 / decode 2 uses one loop adapter and one stored prompt KV cache. Hollow circles: the same loop adapter prefilling with only two
-loops, which separates the effect of training from that of prefill loops. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
+categories); prefill 4 / decode 2 uses one loop adapter and one stored prompt KV cache. ``Adapter 4/2'' and ``adapter 2/2'' are the same loop adapter at prefill 4 or 2 with decode 2; the hollow circles
+separate the effect of training from that of the prefill loops. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
 interval.}
 \label{fig:equal}
 \end{figure*}
