@@ -182,7 +182,8 @@ def decode(token, K, V, n): # last prompt token, then answer
 # training: one (m, n) per micro-batch,
 # teacher = the native 4/4 model
 m, n = randint(1, 4), randint(1, 4)
-with torch.no_grad(): t = model(x, prefill=4, decode=4)
+with torch.no_grad():
+    t = model(x, prefill=4, decode=4)
 s = model(x, prefill=m, decode=n)         # LoRA + maps
 kl = kl_div(s.log_softmax(-1),
             t.log_softmax(-1), log_target=True,
@@ -237,7 +238,7 @@ paired over items with 95\% bootstrap intervals.
 
 \begin{table*}[t]
 \centering\small
-\setlength\tabcolsep{3pt}
+\setlength\tabcolsep{1.5pt}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 benchmark & decode 1 & decode 2 & decode 3 & decode 4 \\
@@ -248,7 +249,7 @@ benchmark & decode 1 & decode 2 & decode 3 & decode 4 \\
 \caption{\textbf{Choosing the prefill loops per benchmark, against the native model with the same decode loops.} Ouro-2.6B, one
 loop adapter. For each benchmark and number of decode loops $n$ we choose the prefill count $m$ on one half of the
 items, score it on the other half, and swap, so that no item is scored by a choice made on it; the table gives the
-resulting accuracy minus native $n/n$ on the same items, the $m$ chosen on each half, and paired 95\% bootstrap
+resulting accuracy minus native $n/n$ on the same items, the $m$ chosen on each half (in parentheses), and paired 95\% bootstrap
 intervals ($^*$: interval excludes zero). Score points on a 0--100 scale.}
 \label{tab:select}
 \end{table*}
@@ -558,12 +559,12 @@ a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 
 \begin{table*}[t]
 \centering\small
-\setlength\tabcolsep{4pt}
+\setlength\tabcolsep{3pt}
 \begin{tabular}{@{}lcccccccc@{}}
 \toprule
- & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{prefill 4 / decode 2 minus} \\
+ & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{adapter 4/2 minus} \\
 \cmidrule(lr){2-5}\cmidrule(l){6-8}
-benchmark & native 2/2 & prefill 2 / decode 2 & prefill 4 / decode 2 & native 4/4 & native 2/2 & prefill 2 / decode 2 & native 4/4 \\
+benchmark & native 2/2 & adapter 2/2 & adapter 4/2 & native 4/4 & native 2/2 & adapter 2/2 & native 4/4 \\
 \midrule
 \multicolumn{8}{@{}l}{\emph{Ouro-2.6B-Thinking (Figure~\ref{fig:equal})}} \\
 \csname @@input\endcsname ../figs/tab_equal_26B-T.tex
@@ -644,7 +645,7 @@ generated tokens) one prompt KV cache decodes $0.97\times$ native at $n{=}2$ and
 
 \begin{table}[h]
 \centering\small
-\setlength\tabcolsep{3pt}
+\setlength\tabcolsep{1.8pt}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
 8K context, 32 steps & $n{=}1$ & $n{=}2$ & $n{=}3$ & $n{=}4$ \\

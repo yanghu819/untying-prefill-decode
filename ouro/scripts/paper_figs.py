@@ -428,7 +428,7 @@ def tab_select(model="Ouro-2.6B", name="tab_select"):
         mm = str(m[0]) if m[0] == m[1] else f"{m[0]},{m[1]}"
         v = (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d)
         sig = "$^*$" if lo > 0 or hi < 0 else ""          # paired 95% interval excludes zero
-        return rf"{v}{sig}\ci{{{lo:.1f}}}{{{hi:.1f}}}\,{{\scriptsize ($m$={mm})}}"
+        return rf"{v}{sig}\ci{{{lo:.1f}}}{{{hi:.1f}}}\,{{\scriptsize ({mm})}}"
     lines = [f"{b} & " + " & ".join(cell(R.get((b, n))) for n in range(1, 5)) + r" \\" for b in benches]
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
 
