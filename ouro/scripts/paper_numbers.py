@@ -626,6 +626,13 @@ def taskmap_select():
             out.append(row)
             print(f"Select m     {model} {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
                   f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]")
+    # single values quoted in the text
+    quoted = {("MATH-500 4-shot", 3): 13.6, ("MATH-500 4-shot", 4): 14.4, ("MBPP+", 3): 18.0, ("MBPP+", 2): 15.6,
+              ("HumanEval", 2): 18.3}
+    for (bench, n), v in quoted.items():
+        got = next((r["diff"][0] for r in out if r["model"] == "Ouro-2.6B" and r["bench"] == bench and r["n"] == n), None)
+        if got != v:
+            print(f"Select m     {bench} n={n}: {got}  !! paper: {v}")
     # counts quoted in the abstract, introduction and Section 4.2: (significant wins, benchmarks) at n = 1 and n = 2
     for n, (wins, total) in {1: (12, 13), 2: (10, 13)}.items():
         rows = [r for r in out if r["n"] == n and r["model"] == "Ouro-2.6B"]

@@ -70,3 +70,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   decode 2: prefill 1 below prefill 4 on all eight benchmarks (significantly on seven) - zero-shot chat prompts prefer more
   prefill loops, unlike the few-shot base model. One Thinking MATH shard hung for 8 h (third such hang) and was restarted.
 - Replication queued: Ouro-1.4B task map (4-shot MATH, MBPP+/HumanEval, MMLU-Pro, ARC-C; BBH partly existing), 76 jobs.
+- Codex second review of the untied draft (paper/codex_review_untie2.md): close to weak accept. Fixed: stale compiled PDF
+  (always regenerate figures/tables, then compile); "decode cost" wording removed; HELMET deficit no longer attributed to
+  prefill loops; Thinking claim narrowed (four beats one, not "optimal"; not all its benchmarks are zero-shot); conclusion
+  without the code-and-math slogan; Appendix A formula b(l+t); MBPP+ at four decode loops marked pending.

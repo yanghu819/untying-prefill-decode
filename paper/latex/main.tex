@@ -231,7 +231,7 @@ GPQA-Diamond~\citep{gpqa}), long-context retrieval (RULER~\citep{ruler} at 4K/8K
 and instruction following (BBH~\citep{bbh}, IFEval~\citep{ifeval}), math (GSM8K~\citep{gsm8k},
 MATH-500~\citep{math,lightman2023lets}) and code (HumanEval~\citep{humaneval}, MBPP+~\citep{evalplus}); protocols and set
 sizes are in Appendix~\ref{app:eval}. One loop adapter per model is trained once and evaluated at all 16 pairs. We
-compare with the native model at the same number of decode loops, which sets the decode cost. Every comparison is
+compare with the native model at the same number of decode loops. Every comparison is
 paired over items with 95\% bootstrap intervals.
 
 \begin{table*}[t]
@@ -255,7 +255,7 @@ intervals ($^*$: interval excludes zero). Score points on a 0--100 scale.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
-\caption{\textbf{Prefill 4 / decode 2: the decode cost of two loops, close to the quality of four.} Ouro-2.6B-Thinking
+\caption{\textbf{Prefill 4 / decode 2: two decode loops, close to the quality of four.} Ouro-2.6B-Thinking
 on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
 categories); prefill 4 / decode 2 uses one loop adapter and one stored prompt KV cache. Hollow circles: the same loop adapter prefilling with only two
 loops, which separates the effect of training from that of prefill loops. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
@@ -304,7 +304,8 @@ they do not include the variability of the choice. With one decode loop the chos
 benchmarks, by 5 to 21 points, and ties on MBPP+, where \nat{1} is already strong; with two decode loops it wins
 significantly on 10 of 13, including HumanEval ($+18.3$) and MBPP+ ($+15.6$). With three or four decode loops results are mixed: the native model, which also
 prefills with three or four loops, is about as good on most benchmarks and better on long-context retrieval (RULER) and
-slightly on BBH, while 4-shot MATH-500 and MBPP+ stay 14--18 points ahead. Comparisons with native models also include the effect of training the adapter; comparisons
+slightly on BBH, while 4-shot MATH-500 gains 13.6 and 14.4 points at three and four decode loops and MBPP+ 18.0 at
+three (native 4/4 results for HumanEval and MBPP+ are pending). Comparisons with native models also include the effect of training the adapter; comparisons
 within the adapter isolate the prefill loops. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}
@@ -315,8 +316,8 @@ Figure~\ref{fig:equal} puts the two findings together on Ouro-2.6B-Thinking: pre
 cost of \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro ($+6.9$\ci{3.1}{11.0}),
 BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}), MBPP+ ($+4.8$\ci{1.3}{8.2}) and HELMET
 ($+13.0$\ci{6.7}{19.5}); on GSM8K, MATH-500 ($+0.2$\ci{-2.6}{3.0}) and HumanEval the gains are within noise. Against \nat{4}, which decodes with
-twice the loops, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), where native 4/4
-recalls exact key--value pairs that more prefill loops lose (Appendix~\ref{app:hurt}), and on MATH-500
+twice the loops, it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), a deficit concentrated in exact recall
+that this native-model contrast does not attribute to the prefill loops (Appendix~\ref{app:hurt}), and on MATH-500
 ($-4.8$\ci{-7.8}{-2.0}).
 
 The same adapter at \rw{2}{2} (hollow circles) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
@@ -325,9 +326,10 @@ detectable difference on GSM8K, MATH-500 and MBPP+; the same holds on Ouro-1.4B-
 
 Untying is not the same as distilling. A LoRA on native 2/2, trained with the same data, teacher and number of tokens
 as the loop adapter, gains on HELMET and BBH but not on knowledge; \rw{4}{2} scores above it on all eight benchmarks,
-significantly on MMLU-Pro ($+5.2$\ci{1.2}{9.3}) and ARC-Challenge ($+2.9$\ci{1.4}{4.4}). On this zero-shot
-reasoning model the per-benchmark choice is the largest prefill count: \rw{1}{2} is below \rw{4}{2} on all eight
-benchmarks, significantly on seven, unlike the few-shot base model of Section~\ref{sec:taskmap}.
+significantly on MMLU-Pro ($+5.2$\ci{1.2}{9.3}) and ARC-Challenge ($+2.9$\ci{1.4}{4.4}). On this reasoning model
+four prefill loops beat one at two decode loops on all eight benchmarks, significantly on seven, which does not make four
+optimal (\rw{2}{2} is slightly higher on MBPP+); unlike 4-shot MATH-500 on the base model (Section~\ref{sec:taskmap}),
+one prefill loop does not help here.
 
 
 
@@ -382,9 +384,10 @@ computation of our training forward.
 \section{Conclusion}
 
 A looped language model need not run the same number of loops for prefill and decode. Untied by a small loop adapter
-on an existing checkpoint, the two counts trade off differently for each task: one prefill loop suits generating code
-and math, three or four suit knowledge. Choosing the prefill count per task gives most of a deeper model's accuracy at a
-shallow model's decode cost, and the same holds for looped decision models.
+on an existing checkpoint, the best prefill count depends on the checkpoint, the benchmark, its prompt and the decode
+budget: one loop is best for 4-shot MATH-500 and MBPP+ on the base model, three or four for knowledge. Choosing the
+prefill count per benchmark gives most of a deeper model's accuracy with few decode loops, and untying also helps looped
+decision models.
 
 \section*{Limitations}
 \label{sec:limits}
@@ -392,7 +395,7 @@ shallow model's decode cost, and the same holds for looped decision models.
 The prefill count is chosen per benchmark from half of its labeled items; we do not route individual prompts, and a
 choice need not transfer to an unseen task. The best count also depends on the prompt format: on the base model one
 prefill loop helps 4-shot MATH-500 but hurts zero-shot MATH-500 (Appendix~\ref{app:hurt}), and at two decode loops the
-zero-shot Thinking model scores higher with four prefill loops than with one on all eight benchmarks we test
+Thinking model scores higher with four prefill loops than with one on all eight benchmarks we test
 (significantly on seven). With three or four decode loops the native model is better
 on long-context retrieval (RULER) and slightly on BBH. Gains against native models include training the adapter; the
 distillation control (Section~\ref{sec:rdws}) separates part of it. More prefill loops raise the time to first token,
@@ -432,7 +435,7 @@ through its own, freshly computed KV. Training
 uses the same KL objective in this layout, in two passes: a no-grad pass in which each loop reads its own causal answer KV records the last loop's answer KV; a second pass
 reads, at every loop, the prompt KV cache, that recorded history strictly before the current position, and the current
 token's KV computed live on the diagonal. Training thus approximates, but does not exactly reproduce, inference, where
-the history is generated recursively in the shared cache. With prompt and answer each stored once, total KV is $b(n+t)$, that
+the history is generated recursively in the shared cache. With prompt and answer each stored once, total KV is $b(\ell+t)$, that
 of a one-loop model; with 1K-token prompts and 2,048 generated tokens the largest batch that fits grows from 32
 (\nat{4}) to 192 and decode-4 throughput from 219 to 476 tokens/s (759 vs.\ 586 at $n{=}2$), at a cost of 4.8
 GSM8K points against \nat{4} (Table~\ref{tab:ablation} compares it with per-loop answer caches). On Ouro-2.6B-Thinking, a loop adapter
