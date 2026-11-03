@@ -234,6 +234,9 @@ TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:mvfull"), ("BBH 3-shot", "L:o26
 TASK_MAP_14 = [("MATH-500 4-shot", "L:O14x-{c}-math:mvfull"), ("MBPP+", "L:O14x-{c}-code:pass_at_1"),
                ("HumanEval", "L:O14x-{c}-code:pass@1"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
                ("ARC-C", "L:O14x-{c}-arc:acc_norm")]
+# same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
+DISTILLED = {1: "E48", 2: "D48", 3: "H48"}
+DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlu:acc", "L:o26x-{d}-gsm:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Task map", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP
@@ -323,6 +326,7 @@ def keys():
     ks |= {ka.replace("S42", "S12") for _, _, ka, _ in equal_specs() if "T26" in ka}
     ks |= {k.format(c=c) for _, k in TASK_MAP_14 for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)]
            + [f"native{n}" for n in range(1, 5)]}
+    ks |= {k.format(d=d) for k in DISTILLED_KEYS for d in DISTILLED.values()}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -575,11 +579,12 @@ def taskmap_select():
     import hashlib
     half = lambda i: int(hashlib.md5(str(i).encode()).hexdigest(), 16) % 2
     out = []
-    specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc"), ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF)]
-    specs += [(bench, key, key.replace("{c}", "native{n}")) for bench, key in TASK_MAP]
-    specs = [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"))
+    specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc", "L:o26x-{d}-mmlu:acc"),
+             ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF, "L:o26x-{d}-gsm:" + GF)]
+    specs += [(bench, key, key.replace("{c}", "native{n}"), key.replace("{c}", "{d}")) for bench, key in TASK_MAP]
+    specs = [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"), None)
                                                   for bench, key in TASK_MAP_14]
-    for model, bench, key, nkey in specs:
+    for model, bench, key, nkey, dkey in specs:
         for n in range(1, 5):
             cells = {m: load(key.format(c=f"S{m}{n}")) for m in range(1, 5)}
             nat = load(nkey.format(n=n))
@@ -597,9 +602,18 @@ def taskmap_select():
             r = boot(picked, {i: nat[i] for i in picked})
             row = dict(model=model, bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
                        native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")])
+            # same-training control: LoRA distillation of native n/n (native 4/4 is the teacher itself)
+            dist = None if dkey is None else nat if n == 4 else load(dkey.format(d=DISTILLED[n]))
+            if dist is not None:
+                shared = {i: v for i, v in picked.items() if i in dist}
+                r = boot(shared, {i: dist[i] for i in shared})
+                row.update(distilled=round(r["b"], 1), distilled_items=len(shared),
+                           diff_distilled=[round(r[k], 1) for k in ("diff", "lo", "hi")])
             out.append(row)
+            vs_d = (f" | distilled {row['distilled']:5.1f} {row['diff_distilled'][0]:+5.1f} [{row['diff_distilled'][1]:+.1f}, "
+                    f"{row['diff_distilled'][2]:+.1f}]") if "distilled" in row else ""
             print(f"Select m     {model} {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
-                  f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]")
+                  f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]{vs_d}")
     # single values quoted in the text
     quoted = {("MATH-500 4-shot", 3): 13.6, ("MATH-500 4-shot", 4): 14.4, ("MBPP+", 3): 18.0, ("MBPP+", 4): 18.5, ("MBPP+", 2): 15.6,
               ("HumanEval", 2): 18.3}
@@ -614,6 +628,11 @@ def taskmap_select():
         got = (sum(r["diff"][1] > 0 for r in rows), len(rows))
         flag = "" if got == (wins, total) else f"  !! paper: {wins} of {total}"
         print(f"Select m     {model} significant wins at n={n}: {got[0]} of {got[1]}{flag}")
+    for n in (1, 2, 3):
+        rows = [r for r in out if r["n"] == n and "diff_distilled" in r]
+        if rows:
+            print(f"Select m     Ouro-2.6B vs distilled {n}/{n}: significantly above on {sum(r['diff_distilled'][1] > 0 for r in rows)}, "
+                  f"below on {sum(r['diff_distilled'][2] < 0 for r in rows)} of {len(rows)}")
     return out
 
 def throughput():
