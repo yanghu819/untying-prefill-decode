@@ -241,6 +241,7 @@ TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF
                ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48", 2: "D48", 3: "H48"}
+DISTILLED_COUNTS = {1: (7, 1, 13), 2: (5, 1, 13), 3: (3, 3, 13)}
 DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
@@ -715,7 +716,8 @@ def taskmap_select():
                 shared = picked
                 r = boot(shared, {i: dist[i] for i in shared})
                 row.update(distilled=round(r["b"], 1), distilled_items=len(shared),
-                           diff_distilled=[round(r[k], 3) for k in ("diff", "lo", "hi")])
+                           diff_distilled=[round(r[k], 3) for k in ("diff", "lo", "hi")],
+                           diff_distilled_select_aware=[round(r["diff"], 3), *select_aware(cells, dist, ids, half)])
             out.append(row)
             vs_d = (f" | distilled {row['distilled']:5.1f} {row['diff_distilled'][0]:+5.1f} [{row['diff_distilled'][1]:+.1f}, "
                     f"{row['diff_distilled'][2]:+.1f}]") if "distilled" in row else ""
@@ -748,9 +750,11 @@ def taskmap_select():
                   f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")
     for n in (1, 2, 3):
         rows = [r for r in out if r["n"] == n and "diff_distilled" in r]
-        if rows:
-            print(f"Select m     Ouro-2.6B vs distilled {n}/{n}: significantly above on {sum(r['diff_distilled'][1] > 0 for r in rows)}, "
-                  f"below on {sum(r['diff_distilled'][2] < 0 for r in rows)} of {len(rows)}")
+        if rows:   # selection-aware intervals, as Table 1; quoted in Section 4.2: (above, below, settings)
+            got = (sum(r["diff_distilled_select_aware"][1] > 0 for r in rows), sum(r["diff_distilled_select_aware"][2] < 0 for r in rows), len(rows))
+            printed = DISTILLED_COUNTS.get(n)
+            flag = f"  !! paper: {printed}" if printed and got != printed else ""
+            print(f"Select m     Ouro-2.6B vs distilled {n}/{n}: significantly above on {got[0]}, below on {got[1]} of {got[2]}{flag}")
     return out
 
 def throughput():

@@ -314,7 +314,10 @@ slightly on BBH, while 4-shot MATH-500 gains 13.6 and 14.4 points at three and f
 is significantly below \nat{2} on 3-shot BBH ($-5.4$; Appendix~\ref{app:models}). Comparisons with native models measure the complete trained method, including the effect of training the adapter.
 Within the adapter, which isolates the prefill loops, the chosen $m$ is significantly above the same adapter's $n/n$ on 6 and
 3 of 13 settings at one and two decode loops (MMLU, MMLU-Pro, BBH, ARC-Challenge, GSM8K and RULER-16K at one) and never
-significantly below it. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
+significantly below it. Against a stronger baseline, native $n/n$ distilled with LoRA on the same data, teacher and
+tokens as the adapter (Table~\ref{tab:selectdist}), the chosen $m$ is significantly above on 7 and 5 of 13 settings at
+one and two decode loops, mostly knowledge, code and 4-shot MATH-500 (MMLU-Pro $+19.0$, HumanEval $+12.8$ at one;
+MBPP+ $+18.8$, MATH-500 $+18.6$ at two), and significantly below on RULER-4K, where distillation alone helps more. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}
 \label{sec:rdws}
@@ -543,6 +546,23 @@ and~\ref{fig:taskmapfull}; the held-out choice is Table~\ref{tab:select}). MMLU 
 1,319 items); RULER uses 520 items per length. MMLU-P: MMLU-Pro, HEval: HumanEval, IFEv: IFEval, R-$k$K:
 RULER at $k$K tokens.}
 \label{tab:taskmapcells}
+\end{table*}
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{4pt}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+benchmark & decode 1 & decode 2 & decode 3 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_select_distilled.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Choosing the prefill loops beats distilled native models on knowledge, code and few-shot math.}
+Ouro-2.6B: the $m$ chosen as in Table~\ref{tab:select}, minus native $n/n$ distilled with LoRA (same data, teacher and
+48M tokens as the loop adapter; its loss omits the first answer token), on the same items; selection-aware paired 95\%
+intervals ($^*$: excludes zero). At four decode loops the distilled model is the teacher itself.}
+\label{tab:selectdist}
 \end{table*}
 
 \FloatBarrier

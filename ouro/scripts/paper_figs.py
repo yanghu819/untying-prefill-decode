@@ -351,6 +351,22 @@ def tab_taskmap(model="Ouro-2.6B"):
     (OUT / "tab_taskmap.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_select_distilled():
+    """Appendix table: the cross-fitted prefill count (Table 1) against the LoRA-distilled native n/n at n = 1, 2, 3;
+    selection-aware intervals (LaTeX rows from paper_numbers.json, taskmap_select)."""
+    rows = [r for r in PN.get("taskmap_select", []) if r["model"] == "Ouro-2.6B" and r["n"] <= 3]
+    R = {(r["bench"], r["n"]): r for r in rows}
+    def cell(r):
+        if r is None or "diff_distilled_select_aware" not in r:
+            return "--"
+        d, lo, hi = r["diff_distilled_select_aware"]
+        sig = "$^*$" if lo > 0 or hi < 0 else ""
+        return (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d) + sig + ci(lo, hi)
+    benches = list(dict.fromkeys(r["bench"] for r in rows))
+    lines = [f"{b} & " + " & ".join(cell(R.get((b, n))) for n in (1, 2, 3)) + r" \\" for b in benches]
+    (OUT / "tab_select_distilled.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "IFEval", "RULER-4K", "RULER-8K"], ncols=5); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "IFEval", "RULER-4K", "RULER-8K"], ncols=5); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

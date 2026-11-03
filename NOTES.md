@@ -23,6 +23,11 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Distilled controls E48/D48/H48 complete (MMLU/GSM8K on full sets). Chosen m vs distilled n/n, selection-aware:
+  above on 7 / 5 / 3 of 13 at n = 1 / 2 / 3, below on 1 / 1 / 3 (RULER; distillation alone helps short-context
+  retrieval). Section 4.2 sentence + generated appendix table tab_selectdist; guard DISTILLED_COUNTS. These controls omit
+  the first answer token; corrected E48f/D48f/H48f training, numbers to be swapped in when they land.
+- Extra timing: 128 more GSM8K problems for native 2/2, 4/4, adapter 4/2, 2/2 and distilled 2/2 (time_more.sh, a1 GPU 3).
 - Task map: Ouro-2.6B MMLU and GSM8K now on the full sets (14,042 / 1,319) for every cell; Table 1 counts unchanged
   (selection-aware 11/13, 9/13; within the adapter 6/13, 3/13; fixed choice 12, 11). Ouro-1.4B replication extended to
   all 13 settings: 10/13 and 2/13 selection-aware, 4/13 and 1/13 within the adapter, significantly below native 2/2 on
