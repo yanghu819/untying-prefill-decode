@@ -87,7 +87,7 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 | paper PDF and arXiv package | — | in order: `paper_numbers.py compute`, `paper_figs.py`, compile `paper/latex/main.tex`, `paper/build_arxiv.py` |
 
 `paper_numbers.py compute` also checks every number quoted in the text against hard-coded expectations (including the
-11-of-13 / 9-of-13 counts of Table 1) and reports any mismatch with `!!`. Not covered: the long-answer throughput
+11-of-13 / 9-of-13 counts of Table 1 and 10 / 2 of 13 on Ouro-1.4B) and reports any mismatch with `!!`. Not covered: the long-answer throughput
 and batch-size measurements, the parser diagnostics and the MBPP+ format counts (reported as measured).
 
 ## What is not here

@@ -729,8 +729,8 @@ def taskmap_select():
         if got is None or abs(got - v) > 0.051:
             print(f"Select m     {bench} n={n}: {got}  !! paper: {v}")
     # counts quoted in the abstract, introduction and Section 4.2: (significant wins, benchmarks) at n = 1 and n = 2
-    for model, n, (wins, total) in (("Ouro-2.6B", 1, (12, 13)), ("Ouro-2.6B", 2, (10, 13)), ("Ouro-1.4B", 1, (5, 5)),
-                                    ("Ouro-1.4B", 2, (3, 5))):
+    for model, n, (wins, total) in (("Ouro-2.6B", 1, (12, 13)), ("Ouro-2.6B", 2, (11, 13)), ("Ouro-1.4B", 1, (12, 13)),
+                                    ("Ouro-1.4B", 2, (5, 13))):
         rows = [r for r in out if r["n"] == n and r["model"] == model]
         got = (sum(r["diff"][1] > 0 for r in rows), len(rows))
         flag = "" if got == (wins, total) else f"  !! paper: {wins} of {total}"
@@ -741,8 +741,8 @@ def taskmap_select():
             got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter_select_aware"][1] > 0 for r in rows),
                    sum(r["diff_adapter_select_aware"][2] < 0 for r in rows), len(rows))
             # quoted in Section 4.2: (selection-aware significant, above adapter n/n, below adapter n/n, benchmarks)
-            printed = {("Ouro-2.6B", 1): (11, 6, 0, 13), ("Ouro-2.6B", 2): (9, 3, 0, 13), ("Ouro-1.4B", 1): (3, 2, 0, 5),
-                       ("Ouro-1.4B", 2): (1, 0, 0, 5)}.get((model, n))
+            printed = {("Ouro-2.6B", 1): (11, 6, 0, 13), ("Ouro-2.6B", 2): (9, 3, 0, 13), ("Ouro-1.4B", 1): (10, 4, 0, 13),
+                       ("Ouro-1.4B", 2): (2, 1, 0, 13)}.get((model, n))
             flag = f"  !! paper: {printed}" if printed and got != printed else ""
             print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "
                   f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")

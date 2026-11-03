@@ -23,6 +23,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Task map: Ouro-2.6B MMLU and GSM8K now on the full sets (14,042 / 1,319) for every cell; Table 1 counts unchanged
+  (selection-aware 11/13, 9/13; within the adapter 6/13, 3/13; fixed choice 12, 11). Ouro-1.4B replication extended to
+  all 13 settings: 10/13 and 2/13 selection-aware, 4/13 and 1/13 within the adapter, significantly below native 2/2 on
+  3-shot BBH (-5.4); stated in 4.2 and Appendix D. Full-set GSM8K/MMLU of the distilled controls running.
 - Lev m < n replicated over seeds 1-3 (21 runs, `lev_mn_seeds.sh`): all 13 pairs below the control in every seed
   (52/52 estimates), significantly in every seed on 10 of 13 (guard LEV_SEEDS). Section 4.5 no longer limited to seed 0.
 - Distilled controls (preliminary, first-token-uncorrected E48/D48): chosen m vs distilled 1/1 significantly above on 7

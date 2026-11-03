@@ -61,7 +61,7 @@ matched-data and matched-update control on 12 of 13 $(m,n)$ pairs, and with fewe
 with $n$ loops for prefill and decode ($n/n$). Red: one loop adapter with the best prefill count $m$ at that $n$ (labels; the smallest maximizing $m$), chosen on these items;
 the held-out choice is Table~\ref{tab:select}.
 The best $m$ differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All
-13 settings are in Figure~\ref{fig:taskmapfull} and Table~\ref{tab:taskmapcells}; all points of a panel use the same items; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
+13 settings are in Figure~\ref{fig:taskmapfull} and Table~\ref{tab:taskmapcells}; all points of a panel use the same items; MMLU and GSM8K are the full sets (14,042 and 1,319 items).}
 \label{fig:grid}
 \end{figure*}
 
@@ -307,10 +307,11 @@ resample (the split into halves stays fixed), so they include the variability of
 per benchmark. With one decode loop the chosen $m$ beats \nat{1} significantly on 11 of 13 settings, by 5 to 21 points;
 on MBPP+, where \nat{1} is already strong, and on GPQA-Diamond ($+12.1$\ci{-2.5}{18.7}) the difference is not
 significant. With two decode loops it wins significantly on 9 of 13, including HumanEval ($+18.3$) and MBPP+ ($+15.6$).
-With the choice held fixed the counts are 12 and 10. With three or four decode loops results are mixed: the native model, which also
+With the choice held fixed the counts are 12 and 11. With three or four decode loops results are mixed: the native model, which also
 prefills with three or four loops, is about as good on most benchmarks and better on long-context retrieval (RULER) and
 slightly on BBH, while 4-shot MATH-500 gains 13.6 and 14.4 points at three and four decode loops and MBPP+ 18.0 and
-18.5. On Ouro-1.4B the chosen $m$ wins significantly on 3 and 1 of 5 benchmarks (Appendix~\ref{app:models}). Comparisons with native models measure the complete trained method, including the effect of training the adapter.
+18.5. On Ouro-1.4B, with its own adapter on the same 13 settings, the chosen $m$ wins significantly on 10 and 2 of 13 and
+is significantly below \nat{2} on 3-shot BBH ($-5.4$; Appendix~\ref{app:models}). Comparisons with native models measure the complete trained method, including the effect of training the adapter.
 Within the adapter, which isolates the prefill loops, the chosen $m$ is significantly above the same adapter's $n/n$ on 6 and
 3 of 13 settings at one and two decode loops (MMLU, MMLU-Pro, BBH, ARC-Challenge, GSM8K and RULER-16K at one) and never
 significantly below it. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
@@ -538,8 +539,8 @@ the held-out choice is Table~\ref{tab:select}. Every cell: Table~\ref{tab:taskma
 \end{tabular}
 \caption{\textbf{Every cell of the task map.} Ouro-2.6B, accuracy (\%) of native $n/n$ and of one loop adapter at
 prefill $m$ / decode $n$ ($m\,/\,n$), each column on the items that all 20 configurations share; bold: the best $m$ at each $n$, chosen on these items (Figures~\ref{fig:grid}
-and~\ref{fig:taskmapfull}; the held-out choice is Table~\ref{tab:select}). MMLU and GSM8K are subsets (20 questions per
-subject, 400 problems); RULER uses 520 items per length. MMLU-P: MMLU-Pro, HEval: HumanEval, IFEv: IFEval, R-$k$K:
+and~\ref{fig:taskmapfull}; the held-out choice is Table~\ref{tab:select}). MMLU and GSM8K are the full sets (14,042 and
+1,319 items); RULER uses 520 items per length. MMLU-P: MMLU-Pro, HEval: HumanEval, IFEv: IFEval, R-$k$K:
 RULER at $k$K tokens.}
 \label{tab:taskmapcells}
 \end{table*}
@@ -561,15 +562,18 @@ benchmark & decode 1 & decode 2 & decode 3 & decode 4 \\
 \csname @@input\endcsname ../figs/tab_select_14.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Table~\ref{tab:select} on Ouro-1.4B} (its own loop adapter; five benchmarks): prefill loops chosen on
+\caption{\textbf{Table~\ref{tab:select} on Ouro-1.4B} (its own loop adapter; the 13 settings of Table~\ref{tab:select}; MMLU and GSM8K
+subsets of 20 questions per subject and 400 problems): prefill loops chosen on
 one half of the items, scored on the other, minus native $n/n$ on the same items, in points; the $m$ chosen on each half in
 parentheses; paired 95\% bootstrap intervals that repeat the choice of $m$ in every resample ($^*$: excludes zero).}
 \label{tab:select14}
 \end{table*}
 
 Table~\ref{tab:select14} repeats the per-benchmark choice on Ouro-1.4B. As on Ouro-2.6B, the gain is largest with one
-decode loop and shrinks with more; unlike Ouro-2.6B, one prefill loop gives no large gain on 4-shot MATH-500 or MBPP+,
-where the chosen count is mostly two or three.
+decode loop (significant on 10 of 13 settings) and shrinks with more (2 of 13 at two decode loops, where 3-shot BBH is
+significantly worse than \nat{2}); within the adapter the chosen $m$ beats the adapter's own $n/n$ significantly on 4
+and 1 of 13. Unlike Ouro-2.6B, one prefill loop gives no large gain on 4-shot MATH-500 or MBPP+, where the chosen count
+is mostly two or three.
 
 \begin{table*}[t]
 \centering\small

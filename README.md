@@ -22,7 +22,7 @@ values: `python ouro/scripts/paper_numbers.py compute` (numpy only). See [`REPRO
 2. **Choosing *m* per benchmark pays most when decoding is cheap.** Choosing *m* on one half of each benchmark's items
    and scoring it on the other half beats native Ouro-2.6B with the same number of decode loops significantly on
    **11 of 13** settings with one decode loop (+5 to +21 points) and **9 of 13** with two (intervals that repeat the
-   choice of *m*); against the same adapter's own *n/n* it wins on 6 and 3 and never loses significantly. With three or
+   choice of *m*); against the same adapter's own *n/n* it wins on 6 and 3 and never loses significantly. Ouro-1.4B, on the same 13 settings: 10 and 2 of 13. With three or
    four decode loops the native model is about as good, except on long-context retrieval where it is better.
 3. **Beyond a distillation baseline.** On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point estimates than
    native 2/2 on eight benchmarks (significantly on five) and scores above a LoRA distillation of native 2/2 trained
