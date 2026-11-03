@@ -278,6 +278,9 @@ def fig_pareto():
                 ax.annotate(f"{d}", (xi, yi), xytext=(dx, 5 if col == OURS else -9), textcoords="offset points",
                             fontsize=6.8, color=OURS if col == OURS else NAT,
                             ha="center" if dx == 0 else ("right" if dx < 0 else "left"))
+        ys = [p[1] for p in nat + ours]
+        lo, hi = min(ys), max(ys); pad = 0.12 * (hi - lo)
+        ax.set_ylim(lo - pad, hi + pad)   # room for the point labels above and below
         ax.set_xscale("log"); ax.set_xticks([125, 250, 500, 1000], ["125", "250", "500", "1k"])
         ax.minorticks_off(); ax.set_xlim(100, 1100)
         ax.set_title(title, fontsize=8.5, color=INK, pad=4)
@@ -285,7 +288,8 @@ def fig_pareto():
     axes[0].set_ylabel("accuracy (%)")
     fig.supxlabel("decode throughput (tokens/s, log scale)", fontsize=8.5, y=-0.04)
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="upper center", ncol=2, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.2)
+    h.append(plt.Line2D([], [], ls="none")); l.append("point labels: decode loops n")
+    fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.2)
     fig.subplots_adjust(wspace=0.32)
     save(fig, "fig_pareto")
 
