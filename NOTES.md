@@ -23,6 +23,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03
+- Handoff to a new agent: HANDOFF.md (state, rules, pipeline, pitfalls) and DEPRECATED.md (code kept only for
+  imports). Deleted 44 per-item files the paper no longer uses, stale figure copies and superseded Codex reviews.
+- All figures now one style (grey native n/n line, red loop-adapter line, point labels); Lev moved to the appendix;
+  Lev m < n runs launched (`lev_mn.sh`).
 - Cleanup: removed the probe and "answers without a final answer" analyses (scripts, results, figures, appendix
   sections), the unused SenseNova training-free appendix, the stale `latest.json` aggregate and long-context throughput
   records, and the 1.4B BBH cells the paper does not use. Labels in `paper_numbers.py` / `paper_figs.py` and launcher

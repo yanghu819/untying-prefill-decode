@@ -1,4 +1,6 @@
-"""Fixed 3-shot greedy GSM8K test evaluation for the four requested Ouro paths."""
+"""DEPRECATED (not used by the paper; see DEPRECATED.md).
+
+Fixed 3-shot greedy GSM8K test evaluation for the four requested Ouro paths."""
 
 import argparse
 import json

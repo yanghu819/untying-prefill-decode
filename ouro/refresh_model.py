@@ -1,4 +1,6 @@
-"""Refresh-aware training for the 4/1 adapter+LoRA path (same params as arm B).
+"""DEPRECATED (not used by the paper; see DEPRECATED.md).
+
+Refresh-aware training for the 4/1 adapter+LoRA path (same params as arm B).
 
 Inference (ouro/evaluate_refresh.py): generated tokens are grouped into blocks
 of N. Inside a block the 1-loop reader decodes; when the block closes, the

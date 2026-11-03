@@ -1,4 +1,5 @@
 #!/bin/bash
+# DEPRECATED (arm V, superseded by arm S; see DEPRECATED.md)
 # Universal loop-map loop adapter (arm V) on Ouro-2.6B: one LoRA + one per-(decode loop, layer, head) KV map for all 16
 # cells p, d in 1..4 (prefill costs exactly p loops, so p < d is allowed). Waits for 4 free GPUs, trains 48M KL tokens,
 # then evaluates every cell on the three main tasks: RULER 16K (bench-mini), GSM8K (400), MMLU (20/subject).

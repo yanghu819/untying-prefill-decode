@@ -1,4 +1,6 @@
-"""Frozen Ouro NLL on the prepared PG19 documents: 1536 prefix + 512 suffix."""
+"""DEPRECATED (not used by the paper; see DEPRECATED.md).
+
+Frozen Ouro NLL on the prepared PG19 documents: 1536 prefix + 512 suffix."""
 
 import argparse
 import json
