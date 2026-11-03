@@ -12,7 +12,7 @@ Every number in the paper comes from one of three places, all in this commit:
    `ouro/results/latest.json`; `ouro/scripts/paper_figs.py` draws Figures 1–3 from `paper_numbers.json` and Figure 5 from
    `latest.json`.
 
-To regenerate the per-item scores themselves you need GPUs: train the connectors, run the evaluations, then
+To regenerate the per-item scores themselves you need GPUs: train the loop adapters, run the evaluations, then
 `python ouro/scripts/paper_numbers.py export RUNS_DIR` collects exactly the items the paper uses.
 
 ## Environment, models, data
