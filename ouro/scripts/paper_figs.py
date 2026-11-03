@@ -40,17 +40,17 @@ def save(fig, name):
 
 def frontier(ax, nat, ours, title, xlog=False, lines=True):
     """The one figure style of the paper: native (grey) and loop adapter (red) as lines of (x, y, label) points."""
-    for pts, col, dy in ((nat, NAT_LIGHT, -9), (ours, OURS, 5)):
+    for pts, col, dy, mk in ((nat, NAT_LIGHT, -10, "o"), (ours, OURS, 5, "s")):
         pts = [p for p in pts if np.isfinite(p[1])]
         if not pts:
             continue
         x, y = [p[0] for p in pts], [p[1] for p in pts]
         if lines:
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
-        ax.scatter(x, y, s=18, color=col, zorder=3)
+        ax.scatter(x, y, s=18, color=col, marker=mk, zorder=3)
         for xi, yi, lab in pts:
             if lab:
-                ax.annotate(lab, (xi, yi), xytext=(0, dy), textcoords="offset points", fontsize=6.8,
+                ax.annotate(lab, (xi, yi), xytext=(0, dy), textcoords="offset points", fontsize=8,
                             color=OURS if col == OURS else NAT, ha="center")
     ys = [p[1] for p in nat + ours if np.isfinite(p[1])]
     lo, hi = min(ys), max(ys); pad = 0.14 * (hi - lo + 1)
@@ -59,13 +59,13 @@ def frontier(ax, nat, ours, title, xlog=False, lines=True):
         ax.set_xscale("log"); ax.minorticks_off()
     ax.set_title(title, fontsize=8.5, color=INK, pad=4)
     ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
-    ax.tick_params(labelsize=7)
+    ax.tick_params(labelsize=8)
 
 
-def legend(fig, ours, labels, y=1.1):
-    h = [plt.Line2D([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.4), plt.Line2D([], [], color=OURS, marker="o", ms=4, lw=1.4),
+def legend(fig, ours, labels, y=1.1, native="native n/n", ncol=3):
+    h = [plt.Line2D([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.4), plt.Line2D([], [], color=OURS, marker="s", ms=4, lw=1.4),
          plt.Line2D([], [], ls="none")]
-    fig.legend(h, ["native n/n", ours, labels], loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, y),
+    fig.legend(h, [native, ours, labels], loc="upper center", ncol=ncol, fontsize=8, bbox_to_anchor=(0.5, y),
                handlelength=1.6, frameon=False)
 
 
@@ -117,12 +117,12 @@ def fig2():
     """End to end (Ouro-2.6B-Thinking, GSM8K, batch 1): accuracy against seconds per answer."""
     E = {r["cond"]: (r["seconds"], r["acc"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"}
     nat = [(*E[f"native{n}st"], f"{n}/{n}") for n in (1, 2, 4) if f"native{n}st" in E]
-    ours = [(*E[c], lab) for c, lab in (("S41sb", "4/1"), ("S42sb", "4/2")) if c in E]
-    fig, ax = plt.subplots(figsize=(3.3, 2.2))
+    ours = [(*E[c], lab) for c, lab in (("S41sb", "4/1"), ("S22sb", "2/2"), ("S42sb", "4/2")) if c in E]
+    fig, ax = plt.subplots(figsize=(3.3, 2.4))
     frontier(ax, nat, ours, "", lines=False)   # 1/1 answers run longer than 2/2: a line would fold back
     ax.set_xlabel("seconds per answer (batch 1)", fontsize=8); ax.set_ylabel("GSM8K accuracy (%)", fontsize=8)
-    legend(fig, "loop adapter", "labels: prefill/decode loops", y=1.04)
-    fig.subplots_adjust(left=0.17, right=0.97, bottom=0.2, top=0.86)
+    legend(fig, "loop adapter", "labels: prefill/decode loops", y=1.02, ncol=2)
+    fig.subplots_adjust(left=0.15, right=0.98, bottom=0.18, top=0.8)
     save(fig, "fig2_frontier")
 
 
@@ -209,7 +209,7 @@ def fig_lev():
         ax.set_xticks(ns); ax.set_xlim(ns[0] - 0.4, ns[-1] + 0.4)
     axes[0][0].set_ylabel("accuracy (%)", fontsize=8.5)
     fig.supxlabel("decision loops n", fontsize=8.5, y=0.0)
-    legend(fig, "loop adapter, best prefill m", "labels: prefill loops m", y=1.0)
+    legend(fig, "trained with prefill m (best m)", "labels: prefill loops m", y=1.0, native="native n/n, continued (control)")
     fig.subplots_adjust(wspace=0.28, bottom=0.2, top=0.8)
     save(fig, "fig_lev")
 
@@ -293,7 +293,7 @@ def tab_select(model="Ouro-2.6B", name="tab_select"):
     def cell(r):
         if r is None:
             return "--"
-        d, lo, hi = r["diff"]
+        d, lo, hi = r["diff_select_aware"]           # intervals repeat the choice of m in every resample
         m = r["m_chosen"]
         mm = str(m[0]) if m[0] == m[1] else f"{m[0]},{m[1]}"
         v = (r"\up{%.1f}" if d >= 0 else r"\dn{%.1f}") % abs(d)

@@ -28,7 +28,7 @@ cd environments/ouro && uv sync && cd ../..          # torch, transformers 4.x (
   `ouro/scripts/prepare_think_mix.py` (same samples in the thinking chat template), `ouro/scripts/sn_prepare.py`
   (re-tokenised for SenseNova).
 - Benchmarks: `ouro/prepare_full_qa.py` (RULER 4K/8K/16K, 13 tasks x 40 rows), `ouro/prepare_helmet.py` (HELMET, 1,108
-  rows), `ouro/runs_scripts/mk_bench_mini.py` (the 260-row RULER-16K subset of Figure 1). GSM8K, MMLU, MMLU-Pro,
+  rows), `ouro/runs_scripts/mk_bench_mini.py` (the 260-row RULER-16K subset of the Pareto figure, Figure 5). GSM8K, MMLU, MMLU-Pro,
   ARC-Challenge, BBH and MATH-500 come from lm-evaluation-harness (`ouro/lmeval_tasks/` adds the zero-shot thinking tasks
   and MATH-500).
 
@@ -79,7 +79,7 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 | Figure 4 and its numbers table (Ouro-2.6B-Thinking, eight benchmarks) | `launch_think.sh` evaluations, `grid_q3_a2.txt` (prefill 1 / decode 2) | `paper_numbers.py` `equal` → `fig_equal`, `tab_equal` |
 | distillation table | `eval_t26d.sh` | `paper_numbers.py` (`Distillation baseline`) → `tab_distill` |
 | Pareto figure, throughput table | `tput_sb.sh` (`ouro/bench_throughput.py`) | `paper_numbers.py` `throughput`, `paper_figs.py fig_pareto` |
-| end-to-end time (Figure 7, timing table) | `ouro/scripts/e2e_latency.py` (batch 1, one idle GPU), `sn_e2e_after.sh` | `paper_numbers.py` (`RATIOS`) |
+| end-to-end time (Figure 6, timing table) | `ouro/scripts/e2e_latency.py` (batch 1, one idle GPU), `sn_e2e_after.sh` | `paper_numbers.py` (`RATIOS`) |
 | decision models (Lev), both directions | `ouro/lev/`, `ouro/runs_scripts/lev_mn.sh` | `paper_numbers.py` `lev` → `fig_lev`, `tab_lev` |
 | Ouro-1.4B-Thinking appendix | `t14_head.sh` | `paper_numbers.py` `equal` → `tab_equal` |
 | SenseNova and hybrid-state appendices | `sn_head.sh`, `sn_math_rest.sh`, `sn_rebalance*.sh`, `sn_arc_mix.sh`, `launch_sng.sh` | `paper_numbers.py` (`Hybrid state`, `sn_equal`) → `tab_hybrid`, `tab_sn` |

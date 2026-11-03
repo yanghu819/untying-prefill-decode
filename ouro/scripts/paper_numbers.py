@@ -80,6 +80,8 @@ SNG_KEYS = [("RULER-4K", "B:SNGnt-{c}:ruler4k"), ("RULER-8K", "B:SNGnt-{c}:ruler
             ("HELMET", "B:SNGnt-{c}-helmet:helmet")]
 
 CMP = []
+# Table 6 (design variants): unrestricted key maps, one prompt KV cache per decode loop, minus the loop adapter
+BANK = {"11": (0.1, -1.3, 1.5), "22": (0.6, -0.8, 2.0), "31": (-0.9, -2.9, 1.2), "32": (1.2, -0.4, 2.7), "42": (-1.0, -2.6, 0.5)}
 for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
              (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-1.7, -3.6, 0.2)]),
              (3, [(0.6, 0.2, 1.1), (-0.4, -3.0, 2.2), (-0.8, -2.4, 0.8)])):
@@ -122,7 +124,7 @@ CMP += [
     ("Table 6", "first-loop branch 4/1 GSM8K", gsm("X26-M41"), gsm("X26-S41"), (0.7, -0.8, 2.2)),
 ]
 for c in ("11", "22", "31", "32", "42"):
-    CMP.append(("Table 6", f"bank per loop {c[0]}/{c[1]} RULER-16K", ruler(f"X26-V{c}", 16), ruler(f"X26-S{c}", 16), None))
+    CMP.append(("Table 6", f"bank per loop {c[0]}/{c[1]} RULER-16K", ruler(f"X26-V{c}", 16), ruler(f"X26-S{c}", 16), BANK[c]))
 for seed, run in ((1, "X26"), (2, "X26s2")):
     CMP += [("Table 7", f"seed {seed} decode 1 GSM8K", gsm(f"{run}-S41"), gsm(f"{run}-S11"), None),
             ("Table 7", f"seed {seed} decode 1 MMLU", mmlu(f"{run}-S41"), mmlu(f"{run}-S11"), None),
@@ -399,8 +401,8 @@ def boot(a, b, reps=5000, groups=None):
 
 E2E = Path(__file__).resolve().parents[1] / "results" / "e2e"
 # (label, model prefix, task, A, B, printed ratio of mean seconds per answer A / B)
-RATIOS = [("2.6B-T GSM8K prefill 4/decode 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.46, 0.64)),
-          ("2.6B-T GSM8K prefill 4/decode 2 vs prefill 2/decode 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.91, 1.11)),
+RATIOS = [("2.6B-T GSM8K prefill 4/decode 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.45, 0.67)),
+          ("2.6B-T GSM8K prefill 4/decode 2 vs prefill 2/decode 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.90, 1.11)),
           ("2.6B-T MATH prefill 4/decode 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
           ("2.6B-T MATH prefill 4/decode 2 vs native 2/2", "think", "math", "S42sb", "native2st", (1.22, None, None)),
           ("SenseNova GSM8K prefill 1/decode 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
@@ -443,7 +445,9 @@ def e2e_table():
         r = dict(label=label, n=len(ids), ratio=round(ta.mean() / tb.mean(), 2), lo=round(float(np.percentile(bs, 2.5)), 2),
                  hi=round(float(np.percentile(bs, 97.5)), 2), printed=printed)
         ratios.append(r)
-        print(f"Sec 4.2      {label:52s} {r['ratio']:.2f}x [{r['lo']:.2f}, {r['hi']:.2f}]  n={len(ids)}  paper {printed}")
+        got = (r["ratio"], r["lo"], r["hi"])
+        flag = "  !! paper: " + str(printed) if printed and any(p is not None and abs(p - g) > 0.0051 for p, g in zip(printed, got)) else ""
+        print(f"Sec 4.2      {label:52s} {r['ratio']:.2f}x [{r['lo']:.2f}, {r['hi']:.2f}]  n={len(ids)}{flag}")
     return rows, ratios
 
 
@@ -626,9 +630,9 @@ def taskmap_cells():
     return out
 
 
-def select_aware(cells, nat, ids, half, reps=1000):
+def select_aware(cells, nat, ids, half, reps=5000):
     """Bootstrap that repeats the cross-fitted choice of m in every resample of the items, so the interval includes
-    the variability of the choice (Table 1 intervals fix it)."""
+    the variability of the choice (the intervals of Table 1; 5,000 draws, seed 0)."""
     rng = np.random.default_rng(0)
     ids = sorted(ids, key=str)
     A = np.array([[cells[m][i] for i in ids] for m in range(1, 5)])
@@ -671,9 +675,10 @@ def taskmap_select():
             row = dict(model=model, bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
                        native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")],
                        diff_select_aware=[round(r["diff"], 1), *select_aware(cells, nat, ids, half)])
+            ra = boot(picked, {i: cells[n][i] for i in picked})
             # within the adapter: the chosen m against the same adapter's m = n (isolates the prefill loops)
-            r = boot(picked, {i: cells[n][i] for i in picked})
-            row.update(adapter_nn=round(r["b"], 1), diff_adapter=[round(r[k], 1) for k in ("diff", "lo", "hi")])
+            row.update(adapter_nn=round(ra["b"], 1), diff_adapter=[round(ra[k], 1) for k in ("diff", "lo", "hi")],
+                       diff_adapter_select_aware=[round(ra["diff"], 1), *select_aware(cells, cells[n], ids, half)])
             # same-training control: LoRA distillation of native n/n (native 4/4 is the teacher itself)
             dist = None if dkey is None else nat if n == 4 else load(dkey.format(d=DISTILLED[n]))
             if dist is not None:
@@ -703,10 +708,11 @@ def taskmap_select():
     for model in ("Ouro-2.6B", "Ouro-1.4B"):
         for n in range(1, 5):
             rows = [r for r in out if r["n"] == n and r["model"] == model]
-            got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter"][1] > 0 for r in rows),
-                   sum(r["diff_adapter"][2] < 0 for r in rows), len(rows))
+            got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter_select_aware"][1] > 0 for r in rows),
+                   sum(r["diff_adapter_select_aware"][2] < 0 for r in rows), len(rows))
             # quoted in Section 4.2: (selection-aware significant, above adapter n/n, below adapter n/n, benchmarks)
-            printed = {("Ouro-2.6B", 1): (11, 8, 0, 13), ("Ouro-2.6B", 2): (9, 5, 0, 13)}.get((model, n))
+            printed = {("Ouro-2.6B", 1): (11, 6, 0, 13), ("Ouro-2.6B", 2): (9, 3, 0, 13), ("Ouro-1.4B", 1): (3, 2, 0, 5),
+                       ("Ouro-1.4B", 2): (1, 0, 0, 5)}.get((model, n))
             flag = f"  !! paper: {printed}" if printed and got != printed else ""
             print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "
                   f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")

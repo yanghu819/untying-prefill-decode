@@ -23,6 +23,15 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Codex round 5 (PDF pages attached, paper/codex_review_untie5.md; 10 objections). Applied: Table 1 intervals now
+  repeat the choice of m (5,000 draws): 11/13 and 9/13 (fixed choice: 12, 10); within the adapter 6/13 and 3/13; 1.4B
+  3/5 and 1/5; native comparisons described as the complete trained method; Figure 6 adds the same-adapter 2/2 point and
+  says the saving comes from the adapted decoder; MELT added and CDB described fully; hybrid conditions described as
+  holding post-block states at two visits; Lev scoped to seed-0 runs; map ablation and design-variant wording without
+  equivalence claims, unrestricted-key rows printed and guarded (BANK); stale timing guards fixed and now checked;
+  8-pt figure labels, square markers for the adapter; pseudocode uses a frozen native teacher and torch.randint;
+  reproducibility appendix lists what the script does not recompute. Not applied: heatmap for Lev (paper uses one line
+  style). Open: MATH-500 parser adjudication, distilled 2/2 timing, training-data overlap audit.
 - Codex fourth review (paper/codex_review_untie4.md): 3/5 borderline; recomputed every statistic, all match
   paper_numbers.json. Applied: "significantly" in every count of wins; GSM8K / HumanEval peaks stated per the data
   (two; three or four); Figure 1 = best m per n chosen on the evaluation items (held-out: Table 1); MBPP+ "ties" ->
