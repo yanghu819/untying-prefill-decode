@@ -187,37 +187,30 @@ def fig_pareto():
 
 
 def fig_lev():
-    """Decision models (Lev): accuracy at every number of decision loops n; ours prefills the context with 4 loops
-    (2 on Lev-3B), the natives use n loops for both."""
+    """Decision models (Lev): accuracy against the number of decision loops n. Grey: native n/n continued with the same
+    data and updates as ours; red: the best prefill count m at each n (labels), one continued training per m."""
     L = PN.get("lev", [])
     def series(label, which):
-        pts = sorted((r["depth"], r[which]) for r in L if r["label"] == label)
-        return [p[0] for p in pts], [p[1] for p in pts]
-    models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if any(r["label"] == f"{m} untied vs same-training control" for r in L)]
-    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.1), squeeze=False,
-                             gridspec_kw=dict(width_ratios=[4 if m != "Lev-3B" else 2.4 for m in models]))
+        return {r["depth"]: r[which] for r in L if r["label"] == label}
+    models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if series(f"{m} untied vs same-training control", "a")]
+    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.0), squeeze=False)
     for ax, m in zip(axes[0], models):
-        p = 2 if m == "Lev-3B" else 4
-        d, ours = series(f"{m} untied vs same-training control", "a")
-        _, ctl = series(f"{m} untied vs same-training control", "b")
-        orig = series(f"{m} control vs original", "b")[1] if any(r["label"] == f"{m} control vs original" for r in L) else None
-        x = np.arange(len(d)); w = 0.27
-        bars = ([("native n/n, released", orig, NAT_LIGHT)] if orig else []) + \
-               [("native n/n, trained like ours", ctl, NAT), ("ours: prefill 4 / decision n (Lev-3B: prefill 2)", ours, OURS)]
-        k0 = -(len(bars) - 1) / 2
-        for j, (lab, v, col) in enumerate(bars):
-            ax.bar(x + (k0 + j) * w, v, w, color=col, label=lab)
-        ax.set_xticks(x, [str(n) for n in d], fontsize=8); ax.tick_params(axis="x", length=0)
-        ax.set_ylim(0, 75)
-        ax.set_xlabel("decision loops n", fontsize=8.5)
-        ax.set_title(f"{m} (prefill {p})", fontsize=8.5, color=INK, pad=3)
-        ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-        for sp in ("top", "right"):
-            ax.spines[sp].set_visible(False)
+        top = 2 if m == "Lev-3B" else 4
+        by_m = {top: series(f"{m} untied vs same-training control", "a")}
+        by_m.update({k: series(f"{m} prefill {k} vs same-training control", "a") for k in range(1, top)})
+        by_m = {k: v for k, v in by_m.items() if v}
+        nat = series(f"{m} untied vs same-training control", "b")
+        ns = sorted(nat)
+        ours = []
+        for n in ns:
+            best = max((v[n], k) for k, v in by_m.items() if n in v)
+            ours.append((n, best[0], f"m={best[1]}"))
+        frontier(ax, [(n, nat[n], "") for n in ns], ours, m)
+        ax.set_xticks(ns); ax.set_xlim(ns[0] - 0.4, ns[-1] + 0.4)
     axes[0][0].set_ylabel("accuracy (%)", fontsize=8.5)
-    h, l = axes[0][0].get_legend_handles_labels()
-    fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.08), frameon=False)
-    fig.subplots_adjust(wspace=0.25)
+    fig.supxlabel("decision loops n", fontsize=8.5, y=-0.02)
+    legend(fig, "untied, best prefill m", "labels: prefill loops m", y=1.08)
+    fig.subplots_adjust(wspace=0.28)
     save(fig, "fig_lev")
 
 

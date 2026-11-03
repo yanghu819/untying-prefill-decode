@@ -461,7 +461,11 @@ LEV_CMP = [("Lev-1.4B untied vs same-training control", "rd4-1.4B-read4", "ctl-1
            # costs about twice the control's per update)
            ("Lev-1.4B untied vs control trained 2x", "rd4-1.4B-read4", "ctl2x-1.4B-read0"),  # d=1: +4.0 [2.1, 6.0]
            ("Lev-2.6B untied vs control trained 2x", "rd4-2.6B-read4", "ctl2x-2.6B-read0"),
-           ("Lev-3B untied vs control trained 2x", "rd2-3B-read2", "ctl2x-3B-read0")]
+           ("Lev-3B untied vs control trained 2x", "rd2-3B-read2", "ctl2x-3B-read0"),
+           # the other direction: fewer prefill loops (m < n), one continued training per prefill count m (lev_mn.sh)
+           *[(f"{m} prefill {k} vs same-training control", f"rd{k}-{s}-read{k}", f"ctl-{s}-read0")
+             for m, s, ks in (("Lev-1.4B", "1.4B", (1, 2, 3)), ("Lev-2.6B", "2.6B", (1, 2, 3)), ("Lev-3B", "3B", (1,)))
+             for k in ks]]
 
 
 def lev():
