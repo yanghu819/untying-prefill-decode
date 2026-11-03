@@ -69,7 +69,7 @@ benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 q
 cache. Each of the $n$ decode loops reads that cache through its own map: a learned scale on each rotary
 (RoPE) pair of the keys, which can be moved onto the query so the cache is never rewritten, and a value map applied
 after attention. Attention over the prompt and over the generated tokens is computed separately and combined into one
-softmax, as in blockwise (FlashAttention-style) attention. The prompt KV is stored once for every $n$: total
+softmax (joint softmax), as in blockwise (FlashAttention-style) attention. The prompt KV is stored once for every $n$: total
 KV $b(\ell+n\,t)$ instead of $b\,n(\ell+t)$, with $b$ bytes per token and loop and $\ell$, $t$ the prompt and answer length.}
 \label{fig:method}
 \end{figure*}
