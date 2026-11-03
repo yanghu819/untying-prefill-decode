@@ -46,7 +46,7 @@ Ouro-2.6B with the same number of decode loops significantly on 12 of 13 benchma
 points) and on 10 of 13 with two; at three or four decode loops results are mixed. On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point
 estimates than the native two-loop model on eight benchmarks (significantly on five), scores above a LoRA distillation
 of that model trained with the same data and teacher, and answers GSM8K in $0.55\times$ the time of the native four-loop
-model. Untying the loops also makes looped decision models more accurate when they decide with one loop.
+model.
 \end{abstract}
 
 \section{Introduction}
@@ -54,11 +54,10 @@ model. Untying the loops also makes looped decision models more accurate when th
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
-\caption{\textbf{The task map.} One loop adapter on frozen Ouro-2.6B, accuracy (\%) at every pair (prefill $m$,
-decode $n$). Each group of four bars is one number of decode loops $n$, with prefill $m=1$--4 from left to right; red marks
-the best $m$ at that $n$, and the black line is the native model with $n$ loops for both ($n/n$). The best prefill count
-differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All thirteen
-benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
+\caption{\textbf{The task map.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$. Grey: the native model
+with $n$ loops for prefill and decode ($n/n$). Red: one loop adapter with the best prefill count $m$ at that $n$ (labels).
+The best $m$ differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All
+thirteen benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
 \label{fig:grid}
 \end{figure*}
 
@@ -101,9 +100,7 @@ still 14 points ahead.
 Untying is more than distillation. On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point estimates than native 2/2 on
 eight benchmarks (Figure~\ref{fig:equal}) and above a LoRA distillation of native 2/2 trained with the same data and
 teacher, significantly on MMLU-Pro and ARC-Challenge; on 64 timed GSM8K problems it answers in $0.55\times$ the time of
-native 4/4 (Figure~\ref{fig:frontier}). The same untying carries over to looped decision models: Lev models that
-prefill their context with more loops than they decide with are 4.4--7.5 points more accurate at one decision loop on
-three backbones (Figure~\ref{fig:lev}).
+native 4/4 (Figure~\ref{fig:frontier}).
 
 Our contributions are a measurement of what prefill loops and decode loops each buy in looped language models, a loop
 adapter that unties them on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
@@ -257,11 +254,10 @@ intervals ($^*$: interval excludes zero). Score points on a 0--100 scale.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
-\caption{\textbf{Prefill 4 / decode 2: two decode loops, close to the quality of four.} Ouro-2.6B-Thinking on GSM8K,
-MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+ and HELMET (averaged over its categories). Every bar is a score
-minus native 2/2 on the same items, with a paired 95\% bootstrap interval. Light and dark red are the same loop adapter
-with two decode loops after two or four prefill loops; their difference is the effect of the prefill loops alone. Grey:
-native 4/4, which decodes with twice the loops. Table~\ref{tab:t14} gives every score.}
+\caption{\textbf{Prefill 4 / decode 2: two decode loops, close to the quality of four.} Ouro-2.6B-Thinking, score
+against the number of decode loops. Grey: native 2/2 and 4/4. Red: the loop adapter with prefill 4 / decode 2. Same items
+for all three in each panel; HELMET is averaged over its categories. Table~\ref{tab:t14} gives every score, the paired
+intervals and the same adapter at prefill 2 / decode 2.}
 \label{fig:equal}
 \end{figure*}
 
@@ -275,16 +271,6 @@ Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on al
 \label{fig:pareto}
 \end{figure*}
 
-\begin{figure*}[!t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{More prefill loops, fewer decision loops.} Lev looped decision models~\citep{lev} on the public LevBench
-development set (3,270 answerable questions), accuracy at each number of decision loops $n$. Red: the context is prefilled
-with four loops (two on Lev-3B, whose backbone has two) and the question and options run $n$ loops on that KV, i.e.\
-prefill 4 / decision $n$. Grey: the native model with $n$ loops for both, released (light) and continued with the same data
-and updates as ours (dark).}
-\label{fig:lev}
-\end{figure*}
 
 \subsection{The task map}
 \label{sec:taskmap}
@@ -324,7 +310,7 @@ twice the loops, it is within two points on six of the eight benchmarks and trai
 that this native-model contrast does not attribute to the prefill loops (Appendix~\ref{app:hurt}), and on MATH-500
 ($-4.8$\ci{-7.8}{-2.0}).
 
-The same adapter at \rw{2}{2} (light red) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
+The same adapter at \rw{2}{2} (Table~\ref{tab:t14}) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
 on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge and $+2.2$\ci{0.1}{4.3} on BBH, with no
 detectable difference on GSM8K, MATH-500 and MBPP+; the same holds on Ouro-1.4B-Thinking (Appendix~\ref{app:t14}).
 
@@ -347,10 +333,10 @@ at one or two decode loops and faster at three or four, because one stored promp
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Fewer decode loops save time end to end.} Ouro-2.6B-Thinking on GSM8K: accuracy and seconds per answer
-at batch 1 (prefill included, real greedy answers, the same 64 problems for every bar). Decoding with two loops takes
-$0.55\times$ the time of native 4/4, whether the prompt is prefilled with 2 or 4 loops; on all 1,319 problems prefill 4 /
-decode 2 is 1.0 point below native 4/4 (Section~\ref{sec:fast}). SenseNova-Loop-9B: Table~\ref{tab:e2e}.}
+\caption{\textbf{Fewer decode loops save time end to end.} Ouro-2.6B-Thinking on GSM8K: accuracy against seconds per
+answer at batch 1 (prefill included, real greedy answers, the same 64 problems for every point; labels: prefill/decode
+loops). Prefill 4 / decode 2 takes $0.55\times$ the time of native 4/4; on all 1,319 problems it is 1.0 point below native
+4/4 (Section~\ref{sec:fast}). Native 1/1 is slower than 2/2 because its answers are longer. SenseNova-Loop-9B: Table~\ref{tab:e2e}.}
 \label{fig:frontier}
 \end{figure}
 
@@ -364,30 +350,12 @@ saving is smaller: $0.63\times$ the time of \nat{4} but $1.22\times$ that of \na
 executions per token (32 vs.\ 56).
 
 
-\subsection{Decision models}
-\label{sec:lev}
-
-
-
-The split also serves looped decision models. Lev~\citep{lev} reads a context, then scores the options of a question
-with a learned head after every loop, without generating text. We prefill the context with four loops (two for Lev-3B,
-whose backbone has two), let every decision loop attend to the last prefill loop's KV, and continue training Lev's own LoRA
-and scoring head; the control continues the same weights on the same data and number of updates with Lev's own forward.
-We evaluate on the 3,270 answerable questions of LevBench's public development set (never its locked test set), with
-intervals over record groups as Lev does; setup and further checks are in Appendix~\ref{app:lev}.
-
-With one decision loop, prefilling with more loops raises accuracy by $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on
-Lev-2.6B and $+4.4$\ci{2.8}{6.1} on Lev-3B (Figure~\ref{fig:lev}); the advantage shrinks as decision loops are added; with all of them it is gone on
-the Ouro backbones and negative on Lev-3B ($-1.8$). It holds across training seeds (four per backbone; all significant except one Lev-3B seed) and
-against a control trained for twice as many updates ($+4.0$, $+5.5$, $+4.0$), so it is not explained by the extra
-computation of our training forward.
-
 \section{Conclusion}
 
 A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, with one
 stored prompt KV cache. The best prefill count depends on the checkpoint, the benchmark, its prompt and the decode
 budget; choosing it per benchmark pays most with one or two decode loops, where it beats native Ouro-2.6B on 12 and 10
-of 13 benchmarks, and untying also improves one-loop decisions of looped decision models.
+of 13 benchmarks.
 
 \section*{Limitations}
 \label{sec:limits}
@@ -703,9 +671,39 @@ at four ($+0.3$\ci{-1.5}{2.1}, $-0.8$\ci{-2.4}{0.8}, $-2.6$\ci{-4.2}{-1.1} at 4/
 first prefill loop's KV improves RULER-4K by $2.3$\ci{1.0}{3.6} points at prefill 4 / decode 1 and leaves GSM8K
 unchanged ($+0.7$\ci{-0.8}{2.2}).
 
-\section{Decision Models: Setup and Checks}
+\section{Looped Decision Models}
 \label{app:lev}
+\label{sec:lev}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
+\caption{\textbf{More prefill loops, fewer decision loops.} Lev looped decision models~\citep{lev} on the public LevBench
+development set (3,270 answerable questions), accuracy at each number of decision loops $n$. Red: the context is prefilled
+with four loops (two on Lev-3B, whose backbone has two) and the question and options run $n$ loops on that KV, i.e.\
+prefill 4 / decision $n$. Grey: the native model with $n$ loops for both, released (light) and continued with the same data
+and updates as ours (dark).}
+\label{fig:lev}
+\end{figure*}
+
+The same split applies to looped decision models. Lev~\citep{lev} reads a context, then scores the options of a question
+with a learned head after every loop, without generating text. We prefill the context with four loops (two for Lev-3B,
+whose backbone has two), let every decision loop attend to the last prefill loop's KV, and continue training Lev's own LoRA
+and scoring head; the control continues the same weights on the same data and number of updates with Lev's own forward.
+We evaluate on the 3,270 answerable questions of LevBench's public development set (never its locked test set), with
+intervals over record groups as Lev does; checks follow below.
+
+With one decision loop, prefilling with more loops raises accuracy by $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on
+Lev-2.6B and $+4.4$\ci{2.8}{6.1} on Lev-3B (Figure~\ref{fig:lev}); the advantage shrinks as decision loops are added; with all of them it is gone on
+the Ouro backbones and negative on Lev-3B ($-1.8$). It holds across training seeds (four per backbone; all significant except one Lev-3B seed) and
+against a control trained for twice as many updates ($+4.0$, $+5.5$, $+4.0$), so it is not explained by the extra
+computation of our training forward.
+
+Here we only prefill with as many loops as the backbone has ($m \ge n$); unlike the task map, we did not train
+decision models with fewer prefill than decision loops.
+
+
+\paragraph{Setup and checks.} 
 Both arms continue each released Lev model for 140 updates on the 8,925-record public S31 training subset with Lev's
 hyperparameters, from the same weights. Our reference forward runs the full sequence through both the prefill and the
 decision loops, so its training computation is about twice the control's. Without training, more prefill loops do not help
