@@ -528,6 +528,10 @@ def equal():
         if s22 is not None:
             r22 = boot(o, {i: s22[i] for i in ids})
             row.update(same22=round(r22["b"], 1), vs22=[round(r22[k], 1) for k in ("diff", "lo", "hi")])
+            r = boot({i: s22[i] for i in ids}, n2)   # figure: every bar is a difference to native 2/2
+            row["s22_vs2"] = [round(r[k], 1) for k in ("diff", "lo", "hi")]
+        r = boot(n4, n2)
+        row["n4_vs2"] = [round(r[k], 1) for k in ("diff", "lo", "hi")]
         out.append(row)
         print(f"Equal        {model} {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
               f"{row['vs2'][0]:+5.1f} [{row['vs2'][1]:+.1f}, {row['vs2'][2]:+.1f}] | 4/4 {row['native4']:5.1f} "

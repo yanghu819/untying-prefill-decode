@@ -54,10 +54,10 @@ model. Untying the loops also makes looped decision models more accurate when th
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
-\caption{\textbf{The task map.} One loop adapter on frozen Ouro-2.6B evaluated at every pair (prefill $m$, decode $n$),
-with the native model ($n/n$) below each column; accuracy (\%). Each panel has its own colour scale, shared by the
-grid and the native row; outlines mark the best prefill count $m$ at each number of decode loops $n$. The best
-prefill count differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All thirteen
+\caption{\textbf{The task map.} One loop adapter on frozen Ouro-2.6B, accuracy (\%) at every pair (prefill $m$,
+decode $n$). Each group of four bars is one number of decode loops $n$, with prefill $m=1$--4 from left to right; red marks
+the best $m$ at that $n$, and the black line is the native model with $n$ loops for both ($n/n$). The best prefill count
+differs by benchmark: one loop for 4-shot MATH-500 and MBPP+, three or four for MMLU and GPQA-Diamond. All thirteen
 benchmarks are in Figure~\ref{fig:taskmapfull}; MMLU and GSM8K are subsets (20 questions per subject, 400 problems).}
 \label{fig:grid}
 \end{figure*}
@@ -257,11 +257,11 @@ intervals ($^*$: interval excludes zero). Score points on a 0--100 scale.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
-\caption{\textbf{Prefill 4 / decode 2: two decode loops, close to the quality of four.} Ouro-2.6B-Thinking
-on standard benchmarks (GSM8K, MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+, and HELMET averaged over its
-categories); prefill 4 / decode 2 uses one loop adapter and one stored prompt KV cache. ``Adapter 4/2'' and ``adapter 2/2'' are the same loop adapter at prefill 4 or 2 with decode 2; the hollow circles
-separate the effect of training from that of the prefill loops. All models are scored on identical evaluation sets; Table~\ref{tab:t14} gives every score and paired
-interval.}
+\caption{\textbf{Prefill 4 / decode 2: two decode loops, close to the quality of four.} Ouro-2.6B-Thinking on GSM8K,
+MATH-500, MMLU-Pro, ARC-Challenge, BBH, HumanEval, MBPP+ and HELMET (averaged over its categories). Every bar is a score
+minus native 2/2 on the same items, with a paired 95\% bootstrap interval. Light and dark red are the same loop adapter
+with two decode loops after two or four prefill loops; their difference is the effect of the prefill loops alone. Grey:
+native 4/4, which decodes with twice the loops. Table~\ref{tab:t14} gives every score.}
 \label{fig:equal}
 \end{figure*}
 
@@ -278,10 +278,11 @@ Ouro-2.6B on the grid subsets of Figure~\ref{fig:grid}; Ouro-2.6B-Thinking on al
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{More prefill loops, fewer decision loops.} Lev looped decision models~\citep{lev} on the public LevBench development
-set (3,270 answerable questions): accuracy against the number of loops spent on the decision. Red: the context is prefilled
-with four loops (two on Nanbeige) and the question and options run $n$ loops on that KV; dark grey: the
-same continued training with Lev's own forward; dashed: the released model.}
+\caption{\textbf{More prefill loops, fewer decision loops.} Lev looped decision models~\citep{lev} on the public LevBench
+development set (3,270 answerable questions), accuracy at each number of decision loops $n$. Red: the context is prefilled
+with four loops (two on Lev-3B, whose backbone has two) and the question and options run $n$ loops on that KV, i.e.\
+prefill 4 / decision $n$. Grey: the native model with $n$ loops for both, released (light) and continued with the same data
+and updates as ours (dark).}
 \label{fig:lev}
 \end{figure*}
 
@@ -323,7 +324,7 @@ twice the loops, it is within two points on six of the eight benchmarks and trai
 that this native-model contrast does not attribute to the prefill loops (Appendix~\ref{app:hurt}), and on MATH-500
 ($-4.8$\ci{-7.8}{-2.0}).
 
-The same adapter at \rw{2}{2} (hollow circles) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
+The same adapter at \rw{2}{2} (light red) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
 on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge and $+2.2$\ci{0.1}{4.3} on BBH, with no
 detectable difference on GSM8K, MATH-500 and MBPP+; the same holds on Ouro-1.4B-Thinking (Appendix~\ref{app:t14}).
 
@@ -346,11 +347,10 @@ at one or two decode loops and faster at three or four, because one stored promp
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Fewer decode loops save time end to end.} Accuracy vs.\ seconds per answer at batch 1 (prefill included,
-real greedy answers, the same 64 GSM8K problems for every point). Top: decoding with two loops takes $0.55\times$ the
-time of native 4/4, whether the prompt is prefilled with 2 or 4 loops; on all 1,319 problems prefill 4 / decode 2 is 1.0 point below
-native 4/4 (Section~\ref{sec:fast}). Bottom: on SenseNova-Loop-9B, whose native one-loop model solves 2.2\% of all GSM8K
-problems, prefill 1 / decode 1 is 1.6 points below native 2/2 at $0.59\times$ the time (y axis zoomed).}
+\caption{\textbf{Fewer decode loops save time end to end.} Ouro-2.6B-Thinking on GSM8K: accuracy and seconds per answer
+at batch 1 (prefill included, real greedy answers, the same 64 problems for every bar). Decoding with two loops takes
+$0.55\times$ the time of native 4/4, whether the prompt is prefilled with 2 or 4 loops; on all 1,319 problems prefill 4 /
+decode 2 is 1.0 point below native 4/4 (Section~\ref{sec:fast}). SenseNova-Loop-9B: Table~\ref{tab:e2e}.}
 \label{fig:frontier}
 \end{figure}
 

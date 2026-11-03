@@ -83,86 +83,46 @@ def fig0():
 
 
 def fig2():
-    """End to end: accuracy vs seconds per answer (batch 1)."""
-    fig, axes = plt.subplots(2, 1, figsize=(3.3, 4.3), gridspec_kw=dict(height_ratios=[1.35, 1]))   # one column
-    names = {"native1st": "native 1/1", "native2st": "native 2/2", "native4st": "native 4/4", "S41sb": "prefill 4 / decode 1",
-             "S22sb": "prefill 2 / decode 2", "S42sb": "prefill 4 / decode 2", "native2": "native 2/2", "C11": "prefill 1 / decode 1",
-             "C21": "prefill 2 / decode 1"}
-    E = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm" and r["cond"] in names}
-    S = {names[r["cond"]]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "sn" and r["task"] == "gsm" and r["cond"] in names}
-    ratio = {r["label"]: r["ratio"] for r in PN["e2e_ratios"]}
-
-    def point(ax, P, n, ours, dx, dy, ha="left", hollow=False):
-        c = OURS if ours else NAT
-        ax.scatter(P[n][1], P[n][0], s=30 if ours else 24, color="white" if hollow else c, edgecolor=c if hollow else "white",
-                   lw=1.0 if hollow else 0.5, zorder=4 if hollow else 3)
-        if dx or dy:  # (0, 0): labelled by a separate callout
-            ax.annotate(n, (P[n][1], P[n][0]), xytext=(dx, dy), textcoords="offset points", fontsize=8,
-                        color=OURS if ours else INK, ha=ha, va="center")
-
-    def speed(ax, x0, x1, y, txt):
-        ax.annotate("", xy=(x1, y), xytext=(x0, y), arrowprops=dict(arrowstyle="-|>", color=OURS, lw=0.9))
-        ax.text((x0 + x1) / 2, y + 0.9 if y > 90 else y + 2.2, txt, color=OURS, fontsize=7, ha="center")
-
-    ax = axes[0]
-    for n, dx, dy, ha in (("native 1/1", 6, 0, "left"), ("native 2/2", 6, 0, "left"), ("native 4/4", 0, -9, "center")):
-        point(ax, E, n, False, dx, dy, ha)
-    point(ax, E, "prefill 4 / decode 1", True, 6, 6, "left")
-    point(ax, E, "prefill 4 / decode 2", True, 0, 0, "left")
-    point(ax, E, "prefill 2 / decode 2", True, 0, 0, "left", hollow=True)
-    r = ratio['2.6B-T GSM8K prefill 4/decode 2 vs native 4/4']
-    ax.annotate(f"prefill 2 or 4 / decode 2\n{r:.2f}× the time of native 4/4", (E["prefill 4 / decode 2"][1], E["prefill 4 / decode 2"][0]),
-                xytext=(-2, -12), textcoords="offset points", fontsize=8, color=OURS, ha="left", va="top")
-    ax.set_xlabel("seconds per answer"); ax.set_ylabel("GSM8K accuracy (%)")
-    ax.set_xlim(40, 125); ax.set_ylim(55, 104)
-    ax.set_title("Ouro-2.6B-Thinking", fontsize=9, color=INK, pad=3)
-    ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    ax = axes[1]
-    point(ax, S, "native 2/2", False, -6, 0, "right")
-    point(ax, S, "prefill 2 / decode 1", True, 6, -6, "left")
-    point(ax, S, "prefill 1 / decode 1", True, 0, 0, "left")
-    r = ratio['SenseNova GSM8K prefill 1/decode 1 vs native 2/2']
-    ax.annotate(f"prefill 1 / decode 1\n{r:.2f}× the time of native 2/2", (S["prefill 1 / decode 1"][1], S["prefill 1 / decode 1"][0]),
-                xytext=(8, 0), textcoords="offset points", fontsize=8, color=OURS, ha="left", va="center")
-    ax.text(0.97, 0.04, "y: 90–100%", transform=ax.transAxes, fontsize=7.5, color=NAT, ha="right")
-    ax.set_xlabel("seconds per answer"); ax.set_xlim(20, 55); ax.set_ylim(90, 100.5)
-    ax.set_title("SenseNova-Loop-9B", fontsize=9, color=INK, pad=3)
-    ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    ax.set_ylabel("GSM8K accuracy (%)")
-    fig.subplots_adjust(hspace=0.55)
+    """End to end (Ouro-2.6B-Thinking, GSM8K, batch 1): accuracy and seconds per answer, one bar per configuration."""
+    names = [("native1st", "native 1/1"), ("native2st", "native 2/2"), ("native4st", "native 4/4"),
+             ("S41sb", "prefill 4 / decode 1"), ("S22sb", "prefill 2 / decode 2"), ("S42sb", "prefill 4 / decode 2")]
+    E = {r["cond"]: (r["acc"], r["seconds"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"}
+    rows = [(lab, *E[c], c.startswith("S")) for c, lab in names if c in E]
+    fig, axes = plt.subplots(1, 2, figsize=(3.3, 2.0), sharey=True)
+    y = np.arange(len(rows))[::-1]
+    for ax, k, xl, lim in ((axes[0], 1, "GSM8K accuracy (%)", 100), (axes[1], 2, "seconds per answer", 130)):
+        for yi, r in zip(y, rows):
+            ax.barh(yi, r[k], height=0.62, color=OURS if r[3] else NAT_LIGHT)
+            ax.text(r[k] + lim * 0.02, yi, f"{r[k]:.0f}", va="center", fontsize=7, color=INK)
+        ax.set_xlim(0, lim * 1.13); ax.set_xlabel(xl, fontsize=7.5); ax.tick_params(axis="x", labelsize=6.5)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0].set_yticks(y, [r[0] for r in rows], fontsize=7.5); axes[0].tick_params(axis="y", length=0)
+    fig.subplots_adjust(wspace=0.12, left=0.36, right=0.98, bottom=0.2, top=0.97)
     save(fig, "fig2_frontier")
 
 
-
 def fig_equal():
-    """The headline: reading 4 loops and writing 2 has the decode depth of native 2/2 and nearly the quality of 4/4."""
-    E = {e["bench"]: e for e in PN["equal"] if e.get("model", "2.6B-T") == "2.6B-T"}   # all three models on the same items per benchmark
+    """Ouro-2.6B-Thinking: every configuration minus native 2/2, with paired 95% bootstrap intervals."""
+    E = {e["bench"]: e for e in PN["equal"] if e.get("model", "2.6B-T") == "2.6B-T"}
     benches = ["GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"]
-    rows = np.array([(E[b]["native2"], E[b]["ours"], E[b]["native4"]) for b in benches])
-    fig, ax = plt.subplots(figsize=(6.9, 2.8))
-    y = np.arange(len(benches))[::-1]
-    for yi, (n2, ours, n4) in zip(y, rows):
-        ax.plot([n2, ours], [yi, yi], color="#D4D4D4", lw=1.0, zorder=1)
-    s22 = [(yi, E[b]["same22"]) for yi, b in zip(y, benches) if "same22" in E[b]]
-    if s22:   # the same adapter reading 2 loops: separates adaptation from reading depth
-        ax.scatter([v for _, v in s22], [yi - 0.12 for yi, _ in s22], s=30, facecolors="white", edgecolors=OURS,
-                   linewidths=1.2, zorder=3.5, label="adapter 2/2")
-    ax.scatter(rows[:, 0], y, s=26, color="#A6A6A6", zorder=2, label="native 2/2")
-    ax.scatter(rows[:, 2], y, s=70, marker="|", color=NAT, linewidths=1.6, zorder=3, label="native 4/4")
-    ax.scatter(rows[:, 1], y + 0.12, s=34, color=OURS, zorder=4, label="adapter 4/2")
-    for yi, v in zip(y, rows[:, 1]):
-        ax.annotate(f"{v:.0f}", (v, yi + 0.12), xytext=(5, 3), textcoords="offset points", fontsize=8, color=OURS)
-    ax.set_yticks(y, benches, fontsize=8.5)
-    ax.set_xlim(40, 102); ax.set_xticks([40, 60, 80, 100]); ax.set_xlabel("score (%)")
-    ax.grid(axis="x", color="#E8E8E8", lw=0.5, zorder=0); ax.set_axisbelow(True)
-    for sp in ("left", "top", "right"):
+    series = [("adapter: prefill 2 / decode 2", "s22_vs2", OURS_LIGHT), ("adapter: prefill 4 / decode 2", "vs2", OURS),
+              ("native 4/4", "n4_vs2", NAT)]
+    fig, ax = plt.subplots(figsize=(6.9, 2.3))
+    x = np.arange(len(benches)); w = 0.26
+    for j, (lab, key, col) in enumerate(series):
+        d = np.array([E[b].get(key, [np.nan] * 3) for b in benches], dtype=float)
+        ax.bar(x + (j - 1) * w, d[:, 0], w, color=col, label=lab,
+               yerr=[d[:, 0] - d[:, 1], d[:, 2] - d[:, 0]], error_kw=dict(lw=0.7, capsize=1.5, ecolor="#555555"))
+    ax.axhline(0, color=INK, lw=0.8)
+    ax.set_xticks(x, benches, fontsize=8.5); ax.tick_params(axis="x", length=0)
+    ax.set_ylabel("score minus native 2/2", fontsize=8.5)
+    ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
+    for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
-    ax.tick_params(axis="y", length=0)
-    h, l = ax.get_legend_handles_labels()
-    order = [l.index(x) for x in ("native 2/2", "adapter 2/2", "adapter 4/2", "native 4/4") if x in l]
-    ax.legend([h[k] for k in order], [l[k] for k in order], loc="lower center", ncol=len(order), fontsize=8.5,
-              bbox_to_anchor=(0.45, 1.0), columnspacing=1.2, handletextpad=0.4)
+    ax.legend(loc="lower center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.0), frameon=False)
     save(fig, "fig_equal")
+
 
 def _tput(cond):
     """Best decode tokens/s over tested batch sizes at 8K context, one B300 (results/throughput-sb4)."""
@@ -210,27 +170,37 @@ def fig_pareto():
 
 
 def fig_lev():
-    """Decision models (Lev): accuracy vs decision depth; reading the context with 4 loops after training."""
+    """Decision models (Lev): accuracy at every number of decision loops n; ours prefills the context with 4 loops
+    (2 on Lev-3B), the natives use n loops for both."""
     L = PN.get("lev", [])
     def series(label, which):
         pts = sorted((r["depth"], r[which]) for r in L if r["label"] == label)
         return [p[0] for p in pts], [p[1] for p in pts]
     models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if any(r["label"] == f"{m} untied vs same-training control" for r in L)]
-    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.2), squeeze=False, sharey=False)
+    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.1), squeeze=False,
+                             gridspec_kw=dict(width_ratios=[4 if m != "Lev-3B" else 2.4 for m in models]))
     for ax, m in zip(axes[0], models):
+        p = 2 if m == "Lev-3B" else 4
         d, ours = series(f"{m} untied vs same-training control", "a")
         _, ctl = series(f"{m} untied vs same-training control", "b")
-        _, orig = series(f"{m} control vs original", "b") if any(r["label"] == f"{m} control vs original" for r in L) else (d, None)
-        if orig:
-            ax.plot(d, orig, "--", color=NAT_LIGHT, marker="o", ms=3.5, lw=1.2, label="released")
-        ax.plot(d, ctl, "-", color=NAT, marker="o", ms=3.5, lw=1.4, label="continued training")
-        ax.plot(d, ours, "-", color=OURS, marker="o", ms=4, lw=1.6, label="untied prefill / decision")
-        ax.set_xticks(d); ax.set_xlabel("decision loops n"); ax.set_title(m + (" (Nanbeige, prefill 2)" if m == "Lev-3B" else " (Ouro, prefill 4)"), fontsize=8.5, color=INK, pad=3)
+        orig = series(f"{m} control vs original", "b")[1] if any(r["label"] == f"{m} control vs original" for r in L) else None
+        x = np.arange(len(d)); w = 0.27
+        bars = ([("native n/n, released", orig, NAT_LIGHT)] if orig else []) + \
+               [("native n/n, trained like ours", ctl, NAT), ("ours: prefill 4 / decision n (Lev-3B: prefill 2)", ours, OURS)]
+        k0 = -(len(bars) - 1) / 2
+        for j, (lab, v, col) in enumerate(bars):
+            ax.bar(x + (k0 + j) * w, v, w, color=col, label=lab)
+        ax.set_xticks(x, [str(n) for n in d], fontsize=8); ax.tick_params(axis="x", length=0)
+        ax.set_ylim(0, 75)
+        ax.set_xlabel("decision loops n", fontsize=8.5)
+        ax.set_title(f"{m} (prefill {p})", fontsize=8.5, color=INK, pad=3)
         ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
-    axes[0][0].set_ylabel("accuracy (%)")
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0][0].set_ylabel("accuracy (%)", fontsize=8.5)
     h, l = axes[0][0].get_legend_handles_labels()
-    fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.6)
-    fig.subplots_adjust(wspace=0.28)
+    fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.08), frameon=False)
+    fig.subplots_adjust(wspace=0.25)
     save(fig, "fig_lev")
 
 
@@ -266,18 +236,14 @@ def tab_sn():
 
 
 def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
-    """Task map: Ouro-2.6B, one loop adapter, accuracy at every (prefill m, decode n), with native n/n below each column.
-    Per-panel colour scale; the best cell is outlined. `only`: panel titles to draw (main text), else all."""
-    M = {x["label"]: x["mean"] for x in (PN["means"].values() if isinstance(PN["means"], dict) else PN["means"])
-         if x.get("section") in ("Task map", "Figure 1")}
-    panels = [("MMLU", "MMLU (20/subject)", "{c} MMLU (20/subject)"), ("MMLU-Pro", "MMLU-Pro", "{c} MMLU-Pro"),
-              ("ARC-C", "ARC-C", "{c} ARC-C"), ("GPQA-Diamond", "GPQA-Diamond", "{c} GPQA-Diamond"),
-              ("RULER-4K", "RULER-4K", "{c} RULER-4K"), ("RULER-16K", "RULER-16K", "{c} RULER-16K"),
-              ("BBH", "BBH 3-shot", "{c} BBH 3-shot"), ("IFEval", "IFEval", "{c} IFEval"),
-              ("GSM8K", "GSM8K (400)", "{c} GSM8K (400)"), ("MATH-500 4-shot", "MATH-500 4-shot", "{c} MATH-500 4-shot"),
-              ("HumanEval", "HumanEval", "{c} HumanEval"), ("MBPP+", "MBPP+", "{c} MBPP+")]
+    """Task map as bars: Ouro-2.6B, one loop adapter. Per benchmark, a group per number of decode loops n with one bar
+    per prefill count m = 1..4 (the best m in red, the others grey) and native n/n as a black line across the group."""
+    M = {x["label"]: x["mean"] for x in PN["means"] if x.get("section") in ("Task map", "Figure 1")}
     PAR = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Pareto"}
-    panels += [("RULER-8K", "RULER-8K", "{c} RULER-8K")]
+    panels = [("MMLU", "{c} MMLU (20/subject)"), ("MMLU-Pro", "{c} MMLU-Pro"), ("ARC-C", "{c} ARC-C"),
+              ("GPQA-Diamond", "{c} GPQA-Diamond"), ("BBH", "{c} BBH 3-shot"), ("IFEval", "{c} IFEval"),
+              ("GSM8K", "{c} GSM8K (400)"), ("MATH-500 4-shot", "{c} MATH-500 4-shot"), ("HumanEval", "{c} HumanEval"),
+              ("MBPP+", "{c} MBPP+"), ("RULER-4K", "{c} RULER-4K"), ("RULER-8K", "{c} RULER-8K"), ("RULER-16K", "{c} RULER-16K")]
     if only:
         panels = [p for t in only for p in panels if p[0] == t]
     def val(fmt, c):
@@ -290,42 +256,34 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
             return r["b"] if r else np.nan
         return np.nan
     nrows = -(-len(panels) // ncols)
-    fig, axes = plt.subplots(nrows, ncols, figsize=(6.9, 2.07 * nrows), squeeze=False)
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6.9, 1.75 * nrows + 0.35), squeeze=False)
     for ax in axes.flat[len(panels):]:
         ax.axis("off")
-    for ax, (title, _, fmt) in zip(axes.flat, panels):
-        A = np.full((5, 4), np.nan)
-        for m in range(1, 5):
-            for n in range(1, 5):
-                A[m - 1, n - 1] = val(fmt, f"S{m}{n}")
+    w = 0.19
+    for ax, (title, fmt) in zip(axes.flat, panels):
         for n in range(1, 5):
-            A[4, n - 1] = val(fmt, f"native{n}")
-        lo, hi = np.nanmin(A) if np.isfinite(A).any() else 0, np.nanmax(A) if np.isfinite(A).any() else 1
-        norm = plt.Normalize(lo - 0.15 * (hi - lo + 1e-9), hi)
-        from matplotlib.colors import LinearSegmentedColormap
-        cmap = LinearSegmentedColormap.from_list("w2r", ["#FFFFFF", OURS])
-        for i in range(5):
-            for j in range(4):
-                v = A[i, j]; y = 4 - i + (0 if i < 4 else -0.25)
-                fc = "#F2F2F2" if not np.isfinite(v) else cmap(norm(v))      # native row: same scale as the grid
-                ax.add_patch(plt.Rectangle((j, y), 1, 1 if i < 4 else 0.9, fc=fc, ec="white", lw=1.2))
-                if np.isfinite(v):
-                    ax.text(j + 0.5, y + (0.5 if i < 4 else 0.45), f"{v:.0f}", ha="center", va="center", fontsize=7.6,
-                            color="white" if norm(v) > 0.62 else INK)
-        for j in range(4):   # best prefill count m at each number of decode loops n (unrounded scores)
-            col = A[:4, j]
-            if np.isfinite(col).all():
-                bi = int(np.nanargmax(col))
-                ax.add_patch(plt.Rectangle((j + 0.05, 4 - bi + 0.05), 0.9, 0.9, fill=False, ec="#202020", lw=0.9))
-        ax.set_xlim(0, 4); ax.set_ylim(-0.3, 5); ax.set_aspect("equal")
-        ax.set_xticks([0.5, 1.5, 2.5, 3.5], ["1", "2", "3", "4"], fontsize=7.5)
-        ax.set_yticks([0.15, 1.5, 2.5, 3.5, 4.5], ["native", "4", "3", "2", "1"], fontsize=7.5)
-        ax.tick_params(length=0, pad=1.5)
-        for sp in ax.spines.values():
-            sp.set_visible(False)
-        ax.set_title(title, fontsize=9, color=INK, pad=2)
-    fig.supxlabel("decode loops n", fontsize=9.5, y=0.02); fig.supylabel("prefill loops m", fontsize=9.5, x=0.01)
-    fig.subplots_adjust(wspace=0.12, hspace=0.28, left=0.07, right=0.995, top=0.96, bottom=0.07 if nrows > 2 else 0.1)
+            v = np.array([val(fmt, f"S{m}{n}") for m in range(1, 5)])
+            best = int(np.nanargmax(v))
+            xs = n - 1 + (np.arange(4) - 1.5) * w
+            ax.bar(xs, v, w * 0.92, color=[OURS if i == best else "#C9C9C9" for i in range(4)])
+            nat = val(fmt, f"native{n}")
+            if np.isfinite(nat):
+                ax.hlines(nat, n - 1 - 2.1 * w, n - 1 + 2.1 * w, color=INK, lw=1.3)
+        ax.set_xticks(range(4), ["1", "2", "3", "4"], fontsize=7.5); ax.tick_params(axis="x", length=0, pad=1.5)
+        ax.tick_params(axis="y", labelsize=6.5, length=2)
+        ax.set_ylim(0, 100 if title != "GPQA-Diamond" else 50)
+        ax.set_title(title, fontsize=8.5, color=INK, pad=2)
+        ax.grid(axis="y", color=GRID, lw=0.5); ax.set_axisbelow(True)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    from matplotlib.patches import Patch
+    from matplotlib.lines import Line2D
+    fig.legend([Patch(color="#C9C9C9"), Patch(color=OURS), Line2D([], [], color=INK, lw=1.3)],
+               ["prefill m = 1, 2, 3, 4 (left to right)", "best m at this n", "native n/n"],
+               loc="upper center", ncol=3, fontsize=8, frameon=False, bbox_to_anchor=(0.5, 1.0))
+    fig.supxlabel("decode loops n", fontsize=9, y=0.01); fig.supylabel("score (%)", fontsize=9, x=0.005)
+    fig.subplots_adjust(wspace=0.22, hspace=0.42, left=0.065, right=0.995, top=1 - 0.42 / (1.75 * nrows + 0.35),
+                        bottom=0.3 / (1.75 * nrows + 0.35))
     save(fig, name)
 
 
