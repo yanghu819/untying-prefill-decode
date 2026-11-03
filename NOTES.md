@@ -77,3 +77,6 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Ouro-1.4B replication (interim): MMLU-Pro cross-fitted m vs native n/n +17.9 / +6.2 / +2.9 / +0.5 (n = 1..4), ARC-C
   +17.2 / +4.2 / +1.1 / -0.1 - same shape as Ouro-2.6B. Code differs: MBPP+ best at prefill 2 (73-74) rather than 1.
   4-shot MATH grid pending.
+- Task maps complete. Ouro-2.6B: 220/220 cells; MBPP+ at four decode loops +18.5. Ouro-1.4B (own adapter; MATH 4-shot,
+  MBPP+, HumanEval, MMLU-Pro, ARC-C): chosen m beats native 1/1 significantly on 5 of 5 and native 2/2 on 3 of 5; the large
+  one-prefill-loop gains of 2.6B on math and code do not carry over (chosen m mostly 2-3). Appendix table tab:select14.

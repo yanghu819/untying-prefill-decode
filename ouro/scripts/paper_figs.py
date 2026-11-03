@@ -428,5 +428,5 @@ def tab_select(model="Ouro-2.6B", name="tab_select"):
 
 
 if __name__ == "__main__":
-    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select()
+    fig0(); fig1(); fig2(); fig3(); fig4(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14")
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

@@ -304,8 +304,10 @@ they do not include the variability of the choice. With one decode loop the chos
 benchmarks, by 5 to 21 points, and ties on MBPP+, where \nat{1} is already strong; with two decode loops it wins
 significantly on 10 of 13, including HumanEval ($+18.3$) and MBPP+ ($+15.6$). With three or four decode loops results are mixed: the native model, which also
 prefills with three or four loops, is about as good on most benchmarks and better on long-context retrieval (RULER) and
-slightly on BBH, while 4-shot MATH-500 gains 13.6 and 14.4 points at three and four decode loops and MBPP+ 18.0 at
-three (native 4/4 results for HumanEval and MBPP+ are pending). Comparisons with native models also include the effect of training the adapter; comparisons
+slightly on BBH, while 4-shot MATH-500 gains 13.6 and 14.4 points at three and four decode loops and MBPP+ 18.0 and
+18.5. On Ouro-1.4B, with its own adapter, the chosen $m$ beats \nat{1} significantly on all five benchmarks we map
+there and \nat{2} on three of five, while the large one-prefill-loop gains on math and code do not carry over
+(Appendix~\ref{app:models}). Comparisons with native models also include the effect of training the adapter; comparisons
 within the adapter isolate the prefill loops. Equal decode loops do not mean equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}
@@ -511,6 +513,25 @@ seed, full sets.}
 
 Table~\ref{tab:models} compares prefill counts at one decode loop within the same loop adapter on five checkpoints from
 two model families.
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+benchmark & decode 1 & decode 2 & decode 3 & decode 4 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_select_14.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Table~\ref{tab:select} on Ouro-1.4B} (its own loop adapter; five benchmarks): prefill loops chosen on
+one half of the items, scored on the other, minus native $n/n$ on the same items.}
+\label{tab:select14}
+\end{table*}
+
+Table~\ref{tab:select14} repeats the per-benchmark choice on Ouro-1.4B. As on Ouro-2.6B, the gain is largest with one
+decode loop and shrinks with more; unlike Ouro-2.6B, one prefill loop gives no large gain on 4-shot MATH-500 or MBPP+,
+where the chosen count is mostly two or three.
 
 \begin{table*}[t]
 \centering\small
