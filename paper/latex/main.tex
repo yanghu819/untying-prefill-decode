@@ -319,16 +319,15 @@ twice the loops, it is within two points on six of the eight benchmarks and trai
 recalls exact key--value pairs that more prefill loops lose (Appendix~\ref{app:hurt}), and on MATH-500
 ($-4.8$\ci{-7.8}{-2.0}).
 
-Part of the gain over \nat{2} comes from training the loop adapter, not from the loop counts. The same loop adapter prefilling with two loops
-(hollow circles; same weights, same training, same decode loops) isolates prefill loops: prefilling with four rather than two
-loops adds $+8.1$\ci{4.0}{12.1} on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge
-and $+2.2$\ci{0.1}{4.3} on BBH, and shows no detectable difference on GSM8K ($+0.2$), MATH-500 ($+0.2$) and MBPP+ ($-0.3$): the gains over \nat{2} on
-knowledge and long-context benchmarks track prefill loops, the others do not. The same holds on Ouro-1.4B-Thinking
-(Appendix~\ref{app:t14}).
+The same adapter at \rw{2}{2} (hollow circles) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
+on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge and $+2.2$\ci{0.1}{4.3} on BBH, with no
+detectable difference on GSM8K, MATH-500 and MBPP+; the same holds on Ouro-1.4B-Thinking (Appendix~\ref{app:t14}).
 
 Untying is not the same as distilling. A LoRA on native 2/2, trained with the same data, teacher and number of tokens
 as the loop adapter, gains on HELMET and BBH but not on knowledge; \rw{4}{2} scores above it on all eight benchmarks,
-significantly on MMLU-Pro ($+5.2$\ci{1.2}{9.3}) and ARC-Challenge ($+2.9$\ci{1.4}{4.4}).
+significantly on MMLU-Pro ($+5.2$\ci{1.2}{9.3}) and ARC-Challenge ($+2.9$\ci{1.4}{4.4}). On this zero-shot
+reasoning model the per-benchmark choice is the largest prefill count: \rw{1}{2} is below \rw{4}{2} on all eight
+benchmarks, significantly on seven, unlike the few-shot base model of Section~\ref{sec:taskmap}.
 
 
 
@@ -393,7 +392,8 @@ shallow model's decode cost, and the same holds for looped decision models.
 The prefill count is chosen per benchmark from half of its labeled items; we do not route individual prompts, and a
 choice need not transfer to an unseen task. The best count also depends on the prompt format: on the base model one
 prefill loop helps 4-shot MATH-500 but hurts zero-shot MATH-500 (Appendix~\ref{app:hurt}), and at two decode loops the
-zero-shot Thinking model is better with four prefill loops than with one on all eight benchmarks we test. With three or four decode loops the native model is better
+zero-shot Thinking model scores higher with four prefill loops than with one on all eight benchmarks we test
+(significantly on seven). With three or four decode loops the native model is better
 on long-context retrieval (RULER) and slightly on BBH. Gains against native models include training the adapter; the
 distillation control (Section~\ref{sec:rdws}) separates part of it. More prefill loops raise the time to first token,
 and equal decode loops do not mean equal latency; end-to-end time is measured at batch 1 on one GPU type, and throughput
