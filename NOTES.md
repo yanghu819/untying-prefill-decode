@@ -22,6 +22,17 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-03 (new agent)
+- Baseline recomputed on the cluster from a fresh clone: 0 printed values differ.
+- Same-training controls for Table 1 launched. Table 1 compares the loop adapter with *untrained* native n/n; the
+  only distillation control so far is Ouro-2.6B-Thinking at 2/2. New: LoRA distillation of native 1/1, 2/2, 3/3 on base
+  Ouro-2.6B (arms E, D, H; `launch_x26_distill.sh`) with the adapter's data (mix-data-48m), teacher, 48M tokens, micro
+  and seed. The older X26-E/D/H runs (24M tokens, different micro) are not matched and are not used. Then all 13
+  benchmarks at the distilled n/n, so the chosen m can be compared with distilled n/n as well as native n/n.
+- Ouro-1.4B replication extended from 5 to 10 lm-eval benchmarks (GSM8K, MMLU, BBH, GPQA-Diamond, IFEval added;
+  `grid14b_q.txt`, 100 jobs on `grid_worker.sh`); RULER on 1.4B to follow.
+- Lev m < n (7 runs, `lev_mn.sh`) still running on a1.
+
 ### 2026-11-03
 - Handoff to a new agent: HANDOFF.md (state, rules, pipeline, pitfalls) and DEPRECATED.md (code kept only for
   imports). Deleted 44 per-item files the paper no longer uses, stale figure copies and superseded Codex reviews.
