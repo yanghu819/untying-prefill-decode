@@ -31,8 +31,17 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
     a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
     `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
-- **Next, in order of value**: distillation controls into Table 1 → Codex fact/figure review of the full PDF → ARR
-  checklist TODOs with the user → anonymized code mirror for review → final polish.
+- **Next, in order of value** (open Codex objections, paper/codex_review_untie6.md):
+  1. distillation controls into Table 1 (E48/D48/H48 now; corrected E48f/D48f/H48f with `--first-target` chained on a1
+     by `controls_first_chain.sh`; then also a corrected Thinking control T26-Df);
+  2. time the distilled 2/2 Thinking control with `ouro/scripts/e2e_latency.py` on the same 64 GSM8K problems
+     (and a larger fixed random sample; report TTFT, tokens, cap rates);
+  3. MATH-500 parser adjudication: responses where full-response math_verify and strict extraction disagree, S14 vs
+     S44 and S11 vs S41; report intended-answer correctness and format separately;
+  4. overlap audit of the adaptation mixture against every evaluation prompt (exact + near-duplicate), recompute on
+     unmatched items;
+  5. Codex review round 7 with the PDF (`~/.b300-handoff/codex_review.sh 7`) until no substantive objections remain;
+  6. ARR checklist TODOs with the user → anonymized code mirror → final polish.
 
 ## 2. The user's rules (all still in force)
 
