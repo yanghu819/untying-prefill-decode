@@ -603,6 +603,47 @@ def sn_equal():
               f"{row['vs_native2'][2]:+.1f}]")
     return out
 
+def taskmap_specs():
+    """(model, benchmark, cell key with {c}, native key with {n}, distilled key with {d} or None) for every task map."""
+    specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc", "L:o26x-{d}-mmlu:acc"),
+             ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF, "L:o26x-{d}-gsm:" + GF)]
+    specs += [(bench, key, key.replace("{c}", "native{n}"), key.replace("{c}", "{d}")) for bench, key in TASK_MAP]
+    return [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"), None)
+                                                 for bench, key in TASK_MAP_14]
+
+
+def taskmap_cells():
+    """Appendix table of the full grid: mean of every (m, n) cell and of native n/n on each task-map benchmark."""
+    out = []
+    for model, bench, key, nkey, _ in taskmap_specs():
+        row = dict(model=model, bench=bench)
+        for n in range(1, 5):
+            for c, k in [(f"S{m}{n}", key.format(c=f"S{m}{n}")) for m in range(1, 5)] + [(f"native{n}", nkey.format(n=n))]:
+                v = load(k)
+                if v is not None:
+                    row[c] = round(100 * float(np.mean(list(v.values()))), 1)
+        out.append(row)
+    return out
+
+
+def select_aware(cells, nat, ids, half, reps=1000):
+    """Bootstrap that repeats the cross-fitted choice of m in every resample of the items, so the interval includes
+    the variability of the choice (Table 1 intervals fix it)."""
+    rng = np.random.default_rng(0)
+    ids = sorted(ids, key=str)
+    A = np.array([[cells[m][i] for i in ids] for m in range(1, 5)])
+    b = np.array([nat[i] for i in ids]); h = np.array([half(i) for i in ids])
+    diffs = []
+    for _ in range(reps):
+        x = rng.integers(0, len(ids), len(ids)); total = 0.0
+        for f in (0, 1):
+            train, test = x[h[x] == f], x[h[x] == 1 - f]
+            m = int(np.argmax(A[:, train].mean(1)))        # ties: the smaller m, as in the main selection
+            total += (A[m, test] - b[test]).sum()
+        diffs.append(100 * total / len(x))
+    return [round(float(np.percentile(diffs, q)), 1) for q in (2.5, 97.5)]
+
+
 def taskmap_select():
     """Choose the prefill loops m per task without selection bias: for every benchmark and decode loops n, split the
     items in two halves (by a hash of the item id), pick the m with the best mean on one half, score it on the other
@@ -611,12 +652,7 @@ def taskmap_select():
     import hashlib
     half = lambda i: int(hashlib.md5(str(i).encode()).hexdigest(), 16) % 2
     out = []
-    specs = [("MMLU", "L:X26-{c}-mmlu:acc", "L:o26n{n}-mmlu:acc", "L:o26x-{d}-mmlu:acc"),
-             ("GSM8K", "L:X26-{c}-gsm:" + GF, "L:o26n{n}-gsm:" + GF, "L:o26x-{d}-gsm:" + GF)]
-    specs += [(bench, key, key.replace("{c}", "native{n}"), key.replace("{c}", "{d}")) for bench, key in TASK_MAP]
-    specs = [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"), None)
-                                                  for bench, key in TASK_MAP_14]
-    for model, bench, key, nkey, dkey in specs:
+    for model, bench, key, nkey, dkey in taskmap_specs():
         for n in range(1, 5):
             cells = {m: load(key.format(c=f"S{m}{n}")) for m in range(1, 5)}
             nat = load(nkey.format(n=n))
@@ -633,7 +669,11 @@ def taskmap_select():
                     picked[i] = cells[m_best][i]
             r = boot(picked, {i: nat[i] for i in picked})
             row = dict(model=model, bench=bench, n=n, m_chosen=chosen, items=len(picked), selected=round(r["a"], 1),
-                       native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")])
+                       native=round(r["b"], 1), diff=[round(r[k], 1) for k in ("diff", "lo", "hi")],
+                       diff_select_aware=[round(r["diff"], 1), *select_aware(cells, nat, ids, half)])
+            # within the adapter: the chosen m against the same adapter's m = n (isolates the prefill loops)
+            r = boot(picked, {i: cells[n][i] for i in picked})
+            row.update(adapter_nn=round(r["b"], 1), diff_adapter=[round(r[k], 1) for k in ("diff", "lo", "hi")])
             # same-training control: LoRA distillation of native n/n (native 4/4 is the teacher itself)
             dist = None if dkey is None else nat if n == 4 else load(dkey.format(d=DISTILLED[n]))
             if dist is not None:
@@ -660,6 +700,16 @@ def taskmap_select():
         got = (sum(r["diff"][1] > 0 for r in rows), len(rows))
         flag = "" if got == (wins, total) else f"  !! paper: {wins} of {total}"
         print(f"Select m     {model} significant wins at n={n}: {got[0]} of {got[1]}{flag}")
+    for model in ("Ouro-2.6B", "Ouro-1.4B"):
+        for n in range(1, 5):
+            rows = [r for r in out if r["n"] == n and r["model"] == model]
+            got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter"][1] > 0 for r in rows),
+                   sum(r["diff_adapter"][2] < 0 for r in rows), len(rows))
+            # quoted in Section 4.2: (selection-aware significant, above adapter n/n, below adapter n/n, benchmarks)
+            printed = {("Ouro-2.6B", 1): (11, 8, 0, 13), ("Ouro-2.6B", 2): (9, 5, 0, 13)}.get((model, n))
+            flag = f"  !! paper: {printed}" if printed and got != printed else ""
+            print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "
+                  f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")
     for n in (1, 2, 3):
         rows = [r for r in out if r["n"] == n and "diff_distilled" in r]
         if rows:
@@ -709,7 +759,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

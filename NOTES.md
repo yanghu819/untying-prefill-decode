@@ -23,6 +23,15 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Codex fourth review (paper/codex_review_untie4.md): 3/5 borderline; recomputed every statistic, all match
+  paper_numbers.json. Applied: "significantly" in every count of wins; GSM8K / HumanEval peaks stated per the data
+  (two; three or four); Figure 1 = best m per n chosen on the evaluation items (held-out: Table 1); MBPP+ "ties" ->
+  no significant difference; distillation "not on knowledge" -> not significantly; Lev wording limited to the runs
+  trained; Figure 4/5 titles narrowed; Figure 5 RULER is the 260-item set. New from existing scores: selection-aware
+  bootstrap (choice of m repeated in every resample) keeps 11/13 and 9/13 significant at n = 1, 2; within the adapter
+  the chosen m beats the adapter's own n/n on 8/13 and 5/13, never significantly below (isolates the prefill loops
+  from training). Full grid of the task map now a generated appendix table (tab_taskmap). Open from the review:
+  time the distilled 2/2 (after D48), MATH-500 parser adjudication, Lev seeds for m < n.
 - Baseline recomputed on the cluster from a fresh clone: 0 printed values differ.
 - Same-training controls for Table 1 launched. Table 1 compares the loop adapter with *untrained* native n/n; the
   only distillation control so far is Ouro-2.6B-Thinking at 2/2. New: LoRA distillation of native 1/1, 2/2, 3/3 on base

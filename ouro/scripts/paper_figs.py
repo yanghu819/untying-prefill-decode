@@ -340,6 +340,24 @@ def tab_lev():
     (OUT / "tab_lev.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_taskmap(model="Ouro-2.6B"):
+    """Appendix table: the full task map, every prefill m / decode n cell and native n/n on every benchmark; the best m
+    at each n in bold (LaTeX header and rows from paper_numbers.json, taskmap_cells)."""
+    rows = [r for r in PN.get("taskmap_cells", []) if r["model"] == model]
+    short = {"MATH-500 4-shot": "MATH", "BBH 3-shot": "BBH", "MMLU-Pro": "MMLU-P", "HumanEval": "HEval", "GPQA-Diamond": "GPQA",
+             "IFEval": "IFEv", "RULER-4K": "R-4K", "RULER-8K": "R-8K", "RULER-16K": "R-16K"}
+    lines = [" & " + " & ".join(short.get(r["bench"], r["bench"]) for r in rows) + r" \\", r"\midrule"]
+    for n in range(1, 5):
+        best = {r["bench"]: max((r.get(f"S{m}{n}", -1) for m in range(1, 5))) for r in rows}
+        for c, name in [(f"native{n}", rf"native {n}/{n}")] + [(f"S{m}{n}", rf"{m}\,/\,{n}") for m in range(1, 5)]:
+            vals = [r.get(c) for r in rows]
+            cell = lambda v, b: "--" if v is None else (rf"\textbf{{{v:.1f}}}" if c[0] == "S" and v == best[b] else f"{v:.1f}")
+            lines.append(f"{name} & " + " & ".join(cell(v, r["bench"]) for v, r in zip(vals, rows)) + r" \\")
+        if n < 4:
+            lines.append(r"\midrule")
+    (OUT / "tab_taskmap.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))
