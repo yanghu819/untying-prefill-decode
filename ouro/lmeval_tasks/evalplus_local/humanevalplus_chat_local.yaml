@@ -1,0 +1,23 @@
+# humanevalplus as Ouro's base-model evaluation ran it: evalplus's default for a tokenizer with a chat template (Ouro ships
+# one): the problem in evalplus's chat prompt (instruction and response prefix, rendered by
+# evalplus.provider.utility.make_raw_chat_prompt into <name>-chat.jsonl), greedy, 768 new tokens, stop at the closing
+# code fence; scored by ouro/scripts/score_evalplus.py (sanitized generation, base and plus tests).
+task: humanevalplus_chat_local
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: /root/.cache/evalplus/HumanEvalPlus-v0.1.10-chat.jsonl
+output_type: generate_until
+test_split: test
+doc_to_text: "{{chat_prompt}}"
+doc_to_target: "{{task_id}}"
+target_delimiter: ""
+generation_kwargs:
+  until: ["<|endoftext|>", "<|im_end|>", "</s>", "\nif __name__", "\ndef main(", "\nprint(", "\n```\n"]
+  max_gen_toks: 768
+  do_sample: false
+metric_list:
+  - metric: bypass
+num_fewshot: 0
+metadata:
+  version: 1.0

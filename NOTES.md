@@ -23,6 +23,16 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Evaluation protocol aligned with Ouro (paper Appendix C.1, Table 16). Our native 4/4 already matched Ouro on MMLU
+  (75.4 vs 74.6), MMLU-Pro (55.2 vs 55.7), BBH (80.4 vs 80.5) and ARC-C (66.5 vs 66.4), but not on code or MATH. Found:
+  (1) 4-shot MATH-500 "prefill 1 beats its teacher" is answer-format: with one prefill loop the model ignores the
+  exemplars' format and writes longer solutions (full-response verify 68.4, strict 18.6; prefill 4: 51.8 / 46.8);
+  (2) our "MBPP+" task scored only the first MBPP assertion, and on base 2.6B every prefill >= 2 drops Python
+  indentation in 35-63% of answers (prefill 1: <3%). Changes: GSM8K and MATH-500 scored with strict match (as Ouro);
+  code with evalplus as Ouro ran it (evalplus default for a tokenizer with a chat template; humanevalplus_chat_local /
+  mbppplus_chat_local + score_evalplus.py): native 4/4 HumanEval 75.6/69.5, MBPP 77.5/64.6 vs Ouro's 78.7/70.7 and
+  80.4/66.6. BBH and MMLU-Pro on the full sets; HellaSwag and Winogrande added (protocol_q.sh). The evalplus prompt
+  needs no trailing newline in direct completion (the reference transformers model emits end-of-text at once).
 - Overlap audit (ouro/scripts/overlap_audit.py; 13-gram token matches between every training sequence of mix-data-48m
   and each evaluation question): MATH-500 101/500, code 126/542, MMLU 106/14,042, BBH 75/6,511, MMLU-Pro 24/1,400,
   others <= 3. Without those items Table 1 keeps 11/13 and 9/13 (selection-aware) and the 4-shot MATH contrast is

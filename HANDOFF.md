@@ -32,6 +32,11 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
     `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
 - **Next, in order of value** (open Codex objections, paper/codex_review_untie6.md):
+  0. Evaluation protocol = Ouro's Table 16 (NOTES 2026-11-03): queues protocol_q.txt (full BBH / MMLU-Pro, HellaSwag,
+     Winogrande) and evalplus_q.txt (code, chat-format evalplus; score with score_evalplus.py, then pn_sync). Still to
+     queue: evalplus for T26-Df (evalplus_q.sh T26 on a1 after it trains), the 1.4B controls (X14-*), and the same
+     protocol for Ouro-1.4B (protocol_q.sh 14). Then switch paper_numbers to strict GSM8K/MATH, evalplus code and full
+     BBH / MMLU-Pro, and rewrite the MATH / code text: the one-prefill-loop gains there are answer format, not reasoning.
   1. distillation controls into Table 1 (E48/D48/H48 now; corrected E48f/D48f/H48f with `--first-target` on a1 (E) and a2
      (D on GPUs 0-3, H on 4-7) by `controls_first_chain.sh`; then also a corrected Thinking control T26-Df);
   2. time the distilled 2/2 Thinking control with `ouro/scripts/e2e_latency.py` on the same 64 GSM8K problems

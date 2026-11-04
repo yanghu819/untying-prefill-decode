@@ -7,7 +7,7 @@ dataset_kwargs:
     test: /root/.cache/evalplus/HumanEvalPlus-v0.1.10-prompts.jsonl
 output_type: generate_until
 test_split: test
-doc_to_text: "{{prompt}}"
+doc_to_text: "{{prompt.rstrip()}}"  # Ouro's tokenizer: after a trailing newline the reference model ends at once (BPE merges newline+indent)
 doc_to_target: "{{task_id}}"
 target_delimiter: ""
 generation_kwargs:
