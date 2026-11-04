@@ -444,7 +444,12 @@ normalised by the answer tokens in the global batch; teacher = native 4/4 with t
 micro-batch. 48M answer tokens: OpenThoughts reasoning traces 45\%, Tulu SFT responses 40\%, LongAlpaca long-context answers
 5\% and FineWeb-Edu windows 10\% (fractions of answer tokens); prompts up to 7,680 tokens, answers up to 1,024. Base models see
 a plain ``User: \ldots\ Assistant:'' format; thinking models see the same samples in their chat template. No benchmark
-data was deliberately included; we did not decontaminate the training corpora.
+data was deliberately included; we did not decontaminate the training corpora. An audit afterwards
+(\texttt{overlap\_audit.py}) finds a 13-token span shared with the training data in 101 of 500 MATH-500 questions,
+126 of 542 code prompts, 106 of 14,042 MMLU, 75 of 6,511 BBH, 24 of 1,400 MMLU-Pro and at most 3 items of the other
+benchmarks (RULER and HELMET are synthetic or long-document and not audited). Without those items the chosen $m$ of
+Table~\ref{tab:select} still wins significantly on 11 and 9 of 13 settings at one and two decode loops, and 4-shot
+MATH-500 at four decode loops gains $+19.0$\ci{14.0}{23.8} from one prefill loop instead of four (399 items).
 
 \paragraph{Optimisation.} AdamW ($\beta=(0.9,0.95)$, no weight decay), peak learning rate $10^{-4}$ with 2\% linear
 warm-up and cosine decay to $10^{-5}$, gradient clipping at 1.0, global batch 24 sequences on 4 B300 GPUs (6.75 hours for

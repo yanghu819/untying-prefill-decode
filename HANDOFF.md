@@ -38,8 +38,8 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
      (and a larger fixed random sample; report TTFT, tokens, cap rates);
   3. MATH-500 parser adjudication: responses where full-response math_verify and strict extraction disagree, S14 vs
      S44 and S11 vs S41; report intended-answer correctness and format separately;
-  4. overlap audit of the adaptation mixture against every evaluation prompt (exact + near-duplicate), recompute on
-     unmatched items;
+  4. overlap audit: done for mix-data-48m (Appendix A; results unchanged without overlapping items); still to run on
+     mix-think-48m for the Thinking results;
   5. Codex review round 7 with the PDF (`~/.b300-handoff/codex_review.sh 7`) until no substantive objections remain;
   6. ARR checklist TODOs with the user → anonymized code mirror → final polish.
 

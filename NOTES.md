@@ -23,6 +23,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Overlap audit (ouro/scripts/overlap_audit.py; 13-gram token matches between every training sequence of mix-data-48m
+  and each evaluation question): MATH-500 101/500, code 126/542, MMLU 106/14,042, BBH 75/6,511, MMLU-Pro 24/1,400,
+  others <= 3. Without those items Table 1 keeps 11/13 and 9/13 (selection-aware) and the 4-shot MATH contrast is
+  +19.0 [14.0, 23.8] (399 items). Appendix A; guarded. The Thinking mixture (mix-think-48m) is still to audit.
 - Distilled controls E48/D48/H48 complete (MMLU/GSM8K on full sets). Chosen m vs distilled n/n, selection-aware:
   above on 7 / 5 / 3 of 13 at n = 1 / 2 / 3, below on 1 / 1 / 3 (RULER; distillation alone helps short-context
   retrieval). Section 4.2 sentence + generated appendix table tab_selectdist; guard DISTILLED_COUNTS. These controls omit

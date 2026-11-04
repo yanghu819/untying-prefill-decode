@@ -679,7 +679,36 @@ def select_aware(cells, nat, ids, half, reps=5000):
     return [round(float(np.percentile(diffs, q)), 3) for q in (2.5, 97.5)]
 
 
-def taskmap_select():
+
+OVERLAP = Path(__file__).resolve().parents[1] / "results" / "overlap" / "mix-data-48m.json"
+
+
+def overlap_check():
+    """Items whose question shares a 13-gram with the adapters' training mixture (overlap_audit.py) are dropped and the
+    Ouro-2.6B selection of Table 1 and the 4-shot MATH-500 contrast are recomputed on the remaining items."""
+    if not OVERLAP.exists():
+        return {}
+    drop = {k for r in json.loads(OVERLAP.read_text())["runs"].values() for k in r["overlapping"]}
+    out = dict(dropped=len(drop))
+    rows = taskmap_select(exclude=drop, quiet=True)
+    for n in (1, 2):
+        sel = [r for r in rows if r["model"] == "Ouro-2.6B" and r["n"] == n]
+        out[f"n{n}"] = (sum(r["diff_select_aware"][1] > 0 for r in sel), len(sel))
+        flag = "" if out[f"n{n}"] == {1: (11, 13), 2: (9, 13)}[n] else "  !! paper: " + str({1: (11, 13), 2: (9, 13)}[n])
+        print(f"Overlap      Ouro-2.6B n={n} without overlapping items: significant with selection-aware intervals "
+              f"{out[f'n{n}'][0]} of {out[f'n{n}'][1]}{flag}")
+    a, b = load("L:o26x-S14-math:mvfull"), load("L:o26x-S44-math:mvfull")
+    if a and b:
+        keep = [i for i in a if i in b and i not in drop]
+        r = boot({i: a[i] for i in keep}, {i: b[i] for i in keep})
+        out["math_s14_s44"] = [round(r[k], 3) for k in ("diff", "lo", "hi")] + [len(keep)]
+        if any(abs(p - g) > 0.051 for p, g in zip((19.0, 14.0, 23.8), (r["diff"], r["lo"], r["hi"]))) or len(keep) != 399:
+            print("Overlap      !! paper: +19.0 [14.0, 23.8], 399 items")
+        print(f"Overlap      MATH-500 4-shot prefill 1 vs 4 at decode 4 without overlapping items: {r['diff']:+.1f} "
+              f"[{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f}, n={len(keep)})")
+    return out
+
+def taskmap_select(exclude=frozenset(), quiet=False):
     """Choose the prefill loops m per task without selection bias: for every benchmark and decode loops n, split the
     items in two halves (by a hash of the item id), pick the m with the best mean on one half, score it on the other
     half, and swap; every item is scored once by an m chosen without it. Compared with native n/n on the same items
@@ -693,7 +722,7 @@ def taskmap_select():
             nat = load(nkey.format(n=n))
             if nat is None or any(v is None for v in cells.values()):
                 continue
-            ids = set(nat).intersection(*(set(v) for v in cells.values()))
+            ids = set(nat).intersection(*(set(v) for v in cells.values())) - exclude
             folds = [[i for i in ids if half(i) == h] for h in (0, 1)]
             chosen, picked = [], {}
             for h in (0, 1):
@@ -721,8 +750,12 @@ def taskmap_select():
             out.append(row)
             vs_d = (f" | distilled {row['distilled']:5.1f} {row['diff_distilled'][0]:+5.1f} [{row['diff_distilled'][1]:+.1f}, "
                     f"{row['diff_distilled'][2]:+.1f}]") if "distilled" in row else ""
+            if quiet:
+                continue
             print(f"Select m     {model} {bench:16s} n={n} m={chosen} selected {row['selected']:5.1f} native {row['native']:5.1f} "
                   f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]{vs_d}")
+    if quiet:
+        return out
     # single values quoted in the text
     quoted = {("MATH-500 4-shot", 3): 13.6, ("MATH-500 4-shot", 4): 14.4, ("MBPP+", 3): 18.0, ("MBPP+", 4): 18.5, ("MBPP+", 2): 15.6,
               ("HumanEval", 2): 18.3}
@@ -799,7 +832,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
