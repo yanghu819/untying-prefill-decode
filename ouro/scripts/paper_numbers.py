@@ -251,7 +251,7 @@ TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF
                ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48f", 2: "D48f", 3: "H48f"}   # controls that also supervise the first answer token (--first-target)
-DISTILLED_COUNTS = {1: (9, 1, 15), 2: (0, 2, 12), 3: (1, 3, 14)}
+DISTILLED_COUNTS = {1: (9, 1, 15), 2: (1, 2, 13), 3: (1, 3, 14)}
 DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
@@ -710,7 +710,7 @@ def overlap_check():
     for n in (1, 2):
         sel = [r for r in rows if r["model"] == "Ouro-2.6B" and r["n"] == n]
         out[f"n{n}"] = (sum(r["diff_select_aware"][1] > 0 for r in sel), len(sel))
-        flag = "" if out[f"n{n}"] == {1: (14, 15), 2: (8, 14)}[n] else "  !! paper: " + str({1: (14, 15), 2: (8, 14)}[n])
+        flag = "" if out[f"n{n}"] == {1: (14, 15), 2: (8, 15)}[n] else "  !! paper: " + str({1: (14, 15), 2: (8, 15)}[n])
         print(f"Overlap      Ouro-2.6B n={n} without overlapping items: significant with selection-aware intervals "
               f"{out[f'n{n}'][0]} of {out[f'n{n}'][1]}{flag}")
     a, b = load("L:o26x-S14-math:exact_match"), load("L:o26x-S44-math:exact_match")
@@ -784,7 +784,7 @@ def taskmap_select(exclude=frozenset(), quiet=False):
             got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter_select_aware"][1] > 0 for r in rows),
                    sum(r["diff_adapter_select_aware"][2] < 0 for r in rows), len(rows))
             # quoted in Section 4.2: (selection-aware significant, above adapter n/n, below adapter n/n, benchmarks)
-            printed = {("Ouro-2.6B", 1): (14, 10, 0, 15), ("Ouro-2.6B", 2): (8, 2, 0, 14), ("Ouro-1.4B", 1): (13, 7, 0, 15),
+            printed = {("Ouro-2.6B", 1): (14, 10, 0, 15), ("Ouro-2.6B", 2): (8, 2, 0, 15), ("Ouro-1.4B", 1): (13, 7, 0, 15),
                        ("Ouro-1.4B", 2): (3, 1, 0, 15)}.get((model, n))
             flag = f"  !! paper: {printed}" if printed and got != printed else ""
             print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "

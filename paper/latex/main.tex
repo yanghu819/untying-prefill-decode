@@ -98,7 +98,7 @@ instead of one raises MMLU from 51.4 to 66.6 and HumanEval+ from 51.2 to 65.9. A
 diagonal of this map. Choosing $m$ for each benchmark on held-out halves of its items (Table~\ref{tab:select}) beats
 native Ouro-2.6B 1/1 significantly on 14 of 15 settings, by 4 to 21 points; it beats the same adapter at prefill 1 on 10,
 and native 1/1 distilled with LoRA on the same data and teacher on 9. With more decode loops the advantage shrinks: at two
-it is significant on 8 of 14 settings against the native model and matched by plain distillation, and at three or four
+it is significant on 8 of 15 settings against the native model and matched by plain distillation, and at three or four
 it is gone.
 
 On Ouro-2.6B-Thinking, prefill 4 / decode 2 scores above native 2/2 on all eight benchmarks (Figure~\ref{fig:equal}),
@@ -310,7 +310,7 @@ transfer to unseen tasks. The intervals of Table~\ref{tab:select} repeat the cho
 resample (the split into halves stays fixed), so they include the variability of the choice; significance is nominal,
 per benchmark. With one decode loop the chosen $m$ beats \nat{1} significantly on 14 of 15 settings, by 3.9 to
 21.3 points (GPQA-Diamond, $+12.1$\ci{-2.5}{18.7}, is not significant). With two decode loops it wins significantly on 8 of
-14, and with three or four on none. Comparisons with native models measure the complete trained method, including the
+15, and with three or four on none. Comparisons with native models measure the complete trained method, including the
 effect of training the adapter. Two controls separate it. Within the adapter, which isolates the prefill loops, the
 chosen $m$ is significantly above the same adapter's $n/n$ on 10 of 15 settings at one decode loop and never
 significantly below it. Against native $n/n$ distilled with LoRA on the same data, teacher and tokens as the adapter
@@ -447,7 +447,7 @@ data was deliberately included; we did not decontaminate the training corpora. A
 126 of 542 code prompts, 106 of 14,042 MMLU, 75 of 6,511 BBH, 24 of 1,400 MMLU-Pro and at most 3 items of the other
 benchmarks (RULER and HELMET are synthetic or long-document, and HellaSwag and Winogrande, added later, are not
 audited). Without those items the chosen $m$ of
-Table~\ref{tab:select} still wins significantly on 14 of 15 and 8 of 14 settings at one and two decode loops.
+Table~\ref{tab:select} still wins significantly on 14 of 15 and 8 of 15 settings at one and two decode loops.
 
 \paragraph{Optimisation.} AdamW ($\beta=(0.9,0.95)$, no weight decay), peak learning rate $10^{-4}$ with 2\% linear
 warm-up and cosine decay to $10^{-5}$, gradient clipping at 1.0, global batch 24 sequences on 4 B300 GPUs (6.75 hours for
