@@ -5,7 +5,9 @@
 # usage: launch_x26_distill.sh ARM GPUS PORT [first]     e.g. launch_x26_distill.sh E 0,1,2,3 29811 first
 # "first" also supervises the first answer token, as the loop adapter does (runs X26-<ARM>48f-*); without it the
 # control omits that token (the X26-<ARM>48-* runs).
+# env SIZE=14: the same controls for Ouro-1.4B (runs X14-*, against the adapter O14-S-universal).
 ARM=$1; GPUS=$2; PORT=$3; F=$([ "$4" = first ] && echo f); FLAG=$([ "$4" = first ] && echo --first-target)
-case $ARM in E) NAME=X26-E48$F-p1d1 ;; D) NAME=X26-D48$F-p2d2 ;; H) NAME=X26-H48$F-p3d3 ;; *) echo "arm must be E, D or H"; exit 2 ;; esac
+S=${SIZE:-26}; MODEL=$([ $S = 14 ] && echo model-1.4b || echo model-2.6b)
+case $ARM in E) NAME=X$S-E48$F-p1d1 ;; D) NAME=X$S-D48$F-p2d2 ;; H) NAME=X$S-H48$F-p3d3 ;; *) echo "arm must be E, D or H"; exit 2 ;; esac
 M=/dev/shm/big-small-ouro; R=$M/runs; cd $R
-[ -f $R/$NAME/TRAIN_DONE ] || MODEL=$M/model-2.6b DATA=$M/mix-data-48m ./run_mix2.sh $NAME $ARM $GPUS $PORT 48000000 --micro 1 $FLAG
+[ -f $R/$NAME/TRAIN_DONE ] || MODEL=$M/$MODEL DATA=$M/mix-data-48m ./run_mix2.sh $NAME $ARM $GPUS $PORT 48000000 --micro 1 $FLAG
