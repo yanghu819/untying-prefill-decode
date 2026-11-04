@@ -2,7 +2,7 @@
 # evalplus_q.sh SET GPU...: HumanEval(+) and MBPP(+) as Ouro's base-model evaluation ran them (evalplus, chat prompt,
 # greedy; tasks humanevalplus_chat_local / mbppplus_chat_local; native 4/4 reproduces Ouro's reported scores within
 # 1-3 points). Score afterwards with ouro/scripts/score_evalplus.py. SET: 26 (Ouro-2.6B cells, natives, distilled
-# controls; 26x: only the controls on this box) | 14 (Ouro-1.4B cells and natives) | T26 (the Ouro-2.6B-Thinking configurations of Table 7). Two jobs per GPU.
+# controls; 26x: only the controls on this box) | 14 (Ouro-1.4B cells and natives) | T26 / T14 (the Thinking configurations of Table 7 and its 1.4B counterpart). Two jobs per GPU.
 S=$1; shift; M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/evalplus_q.txt; cd $R
 CELLS="native1 native2 native3 native4 S11 S21 S31 S41 S12 S22 S32 S42 S13 S23 S33 S43 S14 S24 S34 S44"
 case $S in
@@ -12,6 +12,7 @@ case $S in
   14) MP=$M/model-1.4b; CK=$R/O14-S-universal/checkpoint-48m.pt; P=O14x; EXTRA="" ;;
   T26) MP=$M/model-2.6b-think; CK=$R/T26-S-universal/checkpoint-48m.pt; P=T26x; CELLS="native2 native4 S22 S42"
        EXTRA="D:T26-D-native22:D D:T26-Df-native22:Df" ;;
+  T14) MP=$M/model-1.4b-think; CK=$R/T14-S-universal/checkpoint-48m.pt; P=T14x; CELLS="native2 native4 S22 S42"; EXTRA="" ;;
 esac
 {
   for c in $CELLS; do
