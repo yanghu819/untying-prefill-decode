@@ -22,6 +22,16 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-05 (Codex round 7 fixes)
+- Overlap audit rerun with question+choices fields (ctx, sentence) and code keys remapped to humaneval_chat/mbpp_chat;
+  HellaSwag/Winogrande now audited; items shorter than 13 tokens are reported as unassessed. 187/542 code prompts
+  overlap (was 126). Without overlapping items the chosen m wins 13/15 at n=1 (MBPP+ inconclusive, +2.5 [-1.1, 10.2])
+  and 8/15 at n=2.
+- Distilled 2/2 comparison: 1 significant gain, 2 losses, 11 inconclusive of 14 (D48f gsmfull landed; mmlufull running).
+- Text: low-decode-budget scoping, seed claims limited to seed 0 plus direction across seeds, Ouro-1.4B-Thinking
+  corrections, two-seed table guards, related work (Ouro 5.4.2 KV reuse, FlashLoop).
+- Queued: 1.4B E48f/D48f evals (after_x26_distill.sh now on Ouro's protocol), S43 HellaSwag rerun (OOM), T26x-S12 evalplus.
+
 ### 2026-11-03 (new agent)
 - Paper rewritten under Ouro's protocol (2026-11-05). Core story: prefill with more loops than you decode. Ouro-2.6B,
   15 settings: at one decode loop the best prefill count is 2-4 everywhere; chosen m vs native 1/1 14/15, vs the

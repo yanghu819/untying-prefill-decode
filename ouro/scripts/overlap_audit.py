@@ -5,7 +5,7 @@ usage: overlap_audit.py DATA_DIR MODEL_DIR RUNS_DIR OUT.json RUN...
   DATA_DIR  adaptation mixture (samples.npy, gsm_train.jsonl, fineweb_train.bin; every sample the training used)
   RUN       lm-eval output directories under RUNS_DIR/lmeval/out (one per benchmark; their docs give the questions)
 Writes, per run, the item keys (task/doc_id, as in paper_numbers.py) whose question shares any 13-token span with the
-training data, and the number of items checked. Questions shorter than 13 tokens cannot match and are counted as clean.
+training data, the number of items checked, and the items too short to test (fewer than 13 tokens: unassessed).
 """
 import glob
 import json
@@ -18,7 +18,7 @@ from transformers import AutoTokenizer
 from ouro.prepare_adapter_data import AdapterDataset
 
 N = 13
-FIELDS = ("question", "Question", "problem", "input", "prompt", "instruction")   # the question text of each task's doc
+FIELDS = ("question", "Question", "problem", "input", "prompt", "instruction", "ctx", "sentence")   # question text per task
 P = np.uint64(1000003)
 
 
@@ -63,13 +63,16 @@ def main():
     hit = set(probe[seen].tolist())
     report = {}
     for (name, key), h in items.items():
-        r = report.setdefault(name, dict(items=0, overlapping=[]))
+        r = report.setdefault(name, dict(items=0, overlapping=[], unassessed=[]))
         r["items"] += 1
-        if any(int(x) in hit for x in h):
+        if not len(h):
+            r["unassessed"].append(key)
+        elif any(int(x) in hit for x in h):
             r["overlapping"].append(key)
     out.write_text(json.dumps(dict(n=N, training_sequences=len(done), runs=report), indent=1))
     for name, r in report.items():
-        print(f"{name:28s} {len(r['overlapping']):5d} of {r['items']:6d} items share a {N}-gram with the training data")
+        print(f"{name:28s} {len(r['overlapping']):5d} of {r['items']:6d} items share a {N}-gram with the training data; "
+              f"{len(r['unassessed'])} too short to test")
 
 
 if __name__ == "__main__":

@@ -129,13 +129,16 @@ CMP += [
 ]
 for c in ("11", "22", "31", "32", "42"):
     CMP.append(("Table 6", f"bank per loop {c[0]}/{c[1]} RULER-16K", ruler(f"X26-V{c}", 16), ruler(f"X26-S{c}", 16), BANK[c]))
+# App. two-seed table: printed point differences (GSM8K, MMLU, RULER-4K/8K/16K at decode 1; GSM8K, RULER-4K at decode 2)
+SEED_PRINTED = {1: (8.5, 15.2, -3.8, 2.5, 8.6, -0.1, -7.2), 2: (8.9, 15.2, -3.5, 2.0, 8.6, -1.1, -6.8)}
 for seed, run in ((1, "X26"), (2, "X26s2")):
-    CMP += [("Table 7", f"seed {seed} decode 1 GSM8K", gsm(f"{run}-S41"), gsm(f"{run}-S11"), None),
-            ("Table 7", f"seed {seed} decode 1 MMLU", mmlu(f"{run}-S41"), mmlu(f"{run}-S11"), None),
-            ("Table 7", f"seed {seed} decode 2 GSM8K", gsm(f"{run}-S42"), gsm(f"{run}-S22"), None)]
-    for k in (4, 8, 16):
-        CMP.append(("Table 7", f"seed {seed} decode 1 RULER-{k}K", ruler(f"{run}-S41", k), ruler(f"{run}-S11", k), None))
-    CMP.append(("Table 7", f"seed {seed} decode 2 RULER-4K", ruler(f"{run}-S42", 4), ruler(f"{run}-S22", 4), None))
+    g1, m1, r4, r8, r16, g2, r42 = ((v, None, None) for v in SEED_PRINTED[seed])
+    CMP += [("Table 7", f"seed {seed} decode 1 GSM8K", gsm(f"{run}-S41"), gsm(f"{run}-S11"), g1),
+            ("Table 7", f"seed {seed} decode 1 MMLU", mmlu(f"{run}-S41"), mmlu(f"{run}-S11"), m1),
+            ("Table 7", f"seed {seed} decode 2 GSM8K", gsm(f"{run}-S42"), gsm(f"{run}-S22"), g2)]
+    for k, v in ((4, r4), (8, r8), (16, r16)):
+        CMP.append(("Table 7", f"seed {seed} decode 1 RULER-{k}K", ruler(f"{run}-S41", k), ruler(f"{run}-S11", k), v))
+    CMP.append(("Table 7", f"seed {seed} decode 2 RULER-4K", ruler(f"{run}-S42", 4), ruler(f"{run}-S22", 4), r42))
 CMP += [
     ("Sec 4.1", "2.6B-T HELMET prefill 4/decode 2 vs native 4/4", "B:T26ne-S42-helmet:helmet", "B:T26ne-native4-helmet:helmet",
      (-8.7, -13.3, -4.1)),
@@ -251,7 +254,7 @@ TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF
                ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48f", 2: "D48f", 3: "H48f"}   # controls that also supervise the first answer token (--first-target)
-DISTILLED_COUNTS = {1: (9, 1, 15), 2: (1, 2, 13), 3: (1, 3, 14)}
+DISTILLED_COUNTS = {1: (9, 1, 15), 2: (1, 2, 14), 3: (1, 3, 14)}
 DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
@@ -710,7 +713,8 @@ def overlap_check():
     for n in (1, 2):
         sel = [r for r in rows if r["model"] == "Ouro-2.6B" and r["n"] == n]
         out[f"n{n}"] = (sum(r["diff_select_aware"][1] > 0 for r in sel), len(sel))
-        flag = "" if out[f"n{n}"] == {1: (14, 15), 2: (8, 15)}[n] else "  !! paper: " + str({1: (14, 15), 2: (8, 15)}[n])
+        out[f"n{n}_rows"] = {r["bench"]: [float(x) for x in r["diff_select_aware"]] for r in sel}
+        flag = "" if out[f"n{n}"] == {1: (13, 15), 2: (8, 15)}[n] else "  !! paper: " + str({1: (13, 15), 2: (8, 15)}[n])
         print(f"Overlap      Ouro-2.6B n={n} without overlapping items: significant with selection-aware intervals "
               f"{out[f'n{n}'][0]} of {out[f'n{n}'][1]}{flag}")
     a, b = load("L:o26x-S14-math:exact_match"), load("L:o26x-S44-math:exact_match")
