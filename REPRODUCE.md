@@ -74,7 +74,7 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 
 | element | runs (launcher) | computed by |
 |---|---|---|
-| Figure 1 / full task map (Ouro-2.6B, 13 benchmarks x 16 pairs + native) | `grid_q*_a{1,2}.txt`, `mn_low_prefill.sh`, `mn_math_grid.sh` | `paper_numbers.py` (`Task map` means) → `paper_figs.py fig_taskmap` |
+| Figure 1 / full task map (Ouro-2.6B, 15 settings x 16 pairs + native; Ouro's protocol) | `grid_q*_a{1,2}.txt`, `mn_low_prefill.sh`, `mn_math_grid.sh`, `fullsets_q.txt`, `protocol_q.sh` (HellaSwag, Winogrande), `evalplus_q.sh` + `ouro/scripts/score_evalplus.py` (code) | `paper_numbers.py` (`Task map` means) → `paper_figs.py fig_taskmap` |
 | Table 1, cross-fitted choice of prefill loops (and the Ouro-1.4B table) | as above; `grid14_q_*.txt` | `paper_numbers.py` `taskmap_select` → `paper_figs.py tab_select` |
 | Figure 4 and its numbers table (Ouro-2.6B-Thinking, eight benchmarks) | `launch_think.sh` evaluations, `grid_q3_a2.txt` (prefill 1 / decode 2) | `paper_numbers.py` `equal` → `fig_equal`, `tab_equal` |
 | distillation table | `eval_t26d.sh` | `paper_numbers.py` (`Distillation baseline`) → `tab_distill` |
