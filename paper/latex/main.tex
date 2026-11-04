@@ -627,7 +627,9 @@ parentheses; paired 95\% bootstrap intervals that repeat the choice of $m$ in ev
 Table~\ref{tab:select14} repeats the per-benchmark choice on Ouro-1.4B. As on Ouro-2.6B, the gain is largest with one
 decode loop (significant on 12 of 15 settings) and shrinks with more (2 of 15 at two decode loops, where 3-shot BBH is
 significantly worse than \nat{2}); within the adapter the chosen $m$ beats the adapter's own $n/n$ significantly on 6
-and 1 of 15. Nanbeige4.2-3B-Base, a non-looped model run with its blocks repeated and one loop adapter trained per
+and 1 of 15. Against native 1/1 and 2/2 distilled with LoRA on the same data, teacher and
+tokens, it is significantly above on 6 and below on 3 of 15 at one decode loop (below on all three RULER lengths, where
+distillation alone helps more), and above on 4 and below on 4 at two. Nanbeige4.2-3B-Base, a non-looped model run with its blocks repeated and one loop adapter trained per
 $(m,n)$ pair, shows the same direction at one decode loop: \rw{2}{1} minus \rw{1}{1} is $+11.8$, $+11.7$ and $+14.2$ on
 RULER 4K/8K/16K and $+12.2$ on MMLU (GSM8K: Appendix~\ref{app:eval}).
 

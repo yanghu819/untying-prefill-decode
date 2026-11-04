@@ -256,7 +256,9 @@ TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48f", 2: "D48f", 3: "H48f"}   # controls that also supervise the first answer token (--first-target)
 DISTILLED_COUNTS = {1: (8, 1, 15), 2: (3, 2, 15), 3: (2, 3, 14)}
-DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
+DISTILLED_COUNTS_14 = {1: (6, 3, 15), 2: (4, 4, 15)}   # Ouro-1.4B controls X14-E48f, X14-D48f (App. models)
+DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP + TASK_MAP_14] + ["L:o26x-{d}-mmlufull:acc",
+                                                                                  "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
 MEANS += [("Task map", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP
@@ -681,8 +683,8 @@ def taskmap_specs():
     specs = [("MMLU", "L:X26-{c}-mmlufull:acc", "L:o26n{n}-mmlufull:acc", "L:o26x-{d}-mmlufull:acc"),     # 14,042
              ("GSM8K", "L:X26-{c}-gsmfull:" + GF, "L:X26-native{n}-gsmfull:" + GF, "L:o26x-{d}-gsmfull:" + GF)]  # 1,319
     specs += [(bench, key, key.replace("{c}", "native{n}"), key.replace("{c}", "{d}")) for bench, key in TASK_MAP]
-    return [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"), None)
-                                                 for bench, key in TASK_MAP_14]
+    return [("Ouro-2.6B", *x) for x in specs] + [("Ouro-1.4B", bench, key, key.replace("{c}", "native{n}"),
+                                                  key.replace("{c}", "{d}")) for bench, key in TASK_MAP_14]
 
 
 def taskmap_cells():
@@ -815,13 +817,16 @@ def taskmap_select(exclude=frozenset(), quiet=False):
             flag = f"  !! paper: {printed}" if printed and got != printed else ""
             print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "
                   f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")
-    for n in (1, 2, 3):
-        rows = [r for r in out if r["n"] == n and "diff_distilled" in r]
-        if rows:   # selection-aware intervals, as Table 1; quoted in Section 4.2: (above, below, settings)
-            got = (sum(r["diff_distilled_select_aware"][1] > 0 for r in rows), sum(r["diff_distilled_select_aware"][2] < 0 for r in rows), len(rows))
-            printed = DISTILLED_COUNTS.get(n)
-            flag = f"  !! paper: {printed}" if printed and got != printed else ""
-            print(f"Select m     Ouro-2.6B vs distilled {n}/{n}: significantly above on {got[0]}, below on {got[1]} of {got[2]}{flag}")
+    for model, counts in (("Ouro-2.6B", DISTILLED_COUNTS), ("Ouro-1.4B", DISTILLED_COUNTS_14)):
+        for n in (1, 2, 3):
+            rows = [r for r in out if r["model"] == model and r["n"] == n and "diff_distilled" in r]
+            if rows:   # selection-aware intervals, as Table 1; quoted in Section 4.2: (above, below, settings)
+                got = (sum(r["diff_distilled_select_aware"][1] > 0 for r in rows),
+                       sum(r["diff_distilled_select_aware"][2] < 0 for r in rows), len(rows))
+                printed = counts.get(n)
+                flag = f"  !! paper: {printed}" if printed and got != printed else ""
+                print(f"Select m     {model} vs distilled {n}/{n}: significantly above on {got[0]}, below on {got[1]} of "
+                      f"{got[2]}{flag}")
     return out
 
 def throughput():
