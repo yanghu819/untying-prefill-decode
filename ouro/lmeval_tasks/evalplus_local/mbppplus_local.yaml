@@ -1,0 +1,21 @@
+# MBPP / MBPP+ generation as evalplus does for base models (direct completion, greedy, 768 new tokens,
+# evalplus's stop strings); scored offline by ouro/scripts/score_evalplus.py with evalplus (base and plus tests).
+task: mbppplus_local
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: /root/.cache/evalplus/MbppPlus-v0.2.0-prompts.jsonl
+output_type: generate_until
+test_split: test
+doc_to_text: "{{prompt}}"
+doc_to_target: "{{task_id}}"
+target_delimiter: ""
+generation_kwargs:
+  until: ["<|endoftext|>", "<|endofmask|>", "</s>", "\nif __name__", "\ndef main(", "\nprint(", "\n\"\"\"", "\nassert"]
+  max_gen_toks: 768
+  do_sample: false
+metric_list:
+  - metric: bypass
+num_fewshot: 0
+metadata:
+  version: 1.0

@@ -1,0 +1,21 @@
+# HumanEval / HumanEval+ generation (prompts only: <name>-prompts.jsonl keeps task_id, prompt, entry_point) as evalplus does for base models (direct completion, greedy, 768 new tokens,
+# evalplus's stop strings); scored offline by ouro/scripts/score_evalplus.py with evalplus (base and plus tests).
+task: humanevalplus_local
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: /root/.cache/evalplus/HumanEvalPlus-v0.1.10-prompts.jsonl
+output_type: generate_until
+test_split: test
+doc_to_text: "{{prompt}}"
+doc_to_target: "{{task_id}}"
+target_delimiter: ""
+generation_kwargs:
+  until: ["<|endoftext|>", "<|endofmask|>", "</s>", "\nif __name__", "\ndef main(", "\nprint(", "\ndef ", "\nclass ", "\nimport ", "\nfrom ", "\nassert "]
+  max_gen_toks: 768
+  do_sample: false
+metric_list:
+  - metric: bypass
+num_fewshot: 0
+metadata:
+  version: 1.0
