@@ -22,6 +22,16 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-05 (MATH-500 rescored on the final answer)
+- lm-eval's strict Minerva match is a closing-sentence test: native Ouro-1.4B 4/4 scores 4.4 strict vs 70.6 on the final
+  answer (last \boxed{}, math_verify; paper_numbers.py `boxed`). All MATH-500 keys now use `boxed`.
+- Consequence: on 4-shot MATH-500 one prefill loop is best at every decode depth on Ouro-2.6B (S12 65.0 vs native 4/4
+  53.6; S14 68.2 vs S44 51.0; replicated by seed 2); 0-shot reverses it (S41-S11 +8.0, S42-S22 +7.4). The old
+  "format artifact" reading of MATH was wrong; the MBPP+ indentation artifact stands.
+- New counts: 2.6B n=1 14/15 vs native, 9 within adapter, distilled 8 up / 1 down; n=2 9/15, adapter 3, distilled
+  3 up / 2 down of 15; n=3-4 only MATH. 1.4B 12/15, 2/15. Zero-shot MATH grid (math0_q.sh) queued on a1 to test the
+  exemplar explanation at every cell.
+
 ### 2026-11-05 (Codex round 7 fixes)
 - Overlap audit rerun with question+choices fields (ctx, sentence) and code keys remapped to humaneval_chat/mbpp_chat;
   HellaSwag/Winogrande now audited; items shorter than 13 tokens are reported as unassessed. 187/542 code prompts

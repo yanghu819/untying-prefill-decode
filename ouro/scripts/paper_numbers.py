@@ -11,7 +11,7 @@
 Paired bootstrap: 5,000 resamples of items (numpy, seed 0), 2.5 / 97.5 percentiles, in points (x100). Item sets:
   L:<run>:<metric>[:<filter>]   lm-evaluation-harness samples (GSM8K: flexible-extract; MMLU: acc; ARC: acc_norm;
                                 MMLU-Pro / BBH: exact_match; thinking tasks: math_verify;
-                                MATH-500 for base models: mvfull = math_verify on the full answer)
+                                MATH-500 for base models: boxed = math_verify on the final (last boxed) answer)
   T:<prefix>:<metric>           thinking-model GSM8K, four shards <prefix>_s0.._s3 merged
   B:<run>:<bench>               evaluate_bench.py outputs (RULER, HELMET, BBH for SenseNova)
 """
@@ -106,12 +106,12 @@ CMP += [
     ("Table 2", "SenseNova HELMET", "B:SNnt-C21-helmet:helmet", "B:SNnt-C11-helmet:helmet", (3.5, 0.8, 6.1)),
     ("Table 2", "SenseNova BBH", "B:SNnt-C21-bbh:bbh", "B:SNnt-C11-bbh:bbh", (7.0, 5.9, 8.0)),
     ("Table 5", "2.6B decode 1 RULER-4K", ruler("X26-S41", 4), ruler("X26-S11", 4), (-3.8, -8.2, 0.3)),
-    ("Table 5", "2.6B decode 1 MATH 4-shot", "L:o26x-S41-math:mvfull", "L:o26x-S11-math:mvfull", (-11.2, -15.4, -6.8)),
-    ("Table 5", "2.6B decode 1 MATH 0-shot", "L:o26x-S41-math0shot:mvfull", "L:o26x-S11-math0shot:mvfull", (7.0, 3.0, 10.8)),
-    ("Table 5", "2.6B decode 2 MATH 4-shot", "L:o26x-S42-math:mvfull", "L:o26x-S22-math:mvfull", None),
-    ("Table 5", "2.6B decode 2 MATH 0-shot", "L:o26x-S42-math0shot:mvfull", "L:o26x-S22-math0shot:mvfull", (7.0, 3.0, 11.2)),
-    ("Table 5", "1.4B decode 1 MATH 4-shot", "L:o14x-S41-math4shot:mvfull", "L:o14x-S11-math4shot:mvfull", (-4.0, -8.2, 0.0)),
-    ("Table 5", "1.4B decode 1 MATH 0-shot", "L:o14x-S41-math0shot:mvfull", "L:o14x-S11-math0shot:mvfull", (4.8, 1.4, 8.4)),
+    ("Table 5", "2.6B decode 1 MATH 4-shot", "L:o26x-S41-math:boxed", "L:o26x-S11-math:boxed", (-12.0, -16.2, -7.8)),
+    ("Table 5", "2.6B decode 1 MATH 0-shot", "L:o26x-S41-math0shot:boxed", "L:o26x-S11-math0shot:boxed", (8.0, 4.2, 11.6)),
+    ("Table 5", "2.6B decode 2 MATH 4-shot", "L:o26x-S42-math:boxed", "L:o26x-S22-math:boxed", None),
+    ("Table 5", "2.6B decode 2 MATH 0-shot", "L:o26x-S42-math0shot:boxed", "L:o26x-S22-math0shot:boxed", (7.4, 3.4, 11.4)),
+    ("Table 5", "1.4B decode 1 MATH 4-shot", "L:o14x-S41-math4shot:boxed", "L:o14x-S11-math4shot:boxed", (-4.4, -8.4, -0.6)),
+    ("Table 5", "1.4B decode 1 MATH 0-shot", "L:o14x-S41-math0shot:boxed", "L:o14x-S11-math0shot:boxed", (4.8, 1.2, 8.4)),
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
@@ -188,14 +188,15 @@ CMP += [
         "RULER-16K": (2.9, None, None), "MMLU-Pro": (-2.7, -5.0, -0.3)}.get(bench)) for bench, key in SNG_KEYS],
     # fewer prefill than decode loops (m < n) on the tasks where more prefill loops hurt: same adapter, same n
     *[("Fewer prefill loops", f"{model} prefill {lo} vs {hi} (decode {n}) {bench}", key.format(c=f"S{lo}{n}"),
-       key.format(c=f"S{hi}{n}"), (16.6, 12.4, 21.0) if (bench, lo, hi, n) == ("MATH-500 4-shot", 1, 4, 4) else None)
-      for model, bench, key in (("Ouro-2.6B", "MATH-500 4-shot", "L:o26x-{c}-math:mvfull"),
+       key.format(c=f"S{hi}{n}"), (17.2, 13.0, 21.4) if (bench, lo, hi, n) == ("MATH-500 4-shot", 1, 4, 4) else None)
+      for model, bench, key in (("Ouro-2.6B", "MATH-500 4-shot", "L:o26x-{c}-math:boxed"),
                                 ("Ouro-2.6B", "RULER-4K", "B:X26-{c}f:ruler4k"), ("Ouro-2.6B", "RULER-8K", "B:X26-{c}f:ruler8k"),
                                 ("Ouro-2.6B", "RULER-16K", "B:X26-{c}f:ruler16k"),
                                 ("Ouro-1.4B-T", "BBH 3-shot", "L:T14x-{c}-bbh:exact_match"))
       for lo, hi, n in ((1, 2, 2), (1, 4, 4), (2, 4, 4), (1, 4, 2))],
-    *[("Fewer prefill loops", f"Ouro-2.6B prefill {m} / decode {n} vs native {k}/{k} MATH-500 4-shot", f"L:o26x-S{m}{n}-math:mvfull",
-       f"L:o26x-native{k}-math:mvfull", None) for m, n, k in ((1, 2, 2), (1, 2, 4), (1, 4, 4), (2, 4, 4), (1, 3, 4))],
+    *[("Fewer prefill loops", f"Ouro-2.6B prefill {m} / decode {n} vs native {k}/{k} MATH-500 4-shot", f"L:o26x-S{m}{n}-math:boxed",
+       f"L:o26x-native{k}-math:boxed", (11.4, 7.2, 15.6) if (m, n, k) == (1, 2, 4) else None)
+      for m, n, k in ((1, 2, 2), (1, 2, 4), (1, 4, 4), (2, 4, 4), (1, 3, 4))],
     # Ouro-2.6B-Thinking at decode 2: prefill 1 against prefill 4 (same adapter) and against native 2/2
     *[("Thinking decode 2", f"2.6B-T prefill 1 / decode 2 vs prefill 4 / decode 2 {bench}", ka.replace("S42", "S12"), ka, None)
       for bench, ka, _ in EQUAL],
@@ -238,7 +239,7 @@ MEANS = []
 # task map: Ouro-2.6B, one loop adapter (X26-S-universal), every (prefill m, decode n) cell and native n/n
 # Protocol of Ouro's base-model table (Ouro paper, Appendix C.1, Table 16): MATH-500 and GSM8K strict match, code with
 # evalplus (chat prompt; HumanEval+ and MBPP+ = the plus tests), HellaSwag and Winogrande added.
-TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:exact_match"), ("BBH 3-shot", "L:o26x-{c}-bbh:exact_match"),
+TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:boxed"), ("BBH 3-shot", "L:o26x-{c}-bbh:exact_match"),
             ("ARC-C", "L:o26x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:o26x-{c}-mmlupro:exact_match"),
             ("HellaSwag", "L:o26x-{c}-hellaswag:acc_norm"), ("Winogrande", "L:o26x-{c}-winogrande:acc"),
             ("HumanEval+", "P:o26x-{c}-evalplus:humaneval_chat:plus"), ("MBPP+", "P:o26x-{c}-evalplus:mbpp_chat:plus"),
@@ -246,7 +247,7 @@ TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:exact_match"), ("BBH 3-shot", "
             ("RULER-4K", "B:X26-{c}f:ruler4k"), ("RULER-8K", "B:X26-{c}f:ruler8k"), ("RULER-16K", "B:X26-{c}f:ruler16k")]
 # replication on Ouro-1.4B (its own adapter, O14-S-universal), same settings (MMLU and GSM8K subsets)
 TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF),
-               ("MATH-500 4-shot", "L:O14x-{c}-math:exact_match"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
+               ("MATH-500 4-shot", "L:O14x-{c}-math:boxed"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
                ("ARC-C", "L:O14x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
                ("HellaSwag", "L:O14x-{c}-hellaswag:acc_norm"), ("Winogrande", "L:O14x-{c}-winogrande:acc"),
                ("HumanEval+", "P:O14x-{c}-evalplus:humaneval_chat:plus"), ("MBPP+", "P:O14x-{c}-evalplus:mbpp_chat:plus"),
@@ -254,7 +255,7 @@ TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF
                ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48f", 2: "D48f", 3: "H48f"}   # controls that also supervise the first answer token (--first-target)
-DISTILLED_COUNTS = {1: (9, 1, 15), 2: (1, 2, 14), 3: (1, 3, 14)}
+DISTILLED_COUNTS = {1: (8, 1, 15), 2: (3, 2, 15), 3: (2, 3, 14)}
 DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
@@ -280,6 +281,27 @@ def mvfull(gold, text):
         return float(verify(parse("$" + gold + "$"), parse(text)))
     except Exception:
         return 0.0
+
+
+def final_answer(text):
+    """The last \\boxed{...} of an answer, else the Minerva closing sentence's "final answer is X"; None if neither."""
+    i = text.rfind("\\boxed")
+    j = text.find("{", i) if i >= 0 else -1
+    if j >= 0:
+        depth = 0
+        for k in range(j, len(text)):
+            depth += {"{": 1, "}": -1}.get(text[k], 0)
+            if depth == 0:
+                return text[j + 1:k]
+    m = re.findall(r"final answer is \$?(.+?)\$?\.? I hope", text)
+    return m[-1] if m else None
+
+
+def boxed(gold, text):
+    """MATH-500 final-answer accuracy: the answer of final_answer() equivalent to the reference (math_verify). Unlike
+    lm-eval's strict exact_match it does not require the exemplars' closing sentence; unlike mvfull it scores one answer."""
+    a = final_answer(text)
+    return 0.0 if a is None else mvfull(gold, "$" + a + "$")
 
 
 MARK = re.compile(r"(?i)\balternatively\b|\bwait\b|\bre-?read\b|\bon second thought\b|\blet me (re)?check\b")
@@ -309,8 +331,8 @@ def read_lm(runs, run, metric, filt=None):
             r = json.loads(line)
             if filt and r.get("filter") != filt:
                 continue
-            if metric == "mvfull":  # math_verify on the full answer against the reference answer (MATH-500)
-                out[f"{task}/{r['doc_id']}"] = mvfull(r["doc"]["answer"], r["resps"][0][0])
+            if metric in ("mvfull", "boxed"):  # MATH-500 against the reference answer: whole answer / final answer
+                out[f"{task}/{r['doc_id']}"] = (mvfull if metric == "mvfull" else boxed)(r["doc"]["answer"], r["resps"][0][0])
             elif metric in TEXT:
                 out[f"{task}/{r['doc_id']}"] = TEXT[metric](r)
             elif metric in r:
@@ -714,10 +736,10 @@ def overlap_check():
         sel = [r for r in rows if r["model"] == "Ouro-2.6B" and r["n"] == n]
         out[f"n{n}"] = (sum(r["diff_select_aware"][1] > 0 for r in sel), len(sel))
         out[f"n{n}_rows"] = {r["bench"]: [float(x) for x in r["diff_select_aware"]] for r in sel}
-        flag = "" if out[f"n{n}"] == {1: (13, 15), 2: (8, 15)}[n] else "  !! paper: " + str({1: (13, 15), 2: (8, 15)}[n])
+        flag = "" if out[f"n{n}"] == {1: (13, 15), 2: (9, 15)}[n] else "  !! paper: " + str({1: (13, 15), 2: (9, 15)}[n])
         print(f"Overlap      Ouro-2.6B n={n} without overlapping items: significant with selection-aware intervals "
               f"{out[f'n{n}'][0]} of {out[f'n{n}'][1]}{flag}")
-    a, b = load("L:o26x-S14-math:exact_match"), load("L:o26x-S44-math:exact_match")
+    a, b = load("L:o26x-S14-math:boxed"), load("L:o26x-S44-math:boxed")
     if a and b:
         keep = [i for i in a if i in b and i not in drop]
         r = boot({i: a[i] for i in keep}, {i: b[i] for i in keep})
@@ -788,8 +810,8 @@ def taskmap_select(exclude=frozenset(), quiet=False):
             got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter_select_aware"][1] > 0 for r in rows),
                    sum(r["diff_adapter_select_aware"][2] < 0 for r in rows), len(rows))
             # quoted in Section 4.2: (selection-aware significant, above adapter n/n, below adapter n/n, benchmarks)
-            printed = {("Ouro-2.6B", 1): (14, 10, 0, 15), ("Ouro-2.6B", 2): (8, 2, 0, 15), ("Ouro-1.4B", 1): (13, 7, 0, 15),
-                       ("Ouro-1.4B", 2): (3, 1, 0, 15)}.get((model, n))
+            printed = {("Ouro-2.6B", 1): (14, 9, 0, 15), ("Ouro-2.6B", 2): (9, 3, 0, 15), ("Ouro-1.4B", 1): (12, 6, 0, 15),
+                       ("Ouro-1.4B", 2): (2, 1, 0, 15)}.get((model, n))
             flag = f"  !! paper: {printed}" if printed and got != printed else ""
             print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "
                   f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")

@@ -30,7 +30,7 @@ cd environments/ouro && uv sync && cd ../..          # torch, transformers 4.x (
 - Benchmarks: `ouro/prepare_full_qa.py` (RULER 4K/8K/16K, 13 tasks x 40 rows), `ouro/prepare_helmet.py` (HELMET, 1,108
   rows), `ouro/runs_scripts/mk_bench_mini.py` (the 260-row RULER-16K subset of the Pareto figure, Figure 5). GSM8K, MMLU, MMLU-Pro,
   ARC-Challenge, BBH and MATH-500 come from lm-evaluation-harness (`ouro/lmeval_tasks/` adds the zero-shot thinking tasks
-  and MATH-500).
+  and MATH-500). MATH-500 is scored on the final answer (last `\boxed{}`, else the Minerva closing sentence) with math_verify (`paper_numbers.py boxed`), not with lm-eval's strict Minerva sentence match.
 
 The launchers assume the layout `M=/dev/shm/big-small-ouro` (models in `$M/model-2.6b`, …, data in `$M/mix-data-48m`,
 benchmarks in `$M/bench`, outputs in `$M/runs`); change `M` at the top of a launcher to move it. GPQA-Diamond is read
@@ -46,7 +46,9 @@ from a local CSV (`$M/gpqa-data/`, not redistributed) and IFEval from `$M/ifeval
 | Ouro-1.4B loop adapter `O14-S-universal` | Ouro-1.4B task map, other checkpoints | `launch_scale.sh` |
 | Ouro-2.6B-Thinking `T26-S-universal` | Figure 4, timing, Thinking appendix | `launch_think.sh` |
 | Ouro-1.4B-Thinking `T14-S-universal` | Ouro-1.4B-Thinking appendix | `launch_think14.sh` |
-| LoRA distillation of native 2/2 `T26-D-native22` (arm D) | distillation table | `launch_t26d.sh` |
+| LoRA distillation of native 2/2 `T26-Df-native22` (arm D, every answer token supervised; `T26-D-native22` is the earlier control without the first answer token) | distillation table, timing | `launch_t26df.sh` |
+| LoRA distillation of native n/n `X26-{E,D,H}48f-p{1,2,3}d{1,2,3}`, `X14-*48f-*` (Ouro-2.6B / 1.4B) | distilled comparisons of the cross-fitted choice | `launch_x26_distill.sh ARM GPUS PORT first` (`SIZE=14`), evaluated by `after_x26_distill.sh` |
+| third seed `X26-S-seed3`, Ouro-1.4B second seed `O14-S-seed2` | training-seed appendix | `launch_seed3.sh` |
 | SenseNova-Loop-9B loop adapter `SN-C-universal`; GDN-state variant `SNG-C-universal` | SenseNova and hybrid appendices | `launch_sn.sh`; `launch_sng.sh` (`sensenova_bridge.py --mix G`) |
 | variants `X26-O`, `X26-M`, `X26-V`, `X26-Sfz` (maps frozen) | design-variant appendix | `launch_o.sh`, `launch_m.sh`, `launch_v.sh`, `launch_fz.sh` |
 | Nanbeige per-pair `NBX-p<m>d<n>` | evaluation appendix | `launch_nbs21.sh`, `nbs_cell.sh` |

@@ -42,10 +42,12 @@ number of loops when they prefill the prompt and when they decode each answer to
 16 pairs up to four loops, from one stored prompt KV cache. Evaluated with the Ouro base-model protocol (with documented
 substitutions) on 15 benchmark settings, the answer at a low decode budget is consistent: decode with few loops and
 prefill with more. With one decode loop, the best prefill
-count is two to four on every setting, never one, and choosing it per benchmark on held-out halves of its items beats
-native Ouro-2.6B 1/1 significantly on 14 of 15 settings (by 3.9 to 21.3 points), the same adapter at prefill 1 on 10, and a
-LoRA distillation of native 1/1 with the same data and teacher on 9. With two decode loops a distilled 2/2 is about as good
-(1 significant gain, 2 significant losses and 11 inconclusive differences in 14 comparisons). On Ouro-2.6B-Thinking, prefill 4 / decode 2 is above native 2/2 on all eight benchmarks
+count is two to four on 14 of 15 settings, and choosing it per benchmark on held-out halves of its items beats
+native Ouro-2.6B 1/1 significantly on 14 of 15 settings (by 3.9 to 21.3 points), the same adapter at prefill 1 on 9, and a
+LoRA distillation of native 1/1 with the same data and teacher on 8. The exception is few-shot math: on 4-shot MATH-500
+one prefill loop is best at every decode depth, and prefill 1 / decode 2 beats native 4/4 by 11 points; without the
+exemplars more prefill loops help again. With two decode loops the comparison with a distilled 2/2 is mixed
+(3 significant gains, 2 significant losses and 10 inconclusive differences in 15 comparisons). On Ouro-2.6B-Thinking, prefill 4 / decode 2 is above native 2/2 on all eight benchmarks
 (significantly on four) and above a distilled 2/2 on MMLU-Pro and ARC-Challenge, at $0.59\times$ the answer time of
 native 4/4 on 192 timed GSM8K problems. Looped decision models show the same direction from both sides: with more
 prefill than decision loops they are significantly above a matched-data and matched-update control on 12 of 13
@@ -58,11 +60,11 @@ direction in each of four training seeds.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
-\caption{\textbf{With few decode loops, more prefill loops buy accuracy.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$. Grey: the native model
+\caption{\textbf{At one decode loop, the trained adapter outperforms the native model.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$. Grey: the native model
 with $n$ loops for prefill and decode ($n/n$). Red: one loop adapter with the best prefill count $m$ at that $n$ (labels; the smallest maximizing $m$), chosen on these items;
 the held-out choice is Table~\ref{tab:select}. The red--grey gap is the complete trained method; the effect of the
-prefill loops within the adapter is in Section~\ref{sec:select}. The gap is widest at one decode loop, where the best $m$ is two to four,
-and closes as decode loops are added. All 15 settings are in Figure~\ref{fig:taskmapfull} and Table~\ref{tab:taskmapcells};
+prefill loops within the adapter is in Section~\ref{sec:select}. The gap is widest at one decode loop, where the best $m$ is two to four except on 4-shot MATH-500,
+and generally diminishes at higher decode depths. All 15 settings are in Figure~\ref{fig:taskmapfull} and Table~\ref{tab:taskmapcells};
 all points of a panel use the same items; MMLU and GSM8K are the full sets (14,042 and 1,319 items).}
 \label{fig:grid}
 \end{figure*}
@@ -96,14 +98,18 @@ map on the prompt KV for every decode loop (Figure~\ref{fig:method}); one stored
 We train one loop adapter and evaluate it at all 16 pairs $(m,n)$ with its parameters fixed.
 
 The resulting map (Figure~\ref{fig:grid}), measured with the base-model evaluation protocol of the Ouro models, gives a
-consistent answer at a low decode budget: decode with few loops and prefill with more. With one decode loop the best prefill count is two to four on every
-one of 15 benchmark settings, never one. Within the same adapter at one decode loop, prefilling with three or four loops
+consistent answer at a low decode budget: decode with few loops and prefill with more. With one decode loop the best prefill count is two to four on 14 of
+15 benchmark settings. Within the same adapter at one decode loop, prefilling with three or four loops
 instead of one raises MMLU from 51.4 to 66.6 and HumanEval+ from 51.2 to 65.9. A native model can only move along the
 diagonal of this map. Choosing $m$ for each benchmark on held-out halves of its items (Table~\ref{tab:select}) beats
-native Ouro-2.6B 1/1 significantly on 14 of 15 settings, by 4 to 21 points; it beats the same adapter at prefill 1 on 10,
-and native 1/1 distilled with LoRA on the same data and teacher on 9. With more decode loops the advantage shrinks: at two
-it is significant on 8 of 15 settings against the native model, and against a distilled 2/2 the adapter has
-1 significant gain, 2 significant losses and 11 inconclusive differences in 14 comparisons; at three or four it is gone.
+native Ouro-2.6B 1/1 significantly on 14 of 15 settings, by 4 to 21 points; it beats the same adapter at prefill 1 on 9,
+and native 1/1 distilled with LoRA on the same data and teacher on 8. With more decode loops the advantage shrinks: at two
+it is significant on 9 of 15 settings against the native model, and against a distilled 2/2 the adapter has
+3 significant gains, 2 significant losses and 10 inconclusive differences in 15 comparisons; at three or four only 4-shot
+MATH-500 remains. There one prefill loop is best at every decode depth: prefill 1 / decode 2 scores 65.0 against 53.6 for
+native 4/4, with longer solutions than the exemplars'. Without exemplars, prefilling with four loops is better again
+(Table~
+ef{tab:hurt}): the prefill loops also set how closely the model follows the in-context examples.
 
 On Ouro-2.6B-Thinking, prefill 4 / decode 2 scores above native 2/2 on all eight benchmarks (Figure~\ref{fig:equal}),
 significantly on four, and above a LoRA distillation of native 2/2 with the same data and teacher, significantly on
@@ -116,7 +122,7 @@ uses is significantly above a matched-training control on 12 of 13 $(m,n)$ pairs
 all 13, by up to 13 points; every point estimate keeps its direction in each of four training seeds.
 
 Our contributions are a measurement of what prefill loops and decode loops each buy in looped language models, under the
-models' own evaluation protocol, a loop
+Ouro base-model settings where available (with documented substitutions), a loop
 adapter that unties them on existing checkpoints with an exact single prompt cache, and an end-to-end measurement
 of the time it saves. Code, per-item results and a script that recomputes the paper's statistics accompany it.
 
@@ -204,7 +210,7 @@ s = model(x, prefill=m, decode=n)         # LoRA + maps
 kl = kl_div(s.log_softmax(-1),
             t.log_softmax(-1), log_target=True,
             reduction="none").sum(-1)
-loss = kl[answer].sum() / answer.sum()
+loss = kl[answer].sum() / (answer.sum() - len(x))
 \end{lstlisting}
 \end{minipage}
 \caption{\textbf{The loop adapter in PyTorch-style pseudocode.} Only the last of the $m$ prefill loops' prompt KV is kept for
@@ -232,7 +238,7 @@ instead of $b\,n(\ell+t)$. Serving from one cache equals materialising a mapped 
 checked greedy tokens agree.
 
 \paragraph{What the maps do.} With the same training and the maps frozen at the identity, the decoder is within 0.4 points
-on MMLU (significantly lower at 1/1 and 2/2, by 0.4 and 0.3) and no worse on GSM8K ($+2.3$ at prefill 4 / decode 1), but
+on MMLU (significantly lower at 1/1 and 2/2, by 0.4 and 0.3) has no significantly negative GSM8K difference (at 4/1 it scores $2.3$ points higher\ci{0.2}{4.5}), but
 loses 11.4 points on RULER-16K at prefill 4 / decode 1 (Appendix~\ref{sec:ablation}): in these ablations the maps matter
 for long prompts.
 
@@ -300,7 +306,7 @@ Ouro-2.6B on MMLU (20 questions per subject), RULER-16K (260 items) and GSM8K (4
 \label{sec:taskmap}
 
 Figure~\ref{fig:grid} shows, at each $n$, the best accuracy over $m$ (every cell: Table~\ref{tab:taskmapcells}). At one
-decode loop, one prefill loop is never best: prefilling with two to four loops raises MMLU from 51.4 to 66.6,
+decode loop, one prefill loop is best only on 4-shot MATH-500: prefilling with two to four loops raises MMLU from 51.4 to 66.6,
 MMLU-Pro from 27.9 to 47.4, BBH from 37.9 to 51.7, HumanEval+ from 51.2 to 65.9 and RULER-16K from 54.2 to 62.8 within the
 same adapter. How many prefill loops pay off still varies with the task: RULER-4K is best with two and GSM8K with two
 or three, while MMLU-Pro, ARC-Challenge, GPQA-Diamond and IFEval are best with four. Decode loops matter most for
@@ -315,15 +321,16 @@ half, and swap (Table~\ref{tab:select}). This calibrates $m$ per benchmark; it i
 transfer to unseen tasks. The intervals of Table~\ref{tab:select} repeat the choice of $m$ in every bootstrap
 resample (the split into halves stays fixed), so they include the variability of the choice; significance is nominal,
 per benchmark. With one decode loop the chosen $m$ beats \nat{1} significantly on 14 of 15 settings, by 3.9 to
-21.3 points (GPQA-Diamond, $+12.1$\ci{-2.5}{18.7}, is not significant). With two decode loops it wins significantly on 8 of
-15, and with three or four on none. Comparisons with native models measure the complete trained method, including the
+21.3 points (GPQA-Diamond, $+12.1$\ci{-2.5}{18.7}, is not significant). With two decode loops it wins significantly on 9 of
+15, and with three or four only on 4-shot MATH-500 ($+14.2$ and $+14.6$, with one prefill loop). Comparisons with native models measure the complete trained method, including the
 effect of training the adapter. Two controls separate it. Within the adapter, which isolates the prefill loops, the
-chosen $m$ is significantly above the same adapter's $n/n$ on 10 of 15 settings at one decode loop and never
+chosen $m$ is significantly above the same adapter's $n/n$ on 9 of 15 settings at one decode loop and never
 significantly below it. Against native $n/n$ distilled with LoRA on the same data, teacher and tokens as the adapter
-(Table~\ref{tab:selectdist}), it is significantly above on 9 of 15 settings at one decode loop, among them MMLU-Pro
+(Table~\ref{tab:selectdist}), it is significantly above on 8 of 15 settings at one decode loop, among them MMLU-Pro
 ($+19.3$), BBH ($+11.3$) and HumanEval+ ($+11.6$), and below on RULER-4K, where distillation alone helps more; at two
-decode loops it has 1 significant gain, 2 significant losses and 11 inconclusive differences in 14 comparisons. On Ouro-1.4B, with its own adapter on the same 15 settings, the chosen $m$ wins
-significantly on 13 and 3 of 15 at one and two decode loops (Appendix~\ref{app:models}). Equal decode loops do not mean
+decode loops it has 3 significant gains (among them 4-shot MATH-500, $+18.2$), 2 significant losses and 10 inconclusive
+differences in 15 comparisons. On Ouro-1.4B, with its own adapter on the same 15 settings, the chosen $m$ wins
+significantly on 12 and 2 of 15 at one and two decode loops (Appendix~\ref{app:models}). Equal decode loops do not mean
 equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}
@@ -359,8 +366,9 @@ batches; prefill 4
 \caption{\textbf{Decoding with two loops answers faster than native 4/4.} Ouro-2.6B-Thinking: accuracy against mean
 seconds per answer at batch 1 (prefill included, real greedy answers, the same 192 GSM8K problems for every point;
 labels: prefill/decode loops). Prefill 4 / decode 2 takes $0.59\times$ the time of native 4/4; the same adapter at 2/2
-and the distilled native 2/2 (2/2 dist.) are about as fast, so the saving comes from decoding with two loops, and the
-prefill loops buy accuracy (Section~\ref{sec:rdws}). On all 1,319 problems prefill 4 / decode 2 is 1.0 point below native
+are about as fast, so the saving comes from decoding with two loops; an earlier distilled native 2/2 (2/2 dist.) is
+$1.21\times$ faster than prefill 4 / decode 2. Extra prefill does not improve accuracy on this timed subset (consecutive
+problem IDs 1--192); its gains on other benchmarks are in Section~\ref{sec:rdws}. On all 1,319 problems prefill 4 / decode 2 is 1.0 point below native
 4/4. SenseNova-Loop-9B: Table~\ref{tab:e2e}.}
 \label{fig:frontier}
 \end{figure}
@@ -410,9 +418,10 @@ many loops and the decision can then stop early.
 \section{Conclusion}
 
 A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, with one
-stored prompt KV cache. Measured with the models' base-model evaluation protocol, the lesson at a low decode budget is to decode with
-few loops and prefill with more: with one decode loop the best prefill count is two to four on every setting, and choosing it per benchmark
-beats native Ouro-2.6B significantly on 14 of 15 settings and a distilled 1/1 on 9. On looped decision models more
+stored prompt KV cache. Measured with the Ouro base-model settings where available, the lesson at a low decode budget is to decode with
+few loops and prefill with more: with one decode loop the best prefill count is two to four on 14 of 15 settings, and choosing it per benchmark
+beats native Ouro-2.6B significantly on 14 of 15 settings and a distilled 1/1 on 8. Few-shot math is the exception, where
+one prefill loop is best at every decode depth. On looped decision models more
 prefill than decision loops helps and fewer hurts in every pair we trained.
 
 \section*{Limitations}
@@ -420,11 +429,12 @@ prefill than decision loops helps and fewer hurts in every pair we trained.
 
 The prefill count is chosen per benchmark from half of its labeled items; we do not route individual prompts, and a
 choice need not transfer to an unseen task. The advantage is largest with one decode loop: with two, a distilled native 2/2 with the
-same data is about as good on the base model (1 significant gain, 2 significant losses and 11 inconclusive differences in 14 comparisons), and with three or four decode loops the native model is as good or
+same data gives mixed results on the base model (3 significant gains, 2 significant losses and 10 inconclusive differences in 15 comparisons), and with three or four decode loops the native model is as good or
 better, most clearly on long-context retrieval (RULER). Gains against native models include training the adapter; the
 within-adapter and distillation controls (Section~\ref{sec:select}) separate part of it. Results depend on the evaluation
-protocol: under a non-standard protocol one prefill loop appeared best on 4-shot MATH-500 and MBPP+, an answer-format
-effect (Appendix~\ref{app:eval}). More prefill loops raise the time to first token, and equal decode loops do not mean
+protocol: the best prefill count on MATH-500 changes with the exemplars, strict sentence matching of MATH-500 measures
+the closing sentence rather than the answer, and an earlier code prompt made one prefill loop look best on MBPP+
+(Appendix~\ref{app:eval}). More prefill loops raise the time to first token, and equal decode loops do not mean
 equal latency; end-to-end time is measured at batch 1 on one GPU type, and throughput is a controlled decode benchmark.
 Thinking checkpoints on raw HELMET prompts can stop at once; we decode them so that an answer cannot be empty, for every
 configuration (Appendix~\ref{app:eval}). Thinking models are decoded greedily and scored with math\_verify, not with the
@@ -444,7 +454,8 @@ $D\times D$ value map, both initialised to the identity. Trainable parameters: 6
 frozen.
 
 \paragraph{Objective and data.} $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ summed over answer positions and
-normalised by the answer tokens in the global batch; teacher = native 4/4 with the same weights; one pair $(m,n)$ sampled per
+normalised by $\sum_i(|a_i|-1)$ over the answers $a_i$ of the global batch (one less than the supervised
+positions per answer, as the released checkpoints were trained); teacher = native 4/4 with the same weights; one pair $(m,n)$ sampled per
 micro-batch. 48M answer tokens: OpenThoughts reasoning traces 45\%, Tulu SFT responses 40\%, LongAlpaca long-context answers
 5\% and FineWeb-Edu windows 10\% (fractions of answer tokens); prompts up to 7,680 tokens, answers up to 1,024; the token budget counts $|a|-1$ positions per answer $a$ for the loop
 adapter and the distilled controls alike. Base models see
@@ -452,10 +463,10 @@ a plain ``User: \ldots\ Assistant:'' format; thinking models see the same sample
 data was deliberately included; we did not decontaminate the training corpora. An audit afterwards
 (\texttt{overlap\_audit.py}) finds a 13-token span shared with the training data in 187 of 542 code prompts (HumanEval+ and MBPP+),
 101 of 500 MATH-500 questions, 106 of 14,042 MMLU, 75 of 6,511 BBH, 24 of 1,400 MMLU-Pro and at most 3 items of each
-other audited benchmark (GSM8K, ARC-Challenge, HellaSwag, Winogrande, GPQA, IFEval). Items whose question and choices
-are shorter than 13 tokens cannot be assessed (2,696 MMLU, 296 HellaSwag, 254 BBH, 247 ARC-Challenge, 194 MMLU-Pro, at
+other audited benchmark (GSM8K, ARC-Challenge, HellaSwag, Winogrande, GPQA, IFEval). Items whose extracted question text is unavailable or
+shorter than 13 tokens cannot be assessed (2,696 MMLU, 296 HellaSwag, 254 BBH, 247 ARC-Challenge, 194 MMLU-Pro, at
 most 4 elsewhere) and are kept; RULER and HELMET are synthetic or long-document and not audited. Without the overlapping items the chosen $m$ of
-Table~\ref{tab:select} still wins significantly on 13 of 15 and 8 of 15 settings at one and two decode loops; at one decode loop MBPP+, which
+Table~\ref{tab:select} still wins significantly on 13 of 15 and 9 of 15 settings at one and two decode loops; at one decode loop MBPP+, which
 loses 93 of its 378 problems, becomes inconclusive ($+2.5$ [$-1.1$, $10.2$]).
 
 \paragraph{Optimisation.} AdamW ($\beta=(0.9,0.95)$, no weight decay), peak learning rate $10^{-4}$ with 2\% linear
@@ -491,8 +502,8 @@ condition passes the last visit's full-attention KV and Gated-DeltaNet convoluti
 our runner so that every $(m,n)$ pair is evaluated the same way: lm-evaluation-harness for MMLU (5-shot, log-likelihood,
 14,042), MMLU-Pro (5-shot CoT, strict match; 30 per subject, 420), BBH (3-shot CoT, strict match; 60 per subtask, 1,620),
 ARC-Challenge (25-shot, 1,172), HellaSwag (10-shot, 10,042), Winogrande (5-shot, 1,267) and GSM8K (3-shot CoT, strict
-match, 1,319); MATH-500 with the 4-shot Minerva prompt and strict Minerva answer matching (the Ouro models' own 5-shot
-prompt is not released); HumanEval+ and MBPP+ with evalplus as it runs for a tokenizer with a chat template (the problem
+match, 1,319); MATH-500 with the 4-shot Minerva prompt, scored on the final answer (the last \verb|\boxed{}|, else the Minerva
+closing sentence) with math-verify (the Ouro models' own 5-shot prompt and scorer are not released); HumanEval+ and MBPP+ with evalplus as it runs for a tokenizer with a chat template (the problem
 in evalplus's chat prompt, greedy, 768 new tokens, sanitized code, plus tests). With this protocol native Ouro-2.6B 4/4
 scores within one point of the published numbers on MMLU, MMLU-Pro, BBH and ARC-Challenge and within 1.2 to 3.1 points on
 HumanEval(+) and MBPP(+). GPQA-Diamond (0-shot), IFEval (prompt-level strict), RULER (13 tasks $\times$ 40 rows per length)
@@ -505,14 +516,15 @@ can emit a newline and stop; for thinking models we therefore mask the stop toke
 token, for every configuration. Intervals: paired bootstrap over items, 5,000 resamples, recomputed from released
 per-item scores by one script (Appendix~\ref{app:repro}).
 
-\paragraph{What departing from the protocol does.} An earlier version of this study scored MATH-500 with math-verify on
-the full answer and code with lm-evaluation-harness prompts. Two results of that setup reversed under final-answer scoring, and
-the diagnostics point to answer extraction. On 4-shot MATH-500 at four decode loops, the decoder with one prefill loop largely ignores the exemplars' answer format and writes longer
-solutions: it ends with the exemplars' ``Final Answer'' line on 183 of 500 problems against 429 with four prefill loops,
-so full-answer verification scores it 68.4 against 51.8 and strict matching 18.6 against 46.8. On MBPP+, prefilling base
-Ouro-2.6B with two or more loops dropped Python indentation in 35--63\% of answers under that prompt (under 3\% with one),
-and the task scored only the first base assertion. With the protocol above neither effect remains and the best prefill
-count at one decode loop is two to four on every setting. Answer format also changes one comparison of
+\paragraph{Scoring and prompts.} lm-evaluation-harness's strict Minerva match for MATH-500 credits an answer only if it
+ends with the exemplars' sentence ``Final Answer: The final answer is $X$. I hope it is correct.'' Native Ouro-1.4B 4/4
+writes boxed answers that are mostly correct but closes them in other words, so it scores 4.4 under strict matching and
+70.6 on the final answer; on Ouro-2.6B the decoder with one prefill loop and four decode loops writes longer solutions
+than the exemplars, ends with that sentence on 183 of 500 problems (429 with four prefill loops), and scores 18.6 under
+strict matching but 68.2 on the final answer (51.0 with four prefill loops). We therefore score the final answer; the
+prefill-1 advantage on 4-shot MATH-500 is in the answers, not in their format. Code is different: under an earlier
+lm-evaluation-harness prompt, prefilling base Ouro-2.6B with two or more loops dropped Python indentation in 35--63\% of
+MBPP+ answers (under 3\% with one), and that task scored only the first base assertion; with evalplus this effect is gone. Answer format also changes one comparison of
 Appendix~\ref{app:models}: for Nanbeige4.2-3B-Base, \rw{2}{1} minus \rw{1}{1} on GSM8K is $-8.4$ with strict matching but
 positive with flexible extraction. Native throughput baselines: static per-loop caches with the same two-call flash
 attention (fastest), the standard dynamic cache (500 / 245 / 105 tokens/s at $n=1/2/4$), and a preallocated contiguous
@@ -613,8 +625,8 @@ parentheses; paired 95\% bootstrap intervals that repeat the choice of $m$ in ev
 \end{table*}
 
 Table~\ref{tab:select14} repeats the per-benchmark choice on Ouro-1.4B. As on Ouro-2.6B, the gain is largest with one
-decode loop (significant on 13 of 15 settings) and shrinks with more (3 of 15 at two decode loops, where 3-shot BBH is
-significantly worse than \nat{2}); within the adapter the chosen $m$ beats the adapter's own $n/n$ significantly on 7
+decode loop (significant on 12 of 15 settings) and shrinks with more (2 of 15 at two decode loops, where 3-shot BBH is
+significantly worse than \nat{2}); within the adapter the chosen $m$ beats the adapter's own $n/n$ significantly on 6
 and 1 of 15. Nanbeige4.2-3B-Base, a non-looped model run with its blocks repeated and one loop adapter trained per
 $(m,n)$ pair, shows the same direction at one decode loop: \rw{2}{1} minus \rw{1}{1} is $+11.8$, $+11.7$ and $+14.2$ on
 RULER 4K/8K/16K and $+12.2$ on MMLU (GSM8K: Appendix~\ref{app:eval}).
@@ -742,12 +754,12 @@ generated tokens) one prompt KV cache decodes $0.97\times$ native at $n{=}2$ and
 8K context, 32 steps & $n{=}1$ & $n{=}2$ & $n{=}3$ & $n{=}4$ \\
 \midrule
 native $n/n$ & 834 & 342 & 200 & 125 \\
-\rw{4}{d}, one prompt cache & 813 & 406 & 271 & 203 \\
+\rw{4}{n}, one prompt cache & 813 & 406 & 271 & 203 \\
 \midrule
 1K context, 2{,}048 steps & & $n{=}2$ & & $n{=}4$ \\
 \midrule
 native $n/n$ & & 586 & & 219 \\
-\rw{4}{d}, one prompt cache & & 570 & & 253 \\
+\rw{4}{n}, one prompt cache & & 570 & & 253 \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{Decode throughput} of Ouro-2.6B (tokens/s, best over tested batch sizes, one B300): native model
@@ -873,11 +885,12 @@ experiments on one checkpoint; they show how the decoder responds to each state,
 every condition the layers after the repeated block keep the two-visit prefill's states, so a comparison with the one-visit
 prefill changes those states too; only the comparisons among the three conditions hold them fixed.
 
-In these mixed-state conditions, without training, either second-visit part recovers most of the gain of the full second-visit state (RULER-16K $+50.2$ and
-$+50.5$ against $+66.6$; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$). With the trained loop adapter the two parts behave
+Without training, both mixed-state conditions score far above the one-visit prefill (RULER-16K $+50.2$ and
+$+50.5$, against $+66.6$ for the full second-visit state; MMLU-Pro $+23.7$ and $+21.5$ against $+36.2$); these contrasts also
+change the post-block states, so they do not isolate either part. With the trained loop adapter the two parts behave
 differently. The condition with the second-visit Gated-DeltaNet state is higher on long-context scores: HELMET $+9.1$\ci{6.5}{11.6} and
 RULER-16K $+4.9$\ci{2.1}{7.7}, against $-0.2$ and $+0.7$ for the second-visit attention KV, which lowers RULER-4K
-($-4.5$\ci{-7.2}{-2.0}). The second-visit attention KV raises MMLU-Pro ($+4.6$\ci{2.0}{7.2}; mixed Gated-DeltaNet condition
+($-4.5$\ci{-7.2}{-2.0}). The mixed attention-KV condition is higher on MMLU-Pro ($+4.6$\ci{2.0}{7.2}; mixed Gated-DeltaNet condition
 $+2.0$\ci{-0.4}{4.5}). The ARC-Challenge loss of the full second-visit state (Table~\ref{tab:sn}) appears with the
 Gated-DeltaNet part ($-2.7$\ci{-4.5}{-0.9}; mixed attention-KV condition $+0.8$). In the ``GDN state'' condition the decoder still
 attends to the first visit's KV, consistent with exact retrieval relying on attention in hybrid
@@ -926,7 +939,7 @@ $-11.2$\ci{-13.0}{-9.4}. The native one-visit model scores far lower on every be
 HELMET shows which kinds of long-context task depend on the prefill loops (Table~\ref{tab:helmet}). On both Ouro reasoning models,
 prefilling with four loops instead of one improves retrieval-augmented QA by 15 points and re-ranking by 13--18, but lowers
 exact recall from a JSON key--value store on Ouro-1.4B-Thinking ($-23.5$); against \nat{4}, \rw{4}{2} has higher point
-estimates on retrieval-augmented QA and in-context learning ($+6.1$, $+6.6$; not significant on 2.6B for ICL) and loses exact recall ($58.8$ vs.\ $100$), so its
+estimates on retrieval-augmented QA and in-context learning ($+6.1$\ci{4.1}{8.4}, $+6.6$\ci{3.0}{10.5}) and loses exact recall ($58.8$ vs.\ $100$), so its
 HELMET average is lower ($-8.7$\ci{-13.3}{-4.1}). SenseNova-Loop-9B does not follow the Ouro pattern on recall and
 re-ranking. The recall category is small (34 items on Ouro).
 
@@ -953,7 +966,7 @@ SenseNova; intervals are in \texttt{paper\_numbers.json}.}
 
 The effect of the prefill loops depends on the prompt format (Table~\ref{tab:hurt}). At one decode loop, more
 prefill loops give a negative but inconclusive estimate on RULER-4K, where answers are copied verbatim, and lower 4-shot
-MATH-500 on Ouro-2.6B; without exemplars the same comparison turns positive on two model sizes and two decode loop
+MATH-500 on both model sizes; without exemplars the same comparison turns positive on two model sizes and two decode loop
 counts. Removing exemplars also changes length and format, so we read this as an interaction with the prompt.
 
 \begin{table}[h]
@@ -964,14 +977,14 @@ counts. Removing exemplars also changes length and format, so we read this as an
 model & decode $n$ & task & prefill 4 $-$ prefill $n$ \\
 \midrule
 Ouro-2.6B & 1 & RULER-4K & \dn{3.8}\ci{-8.2}{0.3} \\
- & 1 & MATH, 4-shot & \dn{11.2}\ci{-15.4}{-6.8} \\
- & 1 & MATH, 0-shot & \up{7.0}\ci{3.0}{10.8} \\
- & 2 & MATH, 0-shot & \up{7.0}\ci{3.0}{11.2} \\
-Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.0}\ci{-8.2}{0.0} \\
- & 1 & MATH, 0-shot & \up{4.8}\ci{1.4}{8.4} \\
+ & 1 & MATH, 4-shot & \dn{12.0}\ci{-16.2}{-7.8} \\
+ & 1 & MATH, 0-shot & \up{8.0}\ci{4.2}{11.6} \\
+ & 2 & MATH, 0-shot & \up{7.4}\ci{3.4}{11.4} \\
+Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.4}\ci{-8.4}{-0.6} \\
+ & 1 & MATH, 0-shot & \up{4.8}\ci{1.2}{8.4} \\
 \bottomrule
 \end{tabular}
-\caption{\textbf{The effect of prefill loops changes with the prompt setup.} Same loop adapter, base models, prefill 4 / decode $n$ minus prefill $n$ / decode $n$; MATH-500 scored with math-verify on the full answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
+\caption{\textbf{The effect of prefill loops changes with the prompt setup.} Same loop adapter, base models, prefill 4 / decode $n$ minus prefill $n$ / decode $n$; MATH-500 scored on the final answer. Differences are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:hurt}
 \end{table}
 
