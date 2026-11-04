@@ -15,26 +15,30 @@ values: `python ouro/scripts/paper_numbers.py compute` (numpy only). See [`REPRO
 
 ## Key findings
 
-1. **The best prefill count depends on the benchmark.** One loop adapter on Ouro-2.6B, evaluated at all 16 (prefill
-   *m*, decode *n*) pairs on 13 benchmark settings (the *task map*, Figure 1). Within the same adapter, prefilling 4-shot
-   MATH-500 with one loop instead of four raises accuracy from 51.8 to 68.4 at four decode loops (+16.6 [12.4, 21.0]);
-   MMLU instead needs three or four prefill loops; GSM8K peaks with two and HumanEval with three or four.
-2. **Choosing *m* per benchmark pays most when decoding is cheap.** Choosing *m* on one half of each benchmark's items
-   and scoring it on the other half beats native Ouro-2.6B with the same number of decode loops significantly on
-   **11 of 13** settings with one decode loop (+5 to +21 points) and **9 of 13** with two (intervals that repeat the
-   choice of *m*); against the same adapter's own *n/n* it wins on 6 and 3 and never loses significantly. Ouro-1.4B, on the same 13 settings: 10 and 2 of 13. With three or
-   four decode loops the native model is about as good, except on long-context retrieval where it is better.
-3. **Beyond a distillation baseline.** On Ouro-2.6B-Thinking, prefill 4 / decode 2 has higher point estimates than
-   native 2/2 on eight benchmarks (significantly on five) and scores above a LoRA distillation of native 2/2 trained
-   with the same data, teacher and tokens (significantly on MMLU-Pro +5.2 and ARC-C +2.9).
-4. **The adapted two-loop decoder is faster end to end.** On 64 timed GSM8K problems (batch 1, prefill included)
-   prefill 4 / decode 2 answers in **0.55×** [0.45, 0.67] the time of native 4/4 (the same adapter at 2/2 is as fast);
-   on all 1,319 problems it is 1.0 point below it.
+All numbers use the Ouro models' own evaluation protocol (strict-match GSM8K / MATH-500, evalplus code; native
+Ouro-2.6B 4/4 reproduces the published scores within 0-3 points). 95% paired bootstrap intervals in the paper.
+
+1. **Prefill with more loops than you decode.** One loop adapter on Ouro-2.6B, evaluated at all 16 (prefill *m*,
+   decode *n*) pairs on 15 benchmark settings (the *task map*, Figure 1). With one decode loop the best prefill count is
+   two to four on every setting, never one: within the same adapter, three or four prefill loops instead of one raise
+   MMLU from 51.4 to 66.6 and HumanEval+ from 51.2 to 65.9.
+2. **It beats native, the adapter's own n/n, and a distillation baseline at one decode loop.** Choosing *m* per
+   benchmark on held-out halves beats native Ouro-2.6B 1/1 significantly on **14 of 15** settings (+3.9 to +21.3), the
+   same adapter at prefill 1 on **10**, and native 1/1 distilled with LoRA on the same data and teacher on **9**
+   (intervals that repeat the choice of *m*). With two decode loops distillation matches it; with three or four the
+   native model is as good. Ouro-1.4B: 13 and 3 of 15.
+3. **Reasoning model.** On Ouro-2.6B-Thinking, prefill 4 / decode 2 scores above native 2/2 on all eight benchmarks
+   (significantly on four) and above a distilled 2/2 on MMLU-Pro (+6.0) and ARC-C (+3.2).
+4. **End-to-end time.** On 192 timed GSM8K problems (batch 1, prefill included) prefill 4 / decode 2 answers in
+   **0.59x** [0.52, 0.66] the time of native 4/4; the saving comes from decoding with two loops (a distilled 2/2 is as
+   fast), the extra prefill loops buy accuracy.
 5. **Looped decision models (Lev), both directions.** With more prefill than decision loops, Lev models are
-   significantly above a matched-data and matched-update control on 12 of 13 (*m*, *n*) pairs (+4.4 to +7.5 at one
-   decision loop on three backbones); with fewer, they are below it on all 13 (significantly on 11).
+   significantly above a matched-data and matched-update control on 12 of 13 (*m*, *n*) pairs; with fewer, they are
+   below it on all 13 (significantly on 11), in each of four training seeds.
 6. **One KV cache serves every loop exactly.** A per-frequency complex key scale commutes with RoPE, so it can be
    applied to the query; with a post-attention value map, one stored prompt cache serves every decode loop.
+7. **Evaluation protocol matters.** Under a non-standard protocol, one prefill loop looked best on 4-shot MATH-500 and
+   MBPP+; that was answer format (Appendix B of the paper).
 
 ![Task map on Ouro-2.6B](paper/figs/fig_taskmap.png)
 

@@ -7,23 +7,20 @@
 > Ouro-2.6B-Thinking, Ouro-1.4B-Thinking, SenseNova-Loop-9B-Preview and Lev looped decision models. The paper's statistics
 > are recomputed from released per-item scores by ouro/scripts/paper_numbers.py.
 
-Main findings (95% paired bootstrap intervals in the paper):
-- The best prefill count depends on the benchmark, its prompt and the decode budget (task map over 16 (m, n) pairs on 13
-  benchmark settings, Ouro-2.6B). Within one adapter, 4-shot MATH-500 with one prefill loop instead of four: 51.8 -> 68.4 at four
-  decode loops; MMLU needs three or four prefill loops.
-- Choosing m per benchmark on held-out halves beats native Ouro-2.6B with the same number of decode loops significantly
-  on 11 of 13 settings with one decode loop (+5 to +21) and 9 of 13 with two (selection-aware intervals); against the
-  same adapter's n/n: 6 and 3 of 13; mixed with three or four. Ouro-1.4B (13 settings): 10 and 2 of 13.
-- Ouro-2.6B-Thinking: prefill 4 / decode 2 above native 2/2 on eight benchmarks (significant on five) and above a LoRA
-  distillation of native 2/2 with the same data and teacher (MMLU-Pro +5.2, ARC-C +2.9); 0.55x the answer time of native 4/4
-  on 64 timed GSM8K problems.
+Main findings (95% paired bootstrap intervals in the paper; Ouro's own evaluation protocol):
+- Prefill with more loops than you decode: with one decode loop the best prefill count is 2-4 on all 15 benchmark
+  settings of the Ouro-2.6B task map, never 1.
+- Choosing m per benchmark on held-out halves beats native Ouro-2.6B 1/1 significantly on 14 of 15 settings (+3.9 to
+  +21.3), the same adapter at prefill 1 on 10, and a LoRA-distilled native 1/1 (same data and teacher) on 9; at two
+  decode loops distillation matches it, at three or four the native model is as good. Ouro-1.4B: 13 and 3 of 15.
+- Ouro-2.6B-Thinking: prefill 4 / decode 2 above native 2/2 on all eight benchmarks (significant on four), above a
+  distilled 2/2 on MMLU-Pro (+6.0) and ARC-C (+3.2); 0.59x the answer time of native 4/4 on 192 timed GSM8K problems.
 - Lev looped decision models, both directions: more prefill than decision loops is significantly above a matched
-  control on 12 of 13 (m, n) pairs (+4.4 to +7.5 at one decision loop); fewer is below it on all 13 (significantly 11).
+  control on 12 of 13 (m, n) pairs; fewer is below it on all 13 (significantly 11), in each of four seeds.
 - One stored prompt KV cache serves every decode loop exactly (RoPE-commuting key scale applied to the query).
 
-Limitations stated by the author: the prefill count is calibrated per benchmark, not routed per prompt; the best count
-depends on prompt format and checkpoint; with three or four decode loops native models are better on long-context
-retrieval; comparisons with native models include adapter training; equal decode loops do not mean equal latency.
+Limitations stated by the author: the prefill count is calibrated per benchmark, not routed per prompt; the advantage is largest at one decode loop
+(at two, distillation matches it on the base model); with three or four decode loops native models are as good or better; comparisons with native models include adapter training; equal decode loops do not mean equal latency.
 
 ## Docs
 - README.md: findings, when to use, repository map

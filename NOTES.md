@@ -23,6 +23,15 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 ## Log
 
 ### 2026-11-03 (new agent)
+- Paper rewritten under Ouro's protocol (2026-11-05). Core story: prefill with more loops than you decode. Ouro-2.6B,
+  15 settings: at one decode loop the best prefill count is 2-4 everywhere; chosen m vs native 1/1 14/15, vs the
+  adapter's 1/1 10/15, vs distilled 1/1 (corrected controls E48f/D48f/H48f) 9/15 (RULER-4K below); at two decode loops
+  8/14 vs native but 0/12 vs distilled 2/2; none at three or four. Ouro-1.4B 13/15, 3/15. Thinking 4/2 > native 2/2 on
+  8/8 (4 significant), > distilled 2/2 (T26-Df) on MMLU-Pro +6.0, ARC-C +3.2. Timing on 192 GSM8K problems: 0.59x
+  native 4/4; prefill 4/decode 2 takes 1.21x the time of distilled 2/2 (the saving is decoding with two loops). Without
+  maps, GSM8K is +2.3 at 4/1 under strict match. Nanbeige GSM8K flips sign with strict match (-8.4). New appendix
+  paragraphs on protocol and on what departing from it does. Open: HellaSwag S22/S32/S34/S44 reruns (n=2..4 counts are
+  of 14), seed-2 replication, 1.4B controls, Codex round 7.
 - Evaluation protocol aligned with Ouro (paper Appendix C.1, Table 16). Our native 4/4 already matched Ouro on MMLU
   (75.4 vs 74.6), MMLU-Pro (55.2 vs 55.7), BBH (80.4 vs 80.5) and ARC-C (66.5 vs 66.4), but not on code or MATH. Found:
   (1) 4-shot MATH-500 "prefill 1 beats its teacher" is answer-format: with one prefill loop the model ignores the

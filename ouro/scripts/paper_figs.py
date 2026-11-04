@@ -122,9 +122,12 @@ def fig0():
 
 def fig2():
     """End to end (Ouro-2.6B-Thinking, GSM8K, batch 1): accuracy against seconds per answer."""
-    E = {r["cond"]: (r["seconds"], r["acc"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"}
+    E = {r["cond"]: (r["seconds"], r["acc"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"
+         and r.get("group") == "main"}
     nat = [(*E[f"native{n}st"], f"{n}/{n}") for n in (1, 2, 4) if f"native{n}st" in E]
-    ours = [(*E[c], lab, dy) for c, lab, dy in (("S41sb", "4/1", 5), ("S22sb", "2/2", -12), ("S42sb", "4/2", 5)) if c in E]
+    if "D2st" in E:   # LoRA-distilled native 2/2 (same data and teacher), a native model: grey, unconnected
+        nat.append((*E["D2st"], "2/2 dist."))
+    ours = [(*E[c], lab, dy) for c, lab, dy in (("S22sb", "2/2", -12), ("S42sb", "4/2", 5)) if c in E]
     fig, ax = plt.subplots(figsize=(3.3, 2.4))
     frontier(ax, nat, ours, "", lines=False)   # 1/1 answers run longer than 2/2: a line would fold back
     ax.set_xlabel("seconds per answer (batch 1)", fontsize=8); ax.set_ylabel("GSM8K accuracy (%)", fontsize=8)
@@ -136,7 +139,7 @@ def fig2():
 def fig_equal():
     """Ouro-2.6B-Thinking: native 2/2 and 4/4 against the loop adapter at prefill 4 / decode 2."""
     E = {e["bench"]: e for e in PN["equal"] if e.get("model", "2.6B-T") == "2.6B-T"}
-    benches = ["GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"]
+    benches = ["GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval+", "MBPP+", "HELMET"]
     fig, axes = plt.subplots(2, 4, figsize=(6.9, 3.4))
     for ax, b in zip(axes.flat, benches):
         e = E[b]
@@ -257,8 +260,8 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
     at each number of decode loops n (point labels: that m); all points of a panel on the same items (taskmap_cells)."""
     T = {r["bench"]: r for r in PN["taskmap_cells"] if r["model"] == "Ouro-2.6B"}
     title = {"BBH 3-shot": "BBH"}
-    panels = [b for b in ("MMLU", "MMLU-Pro", "ARC-C", "GPQA-Diamond", "BBH 3-shot", "IFEval", "GSM8K", "MATH-500 4-shot",
-                          "HumanEval", "MBPP+", "RULER-4K", "RULER-8K", "RULER-16K") if b in T]
+    panels = [b for b in ("MMLU", "MMLU-Pro", "ARC-C", "GPQA-Diamond", "HellaSwag", "Winogrande", "BBH 3-shot", "IFEval",
+                          "GSM8K", "MATH-500 4-shot", "HumanEval+", "MBPP+", "RULER-4K", "RULER-8K", "RULER-16K") if b in T]
     if only:
         panels = [b for t in only for b in panels if title.get(b, b) == t]
     nrows = -(-len(panels) // ncols)
@@ -303,7 +306,7 @@ def tab_distill():
     C = {c["label"]: c for c in PN["comparisons"] if c["section"] == "Distillation baseline"}
     pm = lambda c: (r"\up{%.1f}" if c["diff"] >= 0 else r"\dn{%.1f}") % abs(c["diff"]) + ci(c["lo"], c["hi"])
     lines = []
-    for b in ("GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval", "MBPP+", "HELMET"):
+    for b in ("GSM8K", "MATH-500", "MMLU-Pro", "ARC-C", "BBH", "HumanEval+", "MBPP+", "HELMET"):
         ours = C.get(f"2.6B-T prefill 4/decode 2 vs LoRA-distilled native 2/2 {b}")
         dist = C.get(f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {b}")
         if not ours or not dist:
@@ -338,7 +341,8 @@ def tab_taskmap(model="Ouro-2.6B"):
     """Appendix table: the full task map, every prefill m / decode n cell and native n/n on every benchmark; the best m
     at each n in bold (LaTeX header and rows from paper_numbers.json, taskmap_cells)."""
     rows = [r for r in PN.get("taskmap_cells", []) if r["model"] == model]
-    short = {"MATH-500 4-shot": "MATH", "BBH 3-shot": "BBH", "MMLU-Pro": "MMLU-P", "HumanEval": "HEval", "GPQA-Diamond": "GPQA",
+    short = {"MATH-500 4-shot": "MATH", "BBH 3-shot": "BBH", "MMLU-Pro": "MMLU-P", "HumanEval+": "HE+", "GPQA-Diamond": "GPQA",
+             "HellaSwag": "HSwag", "Winogrande": "Wino",
              "IFEval": "IFEv", "RULER-4K": "R-4K", "RULER-8K": "R-8K", "RULER-16K": "R-16K"}
     lines = [" & " + " & ".join(short.get(r["bench"], r["bench"]) for r in rows) + r" \\", r"\midrule"]
     for n in range(1, 5):
@@ -368,5 +372,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "IFEval", "RULER-4K", "RULER-8K"], ncols=5); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "HellaSwag", "Winogrande", "IFEval", "RULER-4K", "RULER-8K"], ncols=4); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval+", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

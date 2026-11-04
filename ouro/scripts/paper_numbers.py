@@ -27,7 +27,7 @@ import numpy as np
 
 ITEMS = Path(__file__).resolve().parents[1] / "results" / "items"
 OUT = Path(__file__).resolve().parents[1] / "results" / "paper_numbers.json"
-GF = "exact_match:flexible-extract"
+GF = "exact_match:strict-match"   # GSM8K 3-shot CoT, strict match (Ouro, Table 16)
 
 
 def gsm(run):
@@ -48,8 +48,8 @@ EQUAL = [("GSM8K", "T:T26-S42-gsm8k_think:math_verify", "T:think-native{n}-gsm8k
          ("MMLU-Pro", "L:T26x-S42-mmlupro:exact_match", "L:T26x-native{n}-mmlupro:exact_match"),
          ("ARC-C", "L:T26x-S42-arc:acc_norm", "L:T26x-native{n}-arc:acc_norm"),
          ("BBH", "L:T26x-S42-bbh:exact_match", "L:T26x-native{n}-bbh:exact_match"),
-         ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
-         ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
+         ("HumanEval+", "P:T26x-S42-evalplus:humaneval_chat:plus", "P:T26x-native{n}-evalplus:humaneval_chat:plus"),
+         ("MBPP+", "P:T26x-S42-evalplus:mbpp_chat:plus", "P:T26x-native{n}-evalplus:mbpp_chat:plus"),
          ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet")]
 
 # SenseNova-Loop-9B headline at decode 1 ({c}: native1, C11, C21, native2)
@@ -80,18 +80,22 @@ SNG_KEYS = [("RULER-4K", "B:SNGnt-{c}:ruler4k"), ("RULER-8K", "B:SNGnt-{c}:ruler
             ("HELMET", "B:SNGnt-{c}-helmet:helmet")]
 
 CMP = []
+# Table 6 / Section 3 (maps frozen at the identity, same recipe, minus the loop adapter): the values the paper prints
+NOMAP = {("S41", "RULER-16K"): (-11.4, -14.7, -8.2), ("S41", "GSM8K"): (2.3, 0.2, 4.5), ("S41", "MMLU"): (-0.2, -0.6, 0.1),
+         ("S42", "RULER-16K"): (-2.6, -4.5, -0.7), ("S42", "GSM8K"): (0.2, -1.3, 1.7), ("S22", "RULER-16K"): (-3.4, -5.6, -1.3),
+         ("S11", "MMLU"): (-0.4, -0.7, -0.0), ("S22", "MMLU"): (-0.3, -0.5, -0.0)}
 # Table 6 (design variants): unrestricted key maps, one prompt KV cache per decode loop, minus the loop adapter
 BANK = {"11": (0.1, -1.3, 1.5), "22": (0.6, -0.8, 2.0), "31": (-0.9, -2.9, 1.2), "32": (1.2, -0.4, 2.7), "42": (-1.0, -2.6, 0.5)}
-for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.0, 5.3, 10.5)]),
-             (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-1.7, -3.6, 0.2)]),
-             (3, [(0.6, 0.2, 1.1), (-0.4, -3.0, 2.2), (-0.8, -2.4, 0.8)])):
+for d, v in ((1, [(15.2, 14.3, 16.1), (8.6, 4.3, 12.8), (8.5, 6.1, 10.9)]),
+             (2, [(6.0, 5.4, 6.7), (5.3, 1.3, 9.4), (-0.1, -2.0, 2.0)]),
+             (3, [(0.6, 0.2, 1.1), (-0.4, -3.0, 2.2), (-2.0, -3.9, -0.2)])):
     CMP += [("Table 1", f"decode {d} MMLU", mmlu(f"X26-S4{d}"), mmlu(f"X26-S{d}{d}"), v[0]),
             ("Table 1", f"decode {d} RULER-16K", ruler(f"X26-S4{d}", 16), ruler(f"X26-S{d}{d}", 16), v[1]),
             ("Table 1", f"decode {d} GSM8K", gsm(f"X26-S4{d}"), gsm(f"X26-S{d}{d}"), v[2])]
 CMP += [
     ("Table 2", "Ouro-1.4B ARC-C", "L:O14x-S41-arc:acc_norm", "L:O14x-S11-arc:acc_norm", (10.8, 8.4, 13.1)),
     ("Table 2", "Ouro-1.4B RULER-16K", ruler("O14-S41", 16), ruler("O14-S11", 16), (1.4, -2.6, 5.4)),
-    ("Table 2", "Ouro-1.4B GSM8K", gsm("O14-S41"), gsm("O14-S11"), (6.2, 3.6, 8.7)),
+    ("Table 2", "Ouro-1.4B GSM8K", gsm("O14-S41"), gsm("O14-S11"), (5.0, 2.7, 7.2)),
     ("Table 2", "Ouro-2.6B-T MMLU-Pro", "L:T26x-S41-mmlupro:exact_match", "L:T26x-S11-mmlupro:exact_match", (18.6, 13.6, 23.8)),
     ("Table 2", "Ouro-2.6B-T HELMET", "B:T26ne-S41-helmet:helmet", "B:T26ne-S11-helmet:helmet", (7.7, 2.1, 13.6)),
     ("Table 2", "Ouro-2.6B-T GSM8K", "T:T26-S41-gsm8k_think:math_verify", "T:T26-S11-gsm8k_think:math_verify", (6.6, 4.2, 9.2)),
@@ -108,20 +112,20 @@ CMP += [
     ("Table 5", "2.6B decode 2 MATH 0-shot", "L:o26x-S42-math0shot:mvfull", "L:o26x-S22-math0shot:mvfull", (7.0, 3.0, 11.2)),
     ("Table 5", "1.4B decode 1 MATH 4-shot", "L:o14x-S41-math4shot:mvfull", "L:o14x-S11-math4shot:mvfull", (-4.0, -8.2, 0.0)),
     ("Table 5", "1.4B decode 1 MATH 0-shot", "L:o14x-S41-math0shot:mvfull", "L:o14x-S11-math0shot:mvfull", (4.8, 1.4, 8.4)),
-    *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), None)
+    *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
                            ("RULER-4K", "B:X26fz-{c}f:ruler4k", "B:X26-{c}f:ruler4k"),
                            ("RULER-16K", "B:X26fz-{c}f:ruler16k", "B:X26-{c}f:ruler16k"),
                            ("MMLU", mmlu("X26fz-{c}"), mmlu("X26-{c}")))],
-    ("Table 6", "direct sharing 4/1 GSM8K", gsm("X26-Y1"), gsm("X26-S41"), (-17.5, -20.1, -14.9)),
-    ("Table 6", "direct sharing 4/2 GSM8K", gsm("X26-Y2"), gsm("X26-S42"), (-0.1, -2.0, 1.7)),
-    ("Table 6", "answer once 4/2 GSM8K", gsm("X26-O42"), gsm("X26-S42"), (0.3, -1.5, 2.1)),
-    ("Table 6", "answer once 3/3 GSM8K", gsm("X26-O33"), gsm("X26-S33"), (-0.8, -2.4, 0.8)),
-    ("Table 6", "answer once 4/4 GSM8K", gsm("X26-O44"), gsm("X26-S44"), (-2.6, -4.2, -1.1)),
+    ("Table 6", "direct sharing 4/1 GSM8K", gsm("X26-Y1"), gsm("X26-S41"), (-11.0, -13.7, -8.3)),
+    ("Table 6", "direct sharing 4/2 GSM8K", gsm("X26-Y2"), gsm("X26-S42"), (1.2, -0.9, 3.3)),
+    ("Table 6", "answer once 4/2 GSM8K", gsm("X26-O42"), gsm("X26-S42"), (-2.5, -4.5, -0.5)),
+    ("Table 6", "answer once 3/3 GSM8K", gsm("X26-O33"), gsm("X26-S33"), (-2.4, -4.2, -0.7)),
+    ("Table 6", "answer once 4/4 GSM8K", gsm("X26-O44"), gsm("X26-S44"), (-3.0, -4.8, -1.3)),
     ("Table 4", "answer once 4/4 vs native 4/4 GSM8K", gsm("X26-O44"), f"L:X26-native4-gsmfull:{GF}", None),
     ("Table 6", "first-loop branch 4/1 RULER-4K", ruler("X26-M41", 4), ruler("X26-S41", 4), (2.3, 1.0, 3.6)),
-    ("Table 6", "first-loop branch 4/1 GSM8K", gsm("X26-M41"), gsm("X26-S41"), (0.7, -0.8, 2.2)),
+    ("Table 6", "first-loop branch 4/1 GSM8K", gsm("X26-M41"), gsm("X26-S41"), (0.5, -0.9, 2.0)),
 ]
 for c in ("11", "22", "31", "32", "42"):
     CMP.append(("Table 6", f"bank per loop {c[0]}/{c[1]} RULER-16K", ruler(f"X26-V{c}", 16), ruler(f"X26-S{c}", 16), BANK[c]))
@@ -155,8 +159,8 @@ CMP += [
           ("MMLU-Pro", "L:T26x-S42-mmlupro:exact_match", "L:T26x-native{n}-mmlupro:exact_match"),
           ("ARC-C", "L:T26x-S42-arc:acc_norm", "L:T26x-native{n}-arc:acc_norm"),
           ("BBH", "L:T26x-S42-bbh:exact_match", "L:T26x-native{n}-bbh:exact_match"),
-          ("HumanEval", "L:T26x-S42-code:pass@1", "L:T26x-native{n}-code:pass@1"),
-          ("MBPP+", "L:T26x-S42-code:pass_at_1", "L:T26x-native{n}-code:pass_at_1"),
+          ("HumanEval+", "P:T26x-S42-evalplus:humaneval_chat:plus", "P:T26x-native{n}-evalplus:humaneval_chat:plus"),
+          ("MBPP+", "P:T26x-S42-evalplus:mbpp_chat:plus", "P:T26x-native{n}-evalplus:mbpp_chat:plus"),
           ("HELMET", "B:T26ne-S42-helmet:helmet", "B:T26ne-native{n}-helmet:helmet"))],
     *[("Hybrid state", f"SenseNova {kind} prefill-2 state {part} vs prefill 1 {bench}", key.format(c=deep + mix), key.format(c=shallow),
        HYBRID_PRINTED.get((kind, mix, bench)))
@@ -195,10 +199,10 @@ CMP += [
     *[("Thinking decode 2", f"2.6B-T prefill 1 / decode 2 vs native 2/2 {bench}", ka.replace("S42", "S12"), kb.format(n=2), None)
       for bench, ka, kb in EQUAL],
     # distillation baseline (arm D: native 2/2 layout, LoRA only, same data / tokens / teacher as the adapter)
-    *[("Distillation baseline", f"2.6B-T prefill 4/decode 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "D"),
-       {"MMLU-Pro": (5.2, 1.2, 9.3), "ARC-C": (2.9, 1.4, 4.4)}.get(bench))
+    *[("Distillation baseline", f"2.6B-T prefill 4/decode 2 vs LoRA-distilled native 2/2 {bench}", ka, ka.replace("S42", "Df"),
+       {"MMLU-Pro": (6.0, 1.7, 10.2), "ARC-C": (3.2, 1.5, 4.8)}.get(bench))
       for bench, ka, _ in EQUAL],
-    *[("Distillation baseline", f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {bench}", ka.replace("S42", "D"), kb.format(n=2), None)
+    *[("Distillation baseline", f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {bench}", ka.replace("S42", "Df"), kb.format(n=2), None)
       for bench, ka, kb in EQUAL],
     # the control for the headline: the same adapter (same weights, same training) at prefill 2 / decode 2
     *[("Same adapter", f"2.6B-T prefill 4/decode 2 vs prefill 2/decode 2 {bench}", ka, ka.replace("S42", "S22"),
@@ -222,26 +226,32 @@ CMP += [
     ("App B", "Nanbeige RULER-8K", "B:NBX-p2d1:ruler8k", "B:NBX-p1d1:ruler8k", (11.7, None, None)),
     ("App B", "Nanbeige RULER-16K", "B:NBX-p2d1:ruler16k", "B:NBX-p1d1:ruler16k", (14.2, None, None)),
     ("App B", "Nanbeige MMLU", "L:NBX-p2d1-mmlufull:acc", "L:NBX-p1d1-mmlufull:acc", (12.2, None, None)),
-    ("App B", "Nanbeige GSM8K", f"L:NBX-p2d1-gsmfull:{GF}", f"L:NBX-p1d1-gsmfull:{GF}", (5.2, None, None)),
+    ("App B", "Nanbeige GSM8K", f"L:NBX-p2d1-gsmfull:{GF}", f"L:NBX-p1d1-gsmfull:{GF}", (-8.4, -11.5, -5.3)),
+    ("App B", "Nanbeige GSM8K flexible extraction", "L:NBX-p2d1-gsmfull:exact_match:flexible-extract",
+     "L:NBX-p1d1-gsmfull:exact_match:flexible-extract", (5.2, None, None)),
 ]
 # means (Figure 1 grid on evaluation subsets)
 MEANS = []
 # task map: Ouro-2.6B, one loop adapter (X26-S-universal), every (prefill m, decode n) cell and native n/n
-TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:mvfull"), ("BBH 3-shot", "L:o26x-{c}-bbh:exact_match"),
+# Protocol of Ouro's base-model table (Ouro paper, Appendix C.1, Table 16): MATH-500 and GSM8K strict match, code with
+# evalplus (chat prompt; HumanEval+ and MBPP+ = the plus tests), HellaSwag and Winogrande added.
+TASK_MAP = [("MATH-500 4-shot", "L:o26x-{c}-math:exact_match"), ("BBH 3-shot", "L:o26x-{c}-bbh:exact_match"),
             ("ARC-C", "L:o26x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:o26x-{c}-mmlupro:exact_match"),
-            ("HumanEval", "L:o26x-{c}-code:pass@1"), ("MBPP+", "L:o26x-{c}-code:pass_at_1"),
+            ("HellaSwag", "L:o26x-{c}-hellaswag:acc_norm"), ("Winogrande", "L:o26x-{c}-winogrande:acc"),
+            ("HumanEval+", "P:o26x-{c}-evalplus:humaneval_chat:plus"), ("MBPP+", "P:o26x-{c}-evalplus:mbpp_chat:plus"),
             ("GPQA-Diamond", "L:o26x-{c}-gpqa:acc_norm"), ("IFEval", "L:o26x-{c}-ifeval:prompt_level_strict_acc"),
             ("RULER-4K", "B:X26-{c}f:ruler4k"), ("RULER-8K", "B:X26-{c}f:ruler8k"), ("RULER-16K", "B:X26-{c}f:ruler16k")]
-# replication on Ouro-1.4B (its own adapter, O14-S-universal) for five benchmarks
+# replication on Ouro-1.4B (its own adapter, O14-S-universal), same settings (MMLU and GSM8K subsets)
 TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF),
-               ("MATH-500 4-shot", "L:O14x-{c}-math:mvfull"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
+               ("MATH-500 4-shot", "L:O14x-{c}-math:exact_match"), ("BBH 3-shot", "L:O14x-{c}-bbh:exact_match"),
                ("ARC-C", "L:O14x-{c}-arc:acc_norm"), ("MMLU-Pro", "L:O14x-{c}-mmlupro:exact_match"),
-               ("HumanEval", "L:O14x-{c}-code:pass@1"), ("MBPP+", "L:O14x-{c}-code:pass_at_1"),
+               ("HellaSwag", "L:O14x-{c}-hellaswag:acc_norm"), ("Winogrande", "L:O14x-{c}-winogrande:acc"),
+               ("HumanEval+", "P:O14x-{c}-evalplus:humaneval_chat:plus"), ("MBPP+", "P:O14x-{c}-evalplus:mbpp_chat:plus"),
                ("GPQA-Diamond", "L:O14x-{c}-gpqa:acc_norm"), ("IFEval", "L:O14x-{c}-ifeval:prompt_level_strict_acc"),
                ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
-DISTILLED = {1: "E48", 2: "D48", 3: "H48"}
-DISTILLED_COUNTS = {1: (7, 1, 13), 2: (5, 1, 13), 3: (3, 3, 13)}
+DISTILLED = {1: "E48f", 2: "D48f", 3: "H48f"}   # controls that also supervise the first answer token (--first-target)
+DISTILLED_COUNTS = {1: (9, 1, 15), 2: (0, 2, 12), 3: (1, 3, 14)}
 DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP] + ["L:o26x-{d}-mmlufull:acc", "L:o26x-{d}-gsmfull:" + GF]
 MEANS += [("Task map 1.4B", f"{c} {bench}", key.format(c=c)) for bench, key in TASK_MAP_14
           for c in [f"S{m}{n}" for m in range(1, 5) for n in range(1, 5)] + [f"native{n}" for n in range(1, 5)]]
@@ -309,6 +319,9 @@ def load_raw(runs, key):
     kind, name, *rest = key.split(":")
     if kind == "L":
         return read_lm(runs, name, rest[0], rest[1] if len(rest) > 1 else None)
+    if kind == "P":  # evalplus results of score_evalplus.py: P:<run>:<dataset>:<base|plus>
+        f = f"{runs}/lmeval/out/{name}/evalplus_{rest[0]}.jsonl"
+        return {f"{rest[0]}/{r['doc_id']}": float(r[rest[1]]) for r in map(json.loads, open(f))} if os.path.exists(f) else {}
     if kind == "T":  # all shards <name>_s0, _s1, ... (GSM8K: 4, MATH-500: 5); empty unless every shard has samples
         shards = sorted({d.rsplit("_", 1)[1] for d in glob.glob(f"{runs}/lmeval/out/{name}_s[0-9]")})
         if not shards or not all(glob.glob(f"{runs}/lmeval/out/{name}_{s}/*/samples_*.jsonl") for s in shards):
@@ -407,8 +420,9 @@ def boot(a, b, reps=5000, groups=None):
 
 E2E = Path(__file__).resolve().parents[1] / "results" / "e2e"
 # (label, model prefix, task, A, B, printed ratio of mean seconds per answer A / B)
-RATIOS = [("2.6B-T GSM8K prefill 4/decode 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.55, 0.45, 0.67)),
-          ("2.6B-T GSM8K prefill 4/decode 2 vs prefill 2/decode 2", "think", "gsm", "S42sb", "S22sb", (1.01, 0.90, 1.11)),
+RATIOS = [("2.6B-T GSM8K prefill 4/decode 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.59, 0.52, 0.66)),
+          ("2.6B-T GSM8K prefill 4/decode 2 vs prefill 2/decode 2", "think", "gsm", "S42sb", "S22sb", (1.02, 0.92, 1.13)),
+          ("2.6B-T GSM8K prefill 4/decode 2 vs LoRA-distilled native 2/2", "think", "gsm", "S42sb", "D2st", (1.21, 1.06, 1.38)),
           ("2.6B-T MATH prefill 4/decode 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
           ("2.6B-T MATH prefill 4/decode 2 vs native 2/2", "think", "math", "S42sb", "native2st", (1.22, None, None)),
           ("SenseNova GSM8K prefill 1/decode 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
@@ -426,20 +440,22 @@ def e2e(model, task, cond):
 
 def e2e_table():
     rows = []
-    for model, task, conds in (("think", "gsm", ("native1st", "native2st", "native4st", "S41sb", "S22sb", "S42sb")),
-                               ("think", "math", ("native2st", "native4st", "S42sb")),
-                               ("sn", "gsm", ("native2", "C11", "C21")),
-                               ("think", "gsm", ("S42sb", "O42sb"))):  # appendix: answer stored once
+    for group, model, task, conds in (
+            ("main", "think", "gsm", ("native2st", "native4st", "D2st", "S22sb", "S42sb")),           # 192 problems
+            ("first64", "think", "gsm", ("native1st", "native2st", "native4st", "S41sb", "S22sb", "S42sb")),  # 64
+            ("main", "think", "math", ("native2st", "native4st", "S42sb")),
+            ("main", "sn", "gsm", ("native2", "C11", "C21")),
+            ("answer-once", "think", "gsm", ("S42sb", "O42sb"))):  # appendix: answer stored once
         recs = {c: e2e(model, task, c) for c in conds}
         common = set.intersection(*(set(r) for r in recs.values() if r))  # same problems for every configuration
         for c in conds:
             r = {i: x for i, x in recs[c].items() if i in common}
             if r:
-                rows.append(dict(model=model, task=task, cond=c, n=len(r), acc=round(100 * np.mean([x["correct"] for x in r.values()]), 1),
+                rows.append(dict(group=group, model=model, task=task, cond=c, n=len(r), acc=round(100 * np.mean([x["correct"] for x in r.values()]), 1),
                                  seconds=round(float(np.mean([x["total_s"] for x in r.values()])), 1),
                                  tokens=round(float(np.mean([x["new_tokens"] for x in r.values()]))),
                                  ms_per_token=round(float(np.mean([x["ms_per_token"] for x in r.values()])), 1)))
-                print(f"Table 3      {model} {task} {c:10s} acc {rows[-1]['acc']:5.1f}  s/answer {rows[-1]['seconds']:6.1f}  n={len(r)}")
+                print(f"Table 3      {group:11s} {model} {task} {c:10s} acc {rows[-1]['acc']:5.1f}  s/answer {rows[-1]['seconds']:6.1f}  n={len(r)}")
     ratios = []
     for label, model, task, a, b, printed in RATIOS:
         A, B = e2e(model, task, a), e2e(model, task, b)
@@ -694,16 +710,14 @@ def overlap_check():
     for n in (1, 2):
         sel = [r for r in rows if r["model"] == "Ouro-2.6B" and r["n"] == n]
         out[f"n{n}"] = (sum(r["diff_select_aware"][1] > 0 for r in sel), len(sel))
-        flag = "" if out[f"n{n}"] == {1: (11, 13), 2: (9, 13)}[n] else "  !! paper: " + str({1: (11, 13), 2: (9, 13)}[n])
+        flag = "" if out[f"n{n}"] == {1: (14, 15), 2: (8, 14)}[n] else "  !! paper: " + str({1: (14, 15), 2: (8, 14)}[n])
         print(f"Overlap      Ouro-2.6B n={n} without overlapping items: significant with selection-aware intervals "
               f"{out[f'n{n}'][0]} of {out[f'n{n}'][1]}{flag}")
-    a, b = load("L:o26x-S14-math:mvfull"), load("L:o26x-S44-math:mvfull")
+    a, b = load("L:o26x-S14-math:exact_match"), load("L:o26x-S44-math:exact_match")
     if a and b:
         keep = [i for i in a if i in b and i not in drop]
         r = boot({i: a[i] for i in keep}, {i: b[i] for i in keep})
         out["math_s14_s44"] = [round(r[k], 3) for k in ("diff", "lo", "hi")] + [len(keep)]
-        if any(abs(p - g) > 0.051 for p, g in zip((19.0, 14.0, 23.8), (r["diff"], r["lo"], r["hi"]))) or len(keep) != 399:
-            print("Overlap      !! paper: +19.0 [14.0, 23.8], 399 items")
         print(f"Overlap      MATH-500 4-shot prefill 1 vs 4 at decode 4 without overlapping items: {r['diff']:+.1f} "
               f"[{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f}, n={len(keep)})")
     return out
@@ -756,28 +770,22 @@ def taskmap_select(exclude=frozenset(), quiet=False):
                   f"{row['diff'][0]:+5.1f} [{row['diff'][1]:+.1f}, {row['diff'][2]:+.1f}]{vs_d}")
     if quiet:
         return out
-    # single values quoted in the text
-    quoted = {("MATH-500 4-shot", 3): 13.6, ("MATH-500 4-shot", 4): 14.4, ("MBPP+", 3): 18.0, ("MBPP+", 4): 18.5, ("MBPP+", 2): 15.6,
-              ("HumanEval", 2): 18.3}
-    for (bench, n), v in quoted.items():
-        got = next((r["diff"][0] for r in out if r["model"] == "Ouro-2.6B" and r["bench"] == bench and r["n"] == n), None)
-        if got is None or abs(got - v) > 0.051:
-            print(f"Select m     {bench} n={n}: {got}  !! paper: {v}")
-    # counts quoted in the abstract, introduction and Section 4.2: (significant wins, benchmarks) at n = 1 and n = 2
-    for model, n, (wins, total) in (("Ouro-2.6B", 1, (12, 13)), ("Ouro-2.6B", 2, (11, 13)), ("Ouro-1.4B", 1, (12, 13)),
-                                    ("Ouro-1.4B", 2, (5, 13))):
-        rows = [r for r in out if r["n"] == n and r["model"] == model]
-        got = (sum(r["diff"][1] > 0 for r in rows), len(rows))
-        flag = "" if got == (wins, total) else f"  !! paper: {wins} of {total}"
-        print(f"Select m     {model} significant wins at n={n}: {got[0]} of {got[1]}{flag}")
+    # single values quoted in Section 4.2: (bench, n, field) -> (diff, lo, hi) or point estimate
+    quoted = {("GPQA-Diamond", 1, "diff_select_aware"): (12.1, -2.5, 18.7), ("MMLU-Pro", 1, "diff_distilled"): 19.3,
+              ("BBH 3-shot", 1, "diff_distilled"): 11.3, ("HumanEval+", 1, "diff_distilled"): 11.6}
+    for (bench, n, field), v in quoted.items():
+        got = next((r.get(field) for r in out if r["model"] == "Ouro-2.6B" and r["bench"] == bench and r["n"] == n), None)
+        want = v if isinstance(v, tuple) else (v,)
+        if got is None or any(abs(a - b) > 0.051 for a, b in zip(want, got)):
+            print(f"Select m     {bench} n={n} {field}: {got}  !! paper: {v}")
     for model in ("Ouro-2.6B", "Ouro-1.4B"):
         for n in range(1, 5):
             rows = [r for r in out if r["n"] == n and r["model"] == model]
             got = (sum(r["diff_select_aware"][1] > 0 for r in rows), sum(r["diff_adapter_select_aware"][1] > 0 for r in rows),
                    sum(r["diff_adapter_select_aware"][2] < 0 for r in rows), len(rows))
             # quoted in Section 4.2: (selection-aware significant, above adapter n/n, below adapter n/n, benchmarks)
-            printed = {("Ouro-2.6B", 1): (11, 6, 0, 13), ("Ouro-2.6B", 2): (9, 3, 0, 13), ("Ouro-1.4B", 1): (10, 4, 0, 13),
-                       ("Ouro-1.4B", 2): (2, 1, 0, 13)}.get((model, n))
+            printed = {("Ouro-2.6B", 1): (14, 10, 0, 15), ("Ouro-2.6B", 2): (8, 2, 0, 14), ("Ouro-1.4B", 1): (13, 7, 0, 15),
+                       ("Ouro-1.4B", 2): (3, 1, 0, 15)}.get((model, n))
             flag = f"  !! paper: {printed}" if printed and got != printed else ""
             print(f"Select m     {model} n={n}: significant with selection-aware intervals {got[0]} of {got[3]}; above the "
                   f"adapter's {n}/{n} significantly {got[1]}, below {got[2]}{flag}")
