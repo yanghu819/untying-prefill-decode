@@ -1,0 +1,11 @@
+# MBPP+ under the standard base-model MBPP protocol: three exemplars with indented code between [BEGIN] and [DONE],
+# generation stops at [DONE], scored on the full MBPP+ tests (the dataset's `test` field), not only the first assertion.
+include: mbpp_local.yaml
+task: mbpp_plus_3shot_local
+doc_to_text: "You are an expert Python programmer, and here is your task: {{prompt if prompt is defined else text}} Your code should pass these tests:\n\n{{test_list[0]}}\n{{test_list[1]}}\n{{test_list[2]}}\n[BEGIN]\n"
+doc_to_target: "{% if is_fewshot is defined %}{{code}}\n[DONE]{% else %}{{test}}{% endif %}"
+generation_kwargs:
+  until:
+    - "[DONE]"
+  max_gen_toks: 512
+  do_sample: false
