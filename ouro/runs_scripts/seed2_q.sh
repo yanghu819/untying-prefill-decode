@@ -1,10 +1,12 @@
 #!/bin/bash
 # seed2_q.sh PART GPU...: Table 1 with a second training seed of the loop adapter (X26-S-seed2): every cell needed to
 # choose m at one and two decode loops (prefill 1-4 / decode 1-2), all task-map settings under Ouro's protocol, with
-# the same tasks and settings as the seed-0 task map. PART lm: the lm-eval settings; PART rest: RULER and evalplus code.
+# the same tasks and settings as the seed-0 task map. PART lm: the lm-eval settings; PART rest: RULER and evalplus code;
+# PART lm34 / rest34: the same for the decode 3-4 cells.
 # Run names X26s2-<cell>-<bench> (RULER: X26s2-<cell>f). Two jobs per GPU.
 PART=$1; shift; M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/seed2_q.txt; CK=$R/X26-S-seed2/checkpoint-48m.pt; cd $R
-for c in S11 S21 S31 S41 S12 S22 S32 S42; do
+CELLS="S11 S21 S31 S41 S12 S22 S32 S42"; case $PART in *34) CELLS="S13 S23 S33 S43 S14 S24 S34 S44"; PART=${PART%34} ;; esac
+for c in $CELLS; do
   MA="path=$M/model-2.6b,condition=$c,checkpoint=$CK,max_length=16384"
   lm() { echo "./lm1.sh \$GPU X26s2-$c-$1 - \"$MA\" \"$2\""; }
   if [ $PART = lm ]; then
