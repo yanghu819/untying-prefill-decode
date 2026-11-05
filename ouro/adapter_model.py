@@ -32,13 +32,15 @@ def backbone(model, ids, cache, steps, attention_mask=None):
 
 
 class ReaderLoRA(nn.Module):
-    """Rank-16, alpha-16, zero-dropout residual on a frozen reader projection."""
+    """Rank-r, alpha-r (scale 1), zero-dropout residual on a frozen reader projection; r = 16 unless env OURO_LORA_RANK
+    is set (rank ablation; set it identically for training and evaluation)."""
 
     def __init__(self, base):
         super().__init__()
         self.base = base
-        self.lora_a = nn.Parameter(torch.empty(16, base.in_features, device=base.weight.device))
-        self.lora_b = nn.Parameter(torch.zeros(base.out_features, 16, device=base.weight.device))
+        r = int(os.environ.get("OURO_LORA_RANK", "16"))
+        self.lora_a = nn.Parameter(torch.empty(r, base.in_features, device=base.weight.device))
+        self.lora_b = nn.Parameter(torch.zeros(base.out_features, r, device=base.weight.device))
         nn.init.kaiming_uniform_(self.lora_a, a=5**0.5)
 
     def forward(self, x):
