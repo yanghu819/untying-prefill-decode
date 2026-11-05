@@ -1,0 +1,49 @@
+{
+ "run": "o26x-S34-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=S34,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-02T13:06:25.902158+00:00",
+ "seconds": "2988.461241725832",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.506,
+   "exact_match_stderr,none": 0.022381462412439424,
+   "math_verify,none": 0.464,
+   "math_verify_stderr,none": 0.022324981738385333
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-02T21-56-12.399888.jsonl",
+   "sha256": "70f65fc6fb6270bc8964e3a3ff454442a6e2e3fffeb9f4ac87718a52830d643b",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "X26-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "ea0595f82e8b5f5dfb407c8b69e76cf7a9983c3ff0a0c2d56a4160cc866740d2",
+  "bytes": 760170173
+ }
+}

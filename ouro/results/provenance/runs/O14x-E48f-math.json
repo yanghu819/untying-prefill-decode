@@ -1,0 +1,57 @@
+{
+ "run": "O14x-E48f-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T22:32:18.030629+00:00",
+ "seconds": "24.007514314260334",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.002,
+   "exact_match_stderr,none": 0.002,
+   "math_verify,none": 0.196,
+   "math_verify_stderr,none": 0.017770751227744897
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-04T15-13-26.119340.jsonl",
+   "sha256": "491af313c024b59a20dd7b88577c359e5305b827a84b7b7d467a4f55a8876f3a",
+   "items": 500
+  },
+  {
+   "file": "samples_minerva_math500_2026-11-05T06-32-40.145226.jsonl",
+   "sha256": "491af313c024b59a20dd7b88577c359e5305b827a84b7b7d467a4f55a8876f3a",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 14:58:48 gpu4: ./lm1.sh $GPU O14x-E48f-math - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\"",
+  "distill_q.txt.log: 06:32:11 gpu7: ./lm1.sh $GPU O14x-E48f-math - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\""
+ ],
+ "checkpoint": {
+  "run": "X14-E48f-p1d1",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "8970d79778da23b7110055b51357175d5dcafe50855cbb9f2c0d1e455cc8a10b",
+  "bytes": 75741555
+ }
+}

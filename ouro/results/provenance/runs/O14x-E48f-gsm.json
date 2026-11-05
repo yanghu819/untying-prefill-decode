@@ -1,0 +1,57 @@
+{
+ "run": "O14x-E48f-gsm",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384",
+ "limit": 400.0,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 400
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "cf8efac44d1e4958914e2cb93fb6e8319d30c9fb794f4ef442bd9f0cbd1acd23"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T22:40:48.574472+00:00",
+ "seconds": "9.322155074682087",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.21,
+   "exact_match_stderr,strict-match": 0.020390916450326858,
+   "exact_match,flexible-extract": 0.2925,
+   "exact_match_stderr,flexible-extract": 0.022774020616430364
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-04T15-05-32.938705.jsonl",
+   "sha256": "87d563c0f7e916ec03d3cd7f78df01e4097b5159f53fdc7382cacbdaccb880b5",
+   "items": 800
+  },
+  {
+   "file": "samples_gsm8k_cot_2026-11-05T06-40-56.021487.jsonl",
+   "sha256": "87d563c0f7e916ec03d3cd7f78df01e4097b5159f53fdc7382cacbdaccb880b5",
+   "items": 800
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 15:03:44 gpu7: ./lm1.sh $GPU O14x-E48f-gsm - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3 --limit 400\"",
+  "distill_q.txt.log: 06:40:41 gpu7: ./lm1.sh $GPU O14x-E48f-gsm - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3 --limit 400\""
+ ],
+ "checkpoint": {
+  "run": "X14-E48f-p1d1",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "8970d79778da23b7110055b51357175d5dcafe50855cbb9f2c0d1e455cc8a10b",
+  "bytes": 75741555
+ }
+}

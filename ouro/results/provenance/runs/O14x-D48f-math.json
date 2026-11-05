@@ -1,0 +1,57 @@
+{
+ "run": "O14x-D48f-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X14-D48f-p2d2/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T22:27:31.177553+00:00",
+ "seconds": "23.711258334107697",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.14,
+   "exact_match_stderr,none": 0.015533272840269705,
+   "math_verify,none": 0.492,
+   "math_verify_stderr,none": 0.022380208834928014
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-05T01-44-38.385971.jsonl",
+   "sha256": "d4302fc4a48f0ee739759f804eba9cba7550126b402278435ba931cc88e63ea6",
+   "items": 500
+  },
+  {
+   "file": "samples_minerva_math500_2026-11-05T06-27-52.905176.jsonl",
+   "sha256": "d4302fc4a48f0ee739759f804eba9cba7550126b402278435ba931cc88e63ea6",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 01:25:08 gpu7: ./lm1.sh $GPU O14x-D48f-math - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X14-D48f-p2d2/checkpoint-48m.pt,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\"",
+  "distill_q.txt.log: 06:27:23 gpu7: ./lm1.sh $GPU O14x-D48f-math - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X14-D48f-p2d2/checkpoint-48m.pt,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\""
+ ],
+ "checkpoint": {
+  "run": "X14-D48f-p2d2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "06dd33a0d7a0c5766597b350b65c643a66e6bb8000c58150f30c039ffc556184",
+  "bytes": 75741555
+ }
+}

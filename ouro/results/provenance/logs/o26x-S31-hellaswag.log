@@ -1,0 +1,26 @@
+2026-11-04:15:58:29 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-04:15:58:31 INFO     [__main__:440] Selected Tasks: ['hellaswag']
+2026-11-04:15:58:31 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-04:15:58:31 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-2.6b', 'condition': 'S31', 'max_length': 16384, 'checkpoint': '/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt'}
+2026-11-04:15:58:39 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/o26x-S31-hellaswag_rank0.db
+Using the latest cached version of the dataset since hellaswag couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-04:15:58:39 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since hellaswag couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'default' at /dev/shm/big-small-ouro/hf-lmeval/datasets/hellaswag/default/0.0.0/218ec52e09a7e7462a5400043bb9a69a41d06b76 (last modified on Sun Oct 25 20:14:13 2026).
+2026-11-04:15:58:39 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'default' at /dev/shm/big-small-ouro/hf-lmeval/datasets/hellaswag/default/0.0.0/218ec52e09a7e7462a5400043bb9a69a41d06b76 (last modified on Sun Oct 25 20:14:13 2026).
+2026-11-04:15:58:41 WARNING  [evaluator:309] Overwriting default num_fewshot of hellaswag from None to 10
+2026-11-04:15:58:41 INFO     [api.task:434] Building contexts for hellaswag on rank 0...
+
+2026-11-04:15:59:22 INFO     [evaluator:559] Running loglikelihood requests
+2026-11-04:15:59:22 INFO     [api.model:261] Loading 'loglikelihood' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/o26x-S31-hellaswag_rank0.db' where possible...
+
+2026-11-04:15:59:27 INFO     [api.model:285] Cached requests: 0, Requests remaining: 40168
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-04:17:20:29 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-04:17:20:29 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: hellaswag
+ouro (path=/dev/shm/big-small-ouro/model-2.6b,condition=S31,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt), gen_kwargs: (None), limit: None, num_fewshot: 10, batch_size: 1
+|  Tasks  |Version|Filter|n-shot| Metric |   |Value |   |Stderr|
+|---------|------:|------|-----:|--------|---|-----:|---|-----:|
+|hellaswag|      1|none  |    10|acc     |↑  |0.5343|±  |0.0050|
+|         |       |none  |    10|acc_norm|↑  |0.7287|±  |0.0044|
+

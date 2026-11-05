@@ -1,0 +1,45 @@
+{
+ "run": "X26-native1-gsmfull",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=native1,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 1319
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "adaf2c05fa61ed165c933cb08acb93cd77e43714d152d7ec5c63ebb4a63c6878"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-03T14:05:36.858605+00:00",
+ "seconds": "336.58083304809406",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.3237300985595148,
+   "exact_match_stderr,strict-match": 0.01288824739737114,
+   "exact_match,flexible-extract": 0.41546626231993933,
+   "exact_match_stderr,flexible-extract": 0.013574222625031811
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-03T22-11-11.552327.jsonl",
+   "sha256": "1bc9cf87714a990b14e669c050c4f7471b5744d241cca789fb6decee7dbb060d",
+   "items": 2638
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid14b_q.txt.log: 22:05:29 gpu7: ./lm1.sh $GPU X26-native1-gsmfull - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=native1,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3\""
+ ]
+}

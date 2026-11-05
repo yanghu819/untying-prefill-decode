@@ -1,0 +1,274 @@
+{
+ "run": "o26x-S11-mmlupro",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=S11,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt,max_length=16384",
+ "limit": 70.0,
+ "n_shot": {
+  "mmlu_pro_biology": 5,
+  "mmlu_pro_business": 5,
+  "mmlu_pro_chemistry": 5,
+  "mmlu_pro_computer_science": 5,
+  "mmlu_pro_economics": 5,
+  "mmlu_pro_engineering": 5,
+  "mmlu_pro_health": 5,
+  "mmlu_pro_history": 5,
+  "mmlu_pro_law": 5,
+  "mmlu_pro_math": 5,
+  "mmlu_pro_other": 5,
+  "mmlu_pro_philosophy": 5,
+  "mmlu_pro_physics": 5,
+  "mmlu_pro_psychology": 5
+ },
+ "n_samples": {
+  "mmlu_pro_biology": {
+   "original": 717,
+   "effective": 70
+  },
+  "mmlu_pro_business": {
+   "original": 789,
+   "effective": 70
+  },
+  "mmlu_pro_chemistry": {
+   "original": 1132,
+   "effective": 70
+  },
+  "mmlu_pro_computer_science": {
+   "original": 410,
+   "effective": 70
+  },
+  "mmlu_pro_economics": {
+   "original": 844,
+   "effective": 70
+  },
+  "mmlu_pro_engineering": {
+   "original": 969,
+   "effective": 70
+  },
+  "mmlu_pro_health": {
+   "original": 818,
+   "effective": 70
+  },
+  "mmlu_pro_history": {
+   "original": 381,
+   "effective": 70
+  },
+  "mmlu_pro_law": {
+   "original": 1101,
+   "effective": 70
+  },
+  "mmlu_pro_math": {
+   "original": 1351,
+   "effective": 70
+  },
+  "mmlu_pro_other": {
+   "original": 924,
+   "effective": 70
+  },
+  "mmlu_pro_philosophy": {
+   "original": 499,
+   "effective": 70
+  },
+  "mmlu_pro_physics": {
+   "original": 1299,
+   "effective": 70
+  },
+  "mmlu_pro_psychology": {
+   "original": 798,
+   "effective": 70
+  }
+ },
+ "task_versions": {
+  "mmlu_pro": 2.0,
+  "mmlu_pro_biology": 2.1,
+  "mmlu_pro_business": 2.1,
+  "mmlu_pro_chemistry": 2.1,
+  "mmlu_pro_computer_science": 2.1,
+  "mmlu_pro_economics": 2.1,
+  "mmlu_pro_engineering": 2.1,
+  "mmlu_pro_health": 2.1,
+  "mmlu_pro_history": 2.1,
+  "mmlu_pro_law": 2.1,
+  "mmlu_pro_math": 2.1,
+  "mmlu_pro_other": 2.1,
+  "mmlu_pro_philosophy": 2.1,
+  "mmlu_pro_physics": 2.1,
+  "mmlu_pro_psychology": 2.1
+ },
+ "task_hashes": {
+  "mmlu_pro_biology": "9f358d5ff5e42ccb4a0dd27a88bc57e805f70ba2b72902e1c6a449c4a8213444",
+  "mmlu_pro_business": "2ed35f6166b86d4e69820d2a31d15515c2592848f91a86dd90f69f13ac8824e1",
+  "mmlu_pro_chemistry": "1257fc3cc06fe753938d9c8af910ad913f4d89e45ea31e2dbb57fd9798e2766f",
+  "mmlu_pro_computer_science": "f269f751c0b55ed7f12fd1cb80627d9285c6cb781e37f79ee0b7d41350060b32",
+  "mmlu_pro_economics": "3db35c7e4ebe80dfa075b34341a8c6ef28fcf43105b8fdeec4e0b7e00294228d",
+  "mmlu_pro_engineering": "0e0057ca56e7288597d51923083350422e7c6350849f6c6600b0f5c15cad6b1b",
+  "mmlu_pro_health": "b0d177086771660b5e934d0b0d3aaef67da09a002531aa3537be16e68a0c0e8b",
+  "mmlu_pro_history": "244e7391b9f392ed0de00b2acf4f0742a542a88fc078bcf328252a371a5138c3",
+  "mmlu_pro_law": "0a01f5a300cadfc92f162655bb0714c37f374007b0567760b60f6c2ca1713da6",
+  "mmlu_pro_math": "8d15d7f7e5ec3c5f0a1e603db5e855c1105911d4f1fa797fb9f5d8552baa23d6",
+  "mmlu_pro_other": "486d17455ffcb469197c406614cfa2f8c0929f67253d0ee342c599a979e33802",
+  "mmlu_pro_philosophy": "b972659282ad26f4eebf52aa74b67477b7cc466e744d93d2a946c3cbec4153b5",
+  "mmlu_pro_physics": "b0273c29889a94b66e7132a45fcd7113f35b6f0f42db04d28c67bcfc9c9ee1c2",
+  "mmlu_pro_psychology": "f6fae0f879b66465045f37d6794e72f87c1ebc1dc49ccc6aad4d7f735b01c95c"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-10-30T15:31:33.111732+00:00",
+ "seconds": "3407.129750524182",
+ "results": {
+  "mmlu_pro": {
+   "exact_match,custom-extract": 0.26224489795918365,
+   "exact_match_stderr,custom-extract": 0.014049790608554966,
+   "alias": "mmlu_pro"
+  },
+  "mmlu_pro_biology": {
+   "alias": " - biology",
+   "exact_match,custom-extract": 0.32857142857142857,
+   "exact_match_stderr,custom-extract": 0.056544486128751945
+  },
+  "mmlu_pro_business": {
+   "alias": " - business",
+   "exact_match,custom-extract": 0.2571428571428571,
+   "exact_match_stderr,custom-extract": 0.052615698346701524
+  },
+  "mmlu_pro_chemistry": {
+   "alias": " - chemistry",
+   "exact_match,custom-extract": 0.21428571428571427,
+   "exact_match_stderr,custom-extract": 0.04939743391486606
+  },
+  "mmlu_pro_computer_science": {
+   "alias": " - computer_science",
+   "exact_match,custom-extract": 0.2571428571428571,
+   "exact_match_stderr,custom-extract": 0.05261569834670152
+  },
+  "mmlu_pro_economics": {
+   "alias": " - economics",
+   "exact_match,custom-extract": 0.34285714285714286,
+   "exact_match_stderr,custom-extract": 0.057142857142857134
+  },
+  "mmlu_pro_engineering": {
+   "alias": " - engineering",
+   "exact_match,custom-extract": 0.2,
+   "exact_match_stderr,custom-extract": 0.04815434123430766
+  },
+  "mmlu_pro_health": {
+   "alias": " - health",
+   "exact_match,custom-extract": 0.22857142857142856,
+   "exact_match_stderr,custom-extract": 0.05055152782453618
+  },
+  "mmlu_pro_history": {
+   "alias": " - history",
+   "exact_match,custom-extract": 0.24285714285714285,
+   "exact_match_stderr,custom-extract": 0.051622592377504974
+  },
+  "mmlu_pro_law": {
+   "alias": " - law",
+   "exact_match,custom-extract": 0.18571428571428572,
+   "exact_match_stderr,custom-extract": 0.046815160711083874
+  },
+  "mmlu_pro_math": {
+   "alias": " - math",
+   "exact_match,custom-extract": 0.34285714285714286,
+   "exact_match_stderr,custom-extract": 0.05714285714285713
+  },
+  "mmlu_pro_other": {
+   "alias": " - other",
+   "exact_match,custom-extract": 0.2571428571428571,
+   "exact_match_stderr,custom-extract": 0.05261569834670152
+  },
+  "mmlu_pro_philosophy": {
+   "alias": " - philosophy",
+   "exact_match,custom-extract": 0.2,
+   "exact_match_stderr,custom-extract": 0.04815434123430765
+  },
+  "mmlu_pro_physics": {
+   "alias": " - physics",
+   "exact_match,custom-extract": 0.3142857142857143,
+   "exact_match_stderr,custom-extract": 0.055886816791065795
+  },
+  "mmlu_pro_psychology": {
+   "alias": " - psychology",
+   "exact_match,custom-extract": 0.3,
+   "exact_match_stderr,custom-extract": 0.05516772843673704
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_mmlu_pro_biology_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "42c9e4340dfb1dbc28a83e2df38fa3ed3ba5f8d9a4f3deb2b649905969564eff",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_business_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "1b835823ad88ce3351ffbaef3a0ee6089ef0690414a40eba46ba6af8b1e731ab",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_chemistry_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "e35f43042cb368fa5db8389b39aff5e1d88fd615b07bf1501065608fd28747ff",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_computer_science_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "78f39cfb1cec877e465aeb5c9ca909c5e50cff596198f76444fe206c4b7d6c8c",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_economics_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "f585ff015c72f9df5465630befefa00dc7eab48630b6d9dfd64724267feac4cb",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_engineering_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "488a4bb8de3d644cb05bfc8f926b2c89d0f3466a8ca79ac505e96a60434a93c1",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_health_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "bd679994066d80e5282ddb5c352a56b5a9f75f9f79e93fd876b6c40ad5976c63",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_history_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "90186a1d8f59334f335d1444e05864d060ac7d79ce65b199bdeb7364591783b3",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_law_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "b5c7fd171924134f537215f508013c6e9cfad1fd406ea06721ef617c9f1aa8de",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_math_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "006d89151f07fb2ed16d2c9910a6f6fd8e6e1752e0aa98bcb284f20455611d80",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_other_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "0c2ac6eec18f219420b51fd8ffa3f798cccbd9287abe8b608673cccd3a782e93",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_philosophy_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "70131d41c3d5b68d0059c5073216251577b34dac407d37ae6fa0b643426cc3e6",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_physics_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "d1474bd03378bd74196ea404c6399a0aa7c92995faf4fbf3e7034bb1f548b85c",
+   "items": 70
+  },
+  {
+   "file": "samples_mmlu_pro_psychology_2026-10-31T00-28-18.255897.jsonl",
+   "sha256": "6a20e67a1535ccb36cc5b86a975b44ee769e1a89805ced1f314a13459c8c238b",
+   "items": 70
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "X26-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "ea0595f82e8b5f5dfb407c8b69e76cf7a9983c3ff0a0c2d56a4160cc866740d2",
+  "bytes": 760170173
+ }
+}

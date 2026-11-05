@@ -1,0 +1,48 @@
+2026-11-05:11:31:04 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-05:11:31:06 INFO     [__main__:440] Selected Tasks: ['humanevalplus_chat_local', 'mbppplus_chat_local']
+2026-11-05:11:31:06 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-05:11:31:06 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-2.6b', 'condition': 'raw41', 'max_length': 16384}
+2026-11-05:11:31:10 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/X26-raw41-evalplus_rank0.db
+2026-11-05:11:31:10 WARNING  [api.task:844] [Task: humanevalplus_chat_local] metric bypass is defined, but aggregation is not. using default aggregation=bypass
+2026-11-05:11:31:10 WARNING  [api.task:856] [Task: humanevalplus_chat_local] metric bypass is defined, but higher_is_better is not. using default higher_is_better=True
+2026-11-05:11:31:10 WARNING  [api.task:844] [Task: mbppplus_chat_local] metric bypass is defined, but aggregation is not. using default aggregation=bypass
+2026-11-05:11:31:10 WARNING  [api.task:856] [Task: mbppplus_chat_local] metric bypass is defined, but higher_is_better is not. using default higher_is_better=True
+2026-11-05:11:31:10 INFO     [evaluator:290] mbppplus_chat_local: Using gen_kwargs: {'until': ['<|endoftext|>', '<|im_end|>', '</s>', '\nif __name__', '\ndef main(', '\nprint(', '\n```\n'], 'max_gen_toks': 768, 'do_sample': False}
+2026-11-05:11:31:10 INFO     [evaluator:290] humanevalplus_chat_local: Using gen_kwargs: {'until': ['<|endoftext|>', '<|im_end|>', '</s>', '\nif __name__', '\ndef main(', '\nprint(', '\n```\n'], 'max_gen_toks': 768, 'do_sample': False}
+2026-11-05:11:31:10 INFO     [api.task:434] Building contexts for mbppplus_chat_local on rank 0...
+
+2026-11-05:11:31:10 INFO     [api.task:434] Building contexts for humanevalplus_chat_local on rank 0...
+
+2026-11-05:11:31:10 INFO     [evaluator:559] Running generate_until requests
+2026-11-05:11:31:10 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/X26-raw41-evalplus_rank0.db' where possible...
+
+2026-11-05:11:31:10 INFO     [api.model:285] Cached requests: 0, Requests remaining: 542
+
+[ouro] batch done 60.6s generated=[768, 768, 4, 4, 4, 290, 4, 4, 414, 190, 768, 4, 6, 245, 168, 768, 768, 10, 768, 227, 177, 250, 768, 768, 768, 768, 768, 317, 768, 768, 226, 4, 5, 274, 218, 4, 254, 280, 10, 228, 291, 768, 141, 476, 168, 184, 271, 174, 768, 268, 768, 768, 768]
+
+[ouro] batch done 56.8s generated=[768, 768, 6, 288, 130, 768, 170, 151, 139, 768, 307, 238, 768, 213, 768, 195, 768, 207, 143, 132, 152, 768, 267, 189, 128, 187, 237, 257, 768, 5, 768, 768, 117, 768, 190, 249, 768, 144, 160, 230, 350, 768, 255, 5, 768, 768, 222, 768, 768, 471, 768, 135, 768, 345, 16, 19, 179, 768, 127, 768, 184, 768, 180, 135]
+
+[ouro] batch done 56.8s generated=[116, 273, 178, 197, 215, 768, 292, 226, 92, 190, 291, 261, 768, 117, 147, 178, 768, 269, 146, 278, 120, 224, 165, 768, 647, 17, 221, 768, 768, 195, 184, 768, 235, 768, 211, 358, 175, 768, 768, 333, 768, 198, 768, 195, 158, 235, 189, 225, 114, 16, 92, 92, 209, 166, 180, 434, 166, 167, 259, 116, 188, 197, 260, 768]
+
+[ouro] batch done 57.4s generated=[303, 768, 238, 220, 145, 206, 768, 18, 204, 218, 768, 251, 768, 768, 209, 157, 19, 135, 105, 768, 154, 148, 184, 768, 203, 129, 768, 92, 768, 152, 149, 134, 214, 163, 165, 768, 208, 277, 167, 768, 768, 768, 768, 189, 268, 171, 104, 768, 182, 399, 265, 193, 61, 124, 196, 141, 768, 32, 153, 250, 768, 17, 130, 137]
+
+[ouro] batch done 52.9s generated=[232, 157, 151, 768, 119, 221, 244, 198, 213, 768, 150, 169, 129, 50, 171, 114, 768, 211, 257, 768, 221, 265, 69, 136, 110, 768, 106, 85, 208, 418, 192, 68, 168, 768, 199, 200, 70, 141, 238, 139, 176, 166, 768, 768, 84, 768, 148, 92, 194, 768, 181, 182, 768, 235, 140, 166, 768, 178, 768, 198, 134, 190, 152, 142]
+
+[ouro] batch done 50.0s generated=[768, 195, 193, 189, 211, 141, 181, 277, 114, 768, 109, 768, 148, 248, 253, 128, 99, 768, 242, 217, 124, 114, 136, 768, 768, 768, 223, 768, 128, 319, 768, 139, 153, 173, 768, 172, 768, 156, 123, 181, 768, 201, 157, 127, 183, 226, 198, 169, 180, 173, 74, 253, 195, 234, 768, 244, 134, 146, 133, 144, 162, 768, 768, 158]
+
+[ouro] batch done 43.8s generated=[768, 768, 196, 39, 768, 144, 768, 39, 150, 306, 306, 187, 170, 768, 768, 768, 768, 144, 768, 173, 157, 768, 94, 165, 768, 768, 159, 768, 226, 106, 62, 284, 159, 143, 768, 120, 202, 768, 768, 257, 768, 259, 199, 123, 768, 768, 202, 191, 177, 133, 477, 147, 145, 768, 768, 74, 407, 192, 159, 165, 202, 220, 768, 768]
+
+[ouro] batch done 41.9s generated=[229, 768, 190, 151, 160, 168, 122, 768, 182, 192, 286, 155, 768, 206, 768, 88, 341, 194, 117, 134, 182, 152, 768, 259, 768, 768, 153, 169, 768, 109, 768, 161, 446, 37, 124, 274, 109, 768, 91, 185, 126, 147, 139, 118, 211, 114, 153, 93, 86, 768, 112, 161, 106, 768, 113, 96, 768, 768, 100, 111, 167, 768, 90, 216]
+
+[ouro] batch done 57.5s generated=[768, 174, 249, 768, 59, 109, 44, 95, 94, 176, 108, 148, 90, 160, 278, 33, 768, 116, 131, 130, 122, 115, 89, 206, 768, 768, 114, 77, 108, 108, 113, 768, 768, 768, 154, 768, 92, 111, 70, 154, 170]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-05:11:39:09 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-05:11:39:09 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: humanevalplus_chat_local
+2026-11-05:11:39:09 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: mbppplus_chat_local
+ouro (path=/dev/shm/big-small-ouro/model-2.6b,condition=raw41,max_length=16384), gen_kwargs: (None), limit: None, num_fewshot: None, batch_size: 1
+|         Tasks          |Version|Filter|n-shot|Metric|   |Value|   |Stderr|
+|------------------------|------:|------|-----:|------|---|----:|---|------|
+|humanevalplus_chat_local|      1|none  |     0|bypass|↑  |  999|±  |   N/A|
+|mbppplus_chat_local     |      1|none  |     0|bypass|↑  |  999|±  |   N/A|
+

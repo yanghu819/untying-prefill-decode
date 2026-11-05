@@ -1,0 +1,61 @@
+{
+ "run": "O14x-E48f-ifeval",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "ifeval_local": 0
+ },
+ "n_samples": {
+  "ifeval_local": {
+   "original": 541,
+   "effective": 541
+  }
+ },
+ "task_versions": {
+  "ifeval_local": 4.0
+ },
+ "task_hashes": {
+  "ifeval_local": "a9cc24d7d92904c9f59225bb28b88b892d9ab82be222808ea7fa345ffd4500ae"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T22:42:40.021643+00:00",
+ "seconds": "8.608225780073553",
+ "results": {
+  "ifeval_local": {
+   "alias": "ifeval_local",
+   "prompt_level_strict_acc,none": 0.19408502772643252,
+   "prompt_level_strict_acc_stderr,none": 0.01701938055074939,
+   "inst_level_strict_acc,none": 0.3129496402877698,
+   "inst_level_strict_acc_stderr,none": "N/A",
+   "prompt_level_loose_acc,none": 0.19963031423290203,
+   "prompt_level_loose_acc_stderr,none": 0.017201316264889965,
+   "inst_level_loose_acc,none": 0.3213429256594724,
+   "inst_level_loose_acc_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_ifeval_local_2026-11-04T15-36-45.717632.jsonl",
+   "sha256": "ba88f3268775cb00f3d09b3cf8a48cc9074d219984f75f1760983123fbf622b6",
+   "items": 541
+  },
+  {
+   "file": "samples_ifeval_local_2026-11-05T06-42-46.777717.jsonl",
+   "sha256": "6f5d88c0e8997bbca3ac6cf46feadd5f124d5618b1e98bd1f50e76165c90f36e",
+   "items": 541
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 15:23:11 gpu3: ./lm1.sh $GPU O14x-E48f-ifeval - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384\" \"--tasks ifeval_local\"",
+  "distill_q.txt.log: 06:42:32 gpu7: ./lm1.sh $GPU O14x-E48f-ifeval - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384\" \"--tasks ifeval_local\""
+ ],
+ "checkpoint": {
+  "run": "X14-E48f-p1d1",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "8970d79778da23b7110055b51357175d5dcafe50855cbb9f2c0d1e455cc8a10b",
+  "bytes": 75741555
+ }
+}

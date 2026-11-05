@@ -1,0 +1,23 @@
+2026-10-25:20:02:24 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-10-25:20:02:26 INFO     [__main__:440] Selected Tasks: ['gsm8k_cot']
+2026-10-25:20:02:26 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-10-25:20:02:26 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-2.6b', 'condition': 'native4'}
+2026-10-25:20:02:32 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/o26n4-gsm_rank0.db
+2026-10-25:20:02:58 INFO     [evaluator:290] gsm8k_cot: Using gen_kwargs: {'do_sample': False, 'until': ['Q:', '</s>', '<|im_end|>']}
+2026-10-25:20:02:58 WARNING  [evaluator:309] Overwriting default num_fewshot of gsm8k_cot from 8 to 3
+2026-10-25:20:02:58 INFO     [api.task:434] Building contexts for gsm8k_cot on rank 0...
+
+2026-10-25:20:03:02 INFO     [evaluator:559] Running generate_until requests
+2026-10-25:20:03:02 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/o26n4-gsm_rank0.db' where possible...
+
+2026-10-25:20:03:03 INFO     [api.model:285] Cached requests: 0, Requests remaining: 1319
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-10-25:20:12:38 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-10-25:20:12:38 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: gsm8k_cot
+ouro (path=/dev/shm/big-small-ouro/model-2.6b,condition=native4), gen_kwargs: (None), limit: None, num_fewshot: 3, batch_size: 1
+|  Tasks  |Version|     Filter     |n-shot|  Metric   |   |Value |   |Stderr|
+|---------|------:|----------------|-----:|-----------|---|-----:|---|-----:|
+|gsm8k_cot|      3|flexible-extract|     3|exact_match|↑  |0.8635|±  |0.0095|
+|         |       |strict-match    |     3|exact_match|↑  |0.6914|±  |0.0127|
+

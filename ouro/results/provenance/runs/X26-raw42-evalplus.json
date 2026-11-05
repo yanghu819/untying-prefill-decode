@@ -1,0 +1,70 @@
+{
+ "run": "X26-raw42-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=raw42,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T03:39:19.653055+00:00",
+ "seconds": "661.0412721787579",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-05T11-50-18.656803.jsonl",
+   "sha256": "140d8b393d23e2613de332c3bfade62970f7c660568a425865a7b19fd62268df",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-05T11-50-18.656803.jsonl",
+   "sha256": "f99c044cf3b7b664756de59f8869f93071eeff7b5e9182df1882fbd65f1e46bb",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "5fcf5367fa2ea189a0f62c70bdb7a99aeaadb96b5dca90a36065f69dabbe8722"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "1a74b8d3f0cfa58bc2945503ef1d68d493abbce2cc6202ebc59108c21cfb5b62"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 11:39:12 gpu4: ./lm1.sh $GPU X26-raw42-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=raw42,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ]
+}

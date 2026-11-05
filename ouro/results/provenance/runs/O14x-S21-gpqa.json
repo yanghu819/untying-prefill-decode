@@ -1,0 +1,51 @@
+{
+ "run": "O14x-S21-gpqa",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=S21,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt",
+ "limit": null,
+ "n_shot": {
+  "gpqa_diamond_n_shot_local": 0
+ },
+ "n_samples": {
+  "gpqa_diamond_n_shot_local": {
+   "original": 198,
+   "effective": 198
+  }
+ },
+ "task_versions": {
+  "gpqa_diamond_n_shot_local": 2.0
+ },
+ "task_hashes": {
+  "gpqa_diamond_n_shot_local": "05ff85eeca385f74ecd7bcdfe3ab6429da1aba7673c004329308b2731cb9f876"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-03T09:54:22.300680+00:00",
+ "seconds": "17.58254073280841",
+ "results": {
+  "gpqa_diamond_n_shot_local": {
+   "alias": "gpqa_diamond_n_shot_local",
+   "acc,none": 0.2474747474747475,
+   "acc_stderr,none": 0.030746300742124484,
+   "acc_norm,none": 0.2474747474747475,
+   "acc_norm_stderr,none": 0.030746300742124484
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gpqa_diamond_n_shot_local_2026-11-03T17-54-37.957490.jsonl",
+   "sha256": "da950c0ff2a8b69485674ace1d0089b8799d398ea1bdf8e3eabadb0a43a5e693",
+   "items": 198
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid14b_q.txt.log: 17:54:15 gpu3: ./lm1.sh $GPU O14x-S21-gpqa - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=S21,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt\" \"--tasks gpqa_diamond_n_shot_local\""
+ ],
+ "checkpoint": {
+  "run": "O14-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "6c5b5ca5cc00893bfb7c1fe190937ecf6a2def48147a6f22ac8d0f729b8d3cc6",
+  "bytes": 380093211
+ }
+}

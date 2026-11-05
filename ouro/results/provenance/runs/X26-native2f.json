@@ -1,0 +1,25 @@
+{
+ "run": "X26-native2f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "X26-native2f/s0/ruler16k.jsonl",
+   "sha256": "88b58fa500bb28189cb9088dec7ccaa9d6976d71f60b6032b72f8afc7ca89069",
+   "items": 520
+  },
+  {
+   "file": "X26-native2f/s0/ruler4k.jsonl",
+   "sha256": "b86a913862b095d768c5f238b005905d4fc448ce9d41ae9def09cc1ba95fd2be",
+   "items": 520
+  },
+  {
+   "file": "X26-native2f/s0/ruler8k.jsonl",
+   "sha256": "46643dbe894ca5cac496827610fcb19af9fd318bddda0bcd46c90bd3887a3a0d",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid_q.txt.log: 01:45:35 gpu6: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-2.6b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' ./ouro/runs_scripts/bench3.sh X26-native2f native2 - $GPU 1"
+ ]
+}

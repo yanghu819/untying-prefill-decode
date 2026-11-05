@@ -22,6 +22,11 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-05 (provenance)
+- `ouro/results/provenance/`: 1,059 evaluation runs (commands, configs, versions, times, sample sha256, checkpoint
+  sha256), 26 training records, cleaned logs, generative outputs; host names and IPs scrubbed. All paper keys covered
+  except the stopped Ouro-1.4B H48f control (not used).
+
 ### 2026-11-05 (MATH-500 rescored on the final answer)
 - lm-eval's strict Minerva match is a closing-sentence test: native Ouro-1.4B 4/4 scores 4.4 strict vs 70.6 on the final
   answer (last \boxed{}, math_verify; paper_numbers.py `boxed`). All MATH-500 keys now use `boxed`.

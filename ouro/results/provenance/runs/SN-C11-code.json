@@ -1,0 +1,74 @@
+{
+ "run": "SN-C11-code",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-sn9b,condition=C11,max_length=16384,batch_tokens=250000,max_batch=64,checkpoint=/dev/shm/big-small-ouro/runs/SN-C-universal/checkpoint.pt",
+ "limit": null,
+ "n_shot": {
+  "humaneval_local": 0,
+  "mbpp_plus_instruct_local": 0
+ },
+ "n_samples": {
+  "mbpp_plus_instruct_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humaneval_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humaneval_local": 1.0,
+  "mbpp_plus_instruct_local": 1.0
+ },
+ "task_hashes": {
+  "mbpp_plus_instruct_local": "2f37f38db4517b9565c38fef2808d484da4636dc8f8e78a9e72fb35137f2d44c",
+  "humaneval_local": "c6a9e93c023f4976f4af28e061461d7cf3c13b6ea2c9c1c446c34f9e16fcf2fa"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "5.18.0",
+ "start": "2026-11-02T06:13:46.212224+00:00",
+ "seconds": "85.51942337397486",
+ "results": {
+  "humaneval_local": {
+   "alias": "humaneval_local",
+   "pass@1,create_test": 0.75,
+   "pass@1_stderr,create_test": 0.03391617237346009
+  },
+  "mbpp_plus_instruct_local": {
+   "alias": "mbpp_plus_instruct_local",
+   "pass_at_1,extract_code": 0.6164021164021164,
+   "pass_at_1_stderr,extract_code": 0.025043757318520196
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humaneval_local_2026-11-02T12-28-38.312217.jsonl",
+   "sha256": "d2ce55a160d981937d2e75949cece472181a56f289a18c9530b95c8642118afa",
+   "items": 164
+  },
+  {
+   "file": "samples_humaneval_local_2026-11-02T14-15-09.830562.jsonl",
+   "sha256": "d2ce55a160d981937d2e75949cece472181a56f289a18c9530b95c8642118afa",
+   "items": 164
+  },
+  {
+   "file": "samples_mbpp_plus_instruct_local_2026-11-02T12-28-38.312217.jsonl",
+   "sha256": "2c3e57ab8cf15fd57ec400adf9cc52c37575648aead598c4cc5a96c99ec62a70",
+   "items": 378
+  },
+  {
+   "file": "samples_mbpp_plus_instruct_local_2026-11-02T14-15-09.830562.jsonl",
+   "sha256": "2c3e57ab8cf15fd57ec400adf9cc52c37575648aead598c4cc5a96c99ec62a70",
+   "items": 378
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "SN-C-universal",
+  "checkpoint": "checkpoint.pt",
+  "sha256": "c0c7fe7a5cbee5504b42c167eff1e13ee078d990e3b29473c4fbdb909ddfcd5e",
+  "bytes": 44874093
+ }
+}

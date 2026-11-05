@@ -1,0 +1,290 @@
+== s0.log
+3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1069, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 594, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 404, in forward
+    hidden_states, _ = self.self_attn(
+                       ^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 330, in forward
+    attn_output, attn_weights = attention_interface(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 220, in _shallow_attention
+    o = F.scaled_dot_product_attention(q, k_s, v_s, attn_mask=mask, scale=scaling).float()  # [B, H, q, D]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (10) must match the size of tensor b (11) at non-singleton dimension 0
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 343, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 339, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 306, in evaluate
+    for row, (text, n, reason) in zip(batch, greedy_batch(runner, tok, batch)):
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 255, in greedy_batch
+    logits, cache = runner.decode(tokens.view(-1, 1), cache, None if single else mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 508, in decode
+    logits, cache = self.system.reader_suffix(input_ids, cache, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 366, in reader_suffix
+    hidden, cache = backbone(self.reader, ids, prefix_cache, self.decode_steps, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 25, in backbone
+    outputs, _, _ = model.model(
+                    ^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1069, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 594, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 404, in forward
+    hidden_states, _ = self.self_attn(
+                       ^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 330, in forward
+    attn_output, attn_weights = attention_interface(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 220, in _shallow_attention
+    o = F.scaled_dot_product_attention(q, k_s, v_s, attn_mask=mask, scale=scaling).float()  # [B, H, q, D]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (10) must match the size of tensor b (11) at non-singleton dimension 0
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 343, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 339, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 306, in evaluate
+    for row, (text, n, reason) in zip(batch, greedy_batch(runner, tok, batch)):
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 255, in greedy_batch
+    logits, cache = runner.decode(tokens.view(-1, 1), cache, None if single else mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 508, in decode
+    logits, cache = self.system.reader_suffix(input_ids, cache, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 366, in reader_suffix
+    hidden, cache = backbone(self.reader, ids, prefix_cache, self.decode_steps, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 25, in backbone
+    outputs, _, _ = model.model(
+                    ^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1069, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 594, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 404, in forward
+    hidden_states, _ = self.self_attn(
+                       ^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 330, in forward
+    attn_output, attn_weights = attention_interface(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 220, in _shallow_attention
+    o = F.scaled_dot_product_attention(q, k_s, v_s, attn_mask=mask, scale=scaling).float()  # [B, H, q, D]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (10) must match the size of tensor b (11) at non-singleton dimension 0
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 343, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 339, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 306, in evaluate
+    for row, (text, n, reason) in zip(batch, greedy_batch(runner, tok, batch)):
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 255, in greedy_batch
+    logits, cache = runner.decode(tokens.view(-1, 1), cache, None if single else mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 508, in decode
+    logits, cache = self.system.reader_suffix(input_ids, cache, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 366, in reader_suffix
+    hidden, cache = backbone(self.reader, ids, prefix_cache, self.decode_steps, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 25, in backbone
+    outputs, _, _ = model.model(
+                    ^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1069, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 594, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 404, in forward
+    hidden_states, _ = self.self_attn(
+                       ^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 330, in forward
+    attn_output, attn_weights = attention_interface(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 220, in _shallow_attention
+    o = F.scaled_dot_product_attention(q, k_s, v_s, attn_mask=mask, scale=scaling).float()  # [B, H, q, D]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (10) must match the size of tensor b (11) at non-singleton dimension 0
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 343, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 339, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 306, in evaluate
+    for row, (text, n, reason) in zip(batch, greedy_batch(runner, tok, batch)):
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 255, in greedy_batch
+    logits, cache = runner.decode(tokens.view(-1, 1), cache, None if single else mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 124, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 508, in decode
+    logits, cache = self.system.reader_suffix(input_ids, cache, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 366, in reader_suffix
+    hidden, cache = backbone(self.reader, ids, prefix_cache, self.decode_steps, attention_mask)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 25, in backbone
+    outputs, _, _ = model.model(
+                    ^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/utils/generic.py", line 1069, in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 594, in forward
+    hidden_states = decoder_layer(
+                    ^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/transformers/modeling_layers.py", line 94, in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 404, in forward
+    hidden_states, _ = self.self_attn(
+                       ^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/third_party/ouro/modeling_ouro.py", line 330, in forward
+    attn_output, attn_weights = attention_interface(
+                                ^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 220, in _shallow_attention
+    o = F.scaled_dot_product_attention(q, k_s, v_s, attn_mask=mask, scale=scaling).float()  # [B, H, q, D]
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: The size of tensor a (10) must match the size of tensor b (11) at non-singleton dimension 0

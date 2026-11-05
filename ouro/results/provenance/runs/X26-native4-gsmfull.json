@@ -1,0 +1,43 @@
+{
+ "run": "X26-native4-gsmfull",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=native4,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 1319
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "adaf2c05fa61ed165c933cb08acb93cd77e43714d152d7ec5c63ebb4a63c6878"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-10-31T21:51:09.497602+00:00",
+ "seconds": "639.2351133488119",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.6937073540561031,
+   "exact_match_stderr,strict-match": 0.01269693010656291,
+   "exact_match,flexible-extract": 0.866565579984837,
+   "exact_match_stderr,flexible-extract": 0.009366491609784476
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-01T06-01-46.814335.jsonl",
+   "sha256": "1993444e4108c17efdddf4c3c62e793a81441d3acbc46d59f415cb83dcc7f1de",
+   "items": 2638
+  }
+ ],
+ "log": true,
+ "commands": []
+}

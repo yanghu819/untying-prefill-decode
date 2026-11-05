@@ -1,0 +1,47 @@
+{
+ "run": "SN-C21-gsm8k_think_s0",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-sn9b,condition=C21,checkpoint=/dev/shm/big-small-ouro/runs/SN-C-universal/checkpoint.pt,max_length=16384,batch_tokens=250000,max_batch=64",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_think_s0": 0
+ },
+ "n_samples": {
+  "gsm8k_think_s0": {
+   "original": 330,
+   "effective": 330
+  }
+ },
+ "task_versions": {
+  "gsm8k_think_s0": 1.0
+ },
+ "task_hashes": {
+  "gsm8k_think_s0": "9cd35a5202984efed25b2e69bdc62c2e88d09f65b3514ee56ead26c8c8e74c45"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "5.18.0",
+ "start": "2026-10-31T14:32:18.102558+00:00",
+ "seconds": "908.0746083678678",
+ "results": {
+  "gsm8k_think_s0": {
+   "alias": "gsm8k_think_s0",
+   "math_verify,none": 0.9696969696969697,
+   "math_verify_stderr,none": 0.00945068091618728
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_think_s0_2026-10-31T22-47-24.163461.jsonl",
+   "sha256": "7b0a4c7768ff3f80166bfed5df77e676e57b84a6d3e7494141092f28e770be50",
+   "items": 330
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "SN-C-universal",
+  "checkpoint": "checkpoint.pt",
+  "sha256": "c0c7fe7a5cbee5504b42c167eff1e13ee078d990e3b29473c4fbdb909ddfcd5e",
+  "bytes": 44874093
+ }
+}

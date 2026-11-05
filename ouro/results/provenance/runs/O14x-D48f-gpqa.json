@@ -1,0 +1,57 @@
+{
+ "run": "O14x-D48f-gpqa",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X14-D48f-p2d2/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gpqa_diamond_n_shot_local": 0
+ },
+ "n_samples": {
+  "gpqa_diamond_n_shot_local": {
+   "original": 198,
+   "effective": 198
+  }
+ },
+ "task_versions": {
+  "gpqa_diamond_n_shot_local": 2.0
+ },
+ "task_hashes": {
+  "gpqa_diamond_n_shot_local": "05ff85eeca385f74ecd7bcdfe3ab6429da1aba7673c004329308b2731cb9f876"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T22:30:48.228086+00:00",
+ "seconds": "7.2040745872072875",
+ "results": {
+  "gpqa_diamond_n_shot_local": {
+   "alias": "gpqa_diamond_n_shot_local",
+   "acc,none": 0.32323232323232326,
+   "acc_stderr,none": 0.03332299921070644,
+   "acc_norm,none": 0.32323232323232326,
+   "acc_norm_stderr,none": 0.03332299921070644
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gpqa_diamond_n_shot_local_2026-11-05T04-15-31.288581.jsonl",
+   "sha256": "45b8ddd9eecf35e734c59f69d2f3c11194852d66730f980ed93cc6cfe8f010df",
+   "items": 198
+  },
+  {
+   "file": "samples_gpqa_diamond_n_shot_local_2026-11-05T06-30-53.537153.jsonl",
+   "sha256": "45b8ddd9eecf35e734c59f69d2f3c11194852d66730f980ed93cc6cfe8f010df",
+   "items": 198
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 04:15:06 gpu1: ./lm1.sh $GPU O14x-D48f-gpqa - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X14-D48f-p2d2/checkpoint-48m.pt,max_length=16384\" \"--tasks gpqa_diamond_n_shot_local\"",
+  "distill_q.txt.log: 06:30:41 gpu7: ./lm1.sh $GPU O14x-D48f-gpqa - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X14-D48f-p2d2/checkpoint-48m.pt,max_length=16384\" \"--tasks gpqa_diamond_n_shot_local\""
+ ],
+ "checkpoint": {
+  "run": "X14-D48f-p2d2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "06dd33a0d7a0c5766597b350b65c643a66e6bb8000c58150f30c039ffc556184",
+  "bytes": 75741555
+ }
+}

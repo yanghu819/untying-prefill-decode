@@ -1,0 +1,47 @@
+{
+ "run": "T26-O-universal-O42-gsm8k_think_s1",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b-think,condition=O42,checkpoint=/dev/shm/big-small-ouro/runs/T26-O-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_think_s1": 0
+ },
+ "n_samples": {
+  "gsm8k_think_s1": {
+   "original": 330,
+   "effective": 330
+  }
+ },
+ "task_versions": {
+  "gsm8k_think_s1": 1.0
+ },
+ "task_hashes": {
+  "gsm8k_think_s1": "1992d59059adcc5c0269b5fb9ffbd83a9834991f2e59eae3f958461073e4e0a1"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-01T06:10:23.847902+00:00",
+ "seconds": "4127.21570928907",
+ "results": {
+  "gsm8k_think_s1": {
+   "alias": "gsm8k_think_s1",
+   "math_verify,none": 0.9424242424242424,
+   "math_verify_stderr,none": 0.012842367870008146
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_think_s1_2026-11-01T15-19-09.100522.jsonl",
+   "sha256": "d8e6931e0eb19c9c3e14b61a7d4356d352e0a722809254ecc7a3f68402d49d5a",
+   "items": 330
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "T26-O-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "3fbbf52912ff0ea6b003b635442223e8f4a5bb33d614b3f6833de6bf99b5ef8b",
+  "bytes": 760170237
+ }
+}

@@ -1,0 +1,41 @@
+{
+ "run": "think-native2-math500_think_s3",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b-think,condition=native2,max_length=16384,batch_tokens=250000,max_batch=64",
+ "limit": null,
+ "n_shot": {
+  "math500_think_s3": 0
+ },
+ "n_samples": {
+  "math500_think_s3": {
+   "original": 100,
+   "effective": 100
+  }
+ },
+ "task_versions": {
+  "math500_think_s3": 1.0
+ },
+ "task_hashes": {
+  "math500_think_s3": "3e180b906e12c1c9a442466dfc30edc5cd8e38381791ac1160102b48565833ca"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-10-31T06:35:13.301918+00:00",
+ "seconds": "3170.9120724429376",
+ "results": {
+  "math500_think_s3": {
+   "alias": "math500_think_s3",
+   "math_verify,none": 0.87,
+   "math_verify_stderr,none": 0.033799766898963114
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_math500_think_s3_2026-10-31T15-28-02.282305.jsonl",
+   "sha256": "554e677cac05d378c7f20cecf003d95675b48886ffb0accb2a833bf332326628",
+   "items": 100
+  }
+ ],
+ "log": true,
+ "commands": []
+}

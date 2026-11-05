@@ -1,0 +1,45 @@
+{
+ "run": "O14x-native3-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=native3,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-03T01:48:13.937111+00:00",
+ "seconds": "1095.8268400887027",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.008,
+   "exact_match_stderr,none": 0.003987957825156938,
+   "math_verify,none": 0.584,
+   "math_verify_stderr,none": 0.02206494331392886
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-03T10-06-27.849722.jsonl",
+   "sha256": "5259e413939cfb0a34883b208e80860d3ea0c6770a8f6949772385ccae32cf64",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid_q.txt.log: 09:48:07 gpu2: ./lm1.sh $GPU O14x-native3-math - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=native3,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\""
+ ]
+}

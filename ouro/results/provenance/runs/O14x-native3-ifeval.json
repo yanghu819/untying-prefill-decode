@@ -1,0 +1,49 @@
+{
+ "run": "O14x-native3-ifeval",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=native3,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "ifeval_local": 0
+ },
+ "n_samples": {
+  "ifeval_local": {
+   "original": 541,
+   "effective": 541
+  }
+ },
+ "task_versions": {
+  "ifeval_local": 4.0
+ },
+ "task_hashes": {
+  "ifeval_local": "a9cc24d7d92904c9f59225bb28b88b892d9ab82be222808ea7fa345ffd4500ae"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-03T09:08:29.083512+00:00",
+ "seconds": "1092.916850511916",
+ "results": {
+  "ifeval_local": {
+   "alias": "ifeval_local",
+   "prompt_level_strict_acc,none": 0.25693160813308685,
+   "prompt_level_strict_acc_stderr,none": 0.01880296257563689,
+   "inst_level_strict_acc,none": 0.38848920863309355,
+   "inst_level_strict_acc_stderr,none": "N/A",
+   "prompt_level_loose_acc,none": 0.26062846580406657,
+   "prompt_level_loose_acc_stderr,none": 0.018890584986760186,
+   "inst_level_loose_acc,none": 0.39448441247002397,
+   "inst_level_loose_acc_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_ifeval_local_2026-11-03T17-26-40.026005.jsonl",
+   "sha256": "823db6d4024ebd9cceed145748a294bf42ed311887b5975500dfd2a44b0f3dd6",
+   "items": 541
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid14b_q.txt.log: 17:08:22 gpu7: ./lm1.sh $GPU O14x-native3-ifeval - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=native3,max_length=16384\" \"--tasks ifeval_local\""
+ ]
+}

@@ -1,0 +1,50 @@
+The repository ByteDance/Ouro-1.4B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-1.4B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-1.4B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-1.4B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+lm_head.weight               | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+model.early_exit_gate.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/root/levwork/env/lib/python3.12/site-packages/peft/utils/save_and_load.py:300: UserWarning: Could not find a config file in ByteDance/Ouro-1.4B - will assume that the vocabulary was not modified.
+  warnings.warn(
+delta: warm start from /dev/shm/levwork/Lev-1.4B: 336 lora tensors and the pointer head loaded
+device=cuda world=1 trainable params=16.2M
+8925 training requests (holdout=[]), questions by type {'noul': 3862, 'choice': 7346, 'score': 1180}
+ep0 step 10/280 loss 0.709 kl 0.000 anchor 0.000 teacher 0.000 0.186s/rec
+ep0 step 20/280 loss 0.647 kl 0.000 anchor 0.000 teacher 0.000 0.164s/rec
+ep0 step 30/280 loss 0.682 kl 0.000 anchor 0.000 teacher 0.000 0.163s/rec
+ep0 step 40/280 loss 0.643 kl 0.000 anchor 0.000 teacher 0.000 0.161s/rec
+ep0 step 50/280 loss 0.715 kl 0.000 anchor 0.000 teacher 0.000 0.159s/rec
+ep0 step 60/280 loss 0.678 kl 0.000 anchor 0.000 teacher 0.000 0.158s/rec
+ep0 step 70/280 loss 0.699 kl 0.000 anchor 0.000 teacher 0.000 0.158s/rec
+ep0 step 80/280 loss 0.659 kl 0.000 anchor 0.000 teacher 0.000 0.156s/rec
+ep0 step 90/280 loss 0.607 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep0 step 100/280 loss 0.638 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep0 step 110/280 loss 0.650 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep0 step 120/280 loss 0.622 kl 0.000 anchor 0.000 teacher 0.000 0.153s/rec
+ep0 step 130/280 loss 0.663 kl 0.000 anchor 0.000 teacher 0.000 0.153s/rec
+ep0 step 140/280 loss 0.631 kl 0.000 anchor 0.000 teacher 0.000 0.152s/rec
+ep1 step 150/280 loss 0.552 kl 0.000 anchor 0.000 teacher 0.000 0.153s/rec
+ep1 step 160/280 loss 0.530 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep1 step 170/280 loss 0.587 kl 0.000 anchor 0.000 teacher 0.000 0.155s/rec
+ep1 step 180/280 loss 0.536 kl 0.000 anchor 0.000 teacher 0.000 0.155s/rec
+ep1 step 190/280 loss 0.509 kl 0.000 anchor 0.000 teacher 0.000 0.156s/rec
+ep1 step 200/280 loss 0.524 kl 0.000 anchor 0.000 teacher 0.000 0.156s/rec
+ep1 step 210/280 loss 0.521 kl 0.000 anchor 0.000 teacher 0.000 0.155s/rec
+ep1 step 220/280 loss 0.529 kl 0.000 anchor 0.000 teacher 0.000 0.155s/rec
+ep1 step 230/280 loss 0.466 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep1 step 240/280 loss 0.501 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep1 step 250/280 loss 0.453 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep1 step 260/280 loss 0.487 kl 0.000 anchor 0.000 teacher 0.000 0.155s/rec
+ep1 step 270/280 loss 0.483 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+ep1 step 280/280 loss 0.482 kl 0.000 anchor 0.000 teacher 0.000 0.154s/rec
+saved /dev/shm/levwork/train/ctl2x-1.4B
+DONE

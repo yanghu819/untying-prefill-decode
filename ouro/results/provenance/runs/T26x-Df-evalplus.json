@@ -1,0 +1,87 @@
+{
+ "run": "T26x-Df-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b-think,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/T26-Df-native22/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T07:03:55.889024+00:00",
+ "seconds": "8.748465587384999",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-04T14-38-22.465133.jsonl",
+   "sha256": "10797f5827a3bf5ca4832330b29421811d12b531ef1d335cd1096ac5e9a211e1",
+   "items": 164
+  },
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-04T15-04-02.762766.jsonl",
+   "sha256": "10797f5827a3bf5ca4832330b29421811d12b531ef1d335cd1096ac5e9a211e1",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-04T14-38-22.465133.jsonl",
+   "sha256": "8fbb3a3d1b208998af4f93053164f4fab8f666df102b50b6219db30485be2e01",
+   "items": 378
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-04T15-04-02.762766.jsonl",
+   "sha256": "8fbb3a3d1b208998af4f93053164f4fab8f666df102b50b6219db30485be2e01",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "8cbec5eacf1b8cb66efe31fc5696c48a34a24899e4ba28cdfdfc1efa11c20af1"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "e2eb75167841223f82763744e8d192e7e86dc0943689d6069e7e162daa8be66b"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "evalplus_q.txt.log: 14:27:33 gpu0: ./lm1.sh $GPU T26x-Df-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b-think,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/T26-Df-native22/checkpoint-48m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\"",
+  "evalplus_q.txt.log: 15:03:49 gpu0: ./lm1.sh $GPU T26x-Df-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b-think,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/T26-Df-native22/checkpoint-48m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ],
+ "checkpoint": {
+  "run": "T26-Df-native22",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "2566b1504dc64e4c9e5c17676c1591921124e720dc7a578385fa59263f0f9a2b",
+  "bytes": 151469325
+ }
+}

@@ -1,0 +1,55 @@
+{
+ "run": "O14x-S42-ifeval",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=S42,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt",
+ "limit": null,
+ "n_shot": {
+  "ifeval_local": 0
+ },
+ "n_samples": {
+  "ifeval_local": {
+   "original": 541,
+   "effective": 541
+  }
+ },
+ "task_versions": {
+  "ifeval_local": 4.0
+ },
+ "task_hashes": {
+  "ifeval_local": "a9cc24d7d92904c9f59225bb28b88b892d9ab82be222808ea7fa345ffd4500ae"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-03T10:56:00.286214+00:00",
+ "seconds": "1058.2617026651278",
+ "results": {
+  "ifeval_local": {
+   "alias": "ifeval_local",
+   "prompt_level_strict_acc,none": 0.2199630314232902,
+   "prompt_level_strict_acc_stderr,none": 0.01782524719221706,
+   "inst_level_strict_acc,none": 0.35851318944844124,
+   "inst_level_strict_acc_stderr,none": "N/A",
+   "prompt_level_loose_acc,none": 0.2255083179297597,
+   "prompt_level_loose_acc_stderr,none": 0.01798426866449563,
+   "inst_level_loose_acc,none": 0.3657074340527578,
+   "inst_level_loose_acc_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_ifeval_local_2026-11-03T19-13-36.574944.jsonl",
+   "sha256": "7205f927483c170c4f4665383c43373c7049ab7da13e85b81226f31e0fbc924d",
+   "items": 541
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid14b_q.txt.log: 18:55:53 gpu7: ./lm1.sh $GPU O14x-S42-ifeval - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=S42,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt\" \"--tasks ifeval_local\""
+ ],
+ "checkpoint": {
+  "run": "O14-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "6c5b5ca5cc00893bfb7c1fe190937ecf6a2def48147a6f22ac8d0f729b8d3cc6",
+  "bytes": 380093211
+ }
+}

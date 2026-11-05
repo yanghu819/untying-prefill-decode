@@ -1,0 +1,31 @@
+[transformers] The `check_model_inputs` decorator is deprecated in favor of `merge_with_config_defaults`.
+2026-11-02:14:01:33 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-02:14:01:35 INFO     [__main__:440] Selected Tasks: ['arc_challenge']
+2026-11-02:14:01:35 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-02:14:01:35 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-sn9b', 'condition': 'C21', 'max_length': 16384, 'batch_tokens': 250000, 'max_batch': 64, 'checkpoint': '/dev/shm/big-small-ouro/runs/SN-C-universal/checkpoint.pt'}
+2026-11-02:14:01:36 INFO     [fla.utils.hardware:146] Blackwell detected: registering default global_scratch allocator.
+[transformers] The tokenizer you are loading from '/dev/shm/big-small-ouro/model-sn9b' with an incorrect regex pattern: https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/discussions/84#69121093e8b480e709447d5e. This will lead to incorrect tokenization. You should set the `fix_mistral_regex=True` flag when loading this tokenizer to fix this issue.
+[ERROR] `cache_position` is part of OuroModel.forward's signature, but not documented. Make sure to add it to the docstring of the function in /root/big-small/third_party/ouro/modeling_ouro.py.
+[ERROR] `cache_position` is part of OuroForCausalLM.forward's signature, but not documented. Make sure to add it to the docstring of the function in /root/big-small/third_party/ouro/modeling_ouro.py.
+
+2026-11-02:14:01:47 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/SN-C21-arc_rank0.db
+Using the latest cached version of the dataset since allenai/ai2_arc couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-02:14:01:47 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since allenai/ai2_arc couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'ARC-Challenge' at /dev/shm/big-small-ouro/hf-lmeval/datasets/allenai___ai2_arc/ARC-Challenge/0.0.0/210d026faf9955653af8916fad021475a3f00453 (last modified on Sun Oct 25 20:03:15 2026).
+2026-11-02:14:01:47 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'ARC-Challenge' at /dev/shm/big-small-ouro/hf-lmeval/datasets/allenai___ai2_arc/ARC-Challenge/0.0.0/210d026faf9955653af8916fad021475a3f00453 (last modified on Sun Oct 25 20:03:15 2026).
+2026-11-02:14:01:47 WARNING  [evaluator:309] Overwriting default num_fewshot of arc_challenge from None to 25
+2026-11-02:14:01:47 INFO     [api.task:434] Building contexts for arc_challenge on rank 0...
+
+2026-11-02:14:02:12 INFO     [evaluator:559] Running loglikelihood requests
+2026-11-02:14:02:12 INFO     [api.model:261] Loading 'loglikelihood' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/SN-C21-arc_rank0.db' where possible...
+
+2026-11-02:14:02:13 INFO     [api.model:285] Cached requests: 4687, Requests remaining: 0
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-02:14:02:16 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-02:14:02:16 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: arc_challenge
+ouro (path=/dev/shm/big-small-ouro/model-sn9b,condition=C21,max_length=16384,batch_tokens=250000,max_batch=64,checkpoint=/dev/shm/big-small-ouro/runs/SN-C-universal/checkpoint.pt), gen_kwargs: (None), limit: None, num_fewshot: 25, batch_size: 1
+|    Tasks    |Version|Filter|n-shot| Metric |   |Value |   |Stderr|
+|-------------|------:|------|-----:|--------|---|-----:|---|-----:|
+|arc_challenge|      1|none  |    25|acc     |↑  |0.5870|±  |0.0144|
+|             |       |none  |    25|acc_norm|↑  |0.6305|±  |0.0141|
+

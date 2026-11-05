@@ -1,0 +1,47 @@
+{
+ "run": "SN-C21-math500_think_s3",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-sn9b,condition=C21,max_length=16384,batch_tokens=250000,max_batch=64,checkpoint=/dev/shm/big-small-ouro/runs/SN-C-universal/checkpoint.pt",
+ "limit": null,
+ "n_shot": {
+  "math500_think_s3": 0
+ },
+ "n_samples": {
+  "math500_think_s3": {
+   "original": 100,
+   "effective": 100
+  }
+ },
+ "task_versions": {
+  "math500_think_s3": 1.0
+ },
+ "task_hashes": {
+  "math500_think_s3": "0534acf354e7373da7105e930fb4a7edf6a2b2794114ebe9b09f1c5bac42d71c"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "5.18.0",
+ "start": "2026-11-02T01:25:22.228994+00:00",
+ "seconds": "1846.0479705999605",
+ "results": {
+  "math500_think_s3": {
+   "alias": "math500_think_s3",
+   "math_verify,none": 0.91,
+   "math_verify_stderr,none": 0.028762349126466136
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_math500_think_s3_2026-11-02T09-56-06.303978.jsonl",
+   "sha256": "55a557ebb0e2a9fe58c65bd74f797fd6f7854c0b5dc1ffc266701b9550bc90c2",
+   "items": 100
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "SN-C-universal",
+  "checkpoint": "checkpoint.pt",
+  "sha256": "c0c7fe7a5cbee5504b42c167eff1e13ee078d990e3b29473c4fbdb909ddfcd5e",
+  "bytes": 44874093
+ }
+}

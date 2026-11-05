@@ -1,0 +1,228 @@
+== s0.log
+tf457/transformers/utils/hub.py", line 532, in cached_files
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message
+Traceback (most recent call last):
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 337, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 333, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 279, in evaluate
+    source = AutoTokenizer.from_pretrained(args.source_tokenizer, local_files_only=True, trust_remote_code=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 1073, in from_pretrained
+    tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 905, in get_tokenizer_config
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 532, in cached_files
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message
+Traceback (most recent call last):
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 337, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 333, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 279, in evaluate
+    source = AutoTokenizer.from_pretrained(args.source_tokenizer, local_files_only=True, trust_remote_code=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 1073, in from_pretrained
+    tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 905, in get_tokenizer_config
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 532, in cached_files
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message
+Traceback (most recent call last):
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 337, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 333, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 279, in evaluate
+    source = AutoTokenizer.from_pretrained(args.source_tokenizer, local_files_only=True, trust_remote_code=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 1073, in from_pretrained
+    tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 905, in get_tokenizer_config
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 532, in cached_files
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message
+Traceback (most recent call last):
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 337, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 333, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 279, in evaluate
+    source = AutoTokenizer.from_pretrained(args.source_tokenizer, local_files_only=True, trust_remote_code=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 1073, in from_pretrained
+    tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 905, in get_tokenizer_config
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 532, in cached_files
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message
+Traceback (most recent call last):
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 479, in cached_files
+    hf_hub_download(
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 337, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 333, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 279, in evaluate
+    source = AutoTokenizer.from_pretrained(args.source_tokenizer, local_files_only=True, trust_remote_code=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 1073, in from_pretrained
+    tokenizer_config = get_tokenizer_config(pretrained_model_name_or_path, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/models/auto/tokenization_auto.py", line 905, in get_tokenizer_config
+    resolved_config_file = cached_file(
+                           ^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 322, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 532, in cached_files
+    _get_cache_file_to_return(path_or_repo_id, filename, cache_dir, revision, repo_type)
+  File "/dev/shm/big-small-ouro/tf457/transformers/utils/hub.py", line 143, in _get_cache_file_to_return
+    resolved_file = try_to_load_from_cache(
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 106, in _inner_fn
+    validate_repo_id(arg_value)
+  File "/root/big-small/environments/ouro/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 154, in validate_repo_id
+    raise HFValidationError(
+huggingface_hub.errors.HFValidationError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/dev/shm/big-small-ouro/model'. Use `repo_type` argument if needed.
+`torch_dtype` is deprecated! Use `dtype` instead!
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message

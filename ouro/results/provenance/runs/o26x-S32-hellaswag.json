@@ -1,0 +1,53 @@
+{
+ "run": "o26x-S32-hellaswag",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=S32,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt",
+ "limit": null,
+ "n_shot": {
+  "hellaswag": 10
+ },
+ "n_samples": {
+  "hellaswag": {
+   "original": 10042,
+   "effective": 10042
+  }
+ },
+ "task_versions": {
+  "hellaswag": 1.0
+ },
+ "task_hashes": {
+  "hellaswag": "d4bcb44ec68db2b8a65f050c3c64c48454179b48fd8aee3e73b55e2ec51e6d82"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T16:58:10.204935+00:00",
+ "seconds": "1565.3166445451789",
+ "results": {
+  "hellaswag": {
+   "alias": "hellaswag",
+   "acc,none": 0.5857398924517029,
+   "acc_stderr,none": 0.00491587096617447,
+   "acc_norm,none": 0.7828121888070105,
+   "acc_norm_stderr,none": 0.004114888107743376
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_hellaswag_2026-11-05T01-24-13.483575.jsonl",
+   "sha256": "7d6e0674ba7a55e0465610ac8161894e9c49807f240d1f62ae450d2d71dfc5dd",
+   "items": 10042
+  }
+ ],
+ "log": true,
+ "commands": [
+  "protocol_q.txt.log: 16:02:50 gpu7: ./lm1.sh $GPU o26x-S32-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=S32,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt\" \"--tasks hellaswag --num_fewshot 10\"",
+  "protocol_q.txt.log: 20:57:02 gpu0: ./lm1.sh $GPU o26x-S32-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=S32,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt\" \"--tasks hellaswag --num_fewshot 10\"",
+  "protocol_q.txt.log: 00:58:02 gpu0: ./lm1.sh $GPU o26x-S32-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=S32,max_length=16384,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt\" \"--tasks hellaswag --num_fewshot 10\""
+ ],
+ "checkpoint": {
+  "run": "X26-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "ea0595f82e8b5f5dfb407c8b69e76cf7a9983c3ff0a0c2d56a4160cc866740d2",
+  "bytes": 760170173
+ }
+}

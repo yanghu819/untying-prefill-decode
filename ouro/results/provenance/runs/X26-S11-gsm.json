@@ -1,0 +1,49 @@
+{
+ "run": "X26-S11-gsm",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=S11,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt,max_length=16384",
+ "limit": 400.0,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 400
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "cf8efac44d1e4958914e2cb93fb6e8319d30c9fb794f4ef442bd9f0cbd1acd23"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-10-29T08:41:01.401511+00:00",
+ "seconds": "129.7320645749569",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.3775,
+   "exact_match_stderr,strict-match": 0.02426843148860863,
+   "exact_match,flexible-extract": 0.46,
+   "exact_match_stderr,flexible-extract": 0.024951079956135092
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-10-29T16-43-09.124085.jsonl",
+   "sha256": "575d760eae9276d4587e55c076cb6447374078adf9cc2ab8f473fd11d49386f6",
+   "items": 800
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "X26-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "ea0595f82e8b5f5dfb407c8b69e76cf7a9983c3ff0a0c2d56a4160cc866740d2",
+  "bytes": 760170173
+ }
+}

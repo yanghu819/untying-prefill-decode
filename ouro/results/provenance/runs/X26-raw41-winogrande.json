@@ -1,0 +1,43 @@
+{
+ "run": "X26-raw41-winogrande",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=raw41,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "winogrande": 5
+ },
+ "n_samples": {
+  "winogrande": {
+   "original": 1267,
+   "effective": 1267
+  }
+ },
+ "task_versions": {
+  "winogrande": 1.0
+ },
+ "task_hashes": {
+  "winogrande": "cb7d189b18f880587e055d13153370ab6e05d9f9b3f25aa9888f4d50338d374d"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T03:08:37.927015+00:00",
+ "seconds": "49.826731947250664",
+ "results": {
+  "winogrande": {
+   "alias": "winogrande",
+   "acc,none": 0.5193370165745856,
+   "acc_stderr,none": 0.014041972733713017
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_winogrande_2026-11-05T11-09-25.870907.jsonl",
+   "sha256": "8f2f3445de0e25c3c3b7a4b2359a925a81c65f39c39e15922a6b276aca1e1565",
+   "items": 1267
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 11:08:31 gpu1: ./lm1.sh $GPU X26-raw41-winogrande - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=raw41,max_length=16384\" \"--tasks winogrande --num_fewshot 5\""
+ ]
+}

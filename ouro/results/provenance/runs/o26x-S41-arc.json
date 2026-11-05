@@ -1,0 +1,49 @@
+{
+ "run": "o26x-S41-arc",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=S41,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-universal/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "arc_challenge": 25
+ },
+ "n_samples": {
+  "arc_challenge": {
+   "original": 1172,
+   "effective": 1172
+  }
+ },
+ "task_versions": {
+  "arc_challenge": 1.0
+ },
+ "task_hashes": {
+  "arc_challenge": "55e883475b5650b20d8d9dc1e9cdf59ef645a257fcd74bf43a9dbb5c632c529c"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-10-30T14:10:36.626891+00:00",
+ "seconds": "423.5518829571083",
+ "results": {
+  "arc_challenge": {
+   "alias": "arc_challenge",
+   "acc,none": 0.575938566552901,
+   "acc_stderr,none": 0.014441889627464344,
+   "acc_norm,none": 0.6245733788395904,
+   "acc_norm_stderr,none": 0.01415063143511173
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_arc_challenge_2026-10-30T22-17-38.230643.jsonl",
+   "sha256": "7ab590ae6167e9d13dd0409017bc49ebbb958f247dfa48623733a730db7a9186",
+   "items": 1172
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "X26-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "ea0595f82e8b5f5dfb407c8b69e76cf7a9983c3ff0a0c2d56a4160cc866740d2",
+  "bytes": 760170173
+ }
+}

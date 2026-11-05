@@ -1,0 +1,71 @@
+2026-10-30:23:18:25 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-10-30:23:18:27 INFO     [__main__:440] Selected Tasks: ['gsm8k_cot']
+2026-10-30:23:18:27 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-10-30:23:18:27 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/nanbeige-3b-base', 'condition': 'X', 'checkpoint': '/dev/shm/big-small-ouro/runs/NBX-p1d1/checkpoint-final.pt', 'max_length': 16384}
+You are using the default legacy behaviour of the <class 'transformers.models.llama.tokenization_llama.LlamaTokenizer'>. This is expected, and simply means that the `legacy` (previous) behavior will be used so nothing changes for you. If you want to use the new behaviour, set `legacy=False`. This should only be set if you understand what it means, and thoroughly read the reason why this was added as explained in https://github.com/huggingface/transformers/pull/24565 - if you loaded a llama tokenizer from a GGUF file you can ignore this message
+`torch_dtype` is deprecated! Use `dtype` instead!
+2026-10-30:23:18:31 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/NBX-p1d1-gsmfull_rank0.db
+Using the latest cached version of the dataset since gsm8k couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-10-30:23:18:31 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since gsm8k couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'main' at /dev/shm/big-small-ouro/hf-lmeval/datasets/gsm8k/main/0.0.0/740312add88f781978c0658806c59bc2815b9866 (last modified on Sun Oct 25 19:52:48 2026).
+2026-10-30:23:18:31 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'main' at /dev/shm/big-small-ouro/hf-lmeval/datasets/gsm8k/main/0.0.0/740312add88f781978c0658806c59bc2815b9866 (last modified on Sun Oct 25 19:52:48 2026).
+2026-10-30:23:18:31 INFO     [evaluator:290] gsm8k_cot: Using gen_kwargs: {'do_sample': False, 'until': ['Q:', '</s>', '<|im_end|>']}
+2026-10-30:23:18:31 WARNING  [evaluator:309] Overwriting default num_fewshot of gsm8k_cot from 8 to 3
+2026-10-30:23:18:31 INFO     [api.task:434] Building contexts for gsm8k_cot on rank 0...
+
+2026-10-30:23:18:35 INFO     [evaluator:559] Running generate_until requests
+2026-10-30:23:18:35 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/NBX-p1d1-gsmfull_rank0.db' where possible...
+
+2026-10-30:23:18:35 INFO     [api.model:285] Cached requests: 0, Requests remaining: 1319
+
+[ouro] batch done 13.1s generated=[220, 203, 228, 132, 199, 250, 159, 256, 256, 212, 206, 195, 221, 256, 166, 170, 96, 115, 250, 256, 129, 209, 195, 129, 165, 256, 230, 212, 256, 90, 120, 252, 125, 139, 122, 159, 108, 202, 210, 217, 151, 173, 97, 192, 126, 162, 100, 129, 180, 97, 256, 200, 235, 170, 217, 109, 83, 184, 256, 146, 114, 65, 162, 208]
+
+[ouro] batch done 9.2s generated=[180, 133, 166, 87, 206, 181, 123, 230, 155, 126, 146, 225, 228, 256, 115, 107, 200, 165, 61, 244, 256, 201, 156, 72, 96, 164, 124, 187, 143, 211, 84, 152, 84, 214, 142, 241, 86, 60, 94, 99, 124, 161, 116, 184, 70, 110, 131, 91, 122, 181, 256, 134, 149, 107, 76, 158, 172, 234, 114, 100, 124, 106, 107, 154]
+
+[ouro] batch done 10.6s generated=[113, 163, 100, 108, 136, 110, 119, 127, 256, 117, 180, 117, 149, 120, 256, 85, 67, 155, 138, 256, 116, 109, 143, 94, 134, 117, 111, 256, 208, 193, 135, 256, 247, 177, 256, 154, 197, 180, 168, 96, 108, 139, 96, 127, 196, 256, 107, 151, 80, 169, 169, 123, 141, 154, 239, 141, 115, 170, 205, 256, 132, 245, 162, 140]
+
+[ouro] batch done 8.6s generated=[170, 111, 132, 166, 144, 91, 178, 256, 105, 190, 114, 122, 187, 123, 77, 256, 147, 46, 132, 123, 256, 234, 168, 188, 128, 93, 136, 143, 74, 144, 256, 134, 193, 105, 103, 73, 256, 172, 128, 142, 156, 158, 77, 136, 90, 123, 104, 166, 121, 119, 135, 98, 115, 109, 102, 131, 98, 112, 191, 123, 80, 141, 50, 161]
+
+[ouro] batch done 8.6s generated=[159, 57, 126, 108, 104, 154, 253, 149, 141, 106, 148, 132, 153, 81, 100, 148, 162, 256, 204, 145, 152, 134, 256, 151, 81, 256, 90, 108, 150, 78, 256, 91, 142, 142, 256, 97, 102, 169, 197, 73, 126, 156, 79, 115, 121, 117, 109, 135, 127, 85, 225, 256, 104, 217, 219, 159, 128, 195, 65, 162, 74, 135, 149, 171]
+
+[ouro] batch done 9.0s generated=[94, 84, 130, 99, 122, 124, 196, 114, 112, 171, 107, 100, 151, 161, 163, 158, 256, 104, 62, 172, 165, 138, 125, 83, 83, 153, 83, 104, 197, 170, 172, 155, 72, 82, 124, 215, 156, 190, 97, 110, 135, 114, 86, 126, 74, 115, 161, 45, 256, 102, 109, 234, 103, 154, 256, 142, 115, 82, 86, 256, 123, 133, 142, 188]
+
+[ouro] batch done 8.6s generated=[120, 110, 74, 146, 138, 62, 249, 171, 183, 160, 214, 170, 141, 179, 146, 63, 140, 88, 109, 119, 98, 75, 97, 210, 108, 110, 113, 256, 173, 126, 234, 83, 217, 113, 114, 106, 104, 110, 145, 98, 110, 138, 101, 110, 94, 109, 115, 101, 163, 110, 131, 138, 151, 125, 151, 209, 85, 78, 116, 142, 171, 111, 158, 131]
+
+[ouro] batch done 7.9s generated=[139, 62, 190, 134, 108, 101, 97, 201, 142, 136, 86, 161, 125, 79, 116, 108, 97, 69, 120, 175, 104, 109, 59, 160, 72, 125, 125, 138, 138, 175, 151, 116, 256, 132, 199, 101, 125, 76, 256, 117, 141, 189, 95, 135, 99, 170, 157, 115, 93, 73, 196, 227, 111, 114, 140, 51, 232, 157, 75, 112, 156, 131, 142, 88]
+
+[ouro] batch done 8.3s generated=[145, 137, 138, 129, 209, 108, 141, 256, 138, 140, 126, 130, 135, 96, 255, 168, 125, 110, 99, 117, 256, 106, 119, 147, 134, 118, 187, 162, 143, 175, 106, 125, 125, 65, 93, 115, 141, 110, 83, 96, 211, 113, 87, 172, 58, 65, 105, 256, 154, 73, 71, 173, 171, 112, 107, 121, 186, 187, 114, 179, 140, 146, 110, 111]
+
+[ouro] batch done 8.8s generated=[86, 252, 143, 99, 92, 80, 188, 126, 88, 149, 125, 116, 144, 131, 91, 99, 93, 150, 107, 37, 126, 127, 120, 256, 140, 63, 114, 76, 204, 101, 133, 101, 149, 163, 120, 42, 112, 81, 148, 198, 78, 83, 141, 88, 117, 83, 96, 126, 150, 91, 61, 130, 142, 100, 141, 146, 184, 91, 90, 102, 181, 172, 111, 224]
+
+[ouro] batch done 8.2s generated=[65, 151, 97, 156, 110, 89, 97, 86, 135, 178, 94, 100, 66, 117, 108, 157, 79, 70, 81, 129, 154, 80, 172, 94, 68, 82, 151, 155, 101, 116, 91, 256, 149, 120, 103, 80, 114, 116, 75, 80, 124, 108, 79, 70, 104, 54, 256, 183, 95, 83, 75, 63, 87, 154, 59, 138, 193, 68, 115, 94, 93, 106, 190, 127]
+
+[ouro] batch done 8.4s generated=[126, 66, 73, 104, 116, 94, 107, 102, 146, 68, 86, 184, 137, 122, 130, 185, 68, 92, 77, 70, 160, 96, 39, 127, 218, 170, 123, 144, 110, 104, 256, 99, 143, 68, 112, 131, 123, 152, 102, 130, 256, 80, 102, 116, 122, 113, 53, 200, 193, 138, 68, 122, 108, 63, 116, 84, 65, 171, 104, 256, 171, 86, 75, 171]
+
+[ouro] batch done 8.4s generated=[60, 96, 118, 100, 129, 256, 90, 90, 45, 110, 78, 69, 166, 206, 256, 71, 115, 111, 94, 108, 121, 81, 103, 133, 130, 79, 122, 120, 78, 100, 115, 55, 89, 159, 90, 217, 91, 66, 102, 74, 165, 88, 126, 96, 59, 256, 99, 84, 64, 57, 104, 163, 97, 94, 111, 84, 82, 118, 111, 76, 82, 86, 53, 85]
+
+[ouro] batch done 8.4s generated=[55, 105, 95, 205, 176, 106, 79, 112, 93, 44, 90, 92, 48, 82, 85, 109, 124, 179, 97, 194, 123, 114, 114, 77, 125, 101, 85, 81, 80, 91, 174, 95, 86, 143, 145, 76, 96, 95, 24, 94, 124, 57, 84, 93, 68, 256, 117, 73, 111, 63, 199, 147, 104, 90, 95, 125, 77, 99, 119, 92, 256, 77, 90, 152]
+
+[ouro] batch done 8.0s generated=[256, 42, 114, 68, 146, 232, 136, 81, 227, 114, 98, 71, 170, 94, 85, 96, 45, 118, 156, 256, 115, 256, 115, 58, 79, 110, 74, 94, 98, 103, 92, 54, 114, 66, 100, 113, 142, 82, 76, 40, 95, 256, 82, 66, 116, 83, 92, 99, 256, 65, 100, 112, 91, 91, 103, 70, 98, 113, 71, 93, 123, 65, 65, 61]
+
+[ouro] batch done 7.7s generated=[111, 114, 94, 152, 66, 96, 44, 59, 93, 90, 107, 101, 64, 175, 196, 110, 121, 73, 137, 54, 105, 42, 154, 71, 185, 111, 100, 64, 63, 114, 53, 68, 114, 256, 78, 72, 94, 77, 138, 76, 128, 83, 73, 55, 81, 112, 67, 50, 256, 111, 68, 68, 59, 118, 106, 88, 61, 95, 63, 121, 60, 62, 74, 79]
+
+[ouro] batch done 8.2s generated=[78, 87, 143, 82, 124, 121, 103, 161, 75, 111, 64, 86, 71, 85, 193, 84, 88, 100, 113, 78, 96, 179, 45, 70, 66, 93, 97, 125, 87, 75, 82, 129, 105, 76, 78, 255, 182, 86, 68, 66, 99, 165, 164, 88, 82, 256, 124, 80, 198, 71, 100, 105, 80, 86, 88, 67, 100, 104, 147, 78, 96, 80, 94, 88]
+
+[ouro] batch done 8.6s generated=[155, 111, 115, 256, 67, 80, 102, 101, 183, 58, 256, 99, 76, 204, 186, 215, 256, 76, 93, 177, 109, 88, 175, 111, 115, 0, 86, 89, 124, 102, 86, 53, 96, 82, 78, 54, 82, 47, 81, 84, 104, 62, 83, 64, 61, 73, 68, 116, 106, 76, 115, 54, 84, 256, 101, 97, 62, 78, 82, 94, 256, 57, 244, 45]
+
+[ouro] batch done 7.7s generated=[90, 256, 77, 116, 214, 59, 77, 109, 146, 66, 108, 66, 188, 43, 70, 213, 123, 125, 78, 123, 215, 100, 85, 80, 49, 88, 91, 54, 87, 84, 83, 84, 58, 163, 127, 76, 123, 76, 76, 108, 96, 256, 183, 59, 74, 156, 71, 147, 72, 89, 101, 86, 84, 58, 160, 142, 73, 87, 62, 51, 108, 54, 79, 91]
+
+[ouro] batch done 6.2s generated=[99, 70, 72, 106, 95, 73, 186, 58, 184, 80, 66, 116, 82, 56, 87, 83, 62, 84, 57, 59, 82, 119, 48, 72, 48, 68, 95, 56, 74, 90, 99, 55, 57, 82, 69, 108, 106, 102, 74, 82, 68, 46, 109, 62, 47, 55, 91, 120, 65, 72, 89, 181, 72, 91, 187, 74, 77, 70, 63, 87, 69, 166, 105, 64]
+
+[ouro] batch done 5.6s generated=[69, 177, 174, 81, 69, 145, 72, 69, 86, 69, 72, 56, 49, 60, 89, 77, 207, 93, 68, 68, 68, 142, 91, 93, 66, 38, 48, 51, 55, 79, 61, 55, 55, 97, 62, 193, 59, 175, 72]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-10-30:23:21:40 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-10-30:23:21:40 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: gsm8k_cot
+ouro (path=/dev/shm/big-small-ouro/nanbeige-3b-base,condition=X,checkpoint=/dev/shm/big-small-ouro/runs/NBX-p1d1/checkpoint-final.pt,max_length=16384), gen_kwargs: (None), limit: None, num_fewshot: 3, batch_size: 1
+|  Tasks  |Version|     Filter     |n-shot|  Metric   |   |Value |   |Stderr|
+|---------|------:|----------------|-----:|-----------|---|-----:|---|-----:|
+|gsm8k_cot|      3|flexible-extract|     3|exact_match|↑  |0.6285|±  |0.0133|
+|         |       |strict-match    |     3|exact_match|↑  |0.6012|±  |0.0135|
+

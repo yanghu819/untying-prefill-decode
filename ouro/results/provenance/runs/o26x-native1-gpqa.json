@@ -1,0 +1,45 @@
+{
+ "run": "o26x-native1-gpqa",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=native1,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gpqa_diamond_n_shot_local": 0
+ },
+ "n_samples": {
+  "gpqa_diamond_n_shot_local": {
+   "original": 198,
+   "effective": 198
+  }
+ },
+ "task_versions": {
+  "gpqa_diamond_n_shot_local": 2.0
+ },
+ "task_hashes": {
+  "gpqa_diamond_n_shot_local": "05ff85eeca385f74ecd7bcdfe3ab6429da1aba7673c004329308b2731cb9f876"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-02T16:56:59.911239+00:00",
+ "seconds": "15.680750166997313",
+ "results": {
+  "gpqa_diamond_n_shot_local": {
+   "alias": "gpqa_diamond_n_shot_local",
+   "acc,none": 0.26262626262626265,
+   "acc_stderr,none": 0.031353050095330834,
+   "acc_norm,none": 0.26262626262626265,
+   "acc_norm_stderr,none": 0.031353050095330834
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gpqa_diamond_n_shot_local_2026-11-03T00-57-13.686877.jsonl",
+   "sha256": "4c54ef8e04fff873b0aad7713281b949f27d4a76592fe7a40db877e356c512ba",
+   "items": 198
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid_q.txt.log: 00:56:53 gpu1: ./lm1.sh $GPU o26x-native1-gpqa - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=native1,max_length=16384\" \"--tasks gpqa_diamond_n_shot_local\""
+ ]
+}

@@ -1,0 +1,36 @@
+The repository ByteDance/Ouro-1.4B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-1.4B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-1.4B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-1.4B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+lm_head.weight               | UNEXPECTED |  | 
+model.early_exit_gate.weight | UNEXPECTED |  | 
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/root/levwork/env/lib/python3.12/site-packages/peft/utils/save_and_load.py:300: UserWarning: Could not find a config file in ByteDance/Ouro-1.4B - will assume that the vocabulary was not modified.
+  warnings.warn(
+delta: warm start from /dev/shm/levwork/Lev-1.4B: 336 lora tensors and the pointer head loaded
+device=cuda world=1 trainable params=16.2M
+8925 training requests (holdout=[]), questions by type {'noul': 3862, 'choice': 7346, 'score': 1180}
+ep0 step 10/140 loss 0.789 kl 0.000 anchor 0.000 teacher 0.000 0.344s/rec
+ep0 step 20/140 loss 0.684 kl 0.000 anchor 0.000 teacher 0.000 0.324s/rec
+ep0 step 30/140 loss 0.617 kl 0.000 anchor 0.000 teacher 0.000 0.308s/rec
+ep0 step 40/140 loss 0.625 kl 0.000 anchor 0.000 teacher 0.000 0.313s/rec
+ep0 step 50/140 loss 0.648 kl 0.000 anchor 0.000 teacher 0.000 0.307s/rec
+ep0 step 60/140 loss 0.657 kl 0.000 anchor 0.000 teacher 0.000 0.303s/rec
+ep0 step 70/140 loss 0.576 kl 0.000 anchor 0.000 teacher 0.000 0.303s/rec
+ep0 step 80/140 loss 0.632 kl 0.000 anchor 0.000 teacher 0.000 0.298s/rec
+ep0 step 90/140 loss 0.608 kl 0.000 anchor 0.000 teacher 0.000 0.302s/rec
+ep0 step 100/140 loss 0.616 kl 0.000 anchor 0.000 teacher 0.000 0.305s/rec
+ep0 step 110/140 loss 0.596 kl 0.000 anchor 0.000 teacher 0.000 0.304s/rec
+ep0 step 120/140 loss 0.573 kl 0.000 anchor 0.000 teacher 0.000 0.303s/rec
+ep0 step 130/140 loss 0.563 kl 0.000 anchor 0.000 teacher 0.000 0.306s/rec
+ep0 step 140/140 loss 0.534 kl 0.000 anchor 0.000 teacher 0.000 0.310s/rec
+saved /dev/shm/levwork/train/rd4-1.4B-s1
+DONE

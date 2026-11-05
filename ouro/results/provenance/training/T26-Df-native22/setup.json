@@ -1,0 +1,166 @@
+{
+  "event": "start",
+  "arm": "D",
+  "first_target": true,
+  "freeze_maps": false,
+  "refresh_blocks": null,
+  "micro": 1,
+  "world_size": 3,
+  "global_batch": 24,
+  "microbatch": 1,
+  "gradient_accumulation": 8,
+  "trainable_parameters": 12582912,
+  "model_path": "/dev/shm/big-small-ouro/model-2.6b-think",
+  "planned_kl_tokens": 48000000,
+  "stop_kl_tokens": 48000000,
+  "resume": null,
+  "start_sample": 0,
+  "data_manifest": {
+    "status": "prepared",
+    "prepared_at_utc": "2026-10-22T02:27:18.812836+00:00",
+    "tokenizer": {
+      "model": "ByteDance/Ouro-1.4B",
+      "revision": "574fa66cb8bf5abdc979642d01cf2b79b16bfab1",
+      "path": "/dev/shm/big-small-ouro/model",
+      "local_files_only": true,
+      "retokenized_for_ouro": true
+    },
+    "schedule": {
+      "seed": 31847,
+      "global_batch": 24,
+      "optimizer_updates": 16799,
+      "samples": 403176,
+      "requested_effective_kl_tokens": 200000000,
+      "effective_kl_tokens": 200001297,
+      "overshoot_effective_kl_tokens": 1297,
+      "source_samples": {
+        "fineweb": 387478,
+        "gsm": 15698
+      },
+      "source_effective_kl_tokens": {
+        "fineweb": 198001258,
+        "gsm": 2000039
+      },
+      "observed_gsm_fraction": 0.010000130149155982,
+      "target_gsm_fraction": 0.01,
+      "gsm_unique_samples": 7473,
+      "gsm_maximum_sample_uses": 3,
+      "gsm_effective_pool_passes": 2.099507360204404,
+      "fineweb_window_order": "Published document order, consecutive non-overlapping 2048-token windows",
+      "gsm_order": "Python Random(seed).shuffle of all retained train rows; reshuffle only on exhaustion",
+      "source_selection": "Choose next whole GSM/FineWeb sample minimizing deviation from 1% GSM effective KL tokens",
+      "stop": "First complete global batch with effective KL tokens >= requested budget",
+      "kl_positions": "suffix[1:]; first suffix target excluded because it is predicted by unadapted prefill"
+    },
+    "fineweb": {
+      "dataset": "HuggingFaceFW/fineweb-edu",
+      "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+      "config": "sample-10BT",
+      "split": "train",
+      "order": "Published streaming order, no shuffle",
+      "selected_documents": 754042,
+      "fetched_and_tokenized_documents": 754048,
+      "unselected_read_ahead_documents": 6,
+      "source_tokens_including_eos": 793554951,
+      "written_tokens": 793554944,
+      "final_document_unused_tokens": 7,
+      "dtype": "little-endian uint32",
+      "document_separator_id": 0,
+      "packing": "Concatenate complete document token IDs plus EOS; trim final document to staged boundary",
+      "prefix_tokens": 1536,
+      "suffix_tokens": 512,
+      "effective_kl_tokens_per_window": 511
+    },
+    "gsm": {
+      "dataset": "openai/gsm8k",
+      "revision": "740312add88f781978c0658806c59bc2815b9866",
+      "config": "main",
+      "split": "train",
+      "original_samples": 7473,
+      "retained_samples": 7473,
+      "excluded_demo_overlap_samples": 0,
+      "fewshot": 3,
+      "fewshot_indices": [
+        0,
+        1,
+        2
+      ],
+      "harness_revision": "d6de81643928d653435c431bae19945d41d32520",
+      "task_yaml": "/dev/shm/big-small-ouro/gsm8k-cot.yaml",
+      "prompt_format": "three fixed demonstrations, then Q: {question}\\nA:",
+      "target_format": "complete original rationale; #### value becomes The answer is value.; append EOS",
+      "answer_truncation": false,
+      "add_special_tokens": false,
+      "chat_template": false,
+      "minimum_target_tokens": 34,
+      "maximum_target_tokens": 458,
+      "minimum_prompt_tokens": 274,
+      "maximum_prompt_tokens": 485,
+      "full_pool_effective_kl_tokens": 952623
+    },
+    "input_tokens": 800624496,
+    "input_tokens_by_source": {
+      "fineweb": 793554944,
+      "gsm": 7069552
+    },
+    "files": {
+      "fineweb": "fineweb_train.bin",
+      "gsm": "gsm_train.jsonl",
+      "schedule": "samples.npy"
+    },
+    "schedule_columns": [
+      "source: 0=fineweb, 1=gsm",
+      "source_item_index",
+      "effective_kl_tokens"
+    ],
+    "arms": "A/B/C consume the same ordered global batches; no rank-local or arm-local sampling",
+    "limitations": [
+      "No benchmark files enter training; no semantic decontamination claim.",
+      "This directory stages only the first requested milestone; later budget requires a separate continuation."
+    ],
+    "safe_to_collect": "manifest.json only; source text, tokens, selection and schedule remain remote",
+    "prefix_tokens_override": 7680,
+    "mix": {
+      "sources": {
+        "openthoughts": {
+          "pool": 37986,
+          "passes": 0.5563628705312483
+        },
+        "tulu": {
+          "pool": 156556,
+          "passes": 0.25396024425764585
+        },
+        "longalpaca": {
+          "pool": 10776,
+          "passes": 0.9206570155902004
+        }
+      },
+      "kl_tokens": {
+        "openthoughts": 21601196,
+        "tulu": 19200402,
+        "longalpaca": 2399875,
+        "fineweb": 4800334
+      },
+      "tokenizer": "/dev/shm/big-small-ouro/model-2.6b",
+      "fractions": {
+        "openthoughts": 0.45,
+        "tulu": 0.4,
+        "longalpaca": 0.05,
+        "fineweb": 0.1
+      },
+      "fineweb_windows": [
+        230001,
+        239394
+      ],
+      "samples": 80208,
+      "max_target": 1024,
+      "max_prompt": 7680,
+      "format": "User: {prompt}\\n\\nAssistant: {response}<eos>, no chat template"
+    },
+    "chat_template": {
+      "tokenizer": "/dev/shm/big-small-ouro/model-2.6b-think",
+      "note": "Re-wrap the diverse distillation mix (mix-data-48m) in the Ouro-Thinking chat template, same samples and schedule:",
+      "unparsed_prompts": 0
+    }
+  }
+}

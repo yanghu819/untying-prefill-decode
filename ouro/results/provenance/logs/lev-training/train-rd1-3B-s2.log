@@ -1,0 +1,29 @@
+
+[transformers] [1mNanbeigeModel LOAD REPORT[0m from: Nanbeige/Nanbeige4.2-3B-Base
+Key            | Status     |  | 
+---------------+------------+--+-
+lm_head.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/root/levwork/env/lib/python3.12/site-packages/peft/utils/save_and_load.py:300: UserWarning: Could not find a config file in Nanbeige/Nanbeige4.2-3B-Base - will assume that the vocabulary was not modified.
+  warnings.warn(
+delta: warm start from /dev/shm/levwork/Lev-3B: 308 lora tensors and the pointer head loaded
+device=cuda world=1 trainable params=25.5M
+8925 training requests (holdout=[]), questions by type {'noul': 3862, 'choice': 7346, 'score': 1180}
+ep0 step 10/140 loss 0.700 kl 0.000 anchor 0.000 teacher 0.000 0.175s/rec
+ep0 step 20/140 loss 0.745 kl 0.000 anchor 0.000 teacher 0.000 0.211s/rec
+ep0 step 30/140 loss 0.698 kl 0.000 anchor 0.000 teacher 0.000 0.207s/rec
+ep0 step 40/140 loss 0.692 kl 0.000 anchor 0.000 teacher 0.000 0.206s/rec
+ep0 step 50/140 loss 0.643 kl 0.000 anchor 0.000 teacher 0.000 0.205s/rec
+ep0 step 60/140 loss 0.615 kl 0.000 anchor 0.000 teacher 0.000 0.201s/rec
+ep0 step 70/140 loss 0.686 kl 0.000 anchor 0.000 teacher 0.000 0.208s/rec
+ep0 step 80/140 loss 0.637 kl 0.000 anchor 0.000 teacher 0.000 0.209s/rec
+ep0 step 90/140 loss 0.667 kl 0.000 anchor 0.000 teacher 0.000 0.210s/rec
+ep0 step 100/140 loss 0.589 kl 0.000 anchor 0.000 teacher 0.000 0.208s/rec
+ep0 step 110/140 loss 0.612 kl 0.000 anchor 0.000 teacher 0.000 0.204s/rec
+ep0 step 120/140 loss 0.558 kl 0.000 anchor 0.000 teacher 0.000 0.203s/rec
+ep0 step 130/140 loss 0.560 kl 0.000 anchor 0.000 teacher 0.000 0.207s/rec
+ep0 step 140/140 loss 0.598 kl 0.000 anchor 0.000 teacher 0.000 0.206s/rec
+saved /dev/shm/levwork/train/rd1-3B-s2
+DONE

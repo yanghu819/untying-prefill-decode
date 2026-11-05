@@ -1,0 +1,43 @@
+{
+ "run": "o26x-native4-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=native4,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-10-30T13:20:35.529178+00:00",
+ "seconds": "2152.240240646992",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.482,
+   "exact_match_stderr,none": 0.022368565117387874,
+   "math_verify,none": 0.456,
+   "math_verify_stderr,none": 0.02229623834840707
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-10-30T21-56-25.859636.jsonl",
+   "sha256": "53b11d44a1cba96d1b80d84ce49f9b7743bc24f6e9542ee0e6ec432bdb8324cb",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": []
+}

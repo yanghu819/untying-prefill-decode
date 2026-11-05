@@ -1,0 +1,27 @@
+2026-11-05:06:40:46 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-05:06:40:48 WARNING  [__main__:368]  --limit SHOULD ONLY BE USED FOR TESTING.REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.
+2026-11-05:06:40:48 INFO     [__main__:440] Selected Tasks: ['gsm8k_cot']
+2026-11-05:06:40:48 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-05:06:40:48 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-1.4b', 'condition': 'E', 'checkpoint': '/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt', 'max_length': 16384}
+2026-11-05:06:40:52 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/O14x-E48f-gsm_rank0.db
+Using the latest cached version of the dataset since gsm8k couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-05:06:40:52 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since gsm8k couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'main' at /dev/shm/big-small-ouro/hf-lmeval/datasets/gsm8k/main/0.0.0/740312add88f781978c0658806c59bc2815b9866 (last modified on Sun Oct 25 19:52:48 2026).
+2026-11-05:06:40:52 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'main' at /dev/shm/big-small-ouro/hf-lmeval/datasets/gsm8k/main/0.0.0/740312add88f781978c0658806c59bc2815b9866 (last modified on Sun Oct 25 19:52:48 2026).
+2026-11-05:06:40:52 INFO     [evaluator:290] gsm8k_cot: Using gen_kwargs: {'do_sample': False, 'until': ['Q:', '</s>', '<|im_end|>']}
+2026-11-05:06:40:52 WARNING  [evaluator:309] Overwriting default num_fewshot of gsm8k_cot from 8 to 3
+2026-11-05:06:40:52 INFO     [api.task:434] Building contexts for gsm8k_cot on rank 0...
+
+2026-11-05:06:40:53 INFO     [evaluator:559] Running generate_until requests
+2026-11-05:06:40:53 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/O14x-E48f-gsm_rank0.db' where possible...
+
+2026-11-05:06:40:53 INFO     [api.model:285] Cached requests: 400, Requests remaining: 0
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-05:06:40:56 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-05:06:40:56 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: gsm8k_cot
+ouro (path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384), gen_kwargs: (None), limit: 400.0, num_fewshot: 3, batch_size: 1
+|  Tasks  |Version|     Filter     |n-shot|  Metric   |   |Value |   |Stderr|
+|---------|------:|----------------|-----:|-----------|---|-----:|---|-----:|
+|gsm8k_cot|      3|flexible-extract|     3|exact_match|↑  |0.2925|±  |0.0228|
+|         |       |strict-match    |     3|exact_match|↑  |0.2100|±  |0.0204|
+

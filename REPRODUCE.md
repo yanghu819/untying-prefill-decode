@@ -37,6 +37,12 @@ benchmarks in `$M/bench`, outputs in `$M/runs`); change `M` at the top of a laun
 from a local CSV (`$M/gpqa-data/`, not redistributed) and IFEval from `$M/ifeval-data/` (task definitions in
 `ouro/lmeval_tasks/gpqa_n_shot_local`, `ifeval_local`).
 
+## Provenance
+
+`ouro/results/provenance/` traces every result to its run: the launching command, evaluation configuration and
+software versions, times, checkpoint sha256 and training log, the cleaned evaluation log and the model's outputs
+(see its README). Regenerate with `python ouro/scripts/provenance.py RUNS_DIR OUT_DIR` on each evaluation machine.
+
 ## Training (one B300 node, 3–4 GPUs per run)
 
 | checkpoint | used for | launcher |

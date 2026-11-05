@@ -1,0 +1,48 @@
+2026-11-04:14:48:25 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-04:14:48:27 INFO     [__main__:440] Selected Tasks: ['humanevalplus_chat_local', 'mbppplus_chat_local']
+2026-11-04:14:48:27 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-04:14:48:27 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-1.4b', 'condition': 'native2', 'max_length': 16384}
+2026-11-04:14:48:30 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/O14x-native2-evalplus_rank0.db
+2026-11-04:14:48:30 WARNING  [api.task:844] [Task: humanevalplus_chat_local] metric bypass is defined, but aggregation is not. using default aggregation=bypass
+2026-11-04:14:48:30 WARNING  [api.task:856] [Task: humanevalplus_chat_local] metric bypass is defined, but higher_is_better is not. using default higher_is_better=True
+2026-11-04:14:48:30 WARNING  [api.task:844] [Task: mbppplus_chat_local] metric bypass is defined, but aggregation is not. using default aggregation=bypass
+2026-11-04:14:48:30 WARNING  [api.task:856] [Task: mbppplus_chat_local] metric bypass is defined, but higher_is_better is not. using default higher_is_better=True
+2026-11-04:14:48:30 INFO     [evaluator:290] mbppplus_chat_local: Using gen_kwargs: {'until': ['<|endoftext|>', '<|im_end|>', '</s>', '\nif __name__', '\ndef main(', '\nprint(', '\n```\n'], 'max_gen_toks': 768, 'do_sample': False}
+2026-11-04:14:48:30 INFO     [evaluator:290] humanevalplus_chat_local: Using gen_kwargs: {'until': ['<|endoftext|>', '<|im_end|>', '</s>', '\nif __name__', '\ndef main(', '\nprint(', '\n```\n'], 'max_gen_toks': 768, 'do_sample': False}
+2026-11-04:14:48:30 INFO     [api.task:434] Building contexts for mbppplus_chat_local on rank 0...
+
+2026-11-04:14:48:30 INFO     [api.task:434] Building contexts for humanevalplus_chat_local on rank 0...
+
+2026-11-04:14:48:30 INFO     [evaluator:559] Running generate_until requests
+2026-11-04:14:48:30 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/O14x-native2-evalplus_rank0.db' where possible...
+
+2026-11-04:14:48:30 INFO     [api.model:285] Cached requests: 0, Requests remaining: 542
+
+[ouro] batch done 55.2s generated=[630, 379, 428, 454, 406, 768, 417, 768, 386, 539, 392, 520, 413, 768, 349, 291, 354, 292, 251, 768, 326, 250, 295, 439, 270, 403, 312, 411, 310, 256, 263, 269, 352, 282, 200, 289, 365, 278, 206, 768, 768, 278, 251, 212, 238, 215, 275, 218, 224, 229, 345, 175, 177]
+
+[ouro] batch done 53.1s generated=[260, 206, 235, 212, 212, 207, 205, 257, 259, 221, 246, 320, 257, 232, 195, 188, 186, 237, 443, 222, 167, 198, 193, 191, 262, 768, 255, 307, 423, 392, 315, 768, 182, 171, 187, 170, 166, 232, 249, 371, 246, 179, 219, 243, 185, 151, 345, 141, 266, 197, 768, 138, 196, 262, 222, 226, 200, 162, 186, 178, 149, 223, 136, 176]
+
+[ouro] batch done 49.8s generated=[162, 174, 183, 196, 143, 193, 768, 319, 130, 203, 148, 230, 121, 124, 152, 155, 176, 187, 224, 156, 151, 232, 169, 225, 768, 134, 284, 370, 202, 136, 768, 183, 130, 399, 330, 399, 165, 768, 288, 768, 340, 243, 161, 143, 162, 768, 156, 393, 168, 262, 151, 150, 161, 768, 149, 356, 659, 144, 768, 193, 258, 242, 260, 401]
+
+[ouro] batch done 47.9s generated=[274, 120, 213, 319, 309, 190, 144, 245, 193, 768, 170, 307, 454, 158, 135, 156, 286, 340, 100, 276, 234, 94, 290, 174, 768, 768, 217, 148, 437, 200, 189, 146, 768, 296, 292, 138, 334, 182, 346, 89, 202, 149, 227, 273, 768, 248, 137, 522, 204, 309, 219, 184, 97, 97, 117, 257, 288, 96, 209, 394, 213, 142, 190, 200]
+
+[ouro] batch done 48.6s generated=[264, 136, 109, 118, 221, 186, 310, 207, 224, 177, 245, 157, 319, 117, 129, 122, 119, 345, 140, 124, 143, 250, 105, 768, 768, 768, 228, 768, 298, 416, 340, 120, 212, 768, 768, 768, 97, 121, 768, 213, 768, 174, 298, 192, 768, 187, 182, 246, 259, 191, 179, 239, 159, 768, 768, 244, 216, 197, 174, 768, 194, 768, 183, 217]
+
+[ouro] batch done 49.4s generated=[768, 768, 768, 235, 194, 768, 253, 214, 768, 768, 768, 233, 113, 155, 768, 172, 107, 92, 243, 242, 141, 768, 768, 224, 284, 204, 200, 768, 159, 221, 768, 246, 768, 186, 768, 125, 768, 203, 241, 88, 63, 156, 141, 217, 130, 217, 196, 768, 94, 768, 193, 768, 768, 163, 122, 139, 147, 768, 172, 768, 768, 768, 768, 181]
+
+[ouro] batch done 49.8s generated=[344, 768, 158, 82, 147, 768, 768, 768, 768, 234, 768, 151, 768, 768, 768, 768, 768, 768, 768, 768, 768, 97, 768, 179, 253, 768, 94, 768, 193, 768, 59, 81, 768, 266, 768, 154, 768, 768, 768, 768, 768, 768, 202, 768, 768, 768, 768, 176, 768, 768, 768, 200, 768, 768, 768, 768, 91, 207, 151, 768, 176, 768, 768, 768]
+
+[ouro] batch done 50.1s generated=[768, 155, 768, 768, 142, 169, 147, 245, 175, 258, 768, 178, 70, 142, 768, 157, 768, 768, 143, 154, 145, 164, 768, 768, 768, 211, 119, 149, 768, 156, 29, 153, 352, 35, 86, 184, 768, 768, 137, 193, 119, 768, 141, 114, 149, 332, 204, 768, 141, 140, 126, 137, 148, 768, 768, 768, 768, 768, 227, 140, 159, 768, 114, 184]
+
+[ouro] batch done 50.8s generated=[768, 184, 768, 768, 768, 768, 200, 142, 113, 768, 69, 768, 130, 768, 182, 156, 258, 768, 226, 124, 768, 768, 249, 768, 768, 125, 768, 190, 158, 132, 158, 768, 169, 768, 768, 139, 112, 768, 87, 768, 258]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-04:14:56:06 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-04:14:56:06 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: humanevalplus_chat_local
+2026-11-04:14:56:06 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: mbppplus_chat_local
+ouro (path=/dev/shm/big-small-ouro/model-1.4b,condition=native2,max_length=16384), gen_kwargs: (None), limit: None, num_fewshot: None, batch_size: 1
+|         Tasks          |Version|Filter|n-shot|Metric|   |Value|   |Stderr|
+|------------------------|------:|------|-----:|------|---|----:|---|------|
+|humanevalplus_chat_local|      1|none  |     0|bypass|↑  |  999|±  |   N/A|
+|mbppplus_chat_local     |      1|none  |     0|bypass|↑  |  999|±  |   N/A|
+

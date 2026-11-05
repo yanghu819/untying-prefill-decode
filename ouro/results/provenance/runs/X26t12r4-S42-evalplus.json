@@ -1,0 +1,76 @@
+{
+ "run": "X26t12r4-S42-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=S42,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-12m-r4/checkpoint-12m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T12:56:51.728353+00:00",
+ "seconds": "855.8777354247868",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-05T21-11-05.597567.jsonl",
+   "sha256": "54155c945107c66f6a4075c0a3c84a766242e61996ac03f5208660123ad4a5eb",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-05T21-11-05.597567.jsonl",
+   "sha256": "5189c9b617569b1a0dc7f9589bb784d6db81961f72ce9dbfef5d0783951d8162",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "1b5b7c57f5aea85aa8b4a15b9a1728dd9a03ad43375a5172df1d8cecb1e1691e"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "c172a0a9cb7d69a1fe647552d8c6dc716f4255ecc5508796b5300b066076abd0"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "tokens_q.txt.log: 20:56:44 gpu6: OURO_LORA_RANK=4 ./lm1.sh $GPU X26t12r4-S42-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=S42,checkpoint=/dev/shm/big-small-ouro/runs/X26-S-12m-r4/checkpoint-12m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ],
+ "checkpoint": {
+  "run": "X26-S-12m-r4",
+  "checkpoint": "checkpoint-12m.pt",
+  "sha256": "fef2d8baf2d03cb50663892b9946e5d38c93aee8d68f23e1c522e83ad69ecd21",
+  "bytes": 646923965
+ }
+}

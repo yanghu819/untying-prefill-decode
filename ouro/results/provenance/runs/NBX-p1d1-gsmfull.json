@@ -1,0 +1,49 @@
+{
+ "run": "NBX-p1d1-gsmfull",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/nanbeige-3b-base,condition=X,checkpoint=/dev/shm/big-small-ouro/runs/NBX-p1d1/checkpoint-final.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 1319
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "adaf2c05fa61ed165c933cb08acb93cd77e43714d152d7ec5c63ebb4a63c6878"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.57.1",
+ "start": "2026-10-30T15:18:27.571019+00:00",
+ "seconds": "194.58656823122874",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.601213040181956,
+   "exact_match_stderr,strict-match": 0.013487360477060839,
+   "exact_match,flexible-extract": 0.6285064442759667,
+   "exact_match_stderr,flexible-extract": 0.013309839075706483
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-10-30T23-21-40.295265.jsonl",
+   "sha256": "c82ce4c85548c48806809b3cf9309023fbfb5704ae001f26166e7b492fd5d442",
+   "items": 2638
+  }
+ ],
+ "log": true,
+ "commands": [],
+ "checkpoint": {
+  "run": "NBX-p1d1",
+  "checkpoint": "checkpoint-final.pt",
+  "sha256": "83c94c69187fb789fa2796119612757d6422004f2c5bf8e02626d6bc85ab5af2",
+  "bytes": 60610235
+ }
+}

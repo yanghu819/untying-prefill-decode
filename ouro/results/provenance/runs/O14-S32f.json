@@ -1,0 +1,31 @@
+{
+ "run": "O14-S32f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "O14-S32f/s0/ruler16k.jsonl",
+   "sha256": "efc69318fae0811e951be1bc1cf54908358e534a12eab0fae0dbc47f1466d368",
+   "items": 520
+  },
+  {
+   "file": "O14-S32f/s0/ruler4k.jsonl",
+   "sha256": "6e78aa7bf52172760e9183723c00479bf90f2eac413ba1e1d361a9442f669a85",
+   "items": 520
+  },
+  {
+   "file": "O14-S32f/s0/ruler8k.jsonl",
+   "sha256": "29bc70252bb1447da608d5fc32d0575485345499fc8cd638072a606ca01e1b6d",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "grid14b_q.txt.log: 00:42:52 gpu5: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-1.4b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' BATCH=24576 OURO_NO_CUDNN_SDP=1 ./ouro/runs_scripts/bench3.sh O14-S32f S32 /dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "O14-S-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "6c5b5ca5cc00893bfb7c1fe190937ecf6a2def48147a6f22ac8d0f729b8d3cc6",
+  "bytes": 380093211
+ }
+}

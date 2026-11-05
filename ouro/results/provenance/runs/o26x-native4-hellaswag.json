@@ -1,0 +1,45 @@
+{
+ "run": "o26x-native4-hellaswag",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=native4,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "hellaswag": 10
+ },
+ "n_samples": {
+  "hellaswag": {
+   "original": 10042,
+   "effective": 10042
+  }
+ },
+ "task_versions": {
+  "hellaswag": 1.0
+ },
+ "task_hashes": {
+  "hellaswag": "d4bcb44ec68db2b8a65f050c3c64c48454179b48fd8aee3e73b55e2ec51e6d82"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-04T06:43:47.000721+00:00",
+ "seconds": "6903.220136631746",
+ "results": {
+  "hellaswag": {
+   "alias": "hellaswag",
+   "acc,none": 0.5968930491933878,
+   "acc_stderr,none": 0.004895194143893019,
+   "acc_norm,none": 0.7944632543318064,
+   "acc_norm_stderr,none": 0.00403267443344722
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_hellaswag_2026-11-04T16-38-48.322632.jsonl",
+   "sha256": "3e6e3df4982e17e359580c73ff3affd15a1f5e8eb72a728de96ae0456110aea0",
+   "items": 10042
+  }
+ ],
+ "log": true,
+ "commands": [
+  "protocol_q.txt.log: 14:43:40 gpu5: ./lm1.sh $GPU o26x-native4-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=native4,max_length=16384\" \"--tasks hellaswag --num_fewshot 10\""
+ ]
+}

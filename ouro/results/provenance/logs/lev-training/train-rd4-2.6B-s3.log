@@ -1,0 +1,37 @@
+The repository ByteDance/Ouro-2.6B contains custom code which must be executed to correctly load the model. You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B .
+ You can inspect the repository content at https://hf.co/ByteDance/Ouro-2.6B.
+You can avoid this prompt in future by passing the argument `trust_remote_code=True`.
+
+Do you wish to run the custom code? [y/N] [transformers] You are using a model of type `ouro` to instantiate a model of type ``. This may be expected if you are loading a checkpoint that shares a subset of the architecture (e.g., loading a `sam2_video` checkpoint into `Sam2Model`), but is otherwise not supported and can yield errors. Please verify that the checkpoint is compatible with the model you are instantiating.
+
+[transformers] [1mOuroModel LOAD REPORT[0m from: ByteDance/Ouro-2.6B
+Key                          | Status     |  | 
+-----------------------------+------------+--+-
+model.early_exit_gate.bias   | UNEXPECTED |  | 
+lm_head.weight               | UNEXPECTED |  | 
+model.early_exit_gate.weight | UNEXPECTED |  | 
+
+Notes:
+- UNEXPECTED:	can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+/root/levwork/env/lib/python3.12/site-packages/peft/utils/save_and_load.py:300: UserWarning: Could not find a config file in ByteDance/Ouro-2.6B - will assume that the vocabulary was not modified.
+  warnings.warn(
+delta: warm start from /dev/shm/levwork/Lev-2.6B: 672 lora tensors and the pointer head loaded
+device=cuda world=1 trainable params=31.3M
+8925 training requests (holdout=[]), questions by type {'noul': 3862, 'choice': 7346, 'score': 1180}
+ep0 step 10/140 loss 0.703 kl 0.000 anchor 0.000 teacher 0.000 0.674s/rec
+ep0 step 20/140 loss 0.642 kl 0.000 anchor 0.000 teacher 0.000 0.572s/rec
+ep0 step 30/140 loss 0.630 kl 0.000 anchor 0.000 teacher 0.000 0.588s/rec
+ep0 step 40/140 loss 0.625 kl 0.000 anchor 0.000 teacher 0.000 0.603s/rec
+ep0 step 50/140 loss 0.587 kl 0.000 anchor 0.000 teacher 0.000 0.596s/rec
+ep0 step 60/140 loss 0.551 kl 0.000 anchor 0.000 teacher 0.000 0.595s/rec
+ep0 step 70/140 loss 0.517 kl 0.000 anchor 0.000 teacher 0.000 0.589s/rec
+ep0 step 80/140 loss 0.494 kl 0.000 anchor 0.000 teacher 0.000 0.597s/rec
+ep0 step 90/140 loss 0.516 kl 0.000 anchor 0.000 teacher 0.000 0.601s/rec
+ep0 step 100/140 loss 0.432 kl 0.000 anchor 0.000 teacher 0.000 0.607s/rec
+ep0 step 110/140 loss 0.451 kl 0.000 anchor 0.000 teacher 0.000 0.607s/rec
+ep0 step 120/140 loss 0.406 kl 0.000 anchor 0.000 teacher 0.000 0.607s/rec
+ep0 step 130/140 loss 0.463 kl 0.000 anchor 0.000 teacher 0.000 0.606s/rec
+ep0 step 140/140 loss 0.475 kl 0.000 anchor 0.000 teacher 0.000 0.602s/rec
+saved /dev/shm/levwork/train/rd4-2.6B-s3
+/root/levwork/train_rd.sh: line 9: seed: command not found
+DONE

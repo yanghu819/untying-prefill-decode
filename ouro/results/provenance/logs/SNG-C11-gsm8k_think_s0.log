@@ -1,0 +1,46 @@
+[transformers] The `check_model_inputs` decorator is deprecated in favor of `merge_with_config_defaults`.
+2026-11-02:18:58:49 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-02:18:58:50 INFO     [__main__:440] Selected Tasks: ['gsm8k_think_s0']
+2026-11-02:18:58:50 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-02:18:58:50 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-sn9b', 'condition': 'C11', 'max_length': 16384, 'batch_tokens': 250000, 'max_batch': 64, 'checkpoint': '/dev/shm/big-small-ouro/runs/SNG-C-universal/checkpoint.pt'}
+2026-11-02:18:58:52 INFO     [fla.utils.hardware:146] Blackwell detected: registering default global_scratch allocator.
+[transformers] The tokenizer you are loading from '/dev/shm/big-small-ouro/model-sn9b' with an incorrect regex pattern: https://huggingface.co/mistralai/Mistral-Small-3.1-24B-Instruct-2503/discussions/84#69121093e8b480e709447d5e. This will lead to incorrect tokenization. You should set the `fix_mistral_regex=True` flag when loading this tokenizer to fix this issue.
+[ERROR] `cache_position` is part of OuroModel.forward's signature, but not documented. Make sure to add it to the docstring of the function in /root/big-small/third_party/ouro/modeling_ouro.py.
+[ERROR] `cache_position` is part of OuroForCausalLM.forward's signature, but not documented. Make sure to add it to the docstring of the function in /root/big-small/third_party/ouro/modeling_ouro.py.
+
+2026-11-02:18:59:02 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/SNG-C11-gsm8k_think_s0_rank0.db
+Using the latest cached version of the dataset since gsm8k couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-02:18:59:03 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since gsm8k couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'main' at /dev/shm/big-small-ouro/hf-lmeval/datasets/gsm8k/main/0.0.0/740312add88f781978c0658806c59bc2815b9866 (last modified on Sun Oct 25 19:52:48 2026).
+2026-11-02:18:59:03 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'main' at /dev/shm/big-small-ouro/hf-lmeval/datasets/gsm8k/main/0.0.0/740312add88f781978c0658806c59bc2815b9866 (last modified on Sun Oct 25 19:52:48 2026).
+2026-11-02:18:59:03 INFO     [evaluator:290] gsm8k_think_s0: Using gen_kwargs: {'until': [], 'max_gen_toks': 4096, 'do_sample': False, 'temperature': 0.0}
+2026-11-02:18:59:03 WARNING  [evaluator:465] Chat template formatting change affects loglikelihood and multiple-choice tasks. See docs/chat-template-readme.md for details.
+2026-11-02:18:59:03 INFO     [api.task:434] Building contexts for gsm8k_think_s0 on rank 0...
+
+2026-11-02:18:59:03 INFO     [evaluator:559] Running generate_until requests
+2026-11-02:18:59:03 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/SNG-C11-gsm8k_think_s0_rank0.db' where possible...
+
+2026-11-02:18:59:03 INFO     [api.model:285] Cached requests: 0, Requests remaining: 330
+
+[transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[transformers] `causal_conv1d_update` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
+[ouro] batch done 140.2s generated=[853, 371, 558, 278, 320, 507, 1811, 583, 490, 365, 618, 325, 298, 552, 304, 509, 419, 343, 993, 378, 377, 402, 336, 387, 450, 355, 318, 465, 274, 526, 552, 329, 391, 831, 407, 243, 348, 273, 421, 277, 303, 188, 216, 268, 386, 229, 868, 282, 493, 170, 369, 560, 384, 315, 295, 408, 751, 564]
+
+[ouro] batch done 114.0s generated=[214, 203, 257, 571, 361, 346, 270, 229, 567, 179, 311, 380, 185, 279, 261, 272, 301, 395, 376, 363, 205, 485, 347, 292, 214, 256, 325, 876, 395, 788, 196, 230, 271, 395, 288, 261, 202, 212, 305, 1163, 281, 240, 236, 229, 239, 322, 632, 238, 731, 254, 232, 485, 353, 200, 1573, 261, 244, 347, 317]
+
+[ouro] batch done 285.6s generated=[185, 171, 341, 218, 310, 211, 606, 205, 202, 212, 559, 221, 408, 260, 310, 376, 1053, 206, 321, 332, 216, 285, 463, 520, 278, 354, 284, 305, 767, 1088, 4096, 423, 258, 182, 205, 269, 194, 185, 173, 376, 215, 419, 247, 300, 1194, 366, 464, 397, 376, 399, 237, 313, 301, 285, 580, 315, 426, 212, 223]
+
+[ouro] batch done 53.3s generated=[242, 244, 256, 290, 301, 578, 164, 222, 311, 353, 238, 703, 289, 172, 125, 183, 237, 358, 339, 201, 154, 194, 318, 226, 184, 244, 365, 276, 189, 189, 205, 240, 196, 156, 601, 291, 224, 278, 443, 329, 153, 198, 169, 282, 258, 352, 393, 233, 270, 216, 168, 315, 313, 160, 344, 178, 226, 243, 225]
+
+[ouro] batch done 294.2s generated=[760, 244, 358, 221, 173, 252, 201, 171, 220, 330, 339, 196, 361, 318, 201, 279, 285, 188, 219, 236, 313, 289, 225, 621, 251, 190, 234, 207, 351, 285, 184, 210, 434, 493, 183, 4096, 243, 221, 275, 193, 184, 226, 378, 324, 225, 287, 246, 134, 304, 319, 268, 459, 266, 494, 210, 315, 180, 298, 336]
+
+[ouro] batch done 47.9s generated=[239, 161, 130, 222, 355, 195, 227, 159, 195, 241, 405, 260, 144, 291, 159, 199, 135, 454, 274, 262, 270, 245, 159, 153, 238, 136, 273, 164, 280, 353, 228, 637, 184, 153, 123, 355]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-02:19:14:40 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-02:19:14:40 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: gsm8k_think_s0
+ouro (path=/dev/shm/big-small-ouro/model-sn9b,condition=C11,max_length=16384,batch_tokens=250000,max_batch=64,checkpoint=/dev/shm/big-small-ouro/runs/SNG-C-universal/checkpoint.pt), gen_kwargs: (None), limit: None, num_fewshot: None, batch_size: 1
+|    Tasks     |Version|Filter|n-shot|  Metric   |   |Value |   |Stderr|
+|--------------|------:|------|-----:|-----------|---|-----:|---|-----:|
+|gsm8k_think_s0|      1|none  |     0|math_verify|↑  |0.9545|±  |0.0115|
+

@@ -1,0 +1,38 @@
+2026-11-02:23:59:14 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-02:23:59:16 INFO     [__main__:440] Selected Tasks: ['math500_think_s4']
+2026-11-02:23:59:16 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-02:23:59:16 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-2.6b-think', 'condition': 'S12', 'checkpoint': '/dev/shm/big-small-ouro/runs/T26-S-universal/checkpoint-48m.pt', 'max_length': 16384, 'batch_tokens': 160000, 'max_batch': 64}
+2026-11-02:23:59:21 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/T26-S12-math500_think_s4_rank0.db
+Using the latest cached version of the dataset since HuggingFaceH4/MATH-500 couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-02:23:59:21 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since HuggingFaceH4/MATH-500 couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'default' at /dev/shm/big-small-ouro/hf-lmeval/datasets/HuggingFaceH4___math-500/default/0.0.0/6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be (last modified on Sun Oct 25 19:57:09 2026).
+2026-11-02:23:59:21 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'default' at /dev/shm/big-small-ouro/hf-lmeval/datasets/HuggingFaceH4___math-500/default/0.0.0/6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be (last modified on Sun Oct 25 19:57:09 2026).
+2026-11-02:23:59:21 INFO     [evaluator:290] math500_think_s4: Using gen_kwargs: {'until': [], 'max_gen_toks': 8192, 'do_sample': False, 'temperature': 0.0}
+2026-11-02:23:59:21 WARNING  [evaluator:465] Chat template formatting change affects loglikelihood and multiple-choice tasks. See docs/chat-template-readme.md for details.
+2026-11-02:23:59:21 INFO     [api.task:434] Building contexts for math500_think_s4 on rank 0...
+
+2026-11-02:23:59:21 INFO     [evaluator:559] Running generate_until requests
+2026-11-02:23:59:21 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/T26-S12-math500_think_s4_rank0.db' where possible...
+
+2026-11-02:23:59:21 INFO     [api.model:285] Cached requests: 0, Requests remaining: 100
+
+[ouro] batch done 990.9s generated=[8192, 3681, 8192, 8192, 8192, 8192, 2906, 2502, 8192, 8192, 2760, 8192, 8192, 8192, 5163, 2493, 8192]
+
+[ouro] batch done 941.5s generated=[6734, 4330, 1945, 2830, 2441, 3052, 8192, 1445, 2847, 3118, 6000, 605, 2046, 1876, 2551, 6125, 665, 1578, 1520]
+
+[ouro] batch done 861.5s generated=[1101, 2155, 2483, 8192, 916, 2020, 1467, 2871, 3426, 3352, 8192, 3239, 5494, 2488, 2135, 1872, 2186, 8192, 8192]
+
+[ouro] batch done 923.4s generated=[4279, 2092, 810, 468, 3456, 978, 3993, 2392, 1158, 538, 1898, 676, 1492, 1399, 4047, 8192, 4569, 8192, 1089]
+
+[ouro] batch done 807.4s generated=[873, 960, 1458, 2208, 1733, 1506, 679, 1651, 747, 349, 1111, 860, 875, 2131, 781, 6983, 8192, 511, 4946]
+
+[ouro] batch done 144.8s generated=[585, 524, 527, 1245, 576, 950, 493]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-03:01:17:13 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-03:01:17:13 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: math500_think_s4
+ouro (path=/dev/shm/big-small-ouro/model-2.6b-think,condition=S12,checkpoint=/dev/shm/big-small-ouro/runs/T26-S-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64), gen_kwargs: (None), limit: None, num_fewshot: None, batch_size: 1
+|     Tasks      |Version|Filter|n-shot|  Metric   |   |Value|   |Stderr|
+|----------------|------:|------|-----:|-----------|---|----:|---|-----:|
+|math500_think_s4|      1|none  |     0|math_verify|↑  | 0.77|±  |0.0423|
+

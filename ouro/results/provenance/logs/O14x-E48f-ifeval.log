@@ -1,0 +1,23 @@
+2026-11-05:06:42:38 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-05:06:42:40 INFO     [__main__:440] Selected Tasks: ['ifeval_local']
+2026-11-05:06:42:40 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-05:06:42:40 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-1.4b', 'condition': 'E', 'checkpoint': '/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt', 'max_length': 16384}
+2026-11-05:06:42:43 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/O14x-E48f-ifeval_rank0.db
+2026-11-05:06:42:43 INFO     [evaluator:290] ifeval_local: Using gen_kwargs: {'until': [], 'do_sample': False, 'temperature': 0.0, 'max_gen_toks': 1280}
+2026-11-05:06:42:43 INFO     [api.task:434] Building contexts for ifeval_local on rank 0...
+
+2026-11-05:06:42:43 INFO     [evaluator:559] Running generate_until requests
+2026-11-05:06:42:43 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/O14x-E48f-ifeval_rank0.db' where possible...
+
+2026-11-05:06:42:43 INFO     [api.model:285] Cached requests: 541, Requests remaining: 0
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-05:06:42:46 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-05:06:42:46 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: ifeval_local
+ouro (path=/dev/shm/big-small-ouro/model-1.4b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X14-E48f-p1d1/checkpoint-48m.pt,max_length=16384), gen_kwargs: (None), limit: None, num_fewshot: None, batch_size: 1
+|   Tasks    |Version|Filter|n-shot|        Metric         |   |Value |   |Stderr|
+|------------|------:|------|-----:|-----------------------|---|-----:|---|------|
+|ifeval_local|      4|none  |     0|inst_level_loose_acc   |↑  |0.3213|±  |   N/A|
+|            |       |none  |     0|inst_level_strict_acc  |↑  |0.3129|±  |   N/A|
+|            |       |none  |     0|prompt_level_loose_acc |↑  |0.1996|±  |0.0172|
+|            |       |none  |     0|prompt_level_strict_acc|↑  |0.1941|±  |0.0170|
+
