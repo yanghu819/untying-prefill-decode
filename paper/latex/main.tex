@@ -41,9 +41,9 @@ they prefill the prompt and when they decode each answer token. The two phases a
 parallel, decoding runs again for every generated token. We untie them. A small \emph{loop adapter}, trained once on a
 frozen looped model, lets it prefill with $m$ loops and decode with $n$, for all 16 pairs up to four loops, from a single
 stored prompt KV cache. The resulting map has a clear shape: decode cheaply, prefill deeply. On Ouro-2.6B with one
-decode loop, prefilling with two to four loops is best on 14 of 15 benchmark settings; with the prefill count chosen on
-held-out items it beats native 1/1 significantly on 14, by up to 21 points, and deeper prefill alone, within the same
-adapter, adds up to 15 points. On Ouro-2.6B-Thinking, prefill 4 / decode 2 stays within two points of native 4/4 on six
+decode loop, prefilling with four loops raises the average over 11 benchmarks from 44.2 to 56.4 (49.8 for native 1/1
+distilled on the same data), and prefilling with two to four loops is best on 14 of 15 settings; with two decode loops
+the adapter comes within 3.8 points of native 4/4. On Ouro-2.6B-Thinking, prefill 4 / decode 2 stays within two points of native 4/4 on six
 of eight benchmarks and answers in $0.59\times$ the time. Looped decision models follow the same rule from both sides:
 more prefill than decision loops helps on 12 of 13 pairs, and fewer hurts on all 13. Loops are best spent where they
 are paid once.
@@ -94,9 +94,9 @@ We train one loop adapter and evaluate it at all 16 pairs $(m,n)$ with its param
 The resulting map (Figure~\ref{fig:grid}) has a clear shape: decode cheaply, prefill deeply. With one decode loop the
 best prefill count is two to four on 14 of 15 benchmark settings; within the same adapter, prefilling with three or four
 loops instead of one raises MMLU from 51.4 to 66.6 and HumanEval+ from 51.2 to 65.9. A native model can only move along
-the diagonal of this map; the adapter opens the whole square. Choosing $m$ per benchmark on held-out items
-(Table~\ref{tab:select}) beats native Ouro-2.6B 1/1 significantly on 14 of 15 settings, by 4 to 21 points, and the gain
-holds against the same adapter at $m=n$ and against native models distilled on the same data (Section~\ref{sec:select}).
+the diagonal of this map; the adapter opens the whole square. With prefill 4 the average over 11 benchmarks rises from
+44.2 to 56.4 at one decode loop and from 63.0 to 66.4 at two, above native models distilled on the same data
+(Table~\ref{tab:main}); without the adapter the same untied configuration collapses.
 
 Untying pays off in time. On Ouro-2.6B-Thinking, prefill 4 / decode 2 stays within two points of native 4/4 on six of
 eight benchmarks (Figure~\ref{fig:equal}) and answers 192 timed GSM8K problems in $0.59\times$ the time
@@ -243,7 +243,7 @@ GPQA-Diamond~\citep{gpqa}, HellaSwag~\citep{hellaswag}, Winogrande~\citep{winogr
 (RULER~\citep{ruler} at 4K/8K/16K, HELMET~\citep{helmet}), reasoning and instruction following (BBH~\citep{bbh},
 IFEval~\citep{ifeval}), math (GSM8K~\citep{gsm8k}, MATH-500~\citep{math,lightman2023lets}) and code
 (HumanEval+ and MBPP+~\citep{humaneval,evalplus}). We follow the base-model protocol of the Ouro models where it is available (shots, chain
-of thought, strict-match scoring for GSM8K and MATH-500, evalplus for code), with documented substitutions; protocols, set sizes and the effect of
+of thought, strict-match scoring for GSM8K, final-answer scoring for MATH-500, evalplus for code), with documented substitutions; protocols, set sizes and the effect of
 departing from them are in Appendix~\ref{app:eval}. One loop adapter per model is trained once; on Ouro-2.6B and Ouro-1.4B it is evaluated at all 16 pairs, on the Thinking
 models at the pairs reported, and on SenseNova-Loop-9B at prefill 1 and 2 with one decode visit. We
 compare with the native model at the same number of decode loops. Every comparison is
@@ -251,20 +251,20 @@ paired over items with 95\% bootstrap intervals.
 
 \begin{table*}[t]
 \centering\small
-\setlength\tabcolsep{1.5pt}
-\begin{tabular}{@{}lcccc@{}}
+\setlength\tabcolsep{2.6pt}
+\begin{tabular}{@{}cl*{12}{c}@{}}
 \toprule
-benchmark & decode 1 & decode 2 & decode 3 & decode 4 \\
+$n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER-16K & Avg. \\
 \midrule
-\csname @@input\endcsname ../figs/tab_select.tex
+\csname @@input\endcsname ../figs/tab_main.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Choosing the prefill loops per benchmark, against the native model with the same decode loops.} Ouro-2.6B, one
-loop adapter. For each benchmark and number of decode loops $n$ we choose the prefill count $m$ on one half of the
-items, score it on the other half, and swap, so that no item is scored by a choice made on it; the table gives the
-resulting accuracy minus native $n/n$ on the same items, the $m$ chosen on each half (in parentheses), and paired 95\% bootstrap
-intervals that repeat the choice of $m$ in every resample ($^*$: interval excludes zero; nominal, per benchmark). Score points on a 0--100 scale.}
-\label{tab:select}
+\caption{\textbf{Main results.} Ouro-2.6B, accuracy (\%) grouped by the number of decode loops $n$; ``4/$n$'' prefills
+with four loops. Native: the unmodified model. Training-free: the frozen model prefills with four loops and decodes
+from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ distilled with LoRA on the same data,
+teacher (native 4/4) and tokens as the loop adapter. Bold: best in each group. Each column uses the items all rows
+share; MMLU and GSM8K are the full sets. Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
+\label{tab:main}
 \end{table*}
 
 \begin{figure*}[t]
@@ -300,25 +300,19 @@ or three, while MMLU-Pro, ARC-Challenge, GPQA-Diamond and IFEval are best with f
 multi-step math: native GSM8K rises from 32.4 at one loop to 69.4 at four. A native model can only move along the
 diagonal of this map.
 
-\subsection{Choosing the prefill loops per benchmark}
+\subsection{Main results}
 \label{sec:select}
 
-For each benchmark and number of decode loops we choose $m$ on half of its labeled items, score that choice on the other
-half, and swap (Table~\ref{tab:select}). This calibrates $m$ per benchmark; it is not routing per prompt, and it does not
-transfer to unseen tasks. The intervals of Table~\ref{tab:select} repeat the choice of $m$ in every bootstrap
-resample (the split into halves stays fixed), so they include the variability of the choice; significance is nominal,
-per benchmark. With one decode loop the chosen $m$ beats \nat{1} significantly on 14 of 15 settings, by 3.9 to
-21.3 points (GPQA-Diamond, $+12.1$\ci{-2.5}{18.7}, is not significant). With two decode loops it wins significantly on 9 of
-15, and with three or four only on 4-shot MATH-500 ($+14.2$ and $+14.6$, with one prefill loop). Comparisons with native models measure the complete trained method, including the
-effect of training the adapter. Two controls separate it. Within the adapter, which isolates the prefill loops, the
-chosen $m$ is significantly above the same adapter's $n/n$ on 9 of 15 settings at one decode loop and never
-significantly below it. Against native $n/n$ distilled with LoRA on the same data, teacher and tokens as the adapter
-(Table~\ref{tab:selectdist}), it is significantly above on 8 of 15 settings at one decode loop, among them MMLU-Pro
-($+19.3$), BBH ($+11.3$) and HumanEval+ ($+11.6$), and below on RULER-4K, where distillation alone helps more; at two
-decode loops it has 3 significant gains (among them 4-shot MATH-500, $+18.2$), 2 significant losses and 10 inconclusive
-differences in 15 comparisons. On Ouro-1.4B, with its own adapter on the same 15 settings, the chosen $m$ wins
-significantly on 12 and 2 of 15 at one and two decode loops (Appendix~\ref{app:models}). Equal decode loops do not mean
-equal latency (Section~\ref{sec:fast}).
+Table~\ref{tab:main} compares fixed configurations at the same number of decode loops. With one decode loop,
+prefilling with four loops raises the average from 44.2 (native 1/1) to 56.4, above native 1/1 distilled on the same
+data (49.8); MMLU rises from 51.5 to 66.6, BBH from 30.9 to 51.7 and HumanEval+ from 44.5 to 64.6. With two decode
+loops the loop adapter at 4/2 averages 66.4, against 63.0 for native 2/2 and 65.3 for its distilled version, within 3.8
+points of native 4/4 with half the decode loops. The adapter is what makes untying work: the frozen model prefilled with
+four loops and decoding with two scores 11.7 on GSM8K without it and 66.7 with it. Within the same adapter, deeper
+prefill alone adds up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
+prefill count per benchmark on held-out items instead of fixing it at four beats native 1/1 significantly on 14 of 15
+settings (Appendix~\ref{app:select}), and Ouro-1.4B shows the same pattern (Appendix~\ref{app:models}). Equal decode
+loops do not mean equal latency (Section~\ref{sec:fast}).
 
 \subsection{More prefill loops, fewer decode loops}
 \label{sec:rdws}
@@ -532,6 +526,28 @@ cache with one attention call (267 / 130 / 57); all produce identical greedy tok
 \caption{Ouro-2.6B loop adapter trained with two seeds (initialisation and $(m,n)$ sampling); paired differences within each
 seed, full sets.}
 \end{table}
+
+\FloatBarrier
+\section{Choosing the Prefill Loops per Benchmark}
+\label{app:select}
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{1.5pt}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+benchmark & decode 1 & decode 2 & decode 3 & decode 4 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_select.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Choosing the prefill loops per benchmark, against the native model with the same decode loops.} Ouro-2.6B, one
+loop adapter. For each benchmark and number of decode loops $n$ we choose the prefill count $m$ on one half of the
+items, score it on the other half, and swap, so that no item is scored by a choice made on it; the table gives the
+resulting accuracy minus native $n/n$ on the same items, the $m$ chosen on each half (in parentheses), and paired 95\% bootstrap
+intervals that repeat the choice of $m$ in every resample ($^*$: interval excludes zero; nominal, per benchmark). Score points on a 0--100 scale.}
+\label{tab:select}
+\end{table*}
 
 \FloatBarrier
 \section{Full Task Map}

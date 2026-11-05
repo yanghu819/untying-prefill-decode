@@ -375,6 +375,7 @@ def keys():
     ks |= {k.format(d=d) for k in DISTILLED_KEYS for d in DISTILLED.values()}
     ks |= {k for _, _, key, nkey, _ in taskmap_specs() for n in range(1, 5)
            for k in [key.format(c=f"S{m}{n}") for m in range(1, 5)] + [nkey.format(n=n)]}
+    ks |= {main_key(b, kind, c) for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -687,6 +688,63 @@ def taskmap_specs():
                                                   key.replace("{c}", "{d}")) for bench, key in TASK_MAP_14]
 
 
+# Main results table (Section 4.1): fixed configurations, standard benchmarks; (label, kind, condition)
+MAIN_BENCH = ["MMLU", "MMLU-Pro", "BBH 3-shot", "ARC-C", "HellaSwag", "Winogrande", "GSM8K", "MATH-500 4-shot",
+              "HumanEval+", "MBPP+", "RULER-16K"]
+MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 4/4", "native", 4),
+             ("training-free 4/1", "raw", "raw41"), ("training-free 4/2", "raw", "raw42"),
+             ("LoRA-distilled 1/1", "dist", 1), ("LoRA-distilled 2/2", "dist", 2),
+             ("loop adapter 4/1", "cell", "S41"), ("loop adapter 4/2", "cell", "S42")]
+
+
+# quoted in the abstract, introduction and Section 4.2
+MAIN_AVG = {"native 1/1": 44.2, "LoRA-distilled 1/1": 49.8, "loop adapter 4/1": 56.4, "native 2/2": 63.0,
+            "LoRA-distilled 2/2": 65.3, "loop adapter 4/2": 66.4, "native 4/4": 70.2}
+MAIN_CELLS = {("MMLU", "native 1/1"): 51.5, ("MMLU", "loop adapter 4/1"): 66.6, ("BBH 3-shot", "native 1/1"): 30.9,
+              ("BBH 3-shot", "loop adapter 4/1"): 51.7, ("HumanEval+", "native 1/1"): 44.5,
+              ("HumanEval+", "loop adapter 4/1"): 64.6, ("GSM8K", "training-free 4/2"): 11.7,
+              ("GSM8K", "loop adapter 4/2"): 66.7}
+
+
+def main_key(bench, kind, c):
+    """Item-score key of one main-table entry (Ouro-2.6B, the task-map settings)."""
+    spec = next(x for x in taskmap_specs() if x[0] == "Ouro-2.6B" and x[1] == bench)
+    _, _, key, nkey, dkey = spec
+    if kind == "native":
+        return nkey.format(n=c)
+    if kind == "dist":
+        return dkey.format(d=DISTILLED[c])
+    if kind == "raw":   # raw runs are named X26-raw<m><n>-<task> for every benchmark
+        return key.replace("o26x-{c}", "X26-{c}").format(c=c)
+    return key.format(c=c)
+
+
+def main_table():
+    """Accuracy of each main-table configuration, each benchmark on the items all rows share; None if a run is missing.
+    avg: mean over the benchmarks when the row is complete."""
+    out = []
+    for bench in MAIN_BENCH:
+        sets = {label: load(main_key(bench, kind, c)) for label, kind, c in MAIN_ROWS}
+        have = [v for v in sets.values() if v]
+        ids = set.intersection(*(set(v) for v in have)) if have else set()
+        out.append(dict(bench=bench, items=len(ids),
+                        **{label: (round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None)
+                           for label, v in sets.items()}))
+    for label, _, _ in MAIN_ROWS:
+        vals = [r[label] for r in out]
+        avg = None if None in vals else float(np.mean(vals))
+        want = MAIN_AVG.get(label)
+        flag = "  !! paper: " + str(want) if want is not None and (avg is None or abs(avg - want) > 0.051) else ""
+        print(f"Main table   {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
+              + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
+    T = {r["bench"]: r for r in out}
+    for (bench, label), want in MAIN_CELLS.items():
+        got = T[bench][label]
+        if got is None or abs(got - want) > 0.051:
+            print(f"Main table   {bench} {label}: {got}  !! paper: {want}")
+    return out
+
+
 def taskmap_cells():
     """Task map (Figure 1, appendix grid): every (m, n) cell and native n/n per benchmark, each mean over the items that
     all 20 configurations share; best[n] is the best m at n, chosen before rounding (ties: the smaller m)."""
@@ -871,7 +929,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

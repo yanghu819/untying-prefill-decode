@@ -355,6 +355,33 @@ def tab_taskmap(model="Ouro-2.6B"):
     (OUT / "tab_taskmap.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_main():
+    """Table 1: main results, fixed configurations grouped by decode loops (accuracy on the items all rows share; bold:
+    best of each group; LaTeX rows from paper_numbers.json, main_table)."""
+    T = {r["bench"]: r for r in PN.get("main_table", [])}
+    benches = list(T)
+    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "loop adapter 4/1"]),
+              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "loop adapter 4/2"]),
+              (4, ["native 4/4"])]
+    show = {"native 1/1": "Native 1/1", "native 2/2": "Native 2/2", "native 4/4": "Native 4/4",
+            "training-free 4/1": "Training-free 4/1", "training-free 4/2": "Training-free 4/2",
+            "LoRA-distilled 1/1": r"LoRA distill.\ 1/1", "LoRA-distilled 2/2": r"LoRA distill.\ 2/2",
+            "loop adapter 4/1": r"\textbf{Loop adapter 4/1}", "loop adapter 4/2": r"\textbf{Loop adapter 4/2}"}
+    lines = []
+    for n, labels in groups:
+        vals = {l: [T[b].get(l) for b in benches] for l in labels}
+        avg = {l: (sum(v) / len(v) if None not in v else None) for l, v in vals.items()}
+        cols = [[vals[l][j] for l in labels] for j in range(len(benches))] + [[avg[l] for l in labels]]
+        best = [max((x for x in c if x is not None), default=None) for c in cols]
+        for i, l in enumerate(labels):
+            cells = [c[i] for c in cols]
+            fmt = lambda x, b: "--" if x is None else (rf"\textbf{{{x:.1f}}}" if len(labels) > 1 and abs(x - b) < 1e-9 else f"{x:.1f}")
+            lines.append(f"{n} & {show[l]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
+        if n < 4:
+            lines.append(r"\midrule")
+    (OUT / "tab_main.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_select_distilled():
     """Appendix table: the cross-fitted prefill count (Table 1) against the LoRA-distilled native n/n at n = 1, 2, 3;
     selection-aware intervals (LaTeX rows from paper_numbers.json, taskmap_select)."""
@@ -372,5 +399,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "HellaSwag", "Winogrande", "IFEval", "RULER-4K", "RULER-8K"], ncols=4); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval+", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "HellaSwag", "Winogrande", "IFEval", "RULER-4K", "RULER-8K"], ncols=4); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval+", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))
