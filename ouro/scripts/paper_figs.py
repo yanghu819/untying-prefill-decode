@@ -387,6 +387,21 @@ def tab_main():
     (OUT / "tab_main.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_ablation():
+    """Ablation table (Section 4.2): main-table average at prefill 4 / decode 1 and 2 for each training-token budget
+    (rank 16) and LoRA rank (12M tokens); LaTeX rows from paper_numbers.json, ablations."""
+    A = {(r["label"], r["cell"]): r["avg"] for r in PN.get("ablations", [])}
+    rows = [("6M tokens", "6M", "16"), ("12M tokens", "12M", "16"), ("24M tokens", "24M", "16"),
+            ("48M tokens", r"48M (default)", "16"), ("rank 4, 12M", "12M", "4"), ("rank 64, 12M", "12M", "64")]
+    f = lambda x: "--" if x is None else f"{x:.1f}"
+    lines = []
+    for i, (label, tok, rank) in enumerate(rows):
+        if i == 4:
+            lines.append(r"\midrule")
+        lines.append(f"{tok} & {rank} & {f(A.get((label, 'S41')))} & {f(A.get((label, 'S42')))} \\\\")
+    (OUT / "tab_ablation.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_select_distilled():
     """Appendix table: the cross-fitted prefill count (Table 1) against the LoRA-distilled native n/n at n = 1, 2, 3;
     selection-aware intervals (LaTeX rows from paper_numbers.json, taskmap_select)."""
@@ -404,5 +419,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "GPQA-Diamond", "RULER-16K"], "fig_taskmap", fixed=4); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "GPQA-Diamond", "RULER-16K"], "fig_taskmap", fixed=4); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

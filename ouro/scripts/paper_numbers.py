@@ -376,6 +376,7 @@ def keys():
     ks |= {k for _, _, key, nkey, _ in taskmap_specs() for n in range(1, 5)
            for k in [key.format(c=f"S{m}{n}") for m in range(1, 5)] + [nkey.format(n=n)]}
     ks |= {main_key(b, kind, c) for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
+    ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -746,6 +747,47 @@ def main_table():
     return out
 
 
+# Ablations (Section 4.2): training tokens at rank 16 and LoRA rank at 12M tokens; (label, run prefix or None = the
+# 48M rank-16 adapter of the main table)
+ABLATIONS = [("6M tokens", "X26t6"), ("12M tokens", "X26t12"), ("24M tokens", "X26t24"), ("48M tokens", None),
+             ("rank 4, 12M", "X26t12r4"), ("rank 64, 12M", "X26t12r64")]
+
+
+ABL_PRINTED = {("6M tokens", "S41"): 54.1, ("6M tokens", "S42"): 65.2, ("48M tokens", "S41"): 57.0,
+               ("48M tokens", "S42"): 66.4}   # quoted in Section 4.2
+
+
+def abl_key(bench, prefix, c):
+    key = main_key(bench, "cell", c)
+    if prefix is None:
+        return key
+    return re.sub(r"(?<=[:])(o26x|X26)-(?=S4)", prefix + "-", key)
+
+
+def ablations():
+    """Main-table average of each ablation run at prefill 4 / decode 1 and 2, every benchmark on the items all runs
+    share; None until a run is complete."""
+    out = []
+    for c in ("S41", "S42"):
+        per = {label: [] for label, _ in ABLATIONS}
+        for bench in MAIN_BENCH:
+            sets = {label: load(abl_key(bench, pre, c)) for label, pre in ABLATIONS}
+            have = [v for v in sets.values() if v]
+            ids = set.intersection(*(set(v) for v in have)) if have else set()
+            for label, v in sets.items():
+                per[label].append(100 * float(np.mean([v[i] for i in ids])) if v else None)
+        for label, _ in ABLATIONS:
+            vals = per[label]
+            avg = None if None in vals else round(float(np.mean(vals)), 2)
+            out.append(dict(cell=c, label=label, avg=avg, scores=[None if v is None else round(v, 2) for v in vals]))
+            want = ABL_PRINTED.get((label, c))
+            if want is not None and (avg is None or abs(avg - want) > 0.051):
+                print(f"Ablation     {c} {label}: {avg}  !! paper: {want}")
+            print(f"Ablation     {c} {label:14s} " + ("  --" if avg is None else f"avg {avg:5.1f}")
+                  + "  " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals))
+    return out
+
+
 def taskmap_cells():
     """Task map (Figure 1, appendix grid): every (m, n) cell and native n/n per benchmark, each mean over the items that
     all 20 configurations share; best[n] is the best m at n, chosen before rounding (ties: the smaller m)."""
@@ -930,7 +972,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

@@ -310,6 +310,25 @@ prefill count per benchmark on held-out items instead of fixing it at four beats
 settings (Appendix~\ref{app:select}), and Ouro-1.4B shows the same pattern (Appendix~\ref{app:models}). Equal decode
 loops do not mean equal latency (Section~\ref{sec:fast}).
 
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+training tokens & LoRA rank & 4/1 avg. & 4/2 avg. \\
+\midrule
+\csname @@input\endcsname ../figs/tab_ablation.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{The loop adapter is cheap to train.} Ouro-2.6B, average over the benchmarks of Table~\ref{tab:main}
+(each on the items all runs share) at prefill 4 / decode 1 and 2, for adapters trained on fewer answer tokens of the
+same mixture and with other LoRA ranks.}
+\label{tab:ablation}
+\end{table}
+
+\paragraph{Training cost.} The adapter needs little data (Table~\ref{tab:ablation}): trained on 6M answer tokens, an
+eighth of the default budget, it already averages 54.1 and 65.2 at prefill 4 / decode 1 and 2, against 57.0 and 66.4
+with 48M, and a larger LoRA rank adds nothing.
+
 \subsection{More prefill loops, fewer decode loops}
 \label{sec:rdws}
 
