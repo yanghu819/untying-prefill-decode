@@ -255,9 +255,10 @@ def tab_sn():
     (OUT / "tab_sn.tex").write_text("\n".join(lines) + "\n")
 
 
-def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
+def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None):
     """Task map: Ouro-2.6B, one loop adapter. Per benchmark, native n/n against the adapter's best prefill count m
-    at each number of decode loops n (point labels: that m); all points of a panel on the same items (taskmap_cells)."""
+    at each number of decode loops n (point labels: that m), or with fixed=m against prefill m at every n (Figure 1);
+    all points of a panel on the same items (taskmap_cells)."""
     T = {r["bench"]: r for r in PN["taskmap_cells"] if r["model"] == "Ouro-2.6B"}
     title = {"BBH 3-shot": "BBH"}
     panels = [b for b in ("MMLU", "MMLU-Pro", "ARC-C", "GPQA-Diamond", "HellaSwag", "Winogrande", "BBH 3-shot", "IFEval",
@@ -271,12 +272,16 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
         ax.axis("off")
     for ax, b in zip(axes.flat, panels):
         r = T[b]
-        ours = [(n, r[f"S{r['best'][str(n)]}{n}"], f"m={r['best'][str(n)]}") for n in range(1, 5)]
+        ours = ([(n, r[f"S{fixed}{n}"], "") for n in range(1, 5)] if fixed else
+                [(n, r[f"S{r['best'][str(n)]}{n}"], f"m={r['best'][str(n)]}") for n in range(1, 5)])
         nat = [(n, r[f"native{n}"], "") for n in range(1, 5)]
         frontier(ax, nat, ours, title.get(b, b))
         ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
-    legend(fig, "loop adapter, best prefill m", "labels: prefill loops m", y=1.0)
+    if fixed:
+        legend(fig, f"loop adapter, prefill {fixed} / decode n", "", y=1.0)
+    else:
+        legend(fig, "loop adapter, best prefill m", "labels: prefill loops m", y=1.0)
     fig.subplots_adjust(wspace=0.32, hspace=0.5, left=0.07, right=0.99, top=1 - 0.38 / H, bottom=0.32 / H)
     save(fig, name)
 
@@ -399,5 +404,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(["MMLU-Pro", "ARC-C", "HellaSwag", "Winogrande", "IFEval", "RULER-4K", "RULER-8K"], ncols=4); fig_taskmap(["MMLU", "GPQA-Diamond", "RULER-16K", "BBH", "GSM8K", "MATH-500 4-shot", "HumanEval+", "MBPP+"], "fig_taskmap"); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "GPQA-Diamond", "RULER-16K"], "fig_taskmap", fixed=4); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

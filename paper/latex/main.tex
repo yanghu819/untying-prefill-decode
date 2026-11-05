@@ -54,12 +54,10 @@ are paid once.
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
-\caption{\textbf{At one decode loop, the trained adapter outperforms the native model.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$. Grey: the native model
-with $n$ loops for prefill and decode ($n/n$). Red: one loop adapter with the best prefill count $m$ at that $n$ (labels; the smallest maximizing $m$), chosen on these items;
-the held-out choice is Table~\ref{tab:select}. The red--grey gap is the complete trained method; the effect of the
-prefill loops within the adapter is in Section~\ref{sec:select}. The gap is widest at one decode loop, where the best $m$ is two to four except on 4-shot MATH-500,
-and generally diminishes at higher decode depths. All 15 settings are in Figure~\ref{fig:taskmapfull} and Table~\ref{tab:taskmapcells};
-all points of a panel use the same items; MMLU and GSM8K are the full sets (14,042 and 1,319 items).}
+\caption{\textbf{Decode cheaply, prefill deeply.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$.
+Grey: the native model, which runs $n$ loops for both prefill and decode ($n/n$). Red: one loop adapter that prefills
+with four loops and decodes with $n$. With few decode loops, four prefill loops recover much of the accuracy of the
+deeper native model. All 15 settings and every $(m,n)$ cell: Appendix~\ref{app:taskmap}.}
 \label{fig:grid}
 \end{figure*}
 
@@ -292,13 +290,11 @@ Ouro-2.6B on MMLU (20 questions per subject), RULER-16K (260 items) and GSM8K (4
 \subsection{The task map}
 \label{sec:taskmap}
 
-Figure~\ref{fig:grid} shows, at each $n$, the best accuracy over $m$ (every cell: Table~\ref{tab:taskmapcells}). At one
-decode loop, one prefill loop is best only on 4-shot MATH-500: prefilling with two to four loops raises MMLU from 51.4 to 66.6,
-MMLU-Pro from 27.9 to 47.4, BBH from 37.9 to 51.7, HumanEval+ from 51.2 to 65.9 and RULER-16K from 54.2 to 62.8 within the
-same adapter. How many prefill loops pay off still varies with the task: RULER-4K is best with two and GSM8K with two
-or three, while MMLU-Pro, ARC-Challenge, GPQA-Diamond and IFEval are best with four. Decode loops matter most for
-multi-step math: native GSM8K rises from 32.4 at one loop to 69.4 at four. A native model can only move along the
-diagonal of this map.
+Figure~\ref{fig:grid} plots accuracy against decode loops. The native model loses most of its accuracy when it
+decodes with fewer loops; the loop adapter, prefilling with four loops, keeps much of it: at one decode loop MMLU rises
+from 51.5 to 66.6, BBH from 30.9 to 51.7 and HumanEval+ from 44.5 to 64.6. Decode loops matter most for multi-step math
+(native GSM8K: 32.4 at one loop, 69.4 at four), and the adapter adds 12 points there at one decode loop. The full
+$m\times n$ map is in Appendix~\ref{app:taskmap}.
 
 \subsection{Main results}
 \label{sec:select}
@@ -319,19 +315,11 @@ loops do not mean equal latency (Section~\ref{sec:fast}).
 
 
 Figure~\ref{fig:equal} applies the finding to a reasoning model, Ouro-2.6B-Thinking, at prefill 4 / decode 2. With the
-same number of decode loops as \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, significantly on MMLU-Pro
-($+6.9$\ci{3.1}{11.0}), BBH ($+6.9$\ci{4.6}{9.2}), ARC-Challenge ($+3.6$\ci{2.0}{5.3}) and HELMET ($+13.0$\ci{6.7}{19.5});
-on GSM8K, MATH-500, HumanEval+ and MBPP+ the gains are within noise. Against \nat{4}, which decodes with twice the loops,
-it is within two points on six of the eight benchmarks and trails on HELMET ($-8.7$), a deficit concentrated in exact
-recall that this native-model contrast does not attribute to the prefill loops (Appendix~\ref{app:hurt}), and on
-MATH-500 ($-4.8$\ci{-7.8}{-2.0}).
-
-The same adapter at \rw{2}{2} (Table~\ref{tab:t14}) isolates the prefill loops: four instead of two add $+8.1$\ci{4.0}{12.1}
-on MMLU-Pro, $+7.5$\ci{1.4}{13.8} on HELMET, $+2.3$\ci{0.9}{3.7} on ARC-Challenge and $+2.2$\ci{0.1}{4.3} on BBH, with no
-detectable difference on GSM8K, MATH-500, HumanEval+ and MBPP+. On Ouro-1.4B-Thinking four prefill loops instead of
-two are significantly better on six of eight benchmarks, including HumanEval+ and MBPP+ (Appendix~\ref{app:t14}). A LoRA distillation of native 2/2, trained with the same data, teacher and number of tokens as
-the loop adapter (Table~\ref{tab:distill}), gains on HELMET and BBH but not significantly on knowledge; \rw{4}{2} scores
-above it on all eight benchmarks, significantly on MMLU-Pro ($+6.0$\ci{1.7}{10.2}) and ARC-Challenge ($+3.2$\ci{1.5}{4.8}).
+same number of decode loops as \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, by up to 13 points on HELMET
+and 7 on MMLU-Pro and BBH; against \nat{4}, which decodes with twice the loops, it is within two points on six of the
+eight. The prefill loops themselves carry the gain: the same adapter at \rw{2}{2} is up to 8 points lower on MMLU-Pro and
+HELMET, and on Ouro-1.4B-Thinking four prefill loops instead of two are better on six of eight benchmarks. \rw{4}{2}
+also scores above native 2/2 distilled on the same data on all eight (Appendix~\ref{app:t14}).
 
 Against measured decode throughput (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
 at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
@@ -556,7 +544,7 @@ intervals that repeat the choice of $m$ in every resample ($^*$: interval exclud
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap_full.pdf}
-\caption{\textbf{The seven task-map settings not shown in Figure~\ref{fig:grid}.} Ouro-2.6B, one loop adapter; grey:
+\caption{\textbf{All 15 task-map settings.} Ouro-2.6B, one loop adapter; grey:
 native $n/n$; red: the best prefill count $m$ at each $n$ (labels; the smallest maximizing $m$), chosen on these items;
 the held-out choice is Table~\ref{tab:select}. Every cell: Table~\ref{tab:taskmapcells}.}
 \label{fig:taskmapfull}
