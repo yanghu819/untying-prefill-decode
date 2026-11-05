@@ -449,7 +449,7 @@ E2E = Path(__file__).resolve().parents[1] / "results" / "e2e"
 # (label, model prefix, task, A, B, printed ratio of mean seconds per answer A / B)
 RATIOS = [("2.6B-T GSM8K prefill 4/decode 2 vs native 4/4", "think", "gsm", "S42sb", "native4st", (0.59, 0.52, 0.66)),
           ("2.6B-T GSM8K prefill 4/decode 2 vs prefill 2/decode 2", "think", "gsm", "S42sb", "S22sb", (1.02, 0.92, 1.13)),
-          ("2.6B-T GSM8K prefill 4/decode 2 vs LoRA-distilled native 2/2", "think", "gsm", "S42sb", "D2st", (1.21, 1.06, 1.38)),
+          ("2.6B-T GSM8K prefill 4/decode 2 vs LoRA-distilled native 2/2", "think", "gsm", "S42sb", "Df2st", (1.20, 1.05, 1.38)),
           ("2.6B-T MATH prefill 4/decode 2 vs native 4/4", "think", "math", "S42sb", "native4st", (0.63, None, None)),
           ("2.6B-T MATH prefill 4/decode 2 vs native 2/2", "think", "math", "S42sb", "native2st", (1.22, None, None)),
           ("SenseNova GSM8K prefill 1/decode 1 vs native 2/2", "sn", "gsm", "C11", "native2", (0.59, 0.52, 0.68)),
@@ -468,7 +468,7 @@ def e2e(model, task, cond):
 def e2e_table():
     rows = []
     for group, model, task, conds in (
-            ("main", "think", "gsm", ("native2st", "native4st", "D2st", "S22sb", "S42sb")),           # 192 problems
+            ("main", "think", "gsm", ("native2st", "native4st", "Df2st", "S22sb", "S42sb")),           # 192 problems
             ("first64", "think", "gsm", ("native1st", "native2st", "native4st", "S41sb", "S22sb", "S42sb")),  # 64
             ("main", "think", "math", ("native2st", "native4st", "S42sb")),
             ("main", "sn", "gsm", ("native2", "C11", "C21")),

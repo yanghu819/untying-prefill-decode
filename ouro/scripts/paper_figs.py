@@ -125,8 +125,8 @@ def fig2():
     E = {r["cond"]: (r["seconds"], r["acc"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"
          and r.get("group") == "main"}
     nat = [(*E[f"native{n}st"], f"{n}/{n}") for n in (1, 2, 4) if f"native{n}st" in E]
-    if "D2st" in E:   # LoRA-distilled native 2/2 (same data and teacher), a native model: grey, unconnected
-        nat.append((*E["D2st"], "2/2 dist."))
+    if "Df2st" in E:   # LoRA-distilled native 2/2 (same data and teacher), a native model: grey, unconnected
+        nat.append((*E["Df2st"], "2/2 dist."))
     ours = [(*E[c], lab, dy) for c, lab, dy in (("S22sb", "2/2", -12), ("S42sb", "4/2", 5)) if c in E]
     fig, ax = plt.subplots(figsize=(3.3, 2.4))
     frontier(ax, nat, ours, "", lines=False)   # 1/1 answers run longer than 2/2: a line would fold back

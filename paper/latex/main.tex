@@ -366,8 +366,8 @@ batches; prefill 4
 \caption{\textbf{Decoding with two loops answers faster than native 4/4.} Ouro-2.6B-Thinking: accuracy against mean
 seconds per answer at batch 1 (prefill included, real greedy answers, the same 192 GSM8K problems for every point;
 labels: prefill/decode loops). Prefill 4 / decode 2 takes $0.59\times$ the time of native 4/4; the same adapter at 2/2
-are about as fast, so the saving comes from decoding with two loops; an earlier distilled native 2/2 (2/2 dist.) is
-$1.21\times$ faster than prefill 4 / decode 2. Extra prefill does not improve accuracy on this timed subset (consecutive
+are about as fast, so the saving comes from decoding with two loops; the distilled native 2/2 (2/2 dist.) is
+$1.20\times$ faster than prefill 4 / decode 2. Extra prefill does not improve accuracy on this timed subset (consecutive
 problem IDs 1--192); its gains on other benchmarks are in Section~\ref{sec:rdws}. On all 1,319 problems prefill 4 / decode 2 is 1.0 point below native
 4/4. SenseNova-Loop-9B: Table~\ref{tab:e2e}.}
 \label{fig:frontier}
@@ -377,7 +377,7 @@ We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; T
 On Ouro-2.6B-Thinking, prefill 4 / decode 2 answers 192 timed GSM8K problems in $0.59\times$\ci{0.52}{0.66} the time of
 \nat{4}. On all 1,319 problems it scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Prefilling with
 4 rather than 2 loops before decoding with two changes the answer time by $1.02\times$\ci{0.92}{1.13}, and prefill 4 /
-decode 2 takes $1.21\times$\ci{1.06}{1.38} the time of the distilled native 2/2, at similar accuracy on these problems: the
+decode 2 takes $1.20\times$\ci{1.05}{1.38} the time of the distilled native 2/2, at similar accuracy on these problems: the
 saving comes from decoding with two loops, and what the extra prefill loops add is the accuracy of Section~\ref{sec:rdws}. On
 MATH-500 the saving is smaller: $0.63\times$ the time of \nat{4} but $1.22\times$ that of \nat{2}
 (Appendix~\ref{app:serve}). On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for \nat{2} on all 1,319
