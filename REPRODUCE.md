@@ -48,7 +48,6 @@ from a local CSV (`$M/gpqa-data/`, not redistributed) and IFEval from `$M/ifeval
 | Ouro-1.4B-Thinking `T14-S-universal` | Ouro-1.4B-Thinking appendix | `launch_think14.sh` |
 | LoRA distillation of native 2/2 `T26-Df-native22` (arm D, every answer token supervised; `T26-D-native22` is the earlier control without the first answer token) | distillation table, timing | `launch_t26df.sh` |
 | LoRA distillation of native n/n `X26-{E,D,H}48f-p{1,2,3}d{1,2,3}`, `X14-*48f-*` (Ouro-2.6B / 1.4B) | distilled comparisons of the cross-fitted choice | `launch_x26_distill.sh ARM GPUS PORT first` (`SIZE=14`), evaluated by `after_x26_distill.sh` |
-| third seed `X26-S-seed3`, Ouro-1.4B second seed `O14-S-seed2` | training-seed appendix | `launch_seed3.sh` |
 | SenseNova-Loop-9B loop adapter `SN-C-universal`; GDN-state variant `SNG-C-universal` | SenseNova and hybrid appendices | `launch_sn.sh`; `launch_sng.sh` (`sensenova_bridge.py --mix G`) |
 | variants `X26-O`, `X26-M`, `X26-V`, `X26-Sfz` (maps frozen) | design-variant appendix | `launch_o.sh`, `launch_m.sh`, `launch_v.sh`, `launch_fz.sh` |
 | Nanbeige per-pair `NBX-p<m>d<n>` | evaluation appendix | `launch_nbs21.sh`, `nbs_cell.sh` |
