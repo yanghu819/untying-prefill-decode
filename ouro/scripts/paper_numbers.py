@@ -255,7 +255,7 @@ TASK_MAP_14 = [("MMLU", "L:O14x-{c}-mmlu:acc"), ("GSM8K", "L:O14x-{c}-gsm:" + GF
                ("RULER-4K", "B:O14-{c}f:ruler4k"), ("RULER-8K", "B:O14-{c}f:ruler8k"), ("RULER-16K", "B:O14-{c}f:ruler16k")]
 # same-training controls on Ouro-2.6B: LoRA distillation of native n/n (arms E, D, H; launch_x26_distill.sh)
 DISTILLED = {1: "E48f", 2: "D48f", 3: "H48f"}   # controls that also supervise the first answer token (--first-target)
-DISTILLED_COUNTS = {1: (8, 1, 15), 2: (3, 2, 15), 3: (2, 3, 14)}
+DISTILLED_COUNTS = {1: (8, 1, 15), 2: (3, 2, 15), 3: (2, 3, 15)}
 DISTILLED_COUNTS_14 = {1: (6, 3, 15), 2: (4, 4, 15)}   # Ouro-1.4B controls X14-E48f, X14-D48f (App. models)
 DISTILLED_KEYS = [k.replace("{c}", "{d}") for _, k in TASK_MAP + TASK_MAP_14] + ["L:o26x-{d}-mmlufull:acc",
                                                                                   "L:o26x-{d}-gsmfull:" + GF]
