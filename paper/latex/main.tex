@@ -303,8 +303,8 @@ Table~\ref{tab:main} compares fixed configurations at the same number of decode 
 prefilling with four loops raises the average from 44.2 (native 1/1) to 56.4, above native 1/1 distilled on the same
 data (49.8); MMLU rises from 51.5 to 66.6, BBH from 30.9 to 51.7 and HumanEval+ from 44.5 to 64.6. With two decode
 loops the loop adapter at 4/2 averages 66.4, against 63.0 for native 2/2 and 65.3 for its distilled version, within 3.8
-points of native 4/4 with half the decode loops. The adapter is what makes untying work: the frozen model prefilled with
-four loops and decoding with two scores 11.7 on GSM8K without it and 66.7 with it. Within the same adapter, deeper
+points of native 4/4 with half the decode loops. The adapter is what makes untying work: without it the same untied
+configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, deeper
 prefill alone adds up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
 prefill count per benchmark on held-out items instead of fixing it at four beats native 1/1 significantly on 14 of 15
 settings (Appendix~\ref{app:select}), and Ouro-1.4B shows the same pattern (Appendix~\ref{app:models}). Equal decode
