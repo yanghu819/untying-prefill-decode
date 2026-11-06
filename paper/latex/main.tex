@@ -261,7 +261,8 @@ $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH
 with four loops. Native: the unmodified model. Training-free: the frozen model prefills with four loops and decodes
 from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ distilled with LoRA on the same data,
 teacher (native 4/4) and tokens as the loop adapter. Bold: best in each group. Each column uses the items all rows
-share; MMLU and GSM8K are the full sets. Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
+share; MMLU and GSM8K are the full sets. Loop adapter: training seed 0; over three training seeds the average is
+$56.4\pm0.0$ at 4/1 and $66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
 \label{tab:main}
 \end{table*}
 
@@ -326,8 +327,8 @@ same mixture and with other LoRA ranks.}
 \end{table}
 
 \paragraph{Training cost.} The adapter needs little data (Table~\ref{tab:ablation}): trained on 6M answer tokens, an
-eighth of the default budget, it already averages 54.1 and 65.2 at prefill 4 / decode 1 and 2, against 57.0 and 66.4
-with 48M, and a larger LoRA rank adds nothing.
+eighth of the default budget, it already averages 53.7 and 65.2 at prefill 4 / decode 1 and 2, against 56.4 and 66.4
+with 48M, and neither a smaller nor a larger LoRA rank changes the result.
 
 \subsection{More prefill loops, fewer decode loops}
 \label{sec:rdws}

@@ -377,6 +377,7 @@ def keys():
            for k in [key.format(c=f"S{m}{n}") for m in range(1, 5)] + [nkey.format(n=n)]}
     ks |= {main_key(b, kind, c) for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
+    ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -721,17 +722,24 @@ def main_key(bench, kind, c):
     return key.format(c=c)
 
 
+MAIN_SEEDS = ("X26s2", "X26s3")   # further training seeds of the loop adapter (seed 0: X26-S-universal)
+
+
 def main_table():
     """Accuracy of each main-table configuration, each benchmark on the items all rows share; None if a run is missing.
-    avg: mean over the benchmarks when the row is complete."""
+    The loop-adapter rows also give each training seed (key '<label> seeds': seed 0, then MAIN_SEEDS), on the same
+    items. avg: mean over the benchmarks when the row is complete."""
     out = []
     for bench in MAIN_BENCH:
         sets = {label: load(main_key(bench, kind, c)) for label, kind, c in MAIN_ROWS}
-        have = [v for v in sets.values() if v]
+        seeds = {label: [load(abl_key(bench, pre, c)) for pre in MAIN_SEEDS] for label, kind, c in MAIN_ROWS
+                 if kind == "cell"}
+        have = [v for v in sets.values() if v] + [v for vs in seeds.values() for v in vs if v]
         ids = set.intersection(*(set(v) for v in have)) if have else set()
-        out.append(dict(bench=bench, items=len(ids),
-                        **{label: (round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None)
-                           for label, v in sets.items()}))
+        mean = lambda v: round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None
+        row = dict(bench=bench, items=len(ids), **{label: mean(v) for label, v in sets.items()})
+        row.update({f"{label} seeds": [row[label]] + [mean(v) for v in vs] for label, vs in seeds.items()})
+        out.append(row)
     for label, _, _ in MAIN_ROWS:
         vals = [r[label] for r in out]
         avg = None if None in vals else float(np.mean(vals))
@@ -739,6 +747,14 @@ def main_table():
         flag = "  !! paper: " + str(want) if want is not None and (avg is None or abs(avg - want) > 0.051) else ""
         print(f"Main table   {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
               + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
+    for label in [l for l, kind, _ in MAIN_ROWS if kind == "cell"]:
+        per_seed = list(zip(*[r[f"{label} seeds"] for r in out]))
+        avgs = [None if None in v else float(np.mean(v)) for v in per_seed]
+        if None not in avgs:
+            got = (round(float(np.mean(avgs)), 1), round(float(np.std(avgs, ddof=1)), 1))
+            want = {"loop adapter 4/1": (56.4, 0.0), "loop adapter 4/2": (66.6, 0.2)}.get(label)   # Table 1 caption
+            print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
+                  + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}
     for (bench, label), want in MAIN_CELLS.items():
         got = T[bench][label]
@@ -753,7 +769,7 @@ ABLATIONS = [("6M tokens", "X26t6"), ("12M tokens", "X26t12"), ("24M tokens", "X
              ("rank 4, 12M", "X26t12r4"), ("rank 64, 12M", "X26t12r64")]
 
 
-ABL_PRINTED = {("6M tokens", "S41"): 54.1, ("6M tokens", "S42"): 65.2, ("48M tokens", "S41"): 57.0,
+ABL_PRINTED = {("6M tokens", "S41"): 53.7, ("6M tokens", "S42"): 65.2, ("48M tokens", "S41"): 56.4,
                ("48M tokens", "S42"): 66.4}   # quoted in Section 4.2
 
 

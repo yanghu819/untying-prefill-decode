@@ -22,6 +22,14 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-06 (mainstream restructure)
+- Main text follows comparable papers: Table 1 (fixed 4/n configurations vs native, training-free untying and
+  same-data LoRA distillation; avg 44.2 / 26.6 / 49.8 / 56.4 at n=1, 63.0 / 30.9 / 65.3 / 66.4 at n=2, native 4/4
+  70.2), Figure 1 with the fixed prefill-4 adapter, ablation table (6M-48M tokens, LoRA rank 4/16/64), three training
+  seeds for the main cells (avg 56.4 +- 0.0 and 66.6 +- 0.2). Niche analyses (per-benchmark choice, full map,
+  overlap, MATH exemplar effect, hybrid states) are in the appendix. Throughput at 2K/15K prompts and 1.4B-Thinking
+  timing are collected but not yet in the paper.
+
 ### 2026-11-05 (provenance)
 - `ouro/results/provenance/`: 1,059 evaluation runs (commands, configs, versions, times, sample sha256, checkpoint
   sha256), 26 training records, cleaned logs, generative outputs; host names and IPs scrubbed. All paper keys covered
