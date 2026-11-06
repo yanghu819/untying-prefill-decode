@@ -344,7 +344,8 @@ also scores above native 2/2 distilled on the same data on all eight (Appendix~\
 Against measured decode throughput (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
 at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
 batches; prefill 4
-/ decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}.
+/ decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}. The gain grows with the prompt: against \nat{4} it is $2.4\times$ at a 2K-token prompt and $3.3\times$ at
+15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$).
 
 \subsection{End-to-end time}
 \label{sec:fast}
@@ -369,7 +370,10 @@ On Ouro-2.6B-Thinking, prefill 4 / decode 2 answers 192 timed GSM8K problems in 
 decode 2 takes $1.20\times$\ci{1.05}{1.38} the time of the distilled native 2/2, at similar accuracy on these problems: the
 saving comes from decoding with two loops, and what the extra prefill loops add is the accuracy of Section~\ref{sec:rdws}. On
 MATH-500 the saving is smaller: $0.63\times$ the time of \nat{4} but $1.22\times$ that of \nat{2}
-(Appendix~\ref{app:serve}). On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for \nat{2} on all 1,319
+(Appendix~\ref{app:serve}). A smaller model is not the same trade: native Ouro-1.4B-Thinking 4/4 takes
+about as long per answer (65.2 against 69.6 seconds), and Ouro-2.6B-Thinking at prefill 4 / decode 2 scores higher
+on five of the eight benchmarks of Figure~\ref{fig:equal}, by 3.5 to 3.8 points on MMLU-Pro, ARC-Challenge and BBH.
+On SenseNova-Loop-9B the trained \rw{1}{1} scores 95.6 against 95.8 for \nat{2} on all 1,319
 GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close to the ratio of layer executions per token
 (32 vs.\ 56).
 

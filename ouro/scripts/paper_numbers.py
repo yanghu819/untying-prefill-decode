@@ -468,6 +468,40 @@ def e2e(model, task, cond):
     return out
 
 
+def smaller_model(e2e_rows, equal_rows):
+    """Section 4.4: Ouro-2.6B-Thinking prefill 4 / decode 2 against native Ouro-1.4B-Thinking 4/4 at a similar answer
+    time (192 timed GSM8K problems), on the eight benchmarks of Figure 4 (each model on its full item set)."""
+    t = {(r["model"], r["cond"]): r["seconds"] for r in e2e_rows if r["task"] == "gsm" and r["group"] in ("main", "smaller")}
+    A = {r["bench"]: r["ours"] for r in equal_rows if r["model"] == "2.6B-T"}
+    B = {r["bench"]: r["native4"] for r in equal_rows if r["model"] == "1.4B-T"}
+    diff = {b: round(A[b] - B[b], 1) for b in A if b in B}
+    got = (t.get(("think", "S42sb")), t.get(("think14", "native4st")), sum(d > 0.25 for d in diff.values()))
+    want = (69.6, 65.2, 5)
+    print(f"Smaller      2.6B-T 4/2 {got[0]} s vs 1.4B-T 4/4 {got[1]} s; 2.6B-T 4/2 minus 1.4B-T 4/4: {diff}"
+          + ("" if got == want else f"  !! paper: {want}"))
+    return dict(seconds=got[:2], diff=diff)
+
+
+def throughput_context():
+    """Section 4.3: best decode tokens/s over batch sizes at 2K and 15K prompts (tput_ctx.sh); prefill 4 / decode 2
+    against native 4/4 and 2/2."""
+    d = Path(__file__).resolve().parents[1] / "results" / "throughput-sb4"
+    best = {}
+    for f in d.glob("*-*.json"):
+        cond, ctx = f.stem.rsplit("-", 1)
+        rows = [r for r in json.loads(f.read_text()) if "tokens_per_s" in r]
+        if rows:
+            best[(cond, int(ctx))] = max(r["tokens_per_s"] for r in rows)
+    out = {}
+    for ctx in (2048, 15360):
+        if all((c, ctx) in best for c in ("S42sb", "native4st", "native2st")):
+            out[ctx] = (round(best[("S42sb", ctx)] / best[("native4st", ctx)], 1), round(best[("S42sb", ctx)] / best[("native2st", ctx)], 2))
+    want = {2048: (2.4, 0.99), 15360: (3.3, 1.12)}
+    flag = "" if out == want else f"  !! paper: {want}"
+    print(f"Throughput   prefill 4 / decode 2 vs native 4/4, 2/2 by prompt length: {out}{flag}")
+    return {str(k): v for k, v in out.items()}
+
+
 def e2e_table():
     rows = []
     for group, model, task, conds in (
@@ -475,7 +509,8 @@ def e2e_table():
             ("first64", "think", "gsm", ("native1st", "native2st", "native4st", "S41sb", "S22sb", "S42sb")),  # 64
             ("main", "think", "math", ("native2st", "native4st", "S42sb")),
             ("main", "sn", "gsm", ("native2", "C11", "C21")),
-            ("answer-once", "think", "gsm", ("S42sb", "O42sb"))):  # appendix: answer stored once
+            ("answer-once", "think", "gsm", ("S42sb", "O42sb")),   # appendix: answer stored once
+            ("smaller", "think14", "gsm", ("native2st", "native4st"))):  # Ouro-1.4B-Thinking, the 192 problems of "main"
         recs = {c: e2e(model, task, c) for c in conds}
         common = set.intersection(*(set(r) for r in recs.values() if r))  # same problems for every configuration
         for c in conds:
@@ -988,7 +1023,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=equal(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
