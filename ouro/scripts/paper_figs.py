@@ -121,18 +121,23 @@ def fig0():
 
 
 def fig2():
-    """End to end (Ouro-2.6B-Thinking, GSM8K, batch 1): accuracy against seconds per answer."""
-    E = {r["cond"]: (r["seconds"], r["acc"]) for r in PN["e2e"] if r["model"] == "think" and r["task"] == "gsm"
-         and r.get("group") == "main"}
-    nat = [(*E[f"native{n}st"], f"{n}/{n}") for n in (1, 2, 4) if f"native{n}st" in E]
-    if "Df2st" in E:   # LoRA-distilled native 2/2 (same data and teacher), a native model: grey, unconnected
-        nat.append((*E["Df2st"], "2/2 dist."))
-    ours = [(*E[c], lab, dy) for c, lab, dy in (("S22sb", "2/2", -12), ("S42sb", "4/2", 5)) if c in E]
+    """Ouro-2.6B-Thinking: average accuracy over the eight benchmarks of Figure 4 against decode throughput
+    (paper_numbers.json, think_frontier)."""
+    F = {r["config"]: (r["tokens_per_s"], r["avg"]) for r in PN.get("think_frontier", [])}
+    if len(F) < 5:
+        return
+    nat = [(*F["native 4/4"], "4/4"), (*F["native 2/2"], "2/2", -11)]
+    ours = [(*F["adapter 2/2"], "2/2", -11), (*F["adapter 4/2"], "4/2", 6)]
     fig, ax = plt.subplots(figsize=(3.3, 2.4))
-    frontier(ax, nat, ours, "", lines=False)   # 1/1 answers run longer than 2/2: a line would fold back
-    ax.set_xlabel("seconds per answer (batch 1)", fontsize=8); ax.set_ylabel("GSM8K accuracy (%)", fontsize=8)
+    frontier(ax, nat, ours, "")
+    x, y = F["distilled 2/2"]
+    ax.scatter([x], [y], s=18, color=NAT_LIGHT, marker="D", zorder=3)
+    ax.annotate("2/2 distilled", (x, y), xytext=(-4, 5), textcoords="offset points", fontsize=8, color=NAT, ha="right")
+    ax.set_xlim(80, 460)
+    ax.set_xlabel("decode throughput (tokens/s, 8K prompt)", fontsize=8)
+    ax.set_ylabel("average accuracy (%)", fontsize=8)
     legend(fig, "loop adapter", "labels: prefill/decode loops", y=1.02, ncol=2)
-    fig.subplots_adjust(left=0.15, right=0.98, bottom=0.18, top=0.8)
+    fig.subplots_adjust(left=0.15, right=0.97, bottom=0.18, top=0.8)
     save(fig, "fig2_frontier")
 
 

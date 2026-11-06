@@ -97,8 +97,9 @@ the diagonal of this map; the adapter opens the whole square. With prefill 4 the
 (Table~\ref{tab:main}); without the adapter the same untied configuration collapses.
 
 Untying pays off in time. On Ouro-2.6B-Thinking, prefill 4 / decode 2 stays within two points of native 4/4 on six of
-eight benchmarks (Figure~\ref{fig:equal}) and answers 192 timed GSM8K problems in $0.59\times$ the time
-(Figure~\ref{fig:frontier}): the decode loops set the cost, and the prefill loops buy back much of the accuracy.
+eight benchmarks (Figure~\ref{fig:equal}); averaged over them it matches native 4/4 at $3.2\times$ its decode
+throughput (Figure~\ref{fig:frontier}) and answers 192 timed GSM8K problems in $0.59\times$ the time at batch 1: the
+decode loops set the cost, and the prefill loops buy back the accuracy.
 
 The same rule holds in looped decision models, which score options over a long context without generating text
 (Section~\ref{sec:lev}), and there we see it from both sides: prefilling the context with more loops than the decision
@@ -353,17 +354,15 @@ batches; prefill 4
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Decoding with two loops answers faster than native 4/4.} Ouro-2.6B-Thinking: accuracy against mean
-seconds per answer at batch 1 (prefill included, real greedy answers, the same 192 GSM8K problems for every point;
-labels: prefill/decode loops). Prefill 4 / decode 2 takes $0.59\times$ the time of native 4/4; the same adapter at 2/2
-are about as fast, so the saving comes from decoding with two loops; the distilled native 2/2 (2/2 dist.) is
-$1.20\times$ faster than prefill 4 / decode 2. Extra prefill does not improve accuracy on this timed subset (consecutive
-problem IDs 1--192); its gains on other benchmarks are in Section~\ref{sec:rdws}. On all 1,319 problems prefill 4 / decode 2 is 1.0 point below native
-4/4. SenseNova-Loop-9B: Table~\ref{tab:e2e}.}
+\caption{\textbf{Prefill 4 / decode 2 matches native 4/4 at $3.2\times$ its decode throughput.} Ouro-2.6B-Thinking:
+average accuracy over the eight benchmarks of Figure~\ref{fig:equal} (each on the items all five configurations share)
+against decode throughput (best tokens/s over batch sizes at an 8K-token prompt, Table~\ref{tab:serve}). Labels:
+prefill/decode loops. The adapter decodes at the same cost at 2/2 and 4/2, and distilled native 2/2 (LoRA merged) at
+that of native 2/2; the four prefill loops add 4.0 points.}
 \label{fig:frontier}
 \end{figure}
 
-We time whole answers at batch 1, prefill included (Figure~\ref{fig:frontier}; Table~\ref{tab:e2e} in Appendix~\ref{app:serve}).
+We time whole answers at batch 1, prefill included (Table~\ref{tab:e2e} in Appendix~\ref{app:serve}).
 On Ouro-2.6B-Thinking, prefill 4 / decode 2 answers 192 timed GSM8K problems in $0.59\times$\ci{0.52}{0.66} the time of
 \nat{4}. On all 1,319 problems it scores 93.3 against 94.2, a paired difference of $-1.0$\ci{-2.0}{0.1}. Prefilling with
 4 rather than 2 loops before decoding with two changes the answer time by $1.02\times$\ci{0.92}{1.13}, and prefill 4 /
@@ -730,7 +729,7 @@ task / model & config & acc.\ (\%) & s / answer & tokens & $N$ \\
 \bottomrule
 \end{tabular}
 \caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; mean seconds and generated tokens per
-answer over $N$ problems; GSM8K: the 192 problems of Figure~\ref{fig:frontier}, consecutive IDs 1--192; budgets 4,096
+answer over $N$ problems; GSM8K: consecutive problem IDs 1--192; budgets 4,096
 and 8,192 tokens). On GSM8K, prefill 4 / decode 2 spends $1.38\times$ the decode time per generated token of \nat{2}
 (pooled time over pooled tokens), but its answers are shorter.}
 \label{tab:e2e}

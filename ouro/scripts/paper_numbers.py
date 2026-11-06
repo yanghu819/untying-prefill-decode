@@ -543,6 +543,34 @@ def appendix_checks():
     return out
 
 
+def think_frontier():
+    """Figure 6: Ouro-2.6B-Thinking, average accuracy over the eight benchmarks of Figure 4 (each on the items all five
+    configurations share) against decode throughput (best tokens/s over batch sizes at an 8K prompt, Table 10; the
+    decode cost depends only on the decode loops and the cache: the adapter at 2/2 decodes as 4/2, the merged LoRA of
+    distilled 2/2 as native 2/2)."""
+    tput = {k: v["tokens_per_s"] for k, v in throughput().items()}
+    confs = {"native 2/2": ("native", 2, tput["native2st"]), "native 4/4": ("native", 4, tput["native4st"]),
+             "distilled 2/2": ("Df", None, tput["native2st"]), "adapter 2/2": ("S22", None, tput["S42sb"]),
+             "adapter 4/2": ("S42", None, tput["S42sb"])}
+    per = {c: [] for c in confs}
+    for bench, ka, kb in EQUAL:
+        keys = {c: (kb.format(n=n) if kind == "native" else ka.replace("S42", kind)) for c, (kind, n, _) in confs.items()}
+        sets = {c: load(k) for c, k in keys.items()}
+        if any(v is None for v in sets.values()):
+            print(f"Figure 6     missing {bench}: {[c for c, v in sets.items() if v is None]}")
+            return []
+        ids = set.intersection(*(set(v) for v in sets.values()))
+        for c, v in sets.items():
+            per[c].append(100 * float(np.mean([v[i] for i in ids])))
+    out = [dict(config=c, avg=round(float(np.mean(per[c])), 2), scores=[round(x, 2) for x in per[c]],
+                tokens_per_s=confs[c][2]) for c in confs]
+    want = {"native 2/2": 64.2, "native 4/4": 70.2, "distilled 2/2": 67.3, "adapter 2/2": 66.4, "adapter 4/2": 70.4}
+    for r in out:
+        flag = "" if abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
+        print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s']:4d} tok/s{flag}")
+    return out
+
+
 def e2e_table():
     rows = []
     for group, model, task, conds in (
@@ -1071,7 +1099,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
