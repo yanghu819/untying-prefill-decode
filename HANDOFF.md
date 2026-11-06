@@ -31,18 +31,14 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
     a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
     `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
-- **Next, in order of value** (user 2026-11-05: converge on the highlights for a top venue; no niche experiments,
-  no defensive Codex review loops):
-  1. Restructure the paper around the asymmetry story: prefill runs once and decode runs per token, so they need not
-     share a loop count; a small post-training loop adapter unties them with one prompt KV cache. Main text: accuracy vs
-     cost (Pareto), the m x n map, measured answer time, Lev both directions. One controls table: within-adapter m=n,
-     training-free untying (`raw_q.sh`, running), same-data LoRA distillation. Counts, MATH exemplar exception,
-     protocol and seeds go to the appendix.
-  2. Baselines similar papers report and we lack: training-free untying (running on both boxes); Ouro early exit at
-     matched average loops if the exit gate is released; a smaller model at equal answer time (1.4B 4/4 vs 2.6B 4/2).
-  3. Stopped as niche (2026-11-05): extra training seeds (X26-S-seed3, O14-S-seed2 evals), Ouro-1.4B H48f control,
-     zero-shot MATH grid.
-  4. ARR checklist TODOs with the user → anonymized code mirror → final polish.
+- **Next, in order of value** (user 2026-11-05/06: converge on the highlights for a top venue; mainstream experiments
+  and figures only; no niche experiments, no defensive Codex review loops; every result traceable):
+  Done: main table (native / training-free / same-data LoRA / adapter at 4/1 and 4/2, three seeds), fixed-prefill
+  Figure 1, ablations (6M-48M tokens, LoRA rank), smaller model at equal answer time, throughput at 2K/8K/15K
+  prompts, provenance for every run (`ouro/results/provenance`, refresh with `provenance.py` when results change).
+  1. Optional, only if the user asks: early-exit baseline (Ouro's gate computes all loops; needs a real early-exit
+     runner), rank 4/64 at 48M tokens.
+  2. ARR checklist TODOs with the user -> anonymized code mirror -> final polish. The user submits to arXiv.
 
 ## 2. The user's rules (all still in force)
 
