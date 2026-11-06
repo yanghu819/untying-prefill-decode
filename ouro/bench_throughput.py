@@ -18,7 +18,7 @@ import torch
 from ouro.adapter_model import load_adapter_runner, merge_reader_lora
 from ouro.evaluate import rows
 from ouro.model import OuroRunner, Variant, cache_bytes, load_model
-from ouro.single_bank import NativeContiguousRunner, NativeStaticRunner, SingleBankRunner
+from ouro.single_bank import AlignedRunner, NativeContiguousRunner, NativeStaticRunner, SingleBankRunner
 
 
 def make(condition, model_path, checkpoint, merge=False):
@@ -29,6 +29,8 @@ def make(condition, model_path, checkpoint, merge=False):
         runner = load_adapter_runner(model_path, checkpoint)
         if merge:
             merge_reader_lora(runner.system.reader)
+        if condition.endswith("sb") and condition[0] == "a":  # a<p><d>sb: aligned, one static prompt bank per decode loop
+            return AlignedRunner(runner.system, int(condition[1]), int(condition[2]))
         if condition.endswith("sb"):  # S<p><d>sb: prompt KV stored once; O<p><d>sb: prompt and answer KV stored once
             return SingleBankRunner(runner.system, int(condition[1]), int(condition[2]))
         if len(condition) == 3 and condition[0] in "UVSWT":  # universal connector at cell (p, d), materialised banks

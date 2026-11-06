@@ -92,7 +92,7 @@ def single_bank_attention(module, query, key, value, attention_mask, scaling=Non
     if FUSED and hq == hkv:
         # two flash-attention calls (prompt bank with the mapped query, own tokens with the plain query) merged by their
         # log-sum-exp; the value map acts on the normalised prompt output (linear, so it commutes with the weighting)
-        out_p, lse_p = _flash(q_prompt.view_as(query), cache.prompt_keys[layer], cache.prompt_values[layer], scaling)
+        out_p, lse_p = _flash(q_prompt.view_as(query), cache.prompt_keys[bank], cache.prompt_values[bank], scaling)
         out_s, lse_s = _flash(query, key, value, scaling)
         out_p = out_p.float()
         out_p = out_p + torch.einsum("bhli,hoi->bhlo", out_p, maps.v_delta[loop, layer])
@@ -100,12 +100,12 @@ def single_bank_attention(module, query, key, value, attention_mask, scaling=Non
         w_p, w_s = (lse_p - top).exp()[..., None], (lse_s - top).exp()[..., None]
         out = (w_p * out_p + w_s * out_s.float()) / (w_p + w_s)
         return out.to(query.dtype).transpose(1, 2).contiguous(), None
-    score_p = (q_prompt @ cache.prompt_keys[layer].transpose(-1, -2)).float() * scaling  # [B, H, g, n]
+    score_p = (q_prompt @ cache.prompt_keys[bank].transpose(-1, -2)).float() * scaling  # [B, H, g, n]
     score_s = (q @ key.transpose(-1, -2)).float() * scaling                              # [B, H, g, t]
     top = torch.maximum(score_p.amax(-1, keepdim=True), score_s.amax(-1, keepdim=True))
     w_p, w_s = (score_p - top).exp(), (score_s - top).exp()
     norm = w_p.sum(-1, keepdim=True) + w_s.sum(-1, keepdim=True)
-    out_p = (w_p.to(value.dtype) @ cache.prompt_values[layer]).float()
+    out_p = (w_p.to(value.dtype) @ cache.prompt_values[bank]).float()
     out_p = out_p + torch.einsum("bhgi,hoi->bhgo", out_p, maps.v_delta[loop, layer])
     out = (out_p + (w_s.to(value.dtype) @ value).float()) / norm
     return out.to(query.dtype).reshape(b, hq, 1, dim).transpose(1, 2).contiguous(), None
@@ -143,6 +143,35 @@ class SingleBankRunner(AdapterRunner):
         del prefix
         return self.decode(input_ids[:, -1:], SingleBankCache(keys, values, self.system.decode_steps,
                                                               shared_answer=self.system.arm in ("O", "P")))
+
+    @torch.inference_mode()
+    def decode(self, input_ids, cache, attention_mask=None):
+        with active(cache, self.system.loop_adapter):
+            hidden, cache = backbone(self.model, input_ids, cache, self.system.decode_steps)
+        return self.model.lm_head(hidden[:, -1:])[:, 0], cache
+
+
+class AlignedRunner(AdapterRunner):
+    """Aligned connector (arm a) at cell (p, d) for throughput: decode loop k reads prefill loop clip(p - d + k) from its
+    own static prompt bank (one bank per decode loop, as the native d-loop model stores), through the same fused
+    attention, key scale and value map as the single-bank decoder."""
+
+    def __init__(self, system, p, d):
+        assert system.arm == "a"
+        super().__init__(system)
+        system.prefill_steps, system.decode_steps = p, d
+
+    @torch.inference_mode()
+    def prefill(self, input_ids, attention_mask=None):
+        p, d = self.system.prefill_steps, self.system.decode_steps
+        _, prefix, _ = self.system.writer_prefix(input_ids, p)
+        n = input_ids.shape[1] - 1
+        depth = len(prefix.raw_keys)
+        src = [min(max(p - d + k, 0), p - 1) for k in range(d)]
+        keys = [prefix.all_keys[j * depth + l][:, :, :n].contiguous() for j in src for l in range(depth)]
+        values = [prefix.all_values[j * depth + l][:, :, :n].contiguous() for j in src for l in range(depth)]
+        del prefix
+        return self.decode(input_ids[:, -1:], SingleBankCache(keys, values, d, per_loop=True))
 
     @torch.inference_mode()
     def decode(self, input_ids, cache, attention_mask=None):
