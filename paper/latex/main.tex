@@ -55,10 +55,10 @@ are paid once.
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
 \caption{\textbf{Decode cheaply, prefill deeply.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$.
-Grey: the native model, which runs $n$ loops for both prefill and decode ($n/n$). Red: one loop adapter that prefills
-with four loops and decodes with one or two, where decoding is cheaper than native 4/4. With few decode loops, four
-prefill loops recover much of the accuracy of the deeper native model. All 15 settings and every $(m,n)$ cell,
-including three and four decode loops: Appendix~\ref{app:taskmap}.}
+Grey: the native model, which runs $n$ loops for both prefill and decode ($n/n$). Red: one loop adapter (aligned caches) that
+prefills with four loops and decodes with $n$. With few decode loops, four prefill loops recover much of the accuracy of
+the deeper native model; with three or four it matches native. Each panel uses the items all points share; all settings
+and every $(m,n)$ cell: Appendix~\ref{app:taskmap}.}
 \label{fig:grid}
 \end{figure*}
 
@@ -238,6 +238,12 @@ $g=\sigma(\lambda_P-\lambda_A)$, which equals one softmax over both (the blockwi
 instead of $b\,n(\ell+t)$. Serving from one cache equals materialising a mapped prompt cache per loop; in bfloat16 all 512
 checked greedy tokens agree.
 
+\paragraph{Aligned caches.} With one cache, every decode loop reads the last prefill loop. The aligned variant keeps one
+prompt cache per decode loop and lets decode loop $k$ read prefill loop $m-n+k$ through its own map, so at $m=n$ every
+decode loop reads exactly the KV the native model would. It stores the prompt $n$ times, as \nat{n} does, and is
+trained identically. It is the more accurate layout, most of all on long-context retrieval; the single cache is the
+smaller one.
+
 \paragraph{What the maps do.} With the same training and the maps frozen at the identity, the decoder is within 0.4 points
 on MMLU (significantly lower at 1/1 and 2/2, by 0.4 and 0.3) has no significantly negative GSM8K difference (at 4/1 it scores $2.3$ points higher\ci{0.2}{4.5}), but
 loses 11.4 points on RULER-16K at prefill 4 / decode 1 (Appendix~\ref{sec:ablation}): in these ablations the maps matter
@@ -277,8 +283,9 @@ $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH
 with four loops. Native: the unmodified model. Training-free: the frozen model prefills with four loops and decodes
 from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ distilled~\citep{kd} with LoRA~\citep{lora} on the same data,
 teacher (native 4/4) and tokens as the loop adapter. Bold: best in each group. Each column uses the items all rows
-share; MMLU and GSM8K are the full sets. Loop adapter: training seed 0; over three training seeds the average is
-$56.4\pm0.0$ at 4/1 and $66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
+share; MMLU and GSM8K are the full sets. One cache: all decode loops read the last prefill loop's cache; aligned: decode loop $k$ reads prefill loop $m-n+k$
+(Section~\ref{sec:method}). Training seed 0; over three training seeds the one-cache average is $56.4\pm0.0$ at 4/1 and
+$66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
 \label{tab:main}
 \end{table*}
 
@@ -286,7 +293,7 @@ $56.4\pm0.0$ at 4/1 and $66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.). Paired intervals 
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_equal.pdf}
 \caption{\textbf{Prefill 4 / decode 2: two decode loops, point estimates within two points of four on six of eight benchmarks.} Ouro-2.6B-Thinking, score
-against the number of decode loops. Grey: native 2/2 and 4/4. Red: the loop adapter with prefill 4 / decode 2. Same items
+against the number of decode loops. Grey: native 2/2 and 4/4. Red: the loop adapter (one cache) with prefill 4 / decode 2. Same items
 for all three in each panel; HELMET is averaged over its categories. Table~\ref{tab:t14} gives every score, the paired
 intervals and the same adapter at prefill 2 / decode 2.}
 \label{fig:equal}
@@ -309,8 +316,10 @@ Ouro-2.6B on MMLU (20 questions per subject), RULER-16K (260 items) and GSM8K (4
 
 Figure~\ref{fig:grid} plots accuracy against decode loops. The native model loses most of its accuracy when it
 decodes with fewer loops; the loop adapter, prefilling with four loops, keeps much of it: at one decode loop MMLU rises
-from 51.5 to 66.6, BBH from 30.9 to 51.7 and HumanEval+ from 44.5 to 64.6. Decode loops matter most for multi-step math
-(native GSM8K: 32.4 at one loop, 69.4 at four), and the adapter adds 12 points there at one decode loop. The full
+from 51.5 to 67.1, BBH from 30.9 to 52.7 and HumanEval+ from 44.5 to 65.2. Decode loops matter most for multi-step math
+(native GSM8K: 32.4 at one loop, 69.4 at four), and the adapter adds 13 points there at one decode loop. With three or
+four decode loops the adapter tracks the native model, also on long-context retrieval (RULER-16K at 4/3: 79.8 against
+78.7 for \nat{3}). The full
 $m\times n$ map is in Appendix~\ref{app:taskmap}.
 
 \subsection{Main results}
@@ -320,7 +329,8 @@ Table~\ref{tab:main} compares fixed configurations at the same number of decode 
 prefilling with four loops raises the average from 44.2 (native 1/1) to 56.4, above native 1/1 distilled on the same
 data (49.8); MMLU rises from 51.5 to 66.6, BBH from 30.9 to 51.7 and HumanEval+ from 44.5 to 64.6. With two decode
 loops the loop adapter at 4/2 averages 66.4, against 63.0 for native 2/2 and 65.3 for its distilled version, within 3.8
-points of native 4/4 with half the decode loops. The adapter is what makes untying work: without it the same untied
+points of native 4/4 with half the decode loops. Aligned caches raise the adapter's averages to 56.8 and 67.2, within 3.0 points of native 4/4 at two decode
+loops; the single cache, at a fraction of the prompt memory, gives up under one point. The adapter is what makes untying work: without it the same untied
 configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, deeper
 prefill alone adds up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
 prefill count per benchmark on held-out items instead of fixing it at four beats native 1/1 significantly on 14 of 15
@@ -434,8 +444,9 @@ fixed depth into two knobs, one paid once per prompt and one paid per token.
 \label{sec:limits}
 
 The prefill count is chosen per benchmark on labeled items, not routed per prompt. The gain is largest at low decode
-depth; with three or four decode loops the native model is as good or better, and a native model distilled on the
-same data closes part of the gap at two (Section~\ref{sec:select}). On few-shot MATH-500 one prefill loop is best
+depth; with three or four decode loops the aligned adapter matches but does not beat the native model, the single
+cache falls behind it on long-context retrieval, and a native model distilled on the same data closes part of the gap
+at two (Section~\ref{sec:select}). On few-shot MATH-500 one prefill loop is best
 (Appendix~\ref{app:eval}). More prefill loops raise the time to first token; time is measured at batch 1 on one GPU
 type. Thinking models are decoded greedily rather than sampled. All models are 1.4B--9B and benchmarks are English.
 

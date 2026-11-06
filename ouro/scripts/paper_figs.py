@@ -394,13 +394,14 @@ def tab_main():
     best of each group; LaTeX rows from paper_numbers.json, main_table)."""
     T = {r["bench"]: r for r in PN.get("main_table", [])}
     benches = list(T)
-    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "loop adapter 4/1"]),
-              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "loop adapter 4/2"]),
+    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "loop adapter 4/1", "aligned adapter 4/1"]),
+              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "loop adapter 4/2", "aligned adapter 4/2"]),
               (4, ["native 4/4"])]
     show = {"native 1/1": "Native 1/1", "native 2/2": "Native 2/2", "native 4/4": "Native 4/4",
             "training-free 4/1": "Training-free 4/1", "training-free 4/2": "Training-free 4/2",
             "LoRA-distilled 1/1": r"LoRA distill.\ 1/1", "LoRA-distilled 2/2": r"LoRA distill.\ 2/2",
-            "loop adapter 4/1": r"\textbf{Loop adapter 4/1}", "loop adapter 4/2": r"\textbf{Loop adapter 4/2}"}
+            "loop adapter 4/1": "Loop adapter, one cache 4/1", "loop adapter 4/2": "Loop adapter, one cache 4/2",
+            "aligned adapter 4/1": r"\textbf{Loop adapter, aligned 4/1}", "aligned adapter 4/2": r"\textbf{Loop adapter, aligned 4/2}"}
     lines = []
     for n, labels in groups:
         vals = {l: [T[b].get(l) for b in benches] for l in labels}
@@ -477,5 +478,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "Winogrande", "RULER-16K"], "fig_taskmap", fixed=4, ours_n=(1, 2)); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e(); tab_repro()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e(); tab_repro()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

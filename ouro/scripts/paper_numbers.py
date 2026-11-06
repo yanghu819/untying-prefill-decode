@@ -847,11 +847,13 @@ MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 
 # quoted in the abstract, introduction and Section 4.2
 MAIN_AVG = {"native 1/1": 44.2, "LoRA-distilled 1/1": 49.8, "loop adapter 4/1": 56.4, "native 2/2": 63.0,
             "LoRA-distilled 2/2": 65.3, "loop adapter 4/2": 66.4, "native 4/4": 70.2,
-            "training-free 4/1": 26.6, "training-free 4/2": 30.9}
+            "training-free 4/1": 26.6, "training-free 4/2": 30.9, "aligned adapter 4/1": 56.8, "aligned adapter 4/2": 67.2}
 MAIN_CELLS = {("MMLU", "native 1/1"): 51.5, ("MMLU", "loop adapter 4/1"): 66.6, ("BBH 3-shot", "native 1/1"): 30.9,
               ("BBH 3-shot", "loop adapter 4/1"): 51.7, ("HumanEval+", "native 1/1"): 44.5,
               ("HumanEval+", "loop adapter 4/1"): 64.6, ("GSM8K", "training-free 4/2"): 11.7,
-              ("GSM8K", "loop adapter 4/2"): 66.7}
+              ("GSM8K", "loop adapter 4/2"): 66.7, ("MMLU", "aligned adapter 4/1"): 67.1,
+              ("BBH 3-shot", "aligned adapter 4/1"): 52.7, ("HumanEval+", "aligned adapter 4/1"): 65.2,
+              ("GSM8K", "aligned adapter 4/1"): 45.0}
 
 
 def main_key(bench, kind, c):
@@ -966,6 +968,10 @@ def aligned_cells():
         row = dict(bench=bench, items=len(ids))
         row.update({c: (round(100 * float(np.mean([v[i] for i in ids])), 3) if v else None) for c, v in sets.items()})
         out.append(row)
+        want = {"RULER-16K": {"a43": 79.8, "native3": 78.7}}.get(bench, {})   # quoted in Section 4.1
+        for c, w in want.items():
+            if row.get(c) is None or abs(row[c] - w) > 0.051:
+                print(f"Aligned map  {bench} {c}: {row.get(c)}  !! paper: {w}")
         print(f"Aligned map  {bench:16s} " + " ".join(f"{c}={row[c]:.1f}" for c in ("a41", "a42", "a43", "a44",
               "native1", "native2", "native3", "native4") if row[c] is not None))
     return out
