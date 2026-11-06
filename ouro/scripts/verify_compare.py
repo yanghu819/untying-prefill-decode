@@ -30,10 +30,15 @@ def main(runs):
         task = "gsm8k" if "gsm" in rv else "mmlu"
         metric, filt = ("exact_match", "strict-match") if task == "gsm8k" else ("acc", None)
         a, b = PN.read_lm(runs, orig, metric, filt), PN.read_lm(runs, rv, metric, filt)
+        if not a:   # original evaluated on the other box: its exported item scores (names as in paper_numbers.py)
+            name = orig.replace("X26-native", "o26n") if "mmlufull" in orig else orig   # native MMLU runs: o26n<n>-mmlufull
+            key = f"L:{name}:{metric}" + (f":{filt}" if filt else "")
+            a = PN.load(key) or {}
         rows.append((rv, a, b))
     for d in sorted(glob.glob(f"{runs}/bench/*-rv")):
         rv = os.path.basename(d)
-        rows.append((rv, bench_scores(runs, rv[:-3], "ruler16k"), bench_scores(runs, rv, "ruler16k")))
+        orig = bench_scores(runs, rv[:-3], "ruler16k") or PN.load(f"B:{rv[:-3]}:ruler16k") or {}
+        rows.append((rv, orig, bench_scores(runs, rv, "ruler16k")))
     for rv, a, b in rows:
         ids = set(a) & set(b)
         if not ids:

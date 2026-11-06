@@ -1043,9 +1043,11 @@ Ouro-1.4B & 1 & MATH, 4-shot & \dn{4.4}\ci{-8.4}{-0.6} \\
 
 \texttt{python ouro/scripts/paper\_numbers.py compute} recomputes the paired differences, intervals, means, timing
 ratios and decode throughput of this paper from the accompanying per-item records and compares them with expected values
-hard-coded in the script, which mirror the numbers printed here. Not yet covered are the long-answer throughput and
-batch-size measurements of Appendix~\ref{app:serve}, the parser diagnostics of Appendix~\ref{app:eval} and the MBPP+
-format counts of Appendix~\ref{app:hybrid}; those values are reported as measured. \texttt{REPRODUCE.md} maps every result to its
+hard-coded in the script, which mirror the numbers printed here; only the MBPP+ format counts of
+Appendix~\ref{app:eval} are reported as measured. Every run's command, configuration, checkpoint hash, log and outputs
+are in \texttt{ouro/results/provenance}. Re-running the main-table cells from scratch reproduces GSM8K and MMLU with at
+least 99.6\% of item scores identical and RULER-16K with 94--100\% identical and averages within 0.9 points
+(\texttt{ouro/results/verify\_rerun.txt}). \texttt{REPRODUCE.md} maps every result to its
 scripts and gives the training and evaluation commands that regenerate the per-item records.
 
 \end{document}
