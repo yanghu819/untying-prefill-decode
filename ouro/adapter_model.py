@@ -69,6 +69,8 @@ class PrefixState:
     sin: torch.Tensor
     first_keys: list = None    # loop-1 KV of the prefill (keys with RoPE applied), used by the two-source map (arm Q)
     first_values: list = None
+    all_keys: list = None      # every prefill loop's KV (keys with RoPE applied; bank = loop * L + layer), arm a
+    all_values: list = None
 
 
 class CaptureCache(NativeCache):
@@ -97,8 +99,11 @@ class LoopMapAdapter(nn.Module):
     built from the prefill model's last-loop KV by a per-(k, l, kv-head) linear map, identity + zero-init delta
     (pre-RoPE keys, re-rotated). Prefill therefore costs exactly p loops, for any p (also p < d)."""
 
-    def __init__(self, config, device, loops, shared_bank=False, two_source=False, shallow=False):
+    def __init__(self, config, device, loops, shared_bank=False, two_source=False, shallow=False, aligned=False):
         super().__init__()
+        # aligned (arm a): decode loop k of n reads prefill loop clip(m - n + k, 0, m - 1) instead of the last one, so
+        # at m = n every decode loop reads its own loop's KV, as the native model; needs the shared-bank key map
+        self.aligned = aligned
         shape = (loops, config.num_hidden_layers, config.num_key_value_heads, config.head_dim, config.head_dim)
         self.loops, self.shared_bank = loops, shared_bank
         if shared_bank:
@@ -138,6 +143,15 @@ class LoopMapAdapter(nn.Module):
         cache = IndexedCache(loops * depth)
         for k in range(loops):
             for layer, (raw_key, value) in enumerate(zip(prefix.raw_keys, prefix.values)):
+                if self.aligned:   # the scale commutes with RoPE: map the stored (rotated) key of the aligned loop
+                    m = len(prefix.all_keys) // depth
+                    src = min(max(m - loops + k, 0), m - 1) * depth + layer
+                    key = self.map_key(prefix.all_keys[src][:, :, :n], k, layer)
+                    value = prefix.all_values[src][:, :, :n]
+                    value = value + torch.einsum("bhti,hoi->bhto", value.float(), self.v_delta[k, layer]).to(value.dtype)
+                    cache.key_cache.append(key)
+                    cache.value_cache.append(value)
+                    continue
                 raw_key, value = raw_key[:, :, :n], value[:, :, :n]
                 key = self.map_key(raw_key, k, layer)
                 key = key * cos + rotate_half(key) * sin
@@ -306,12 +320,12 @@ class AdapterSystem(nn.Module):
             self.prefill_steps, self.decode_steps = int(arm[1]), int(arm[2])
             self.adapter = None
             self.loop_adapter = LoopMapAdapter(writer.config, next(writer.parameters()).device, self.decode_steps, two_source=arm[0] == "Q")
-        elif arm in ("V", "S", "W", "T", "M", "O", "P"):  # O = S + self-live shared answer history; M = S + gated shallow (first-loop) attention branch; T = S + second source (prefill loop-1 KV)  # W = S without decoder LoRA (map only); universal loop-map connector: one map for every (p, d) in 1..4, set per batch / at eval
+        elif arm in ("V", "S", "W", "T", "M", "O", "P", "a"):  # O = S + self-live shared answer history; M = S + gated shallow (first-loop) attention branch; T = S + second source (prefill loop-1 KV)  # W = S without decoder LoRA (map only); universal loop-map connector: one map for every (p, d) in 1..4, set per batch / at eval
             # S: single-bank variant (RoPE-commuting key map), the prompt keeps one KV bank for every decode loop
             self.prefill_steps, self.decode_steps = 4, 4
             self.adapter = None
-            self.loop_adapter = LoopMapAdapter(writer.config, next(writer.parameters()).device, 4, shared_bank=arm in ("S", "W", "T", "M", "O", "P"),
-                                               two_source=arm == "T", shallow=arm == "M")
+            self.loop_adapter = LoopMapAdapter(writer.config, next(writer.parameters()).device, 4, shared_bank=arm in ("S", "W", "T", "M", "O", "P", "a"),
+                                               two_source=arm == "T", shallow=arm == "M", aligned=arm == "a")
         elif arm[0] in "ZY":  # trained KV-sharing baseline (Y: decode model also emits the first token) Z<d>: native p4 prefill, d-loop decode reading last-loop KV only
             self.prefill_steps, self.decode_steps = 4, int(arm[1])
             self.adapter = None
@@ -323,7 +337,7 @@ class AdapterSystem(nn.Module):
             # OverFill-style: the whole decode-side model is trained (no LoRA).
             self.reader.requires_grad_(True)
             self.reader.model.early_exit_gate.requires_grad_(False)  # unused at fixed loop count
-        elif arm in ("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "U", "V", "S", "T", "M", "O", "P") or arm[0] in "XZYQ":
+        elif arm in ("B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "U", "V", "S", "T", "M", "O", "P", "a") or arm[0] in "XZYQ":
             for layer in self.reader.model.layers:
                 for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
                     setattr(layer.self_attn, name, ReaderLoRA(getattr(layer.self_attn, name)))
@@ -353,6 +367,8 @@ class AdapterSystem(nn.Module):
             cache.sin,
             list(cache.key_cache[:depth]),
             list(cache.value_cache[:depth]),
+            list(cache.key_cache),
+            list(cache.value_cache),
         )
         self.raw_keys = [None] * depth
         first_logits = self.writer.lm_head(hidden[:, -1:])[:, 0]
@@ -470,7 +486,7 @@ class AdapterRunner:
             hidden, cache = backbone(self.model, input_ids[:, -1:], LastLoopCache(cache, depth, 4, self.system.decode_steps),
                                      self.system.decode_steps, attention_mask)
             return self.model.lm_head(hidden[:, -1:])[:, 0], cache
-        if self.arm[0] in "XNQ" or self.arm in ("V", "S", "W", "T", "M", "O", "P"):
+        if self.arm[0] in "XNQ" or self.arm in ("V", "S", "W", "T", "M", "O", "P", "a"):
             # prefill model at p loops; decode model reads mapped KV of all but the last prompt token, then runs the
             # last prompt token itself (d loops) so the first output token also comes from the decode model
             _, prefix, _ = self.system.writer_prefix(input_ids, self.system.prefill_steps, attention_mask)

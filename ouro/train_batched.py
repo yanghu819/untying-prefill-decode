@@ -39,7 +39,7 @@ class Batched(nn.Module):
             return loopmap_selflive_forward(self.system, samples, device)
         if self.system.arm == "P":  # original self-live recipe: main per-loop loss + 0.1 x self-live view, fixed-point history
             return loopmap_selflive_forward(self.system, samples, device, faithful=True)
-        if self.system.arm[0] in "XNQ" or self.system.arm in ("V", "S", "W", "T", "M"):
+        if self.system.arm[0] in "XNQ" or self.system.arm in ("V", "S", "W", "T", "M", "a"):
             return loopmap_forward(self.system, samples, device)
         if self.system.arm[0] == "Z":
             return kvshare_forward(self.system, samples, device)
@@ -73,7 +73,7 @@ def main():
     parser.add_argument("--model-path", type=Path, required=True)
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--arm", choices=("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "U", "V", "S", "W", "T", "R", "Z1", "Z2", "Z3", "Z4", "Y1", "Y2", "Y3", "Y4", "M", "O", "P")
+    parser.add_argument("--arm", choices=("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "U", "V", "S", "W", "T", "R", "Z1", "Z2", "Z3", "Z4", "Y1", "Y2", "Y3", "Y4", "M", "O", "P", "a")
                         + tuple(f"{a}{p}{d}" for a in "XNQ" for p in range(1, 5) for d in range(1, 5)), required=True)
     parser.add_argument("--blocks", type=int, nargs="+", default=[4, 8, 16, 32, 1000])
     parser.add_argument("--micro", type=int, default=6)
@@ -174,7 +174,7 @@ def main():
         for micro, chunk in enumerate(chunks):
             samples = [data[index] for index in chunk]
             blocks = [random.Random(args.seed * 1_000_003 + index).choice(args.blocks) for index in chunk]
-            if args.arm in ("U", "V", "S", "W", "T", "M", "O", "P"):  # universal connector: one (prefill p, decode d) cell per micro-batch
+            if args.arm in ("U", "V", "S", "W", "T", "M", "O", "P", "a"):  # universal connector: one (prefill p, decode d) cell per micro-batch
                 cells = U_CELLS if args.arm == "U" else V_CELLS
                 system.prefill_steps, system.decode_steps = random.Random(args.seed * 7919 + chunk[0]).choice(cells)
             syncing = micro == len(chunks) - 1

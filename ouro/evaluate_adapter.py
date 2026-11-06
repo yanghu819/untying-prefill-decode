@@ -88,7 +88,7 @@ def make_runner(args):
             raise ValueError(f"Checkpoint arm {runner.arm} does not match {args.condition}")
         runner.time_adapter = args.timing
         return runner
-    if len(args.condition) == 3 and args.condition[0] in "UVSWTMOP":  # universal connector at cell (p, d), e.g. U41 / V14
+    if len(args.condition) == 3 and args.condition[0] in "UVSWTMOPa":  # universal connector at cell (p, d), e.g. U41 / V14
         from ouro.adapter_model import load_adapter_runner
 
         runner = load_adapter_runner(args.model_path, args.checkpoint, device="cuda", dtype=torch.bfloat16, attention="sdpa")
