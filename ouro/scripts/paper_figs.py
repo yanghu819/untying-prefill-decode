@@ -260,7 +260,7 @@ def tab_sn():
     (OUT / "tab_sn.tex").write_text("\n".join(lines) + "\n")
 
 
-def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None):
+def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None, ours_n=(1, 2, 3, 4)):
     """Task map: Ouro-2.6B, one loop adapter. Per benchmark, native n/n against the adapter's best prefill count m
     at each number of decode loops n (point labels: that m), or with fixed=m against prefill m at every n (Figure 1);
     all points of a panel on the same items (taskmap_cells)."""
@@ -277,7 +277,7 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None):
         ax.axis("off")
     for ax, b in zip(axes.flat, panels):
         r = T[b]
-        ours = ([(n, r[f"S{fixed}{n}"], "") for n in range(1, 5)] if fixed else
+        ours = ([(n, r[f"S{fixed}{n}"], "") for n in ours_n] if fixed else
                 [(n, r[f"S{r['best'][str(n)]}{n}"], f"m={r['best'][str(n)]}") for n in range(1, 5)])
         nat = [(n, r[f"native{n}"], "") for n in range(1, 5)]
         frontier(ax, nat, ours, title.get(b, b))
@@ -429,6 +429,13 @@ def tab_e2e():
     (OUT / "tab_e2e.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_repro():
+    """Appendix B: native Ouro-2.6B 4/4 under our evaluation and as reported by Ouro (paper_numbers.json, repro)."""
+    f = lambda x: "--" if x is None else f"{x:.1f}"
+    rows = [f"{r['bench']} & {f(r['ours'])} & {f(r['reported'])} & {r['items']:,} \\\\" for r in PN.get("repro", [])]
+    (OUT / "tab_repro.tex").write_text("\n".join(rows) + "\n")
+
+
 def tab_select_distilled():
     """Appendix table: the cross-fitted prefill count (Table 1) against the LoRA-distilled native n/n at n = 1, 2, 3;
     selection-aware intervals (LaTeX rows from paper_numbers.json, taskmap_select)."""
@@ -446,5 +453,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "GPQA-Diamond", "RULER-16K"], "fig_taskmap", fixed=4); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "Winogrande", "RULER-16K"], "fig_taskmap", fixed=4, ours_n=(1, 2)); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e(); tab_repro()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

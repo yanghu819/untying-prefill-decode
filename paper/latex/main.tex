@@ -42,9 +42,9 @@ parallel, decoding runs again for every generated token. We untie them. A small 
 frozen looped model, lets it prefill with $m$ loops and decode with $n$, for all 16 pairs up to four loops, from a single
 stored prompt KV cache. The resulting map has a clear shape: decode cheaply, prefill deeply. On Ouro-2.6B with one
 decode loop, prefilling with four loops raises the average over 11 benchmarks from 44.2 to 56.4 (49.8 for native 1/1
-distilled on the same data), and prefilling with two to four loops is best on 14 of 15 settings; with two decode loops
-the adapter comes within 3.8 points of native 4/4. On Ouro-2.6B-Thinking, prefill 4 / decode 2 stays within two points of native 4/4 on six
-of eight benchmarks and answers in $0.59\times$ the time. Looped decision models follow the same rule from both sides:
+distilled on the same data), and prefilling with two to four loops is best on 14 of 15 settings. On Ouro-2.6B-Thinking,
+prefill 4 / decode 2 matches the average accuracy of native 4/4 over eight benchmarks at $3.2\times$ its decode
+throughput, and answers in $0.59\times$ the time at batch 1. Looped decision models follow the same rule from both sides:
 more prefill than decision loops helps on 12 of 13 pairs, and fewer hurts on all 13. Loops are best spent where they
 are paid once.
 \end{abstract}
@@ -56,8 +56,9 @@ are paid once.
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
 \caption{\textbf{Decode cheaply, prefill deeply.} Ouro-2.6B, accuracy (\%) against the number of decode loops $n$.
 Grey: the native model, which runs $n$ loops for both prefill and decode ($n/n$). Red: one loop adapter that prefills
-with four loops and decodes with $n$. With few decode loops, four prefill loops recover much of the accuracy of the
-deeper native model. All 15 settings and every $(m,n)$ cell: Appendix~\ref{app:taskmap}.}
+with four loops and decodes with one or two, where decoding is cheaper than native 4/4. With few decode loops, four
+prefill loops recover much of the accuracy of the deeper native model. All 15 settings and every $(m,n)$ cell,
+including three and four decode loops: Appendix~\ref{app:taskmap}.}
 \label{fig:grid}
 \end{figure*}
 
@@ -109,7 +110,8 @@ on all 13, by up to 13 points, with the same direction in each of four training 
 Our contributions are: (i) the observation that prefill loops and decode loops buy different things, measured on the
 full $m\times n$ map of two looped language models and of looped decision models; (ii) a loop adapter that unties them
 on existing checkpoints with one exact prompt KV cache, storing $b(\ell+n\,t)$ bytes of KV instead of $b\,n(\ell+t)$;
-and (iii) end-to-end measured savings at batch 1. Code, per-item results and a script that recomputes every statistic
+and (iii) measured savings: native-4/4 accuracy at $3.2\times$ the decode throughput, and $0.59\times$ the answer
+time at batch 1. Code, per-item results and a script that recomputes every statistic
 are released.
 
 
@@ -489,8 +491,26 @@ ARC-Challenge (25-shot, 1,172), HellaSwag (10-shot, 10,042), Winogrande (5-shot,
 match, 1,319); MATH-500 with the 4-shot Minerva prompt, scored on the final answer (the last \verb|\boxed{}|, else the Minerva
 closing sentence) with math-verify (the Ouro models' own 5-shot prompt and scorer are not released); HumanEval+ and MBPP+ with evalplus as it runs for a tokenizer with a chat template (the problem
 in evalplus's chat prompt, greedy, 768 new tokens, sanitized code, plus tests). With this protocol native Ouro-2.6B 4/4
-scores within one point of the published numbers on MMLU, MMLU-Pro, BBH and ARC-Challenge and within 1.2 to 3.1 points on
-HumanEval(+) and MBPP(+). GPQA-Diamond (0-shot), IFEval (prompt-level strict), RULER (13 tasks $\times$ 40 rows per length)
+scores within one point of the published numbers on MMLU, MMLU-Pro, BBH, ARC-Challenge and HellaSwag and within 1.2 to 3.1 points on
+HumanEval(+) and MBPP(+) (Table~\ref{tab:repro}). Two scores differ for a documented reason: GSM8K strict matching
+requires the exemplars' ``The answer is'' sentence and gives 69.4, while flexible extraction of the last number gives
+86.7, bracketing the published 81.6; and MATH-500 with the public 4-shot Minerva prompt gives 53.6 against 90.9 with
+Ouro's unreleased 5-shot prompt and scorer. Every configuration in this paper is scored the same way, so these
+choices shift all rows together.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+benchmark & ours & reported & items \\
+\midrule
+\csname @@input\endcsname ../figs/tab_repro.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Reproducing the native model.} Ouro-2.6B 4/4 under our evaluation and as reported by
+\citet[Table~8]{ouro}; MMLU-Pro and BBH here on the full runs of the native model.}
+\label{tab:repro}
+\end{table} GPQA-Diamond (0-shot), IFEval (prompt-level strict), RULER (13 tasks $\times$ 40 rows per length)
 and HELMET (RAG, synthetic recall, re-ranking and ICL; 1,108 rows) are prepared and scored by our own scripts. Thinking
 models answer GSM8K and MATH-500 zero-shot in their chat template, answers in \verb|\boxed{}| scored with math-verify,
 with budgets of 4,096 and 8,192 tokens, greedily rather than with the sampling and model-judged scoring of their original
@@ -711,8 +731,9 @@ prefill loops replicates: with the same loop adapter, prefilling with four loops
 ARC-Challenge ($+2.7$), BBH ($+8.8$), HumanEval+ ($+7.9$) and MBPP+ ($+6.3$), with no detectable difference on GSM8K and
 MATH-500. Against native 2/2 the result is weaker than on Ouro-2.6B-Thinking: prefill 4 / decode 2 is significantly better
 on GSM8K ($+3.0$), ARC-Challenge ($+4.3$) and HumanEval+ ($+10.4$), within noise on four benchmarks, and much worse on
-3-shot BBH ($-15.9$), where this
-checkpoint's loop adapter degenerates at both prefill loop counts. Against native 4/4 the gap is larger than on
+3-shot BBH ($-15.9$): on this raw few-shot prompt the adapter often ends its answer right after the exemplars' opening
+``Let's think step by step.'' (734 of 1,620 answers at \rw{4}{2}, 28 for \nat{2}), an early stop that its
+chat-format training data never show; Ouro-2.6B-Thinking does not do this. Against native 4/4 the gap is larger than on
 Ouro-2.6B-Thinking, most of all on BBH ($-37.2$) and HELMET ($-18.3$).
 
 \section{End-to-End Time and Decode Throughput}

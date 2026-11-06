@@ -388,6 +388,7 @@ def keys():
     ks |= {main_key(b, kind, c) for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
+    ks |= {k for _, k, _ in REPRO}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -531,6 +532,12 @@ def appendix_checks():
         got = best(path)
         out[path] = got
         print(f"Appendix     {path:40s} {got[0]} tok/s at batch {got[1]}" + ("" if got == w else f"  !! paper: {w}"))
+    prov = res / "provenance" / "outputs"
+    for run, w in (("T14x-S42-bbh", 734), ("T14x-native2-bbh", 28)):   # answers that stop within 60 characters
+        rows = [json.loads(l) for l in gzip.open(prov / f"{run}.jsonl.gz")]
+        got = sum(len(r["output"]) < 60 for r in rows if r.get("filter") in (None, "get-answer", "strict-match"))
+        out[run + " early stops"] = got
+        print(f"Appendix     {run} answers stopping early: {got}" + ("" if got == w else f"  !! paper: {w}"))
     rec = lambda k: 100 * float(np.mean(list(load(k).values())))
     for label, got, w in (("1.4B-T HELMET recall prefill 4 - 1 (decode 1)",
                            rec("B:T14ne-S41-helmet:helmet#recall") - rec("B:T14ne-S11-helmet:helmet#recall"), -23.5),
@@ -568,6 +575,31 @@ def think_frontier():
     for r in out:
         flag = "" if abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
         print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s']:4d} tok/s{flag}")
+    return out
+
+
+# Appendix B: native Ouro-2.6B 4/4 under our evaluation against the values reported by Ouro (Table 8 of the Ouro paper)
+REPRO = [("MMLU", "L:o26n4-mmlufull:acc", 74.60), ("MMLU-Pro", "L:o26x-native4-mmlupro:exact_match", 55.73),
+         ("BBH", "L:o26x-native4-bbh:exact_match", 80.46), ("ARC-C", "L:o26x-native4-arc:acc_norm", 66.40),
+         ("HellaSwag", "L:o26x-native4-hellaswag:acc_norm", 79.69), ("Winogrande", "L:o26x-native4-winogrande:acc", 75.85),
+         ("GSM8K", f"L:X26-native4-gsmfull:{GF}", 81.58),
+         ("GSM8K (flexible extraction)", "L:X26-native4-gsmfull:exact_match:flexible-extract", None),
+         ("MATH-500", "L:o26x-native4-math:boxed", 90.85),
+         ("HumanEval", "P:o26x-native4-evalplus:humaneval_chat:base", 78.70),
+         ("HumanEval+", "P:o26x-native4-evalplus:humaneval_chat:plus", 70.70),
+         ("MBPP", "P:o26x-native4-evalplus:mbpp_chat:base", 80.40), ("MBPP+", "P:o26x-native4-evalplus:mbpp_chat:plus", 66.60)]
+REPRO_PRINTED = {"GSM8K": 69.4, "GSM8K (flexible extraction)": 86.7, "MATH-500": 53.6}   # quoted in Appendix B text
+
+
+def repro():
+    out = []
+    for bench, key, reported in REPRO:
+        v = load(key)
+        ours = None if v is None else round(100 * float(np.mean(list(v.values()))), 2)
+        out.append(dict(bench=bench, ours=ours, reported=reported, items=0 if v is None else len(v)))
+        want = REPRO_PRINTED.get(bench)
+        flag = "" if want is None or (ours is not None and abs(ours - want) < 0.051) else f"  !! paper: {want}"
+        print(f"Repro        {bench:28s} ours {ours}  Ouro {reported}  n={out[-1]['items']}{flag}")
     return out
 
 
@@ -1099,7 +1131,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
