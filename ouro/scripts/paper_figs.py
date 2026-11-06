@@ -102,7 +102,7 @@ def fig0():
     box(2, 16.0, 18, 4.6, "loop m", fc=LIGHT, ec=OURS)
     arrow(11, 7.4, 11, 9.6); arrow(11, 13.4, 11, 15.6)
     box(24, 15.4, 21, 6.4, "prompt KV cache", fc=LIGHT, ec=OURS, lw=1.0, color=OURS, weight="bold", size=8,
-        sub="last loop, stored once")
+        sub="prefill loop m-n+k")
     box(24, 2.5, 21, 6.2, "answer KV", size=8, sub="of decode loop k")
     arrow(20.4, 18.3, 23.6, 18.3, OURS)
     box(53, 15.6, 15, 4.4, r"query $\times\,\bar c_k$", fc=LIGHT, ec=OURS)

@@ -39,11 +39,12 @@
 Looped language models reuse one block of layers several times per token, and they run the same number of loops when
 they prefill the prompt and when they decode each answer token. The two phases are not alike: prefill runs once and in
 parallel, decoding runs again for every generated token. We untie them. A small \emph{loop adapter}, trained once on a
-frozen looped model, lets it prefill with $m$ loops and decode with $n$, for all 16 pairs up to four loops, from a single
-stored prompt KV cache. The resulting map has a clear shape: decode cheaply, prefill deeply. On Ouro-2.6B with one
-decode loop, prefilling with four loops raises the average over 11 benchmarks from 44.2 to 56.4 (49.8 for native 1/1
-distilled on the same data), and prefilling with two to four loops is best on 14 of 15 settings. On Ouro-2.6B-Thinking,
-prefill 4 / decode 2 matches the average accuracy of native 4/4 over eight benchmarks at $3.2\times$ its decode
+frozen looped model, lets it prefill with $m$ loops and decode with $n$, for all 16 pairs up to four loops; each decode
+loop reads the prompt KV of a matching prefill loop through a learned map, or, to save memory, all read one stored cache.
+The resulting map has a clear shape: decode cheaply, prefill deeply. On Ouro-2.6B with one decode loop, prefilling with
+four loops raises the average over 11 benchmarks from 44.2 to 56.8 (49.8 for native 1/1 distilled on the same data),
+prefilling with two to four loops is best on 14 of 15 settings, and with as many decode as prefill loops the adapter
+matches the native model. On Ouro-2.6B-Thinking, with one stored cache, prefill 4 / decode 2 matches the average accuracy of native 4/4 over eight benchmarks at $3.2\times$ its decode
 throughput, and answers in $0.59\times$ the time at batch 1. Looped decision models follow the same rule from both sides:
 more prefill than decision loops helps on 12 of 13 pairs, and fewer hurts on all 13. Loops are best spent where they
 are paid once.
@@ -65,12 +66,13 @@ and every $(m,n)$ cell: Appendix~\ref{app:taskmap}.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig0_method.pdf}
-\caption{\textbf{The loop adapter.} The frozen model prefills the prompt with $m$ loops and keeps one prompt KV
-cache. Each of the $n$ decode loops reads that cache through its own map: a learned scale on each rotary
-(RoPE) pair of the keys, which can be moved onto the query so the cache is never rewritten, and a value map applied
-after attention. Attention over the prompt and over the generated tokens is computed separately and combined into one
-softmax (joint softmax), as in blockwise (FlashAttention-style) attention. The prompt KV is stored once for every $n$: total
-KV $b(\ell+n\,t)$ instead of $b\,n(\ell+t)$, with $b$ bytes per token and loop and $\ell$, $t$ the prompt and answer length.}
+\caption{\textbf{The loop adapter.} The frozen model prefills the prompt with $m$ loops. Each of the $n$ decode loops
+reads the prompt KV of prefill loop $m-n+k$ (aligned caches) through its own map: a learned scale on each rotary (RoPE)
+pair of the keys, which can be moved onto the query so the cache is never rewritten, and a value map applied after
+attention. Attention over the prompt and over the generated tokens is computed separately and combined into one softmax
+(joint softmax), as in blockwise (FlashAttention-style) attention. With one stored cache instead, every decode loop reads
+loop $m$ and the prompt KV is stored once for every $n$: total KV $b(\ell+n\,t)$ instead of $b\,n(\ell+t)$, with $b$
+bytes per token and loop and $\ell$, $t$ the prompt and answer length.}
 \label{fig:method}
 \end{figure*}
 
@@ -87,7 +89,8 @@ and what do decode loops buy? If the answers differ, the two counts should be ch
 We write \rw{m}{n} for prefilling the prompt with $m$ loops and decoding every answer token with $n$ loops, and
 \nat{n} for the unmodified model, which uses $n$ loops for both. When $m\neq n$, the decode loops must attend to prompt
 KV produced by a different loop than their own. Our \emph{loop adapter} combines LoRA on the frozen model with a learned
-map on the prompt KV for every decode loop (Figure~\ref{fig:method}); one stored prompt cache serves every decode loop.
+map on the prompt KV for every decode loop (Figure~\ref{fig:method}): decode loop $k$ reads prefill loop $m-n+k$
+(aligned caches), or every decode loop reads one stored prompt cache.
 We train one loop adapter and evaluate it at all 16 pairs $(m,n)$ with its parameters fixed.
 
 The resulting map (Figure~\ref{fig:grid}) has a clear shape: decode cheaply, prefill deeply. With one decode loop the
@@ -109,7 +112,8 @@ on all 13, by up to 13 points, with the same direction in each of four training 
 
 Our contributions are: (i) the observation that prefill loops and decode loops buy different things, measured on the
 full $m\times n$ map of two looped language models and of looped decision models; (ii) a loop adapter that unties them
-on existing checkpoints with one exact prompt KV cache, storing $b(\ell+n\,t)$ bytes of KV instead of $b\,n(\ell+t)$;
+on existing checkpoints, with aligned prompt caches that match the native model at equal depth or with one exact
+prompt KV cache that stores $b(\ell+n\,t)$ bytes of KV instead of $b\,n(\ell+t)$;
 and (iii) measured savings: native-4/4 accuracy at $3.2\times$ the decode throughput, and $0.59\times$ the answer
 time at batch 1. Code, per-item results and a script that recomputes every statistic
 are released.
@@ -127,7 +131,7 @@ model for several depth budgets; ELR also finds that keeping only the last loop'
 Parallel Loop Transformer~\citep{plt}, LoopCoder-v2~\citep{loopcoder2} and shared-memory looped
 transformers~\citep{sharedmem} let later loops read the first loop's KV plus a short local window. All run the same
 number of loops for prefill and decode. Ouro~\citep{ouro} reuses the last loop's KV for generated tokens but loses
-more than 10 GSM8K points when prefill does the same; our single prompt cache is instead trained for. FlashLoop~\citep{flashloop}
+more than 10 GSM8K points when prefill does the same; our adapter is trained to read prompt KV across loops. FlashLoop~\citep{flashloop}
 speeds up looped models without training through token-sparse loop updates, sparse attention and KV-residual quantisation.
 
 \paragraph{Adaptive and phase-specific computation.} Halting~\citep{act,pondernet}, token-level early
