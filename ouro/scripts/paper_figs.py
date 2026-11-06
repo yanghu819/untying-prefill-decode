@@ -291,6 +291,30 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None, ours_n=
     save(fig, name)
 
 
+def fig_aligned(panels, name="fig_taskmap", ncols=4):
+    """Figure 1: Ouro-2.6B, native n/n (grey) against the aligned loop adapter at prefill 4 / decode n (red), n = 1..4,
+    each panel on the items all configurations share (paper_numbers.json, aligned_cells)."""
+    T = {r["bench"]: r for r in PN.get("aligned_cells", [])}
+    title = {"BBH 3-shot": "BBH", "MATH-500 4-shot": "MATH-500"}
+    panels = [b for b in panels if b in T and all(T[b].get(f"a4{n}") is not None for n in range(1, 5))]
+    if not panels:
+        return
+    nrows = -(-len(panels) // ncols)
+    H = 1.6 * nrows + 0.3
+    fig, axes = plt.subplots(nrows, ncols, figsize=(6.9, H), squeeze=False)
+    for ax in axes.flat[len(panels):]:
+        ax.axis("off")
+    for ax, b in zip(axes.flat, panels):
+        r = T[b]
+        frontier(ax, [(n, r[f"native{n}"], "") for n in range(1, 5)], [(n, r[f"a4{n}"], "") for n in range(1, 5)],
+                 title.get(b, b))
+        ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
+    fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
+    legend(fig, "loop adapter, prefill 4 / decode n", "", y=1.0)
+    fig.subplots_adjust(wspace=0.32, hspace=0.5, left=0.07, right=0.99, top=1 - 0.38 / H, bottom=0.32 / H)
+    save(fig, name)
+
+
 def tab_select(model="Ouro-2.6B", name="tab_select"):
     """Main table: per benchmark and decode loops n, prefill loops m chosen on one half of the items and scored on the
     other (cross-fitted), minus native n/n on the same items (LaTeX rows from paper_numbers.json, taskmap_select)."""

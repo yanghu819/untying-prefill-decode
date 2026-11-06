@@ -389,6 +389,7 @@ def keys():
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
     ks |= {k for _, k, _ in REPRO}
+    ks |= {main_key(b, "aligned", f"a{m}{n}") for b in MAIN_BENCH for m in range(1, 5) for n in range(1, 5)}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -839,7 +840,8 @@ MAIN_BENCH = ["MMLU", "MMLU-Pro", "BBH 3-shot", "ARC-C", "HellaSwag", "Winogrand
 MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 4/4", "native", 4),
              ("training-free 4/1", "raw", "raw41"), ("training-free 4/2", "raw", "raw42"),
              ("LoRA-distilled 1/1", "dist", 1), ("LoRA-distilled 2/2", "dist", 2),
-             ("loop adapter 4/1", "cell", "S41"), ("loop adapter 4/2", "cell", "S42")]
+             ("loop adapter 4/1", "cell", "S41"), ("loop adapter 4/2", "cell", "S42"),
+             ("aligned adapter 4/1", "aligned", "a41"), ("aligned adapter 4/2", "aligned", "a42")]
 
 
 # quoted in the abstract, introduction and Section 4.2
@@ -860,7 +862,7 @@ def main_key(bench, kind, c):
         return nkey.format(n=c)
     if kind == "dist":
         return dkey.format(d=DISTILLED[c])
-    if kind == "raw":   # raw runs are named X26-raw<m><n>-<task> for every benchmark
+    if kind in ("raw", "aligned"):   # raw and aligned runs are named X26-<cell>-<task> for every benchmark
         return key.replace("o26x-{c}", "X26-{c}").format(c=c)
     return key.format(c=c)
 
@@ -944,6 +946,28 @@ def ablations():
                 print(f"Ablation     {c} {label}: {avg}  !! paper: {want}")
             print(f"Ablation     {c} {label:14s} " + ("  --" if avg is None else f"avg {avg:5.1f}")
                   + "  " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals))
+    return out
+
+
+def aligned_cells():
+    """The aligned loop adapter's map (arm a, X26-a-universal): every cell a<m><n> and native n/n per main-table benchmark,
+    each mean over the items all available configurations share; None for cells not yet evaluated."""
+    out = []
+    for bench in MAIN_BENCH:
+        keys = {f"a{m}{n}": main_key(bench, "aligned", f"a{m}{n}") for n in range(1, 5) for m in range(1, 5)}
+        keys.update({f"native{n}": main_key(bench, "native", n) for n in range(1, 5)})
+        sets = {c: load(k) for c, k in keys.items()}
+        # a cell counts once it covers the items all other main-table rows share
+        ref = set.intersection(*(set(load(main_key(bench, kind, c)) or {}) for _, kind, c in MAIN_ROWS
+                                 if kind != "aligned"))
+        sets = {c: (v if v and ref <= set(v) else None) for c, v in sets.items()}
+        have = [v for v in sets.values() if v]
+        ids = set.intersection(*(set(v) for v in have))
+        row = dict(bench=bench, items=len(ids))
+        row.update({c: (round(100 * float(np.mean([v[i] for i in ids])), 3) if v else None) for c, v in sets.items()})
+        out.append(row)
+        print(f"Aligned map  {bench:16s} " + " ".join(f"{c}={row[c]:.1f}" for c in ("a41", "a42", "a43", "a44",
+              "native1", "native2", "native3", "native4") if row[c] is not None))
     return out
 
 
@@ -1131,7 +1155,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

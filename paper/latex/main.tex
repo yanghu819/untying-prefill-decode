@@ -117,7 +117,12 @@ are released.
 
 \section{Related Work}
 
-\paragraph{Looped and elastic depth.} Accordion~\citep{accordion} and Elastic Latent Recurrence~\citep{elr} train one
+\paragraph{Looped and elastic depth.} Weight-tied depth recurrence goes back to Universal Transformers and
+cross-layer sharing~\citep{ut,albert}; looped transformers are computationally universal~\citep{giannou2023looped},
+can simulate chain-of-thought steps in latent space~\citep{saunshi2025latent} and generalise in length with adaptive
+step counts~\citep{loopedlengthgen}, a vertical counterpart of continuous latent reasoning~\citep{coconut}. Relaxed
+Recursive Transformers~\citep{relaxedrecursive} convert pretrained models into looped ones with per-loop LoRA;
+Mixture-of-Recursions~\citep{mor} and Huginn~\citep{huginn} route or scale the loop count. Accordion~\citep{accordion} and Elastic Latent Recurrence~\citep{elr} train one
 model for several depth budgets; ELR also finds that keeping only the last loop's KV retains most of the gain. The
 Parallel Loop Transformer~\citep{plt}, LoopCoder-v2~\citep{loopcoder2} and shared-memory looped
 transformers~\citep{sharedmem} let later loops read the first loop's KV plus a short local window. All run the same
@@ -125,13 +130,19 @@ number of loops for prefill and decode. Ouro~\citep{ouro} reuses the last loop's
 more than 10 GSM8K points when prefill does the same; our single prompt cache is instead trained for. FlashLoop~\citep{flashloop}
 speeds up looped models without training through token-sparse loop updates, sparse attention and KV-residual quantisation.
 
-\paragraph{Phase-specific computation.} Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
+\paragraph{Adaptive and phase-specific computation.} Halting~\citep{act,pondernet}, token-level early
+exit~\citep{deebert,depthadaptive,calm,layerskip} and token routing~\citep{mod} spend depth per token; CALM must also
+fill the skipped layers' KV for later tokens, the problem our maps solve per loop. Speculative
+decoding~\citep{specdecoding,specsampling} pairs a cheap drafter with a deep verifier, and pause tokens add compute at
+prompt positions~\citep{pausetokens}. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
 decode and studies caches shared across depths; Position-Aware
 Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill} decodes with a width-pruned model;
 Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop} and SPEED~\citep{speed}
 prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
-State-Prediction Separation~\citep{sps} add decode-side computation. We instead vary prefill and decode loops
-independently within one loop adapter and measure what each buys.
+State-Prediction Separation~\citep{sps} add decode-side computation. Serving systems already run the two phases on
+separate hardware~\citep{distserve,splitwise,mooncake} or co-schedule them~\citep{sarathiserve,vllm}; untying the
+loops lets each phase also use its own depth. We vary prefill and decode loops independently within one loop adapter
+and measure what each buys.
 
 \paragraph{Asymmetric KV producers and consumers.} YOCO~\citep{yoco} has a self-decoder produce one global KV cache that
 a cross-decoder reads; YOCO-U~\citep{yocou} loops the self-decoder, keeping KV storage independent of the loop count
@@ -139,7 +150,9 @@ while every token still runs the loops; KITE~\citep{kite} expands a checkpoint i
 only the KV-producing tower. These architectures are built for the split; we adapt an existing looped model after
 pretraining and choose the prefill loops $m$ and decode loops $n$ per request.
 
-\paragraph{Sharing and transferring state.} MELT~\citep{melt} post-trains Ouro to keep one gated KV cache per layer shared by
+\paragraph{Sharing and transferring state.} KV is shared across heads~\citep{mqa,gqa} and
+layers~\citep{cla,mlkv}, and evicted or compressed per token~\citep{streamingllm,h2o,snapkv,pyramidkv}, which is
+orthogonal to and composable with our per-loop reads. MELT~\citep{melt} post-trains Ouro to keep one gated KV cache per layer shared by
 all loops plus a small per-loop sliding-window cache, decoupling memory from depth; it does not separate prefill from decode loops or map which depths a task needs.
 Looped Latent Attention~\citep{lla} compresses KV across loops;
 BeNice!~\citep{benice} and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c},
@@ -230,7 +243,7 @@ on MMLU (significantly lower at 1/1 and 2/2, by 0.4 and 0.3) has no significantl
 loses 11.4 points on RULER-16K at prefill 4 / decode 1 (Appendix~\ref{sec:ablation}): in these ablations the maps matter
 for long prompts.
 
-\paragraph{Training.} We minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
+\paragraph{Training.} We distil~\citep{kd}: we minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
 native 4/4 model as teacher, on 48M answer tokens of reasoning traces, instruction data, long-context data and web text.
 One $(m,n)$ pair is sampled per micro-batch, so one set of parameters (63M, 2.4\% of Ouro-2.6B) serves all 16 pairs.
 Details are in Appendix~\ref{app:training}.
@@ -262,7 +275,7 @@ $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH
 \end{tabular}
 \caption{\textbf{Main results.} Ouro-2.6B, accuracy (\%) grouped by the number of decode loops $n$; ``4/$n$'' prefills
 with four loops. Native: the unmodified model. Training-free: the frozen model prefills with four loops and decodes
-from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ distilled with LoRA on the same data,
+from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ distilled~\citep{kd} with LoRA~\citep{lora} on the same data,
 teacher (native 4/4) and tokens as the loop adapter. Bold: best in each group. Each column uses the items all rows
 share; MMLU and GSM8K are the full sets. Loop adapter: training seed 0; over three training seeds the average is
 $56.4\pm0.0$ at 4/1 and $66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
