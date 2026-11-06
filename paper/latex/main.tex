@@ -182,10 +182,10 @@ We describe the loop adapter for Ouro; SenseNova-Loop-9B uses a lighter variant 
 
 def prefill(prompt, m):                   # prompt minus its last token
     h = embed(prompt)
-    for _ in range(m):
+    for j in range(m):
         for l in range(L):
-            h, K[l], V[l] = blocks[l](h)  # last loop's K, V kept
-    return K, V                           # one prompt KV cache
+            h, K[j][l], V[j][l] = blocks[l](h)  # every loop's K, V
+    return K, V
 
 def attend(q, K, V, kv_answer, c, W):     # layer l, decode loop k
     qc = complex_mul(q, c.conj())         # key scale moved to the query
@@ -195,12 +195,13 @@ def attend(q, K, V, kv_answer, c, W):     # layer l, decode loop k
     g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
     return g * o_p + (1 - g) * o_a
 
-def decode(token, K, V, n): # last prompt token, then answer
+def decode(token, K, V, m, n): # last prompt token, then answer
     h = embed(token)
     for k in range(n):
+        j = max(m - n + k, 0)     # aligned; one cache: j = m - 1
         for l in range(L):
             h = blocks[l](h, attn=lambda q, kv: attend(
-                    q, K[l], V[l], kv, c[k][l], W[k][l]))
+                    q, K[j][l], V[j][l], kv, c[k][l], W[k][l]))
     return lm_head(h)
 \end{lstlisting}
 \end{minipage}\hfill
@@ -218,8 +219,9 @@ kl = kl_div(s.log_softmax(-1),
 loss = kl[answer].sum() / (answer.sum() - len(x))
 \end{lstlisting}
 \end{minipage}
-\caption{\textbf{The loop adapter in PyTorch-style pseudocode.} Only the last of the $m$ prefill loops' prompt KV is kept for
-decoding; every decode loop reads it through its own key scale (applied to the query) and value map
+\caption{\textbf{The loop adapter in PyTorch-style pseudocode.} Decode loop $k$ reads prefill loop $m-n+k$ (loops
+counted from zero here; the one-cache variant keeps only the last prefill loop) through its own key scale (applied to
+the query) and value map
 (applied to the attention output), and the prompt and answer attention are combined exactly through their log-sum-exp.}
 \label{alg:adapter}
 \end{figure*}
@@ -330,11 +332,10 @@ $m\times n$ map is in Appendix~\ref{app:taskmap}.
 \label{sec:select}
 
 Table~\ref{tab:main} compares fixed configurations at the same number of decode loops. With one decode loop,
-prefilling with four loops raises the average from 44.2 (native 1/1) to 56.4, above native 1/1 distilled on the same
-data (49.8); MMLU rises from 51.5 to 66.6, BBH from 30.9 to 51.7 and HumanEval+ from 44.5 to 64.6. With two decode
-loops the loop adapter at 4/2 averages 66.4, against 63.0 for native 2/2 and 65.3 for its distilled version, within 3.8
-points of native 4/4 with half the decode loops. Aligned caches raise the adapter's averages to 56.8 and 67.2, within 3.0 points of native 4/4 at two decode
-loops; the single cache, at a fraction of the prompt memory, gives up under one point. The adapter is what makes untying work: without it the same untied
+prefilling with four loops raises the average from 44.2 (native 1/1) to 56.8, above native 1/1 distilled on the same
+data (49.8); with two, the aligned adapter averages 67.2, against 63.0 for native 2/2 and 65.3 for its distilled
+version, within 3.0 points of native 4/4 with half the decode loops. The one-cache variant, at a fraction of the prompt
+memory, gives up under one point (56.4 and 66.4). The adapter is what makes untying work: without it the same untied
 configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, deeper
 prefill alone adds up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
 prefill count per benchmark on held-out items instead of fixing it at four beats native 1/1 significantly on 14 of 15

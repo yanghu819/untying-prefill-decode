@@ -176,15 +176,14 @@ def fig_pareto():
                 nat.append((_tput(f"native{d}st"), c["b"], d)); ours.append((_tput(f"S4{d}sb"), c["a"], d))
             elif key.startswith("GSM8K Thinking"):  # prefill 4 / decode 4 not evaluated on the Thinking model
                 nat.append((_tput(f"native{d}st"), _M[f"GSM8K full think-native{d}"], d))
-        for pts, col, lab, mk in ((nat, NAT_LIGHT, "native n/n", "o"), (ours, OURS, "prefill 4 / decode n", "o")):
+        for pts, col, lab, mk in ((nat, NAT_LIGHT, "native n/n", "o"), (ours, OURS, "prefill 4 / decode n", "s")):
             x, y = [p[0] for p in pts], [p[1] for p in pts]
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
-            ax.scatter(x, y, s=18, color=col, zorder=3, label=lab)
-            for xi, yi, d in pts:
-                dx = {4: -4, 3: 4}.get(d, 0) if col == OURS else 0   # prefill 4 / decode 3 and 4 sit close: split labels
-                ax.annotate(f"{d}", (xi, yi), xytext=(dx, 5 if col == OURS else -9), textcoords="offset points",
-                            fontsize=6.8, color=OURS if col == OURS else NAT,
-                            ha="center" if dx == 0 else ("right" if dx < 0 else "left"))
+            ax.scatter(x, y, s=18, color=col, marker=mk, zorder=3, label=lab)
+            for xi, yi, d in pts:   # label the n = 1 end only; each line runs from n = 1 (right) to n = 4 (left)
+                if d == 1:
+                    ax.annotate(f"n={d}", (xi, yi), xytext=(0, 6 if col == OURS else -11), textcoords="offset points",
+                                fontsize=8, color=OURS if col == OURS else NAT, ha="center")
         ys = [p[1] for p in nat + ours]
         lo, hi = min(ys), max(ys); pad = 0.12 * (hi - lo)
         ax.set_ylim(lo - pad, hi + pad)   # room for the point labels above and below
@@ -195,8 +194,7 @@ def fig_pareto():
     axes[0].set_ylabel("accuracy (%)")
     fig.supxlabel("8K decode microbenchmark throughput (tokens/s, log scale)", fontsize=8.5, y=-0.04)
     h, l = axes[0].get_legend_handles_labels()
-    h.append(plt.Line2D([], [], ls="none")); l.append("point labels: decode loops n")
-    fig.legend(h, l, loc="upper center", ncol=3, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.2)
+    fig.legend(h, l, loc="upper center", ncol=2, fontsize=8, bbox_to_anchor=(0.5, 1.1), handlelength=1.2)
     fig.subplots_adjust(wspace=0.32)
     save(fig, "fig_pareto")
 
