@@ -325,10 +325,20 @@ TEXT = {"noanswer": lambda r: float("\\boxed" not in r["resps"][0][0]),         
         "steps": lambda r: float(len([x for x in r["doc"]["answer"].split("####")[0].split("\n") if x.strip()]))}
 
 
+STAMP = {}   # run -> timestamp of the newest sample file read (written by export(), compared when merging boxes)
+
+
 def read_lm(runs, run, metric, filt=None):
+    """Item scores of one lm-evaluation-harness run. A run evaluated more than once keeps one sample file per task per
+    evaluation (file names end in the start time); only the newest is read, as in provenance.py."""
+    newest = {}
+    for f in sorted(glob.glob(f"{runs}/lmeval/out/{run}/*/samples_*.jsonl")):
+        task, stamp = os.path.basename(f)[:-len(".jsonl")].split("samples_")[1].rsplit("_", 1)
+        newest[task] = max(newest.get(task, (stamp, f)), (stamp, f))
+    if newest:
+        STAMP[run] = max(stamp for stamp, _ in newest.values())
     out = {}
-    for f in glob.glob(f"{runs}/lmeval/out/{run}/*/samples_*.jsonl"):
-        task = os.path.basename(f).split("samples_")[1].rsplit("_", 1)[0]
+    for task, (_, f) in newest.items():
         for line in open(f):
             r = json.loads(line)
             if filt and r.get("filter") != filt:
@@ -390,10 +400,10 @@ def export(runs, out_dir):
             missing.append(k)
             continue
         p = out_dir / fname(k)
-        if p.exists() and len(json.load(gzip.open(p))["scores"]) >= len(s):
+        if p.exists() and len(json.load(gzip.open(p))["scores"]) > len(s):
             continue
         with gzip.open(p, "wt") as f:
-            json.dump(dict(key=k, n=len(s), scores=s), f, separators=(",", ":"))
+            json.dump(dict(key=k, n=len(s), scores=s, stamp=STAMP.get(k.split(":")[1])), f, separators=(",", ":"))
     print(f"exported {len(keys()) - len(missing)} item sets to {out_dir}; missing here: {len(missing)}")
     for k in missing:
         print("  missing", k)
@@ -502,6 +512,37 @@ def throughput_context():
     return {str(k): v for k, v in out.items()}
 
 
+def appendix_checks():
+    """Numbers quoted in the appendices that no other check covers: decode throughput (best tokens/s over batch sizes)
+    of the per-design and long-answer runs, HELMET recall, and the 1.4B MATH-500 final-answer score."""
+    res = Path(__file__).resolve().parents[1] / "results"
+    def best(path):
+        rows = [r for r in json.loads((res / path).read_text()) if "tokens_per_s" in r]
+        b = max(rows, key=lambda r: r["tokens_per_s"])
+        return round(b["tokens_per_s"]), b["batch"]
+    want = {"throughput-long/native2st-1024.json": (586, 64), "throughput-long/native4st-1024.json": (219, 32),
+            "throughput-long/S42sb-1024.json": (570, 128), "throughput-long/S44sb-1024.json": (253, 64),
+            "throughput-long/O42sb-1024.json": (759, 128), "throughput-long/O44sb-1024.json": (476, 192),
+            "throughput-sb4/native1.json": (500, 64), "throughput-sb4/native2.json": (245, 40),
+            "throughput-sb4/native4.json": (105, 20), "throughput-sb4/native1sc.json": (267, 80),
+            "throughput-sb4/native2sc.json": (130, 40), "throughput-sb4/native4sc.json": (57, 16)}
+    out = {}
+    for path, w in want.items():
+        got = best(path)
+        out[path] = got
+        print(f"Appendix     {path:40s} {got[0]} tok/s at batch {got[1]}" + ("" if got == w else f"  !! paper: {w}"))
+    rec = lambda k: 100 * float(np.mean(list(load(k).values())))
+    for label, got, w in (("1.4B-T HELMET recall prefill 4 - 1 (decode 1)",
+                           rec("B:T14ne-S41-helmet:helmet#recall") - rec("B:T14ne-S11-helmet:helmet#recall"), -23.5),
+                          ("2.6B-T HELMET recall 4/2", rec("B:T26ne-S42-helmet:helmet#recall"), 58.8),
+                          ("2.6B-T HELMET recall native 4/4", rec("B:T26ne-native4-helmet:helmet#recall"), 100.0),
+                          ("1.4B native 4/4 MATH-500 final answer", rec("L:O14x-native4-math:boxed"), 70.6),
+                          ("1.4B native 4/4 MATH-500 strict match", rec("L:O14x-native4-math:exact_match"), 4.4)):
+        out[label] = round(got, 2)
+        print(f"Appendix     {label:46s} {got:6.1f}" + ("" if abs(got - w) < 0.051 else f"  !! paper: {w}"))
+    return out
+
+
 def e2e_table():
     rows = []
     for group, model, task, conds in (
@@ -521,6 +562,13 @@ def e2e_table():
                                  tokens=round(float(np.mean([x["new_tokens"] for x in r.values()]))),
                                  ms_per_token=round(float(np.mean([x["ms_per_token"] for x in r.values()])), 1)))
                 print(f"Table 3      {group:11s} {model} {task} {c:10s} acc {rows[-1]['acc']:5.1f}  s/answer {rows[-1]['seconds']:6.1f}  n={len(r)}")
+    # Table 9 caption: pooled decode time per generated token, prefill 4 / decode 2 against native 2/2 (192 problems)
+    A, B = e2e("think", "gsm", "S42sb"), e2e("think", "gsm", "native2st")
+    ids = sorted(set(A) & set(B))
+    per_tok = round(sum(A[i]["gen_s"] for i in ids) / sum(A[i]["new_tokens"] for i in ids)
+                    / (sum(B[i]["gen_s"] for i in ids) / sum(B[i]["new_tokens"] for i in ids)), 2)
+    print(f"Table 9      decode time per token, 4/2 vs native 2/2: {per_tok}x (n={len(ids)})"
+          + ("" if per_tok == 1.38 else "  !! paper: 1.38"))
     ratios = []
     for label, model, task, a, b, printed in RATIOS:
         A, B = e2e(model, task, a), e2e(model, task, b)
@@ -1023,7 +1071,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

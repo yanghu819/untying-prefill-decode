@@ -59,7 +59,7 @@ def commands(runs, run):
     """Queue log lines that launched this run (grid_worker.sh writes 'HH:MM:SS gpuN: <command>')."""
     pat = re.compile(rf"(?<![\w-]){re.escape(run)}(?![\w-])")
     out = []
-    for f in sorted(glob.glob(f"{runs}/*_q.txt.log")):
+    for f in sorted(set(glob.glob(f"{runs}/*_q.txt.log")) | set(glob.glob(f"{runs}/jobs*.log"))):
         out += [f"{Path(f).name}: {l.strip()}" for l in open(f, errors="replace") if pat.search(l)]
     return out
 

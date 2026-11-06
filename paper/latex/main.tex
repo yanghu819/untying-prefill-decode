@@ -722,28 +722,17 @@ Ouro-2.6B-Thinking, most of all on BBH ($-37.2$) and HELMET ($-18.3$).
 \begin{table}[h]
 \centering\small
 \setlength\tabcolsep{3pt}
-\begin{tabular}{@{}llrr@{}}
+\begin{tabular}{@{}llrrrr@{}}
 \toprule
-task / model & config & acc.\ (\%) & time (s) \\
+task / model & config & acc.\ (\%) & s / answer & tokens & $N$ \\
 \midrule
-\multirow{4}{*}{\shortstack[l]{GSM8K\\Ouro-2.6B-T}} & \nat{2} & 95.3 & 70.0 \\
- & \nat{4} & 93.8 & 114.2 \\
- & \rw{2}{2} & 96.9 & 62.6 \\
- & \rw{4}{2} & 96.9 & 63.1 \\
-\midrule
-\multirow{3}{*}{\shortstack[l]{MATH-500\\Ouro-2.6B-T}} & \nat{2} & 85.0 & 243 \\
- & \nat{4} & 82.5 & 469 \\
- & \rw{4}{2} & 85.0 & 298 \\
-\midrule
-\multirow{3}{*}{\shortstack[l]{GSM8K\\SenseNova}} & \nat{2} & 98.4 & 48.0 \\
- & \rw{1}{1} & 96.9 & 28.4 \\
- & \rw{2}{1} & 95.3 & 30.6 \\
+\csname @@input\endcsname ../figs/tab_e2e.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; Ouro-2.6B-Thinking and
-SenseNova-Loop-9B; 64 GSM8K and 40 MATH-500 problems, budgets 4,096 and 8,192 tokens). On GSM8K, prefill 4 / decode 2 spends $1.27\times$ the decode time per generated token of \nat{2} at batch 1 (pooled time over pooled
-tokens), but its answers are
-shorter.}
+\caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; mean seconds and generated tokens per
+answer over $N$ problems; GSM8K: the 192 problems of Figure~\ref{fig:frontier}, consecutive IDs 1--192; budgets 4,096
+and 8,192 tokens). On GSM8K, prefill 4 / decode 2 spends $1.38\times$ the decode time per generated token of \nat{2}
+(pooled time over pooled tokens), but its answers are shorter.}
 \label{tab:e2e}
 \end{table}
 

@@ -402,6 +402,28 @@ def tab_ablation():
     (OUT / "tab_ablation.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_e2e():
+    """Table 9: end-to-end time per answer at batch 1 (paper_numbers.json, e2e; the 192 GSM8K problems of Figure 6)."""
+    E = {(r["model"], r["task"], r["cond"]): r for r in PN["e2e"] if r["group"] == "main"}
+    blocks = [(r"\shortstack[l]{GSM8K\\Ouro-2.6B-T}", "think", "gsm",
+               [("native2st", r"\nat{2}"), ("native4st", r"\nat{4}"), ("Df2st", "distilled 2/2"), ("S22sb", r"\rw{2}{2}"),
+                ("S42sb", r"\rw{4}{2}")]),
+              (r"\shortstack[l]{MATH-500\\Ouro-2.6B-T}", "think", "math",
+               [("native2st", r"\nat{2}"), ("native4st", r"\nat{4}"), ("S42sb", r"\rw{4}{2}")]),
+              (r"\shortstack[l]{GSM8K\\SenseNova}", "sn", "gsm",
+               [("native2", r"\nat{2}"), ("C11", r"\rw{1}{1}"), ("C21", r"\rw{2}{1}")])]
+    lines = []
+    for i, (name, model, task, conds) in enumerate(blocks):
+        if i:
+            lines.append(r"\midrule")
+        for j, (c, label) in enumerate(conds):
+            r = E[(model, task, c)]
+            head = rf"\multirow{{{len(conds)}}}{{*}}{{{name}}}" if j == 0 else ""
+            sec = f"{r['seconds']:.0f}" if r["seconds"] >= 100 else f"{r['seconds']:.1f}"
+            lines.append(f"{head} & {label} & {r['acc']:.1f} & {sec} & {r['tokens']} & {r['n']} \\\\")
+    (OUT / "tab_e2e.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_select_distilled():
     """Appendix table: the cross-fitted prefill count (Table 1) against the LoRA-distilled native n/n at n = 1, 2, 3;
     selection-aware intervals (LaTeX rows from paper_numbers.json, taskmap_select)."""
@@ -419,5 +441,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "GPQA-Diamond", "RULER-16K"], "fig_taskmap", fixed=4); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_taskmap(["MMLU", "MMLU-Pro", "BBH", "ARC-C", "GSM8K", "HumanEval+", "GPQA-Diamond", "RULER-16K"], "fig_taskmap", fixed=4); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

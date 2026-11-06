@@ -3,7 +3,8 @@
 # prefills with m loops, keeps only the last loop's prompt KV and decodes with n loops reading it, without a loop
 # adapter (Ouro's last-step KV reuse applied to the prompt). Same tasks and settings as the task map, so each cell pairs
 # with the adapter's S<m><n> on the same items (the main table uses raw41 / raw42). Two jobs per GPU.
-# env CELLS: a subset of the conditions; env ONLY: one task (e.g. ONLY=hellaswag) to add to an earlier queue.
+# env CELLS: a subset of the conditions (also ali<m><n>: decode loop k reads prefill loop m-n+k, evaluate_adapter.RawRunner);
+# env ONLY: one task (e.g. ONLY=hellaswag) to add to an earlier queue.
 # env SIZE=14: Ouro-1.4B (run names O14x-raw<m><n>-<task>, RULER O14-raw<m><n>f; GSM8K and MMLU subsets as its task map).
 M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/raw_q.txt; cd $R
 if [ "${SIZE:-26}" = 14 ]; then MP=$M/model-1.4b; P=O14x; B=O14; GSM="gsm --limit 400"; MMLU="mmlu --limit 20"

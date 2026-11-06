@@ -40,19 +40,32 @@ class RawRunner:
     the last loop's KV; the same frozen model then runs every remaining token (incl. the last prompt token, so it also
     emits the first answer token) with d loops, each loop reading that single KV bank."""
 
-    def __init__(self, model, p, d):
-        self.model, self.p, self.d = model, p, d
-        self.variant, self.variant_name = Variant(p, d, "last_loop"), f"raw{p}{d}"
+    def __init__(self, model, p, d, aligned=False):
+        self.model, self.p, self.d, self.aligned = model, p, d, aligned
+        self.variant = Variant(p, d, "aligned" if aligned else "last_loop")
+        self.variant_name = f"{'ali' if aligned else 'raw'}{p}{d}"
         self.time_adapter, self.last_adapter_seconds = False, 0.0
+
+    def decode_cache(self, cache, depth):
+        """Last-loop mode: every decode loop reads prefill loop p. Aligned mode (ali<p><d>, p >= d): decode loop k
+        reads prefill loop p - d + k through its own per-loop cache, so ali<n><n> is exactly native n/n."""
+        from ouro.model import LastLoopCache, NativeCache
+        if not self.aligned:
+            return LastLoopCache(cache, depth, self.p, self.d)
+        out = NativeCache(self.d * depth)
+        lo = (self.p - self.d) * depth
+        out.key_cache, out.value_cache = cache.key_cache[lo:lo + self.d * depth], cache.value_cache[lo:lo + self.d * depth]
+        out._seen_tokens = cache.get_seq_length(lo)
+        return out
 
     @torch.inference_mode()
     def prefill(self, input_ids, attention_mask=None):
         from ouro.adapter_model import backbone
-        from ouro.model import LastLoopCache, NativeCache
+        from ouro.model import NativeCache
         depth = self.model.config.num_hidden_layers
         _, cache = backbone(self.model, input_ids[:, :-1], NativeCache(self.p * depth), self.p,
                             None if attention_mask is None else attention_mask[:, :-1])
-        hidden, cache = backbone(self.model, input_ids[:, -1:], LastLoopCache(cache, depth, self.p, self.d), self.d, attention_mask)
+        hidden, cache = backbone(self.model, input_ids[:, -1:], self.decode_cache(cache, depth), self.d, attention_mask)
         return self.model.lm_head(hidden[:, -1:])[:, 0], cache
 
     @torch.inference_mode()
@@ -63,9 +76,9 @@ class RawRunner:
 
 
 def make_runner(args):
-    if len(args.condition) == 5 and args.condition.startswith("raw"):  # untrained read p / write d
+    if len(args.condition) == 5 and args.condition[:3] in ("raw", "ali"):  # untrained read p / write d
         model = load_model(args.model_path, device="cuda", dtype=torch.bfloat16, attention="sdpa")
-        return RawRunner(model, int(args.condition[3]), int(args.condition[4]))
+        return RawRunner(model, int(args.condition[3]), int(args.condition[4]), aligned=args.condition.startswith("ali"))
     if (len(args.condition) == 3 and args.condition[0] in "XNQ") or (len(args.condition) == 2 and args.condition[0] in "ZY"):
         # loop-map connector checkpoint X<p><d>, trained KV-sharing baseline Z<d>
         from ouro.adapter_model import load_adapter_runner
