@@ -459,6 +459,27 @@ def tab_repro():
     (OUT / "tab_repro.tex").write_text("\n".join(rows) + "\n")
 
 
+def tab_aligned():
+    """Appendix: the aligned loop adapter's full map on the main-table benchmarks, every prefill m / decode n cell and
+    native n/n (each column on the items all available configurations share); bold: the best m at each n
+    (paper_numbers.json, aligned_cells)."""
+    rows = PN.get("aligned_cells", [])
+    short = {"MATH-500 4-shot": "MATH", "BBH 3-shot": "BBH", "MMLU-Pro": "MMLU-P", "HumanEval+": "HE+",
+             "HellaSwag": "HSwag", "Winogrande": "Wino", "RULER-16K": "R-16K"}
+    lines = [" & " + " & ".join(short.get(r["bench"], r["bench"]) for r in rows) + r" \\", r"\midrule"]
+    f = lambda x, b: "--" if x is None else (rf"\textbf{{{x:.1f}}}" if b else f"{x:.1f}")
+    for n in range(1, 5):
+        best = {r["bench"]: max((r[f"a{m}{n}"] for m in range(1, 5) if r[f"a{m}{n}"] is not None), default=None)
+                for r in rows}
+        lines.append(rf"native {n}/{n} & " + " & ".join(f(r[f"native{n}"], False) for r in rows) + r" \\")
+        for m in range(1, 5):
+            cells = [f(r[f"a{m}{n}"], r[f"a{m}{n}"] is not None and r[f"a{m}{n}"] == best[r["bench"]]) for r in rows]
+            lines.append(rf"{m}\,/\,{n} & " + " & ".join(cells) + r" \\")
+        if n < 4:
+            lines.append(r"\midrule")
+    (OUT / "tab_aligned.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_select_distilled():
     """Appendix table: the cross-fitted prefill count (Table 1) against the LoRA-distilled native n/n at n = 1, 2, 3;
     selection-aware intervals (LaTeX rows from paper_numbers.json, taskmap_select)."""
@@ -476,5 +497,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e(); tab_repro()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

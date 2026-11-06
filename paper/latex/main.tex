@@ -144,7 +144,8 @@ Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{ove
 Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop} and SPEED~\citep{speed}
 prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
 State-Prediction Separation~\citep{sps} add decode-side computation. Serving systems already run the two phases on
-separate hardware~\citep{distserve,splitwise,mooncake} or co-schedule them~\citep{sarathiserve,vllm}; untying the
+separate hardware~\citep{distserve,splitwise,mooncake} or co-schedule them~\citep{sarathiserve} over paged KV
+memory~\citep{vllm}; untying the
 loops lets each phase also use its own depth. We vary prefill and decode loops independently within one loop adapter
 and measure what each buys.
 
@@ -325,8 +326,7 @@ decodes with fewer loops; the loop adapter, prefilling with four loops, keeps mu
 from 51.5 to 67.1, BBH from 30.9 to 52.7 and HumanEval+ from 44.5 to 65.2. Decode loops matter most for multi-step math
 (native GSM8K: 32.4 at one loop, 69.4 at four), and the adapter adds 13 points there at one decode loop. With three or
 four decode loops the adapter tracks the native model, also on long-context retrieval (RULER-16K at 4/3: 79.8 against
-78.7 for \nat{3}). The full
-$m\times n$ map is in Appendix~\ref{app:taskmap}.
+78.7 for \nat{3}).
 
 \subsection{Main results}
 \label{sec:select}
@@ -442,8 +442,7 @@ many loops and the decision can then stop early.
 
 A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, reading
 aligned prompt caches or, to save memory, one stored cache. The two phases want different depths: with few decode loops, more prefill loops recover much of
-the accuracy of a deeper model, so a looped model can decode cheaply and prefill deeply, answering at native-4/4-level
-accuracy in $0.59\times$ the time. Looped decision models show the same rule from both sides. Untying the loops turns a
+a deeper model's accuracy, so a looped model can decode cheaply and prefill deeply. Looped decision models show the same rule from both sides. Untying the loops turns a
 fixed depth into two knobs, one paid once per prompt and one paid per token.
 
 \section*{Limitations}
@@ -454,7 +453,7 @@ depth; with three or four decode loops the aligned adapter matches but does not 
 cache falls behind it on long-context retrieval, and a native model distilled on the same data closes part of the gap
 at two (Section~\ref{sec:select}). On few-shot MATH-500 one prefill loop is best
 (Appendix~\ref{app:eval}). More prefill loops raise the time to first token; time is measured at batch 1 on one GPU
-type. Thinking models are decoded greedily rather than sampled. All models are 1.4B--9B and benchmarks are English.
+type. Thinking models are decoded greedily; models are 1.4B--9B and benchmarks English.
 
 \FloatBarrier
 \bibliography{references}
@@ -617,7 +616,7 @@ intervals that repeat the choice of $m$ in every resample ($^*$: interval exclud
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap_full.pdf}
-\caption{\textbf{All 15 task-map settings.} Ouro-2.6B, one loop adapter; grey:
+\caption{\textbf{All 15 task-map settings.} Ouro-2.6B, one loop adapter with one cache; grey:
 native $n/n$; red: the best prefill count $m$ at each $n$ (labels; the smallest maximizing $m$), chosen on these items;
 the held-out choice is Table~\ref{tab:select}. Every cell: Table~\ref{tab:taskmapcells}.}
 \label{fig:taskmapfull}
@@ -631,12 +630,27 @@ the held-out choice is Table~\ref{tab:select}. Every cell: Table~\ref{tab:taskma
 \csname @@input\endcsname ../figs/tab_taskmap.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Every cell of the task map.} Ouro-2.6B, accuracy (\%) of native $n/n$ and of one loop adapter at
-prefill $m$ / decode $n$ ($m\,/\,n$), each column on the items that all 20 configurations share; bold: the best $m$ at each $n$, chosen on these items (Figures~\ref{fig:grid}
-and~\ref{fig:taskmapfull}; the held-out choice is Table~\ref{tab:select}). MMLU and GSM8K are the full sets (14,042 and
+\caption{\textbf{Every cell of the task map, one cache.} Ouro-2.6B, accuracy (\%) of native $n/n$ and of one loop adapter
+with one cache at prefill $m$ / decode $n$ ($m\,/\,n$), each column on the items that all 20 configurations share; bold:
+the best $m$ at each $n$, chosen on these items (Figure~\ref{fig:taskmapfull}; the held-out choice is
+Table~\ref{tab:select}). MMLU and GSM8K are the full sets (14,042 and
 1,319 items); RULER uses 520 items per length. MMLU-P: MMLU-Pro, HEval: HumanEval, IFEv: IFEval, R-$k$K:
 RULER at $k$K tokens.}
 \label{tab:taskmapcells}
+\end{table*}
+
+\begin{table*}[t]
+\centering\scriptsize
+\setlength\tabcolsep{2.4pt}
+\begin{tabular}{@{}l*{11}{c}@{}}
+\toprule
+\csname @@input\endcsname ../figs/tab_aligned.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Every cell of the task map, aligned caches.} Ouro-2.6B, accuracy (\%) of native $n/n$ and of the
+aligned loop adapter at prefill $m$ / decode $n$ on the benchmarks of Table~\ref{tab:main}, each column on the items all
+available configurations share (Figure~\ref{fig:grid}); bold: the best $m$ at each $n$; --: not evaluated yet.}
+\label{tab:alignedcells}
 \end{table*}
 
 \begin{table*}[t]
