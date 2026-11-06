@@ -164,12 +164,13 @@ class AlignedRunner(AdapterRunner):
     @torch.inference_mode()
     def prefill(self, input_ids, attention_mask=None):
         p, d = self.system.prefill_steps, self.system.decode_steps
-        _, prefix, _ = self.system.writer_prefix(input_ids, p)
-        n = input_ids.shape[1] - 1
+        # prefill all but the last prompt token, so each bank is used whole (no slice copies); the banks of the loops
+        # no decode loop reads are freed with the prefix
+        _, prefix, _ = self.system.writer_prefix(input_ids[:, :-1], p)
         depth = len(prefix.raw_keys)
         src = [min(max(p - d + k, 0), p - 1) for k in range(d)]
-        keys = [prefix.all_keys[j * depth + l][:, :, :n].contiguous() for j in src for l in range(depth)]
-        values = [prefix.all_values[j * depth + l][:, :, :n].contiguous() for j in src for l in range(depth)]
+        keys = [prefix.all_keys[j * depth + l] for j in src for l in range(depth)]
+        values = [prefix.all_values[j * depth + l] for j in src for l in range(depth)]
         del prefix
         return self.decode(input_ids[:, -1:], SingleBankCache(keys, values, d, per_loop=True))
 
