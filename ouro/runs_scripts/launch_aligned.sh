@@ -4,10 +4,12 @@
 # the native model's KV. Trained as X26-S-universal (mix-data-48m, 48M tokens, global batch 24, all 16 (m, n) pairs);
 # then the main-table benchmarks and RULER 4K/8K/16K at a41..a44 and the diagonal a22, a33, two jobs per GPU.
 # env CELLS: other cells of the map (default a41 a42 a43 a44 a22 a33).
+# env SEED=2: another training seed (X26-a-seed2, run names X26as2-<cell>-...), cells a41 a42 by default.
 # env TOK=12: a shorter run (X26-a-12m, run names X26a12-<cell>-...) to compare with the arm-S ablation X26-S-12m.
 GPUS=$1; PORT=$2; T=${TOK:-48}; M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/aligned_q.txt; cd $R
-if [ $T = 48 ]; then N=X26-a-universal; P=X26; else N=X26-a-${T}m; P=X26a$T; fi
-[ -f $R/$N/TRAIN_DONE ] || DATA=$M/mix-data-48m ./run_mix2.sh $N a $GPUS $PORT ${T}000000 --micro 1 || exit 1
+if [ -n "$SEED" ]; then N=X26-a-seed$SEED; P=X26as$SEED; CELLS=${CELLS:-a41 a42}; EXTRA="--seed $SEED"
+elif [ $T = 48 ]; then N=X26-a-universal; P=X26; else N=X26-a-${T}m; P=X26a$T; fi
+[ -f $R/$N/TRAIN_DONE ] || DATA=$M/mix-data-48m ./run_mix2.sh $N a $GPUS $PORT ${T}000000 --micro 1 $EXTRA || exit 1
 CK=$(ls $R/$N/checkpoint-*.pt | tail -1)
 for c in ${CELLS:-a41 a42 a43 a44 a22 a33}; do
   MA="path=$M/model-2.6b,condition=$c,checkpoint=$CK,max_length=16384"
