@@ -309,7 +309,7 @@ intervals and the same adapter at prefill 2 / decode 2.}
 \centering
 \includegraphics[width=0.94\textwidth]{../figs/fig_pareto.pdf}
 \caption{\textbf{At one or two decode loops, the adapter is more accurate than native $n/n$.} Native $n/n$ (grey) and the loop adapter with prefill 4 / decode
-$n$ (red), $n=1$--4 (labels; Thinking adapter $n=1$--3). Throughput is a separate decode microbenchmark: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
+$n$ (red, one cache); each line runs from $n=1$ (labelled, right) to $n=4$ (left; Thinking adapter $n=1$--3). Throughput is a separate decode microbenchmark: best decode tokens/s over batch sizes at 8K context on one B300 (same for the
 base and Thinking models, which share the architecture); one stored prompt KV cache admits larger batches as $n$ grows.
 Ouro-2.6B on MMLU (20 questions per subject), RULER-16K (260 items) and GSM8K (400 problems); Ouro-2.6B-Thinking on all
 1,319 GSM8K problems.}
