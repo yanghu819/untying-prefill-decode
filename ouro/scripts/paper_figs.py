@@ -206,7 +206,7 @@ def fig_lev():
     def series(label, which):
         return {r["depth"]: r[which] for r in L if r["label"] == label}
     models = [m for m in ("Lev-1.4B", "Lev-2.6B", "Lev-3B") if series(f"{m} untied vs same-training control", "a")]
-    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 2.0), squeeze=False)
+    fig, axes = plt.subplots(1, len(models), figsize=(6.9, 1.75), squeeze=False)
     for ax, m in zip(axes[0], models):
         top = 2 if m == "Lev-3B" else 4
         by_m = {top: series(f"{m} untied vs same-training control", "a")}

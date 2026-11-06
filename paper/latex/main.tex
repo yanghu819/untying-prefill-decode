@@ -378,9 +378,6 @@ batches; prefill 4
 / decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}. The gain grows with the prompt: against \nat{4} it is $2.4\times$ at a 2K-token prompt and $3.3\times$ at
 15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$).
 
-\subsection{End-to-end time}
-\label{sec:fast}
-
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
@@ -391,6 +388,19 @@ prefill/decode loops. The adapter decodes at the same cost at 2/2 and 4/2, and d
 that of native 2/2; the four prefill loops add 4.0 points.}
 \label{fig:frontier}
 \end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
+\caption{\textbf{Decision models gain when the context gets more loops than the decision.} Lev decision models~\citep{lev}, LevBench
+development set (3,270 questions), accuracy against decision loops $n$. Grey: native $n/n$ continued with the same data
+and updates. Red: the best of the models trained to prefill with $m$ loops (labels); seed 0. All pairs: Table~\ref{tab:lev}.}
+\label{fig:lev}
+\end{figure*}
+
+\subsection{End-to-end time}
+\label{sec:fast}
+
 
 We time whole answers at batch 1, prefill included (Table~\ref{tab:e2e} in Appendix~\ref{app:serve}).
 On Ouro-2.6B-Thinking, prefill 4 / decode 2 answers 192 timed GSM8K problems in $0.59\times$\ci{0.52}{0.66} the time of
@@ -409,16 +419,6 @@ GSM8K problems and takes $0.59\times$\ci{0.52}{0.68} the time per answer, close 
 \subsection{Looped decision models: both directions}
 \label{sec:lev}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{Decision models gain when the context gets more loops than the decision.} Lev looped decision
-models~\citep{lev} on LevBench's development set (3,270 answerable questions of the \texttt{rights-subset-v1} export), accuracy against the number of
-decision loops $n$. Grey: native $n/n$, continued with the same data and updates as ours. Red: the best (on these items) of the
-models trained, one per $m$, to prefill the context with $m$ loops (labels give $m$); seed 0. Every $(m,n)$ pair, both directions:
-Table~\ref{tab:lev}.}
-\label{fig:lev}
-\end{figure*}
 
 Untying is not specific to generation. Lev~\citep{lev} turns looped language models into decision models: they read a
 long context, then score the options of a question with a learned head after every loop, without generating text. We
@@ -439,8 +439,8 @@ many loops and the decision can then stop early.
 
 \section{Conclusion}
 
-A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, with one
-stored prompt KV cache. The two phases want different depths: with few decode loops, more prefill loops recover much of
+A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, reading
+aligned prompt caches or, to save memory, one stored cache. The two phases want different depths: with few decode loops, more prefill loops recover much of
 the accuracy of a deeper model, so a looped model can decode cheaply and prefill deeply, answering at native-4/4-level
 accuracy in $0.59\times$ the time. Looped decision models show the same rule from both sides. Untying the loops turns a
 fixed depth into two knobs, one paid once per prompt and one paid per token.
