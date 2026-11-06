@@ -22,6 +22,16 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-07 (aligned loop adapter)
+- Diagnosis: on its own diagonal the one-cache adapter fell below native on retrieval (RULER-16K 4/4: 73.4 vs 81.3; Lev-3B
+  m=n: -1.8 in all seeds). Unrestricted per-loop maps did not help, training-free aligned caches helped GSM8K but not
+  retrieval. Aligned adapter (arm a, ouro/runs_scripts/launch_aligned.sh): decode loop k reads prefill loop m-n+k.
+- X26-a-universal (48M): main-table avg 56.8 (4/1) and 67.2 (4/2) vs one cache 56.4 / 66.4; matches native at 4/4
+  (MMLU 74.5/74.6, GSM8K 68.8/69.4); RULER-16K 4/3 79.8 vs native 78.7. Paper now leads with aligned caches; one cache
+  is the memory-saving variant (Thinking figures still one cache until T26-a lands).
+- Running: O14-a evals, T26-a training (then eval_think_aligned.sh), aligned seeds 2/3 (wait_gpus.sh), full aligned map,
+  verify_q.sh re-runs. Related work: 30 verified citations added.
+
 ### 2026-11-06 (mainstream restructure)
 - Main text follows comparable papers: Table 1 (fixed 4/n configurations vs native, training-free untying and
   same-data LoRA distillation; avg 44.2 / 26.6 / 49.8 / 56.4 at n=1, 63.0 / 30.9 / 65.3 / 66.4 at n=2, native 4/4

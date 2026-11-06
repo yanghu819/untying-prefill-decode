@@ -31,14 +31,15 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
     a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
     `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
-- **Next, in order of value** (user 2026-11-05/06: converge on the highlights for a top venue; mainstream experiments
-  and figures only; no niche experiments, no defensive Codex review loops; every result traceable):
-  Done: main table (native / training-free / same-data LoRA / adapter at 4/1 and 4/2, three seeds), fixed-prefill
-  Figure 1, ablations (6M-48M tokens, LoRA rank), smaller model at equal answer time, throughput at 2K/8K/15K
-  prompts, provenance for every run (`ouro/results/provenance`, refresh with `provenance.py` when results change).
-  1. Optional, only if the user asks: early-exit baseline (Ouro's gate computes all loops; needs a real early-exit
-     runner), rank 4/64 at 48M tokens.
-  2. ARR checklist TODOs with the user -> anonymized code mirror -> final polish. The user submits to arXiv.
+- **Next, in order of value** (user 2026-11-05..07: mainstream experiments only, every GPU busy (use spare cards for
+  re-verification), keep auditing the paper, more verified citations, detailed fact checks, better figures):
+  1. Aligned loop adapter (arm a) is the main method. Pending: T26-a evals (eval_think_aligned.sh) -> switch Figures 4/6
+     and the Thinking text to aligned; O14-a evals -> Ouro-1.4B appendix; seeds 2/3 -> Table 1 mean +- s.d.; full
+     aligned map -> appendix map; throughput of the aligned layout (n prompt caches) -> state the memory/speed trade.
+  2. Story checks still open: Lev with aligned caches (Lev-3B diagonal), 1.4B BBH early stop under arm a, MATH 4-shot
+     exemplar effect under arm a.
+  3. verify_q.sh re-runs: compare item-level with the originals (write ouro/scripts/verify_compare.py).
+  4. ARR checklist TODOs with the user -> anonymized code mirror -> final polish. The user submits to arXiv.
 
 ## 2. The user's rules (all still in force)
 
