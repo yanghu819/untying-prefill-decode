@@ -376,7 +376,8 @@ Against measured decode throughput (Figure~\ref{fig:pareto}), prefill 4 / decode
 at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
 batches; prefill 4
 / decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}. The gain grows with the prompt: against \nat{4} it is $2.4\times$ at a 2K-token prompt and $3.3\times$ at
-15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$).
+15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$). With aligned caches the adapter decodes at about the cost of \nat{n}, storing the prompt $n$ times
+(314 against 342 tokens/s at $n=2$, still $2.5\times$ \nat{4}); the single cache buys the remaining speed.
 
 \begin{figure}[t]
 \centering

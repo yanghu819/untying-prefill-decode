@@ -522,7 +522,8 @@ def appendix_checks():
         rows = [r for r in json.loads((res / path).read_text()) if "tokens_per_s" in r]
         b = max(rows, key=lambda r: r["tokens_per_s"])
         return round(b["tokens_per_s"]), b["batch"]
-    want = {"throughput-long/native2st-1024.json": (586, 64), "throughput-long/native4st-1024.json": (219, 32),
+    want = {"throughput-sb4/a42sb.json": (314, 32), "throughput-sb4/a41sb.json": (783, 64),
+            "throughput-long/native2st-1024.json": (586, 64), "throughput-long/native4st-1024.json": (219, 32),
             "throughput-long/S42sb-1024.json": (570, 128), "throughput-long/S44sb-1024.json": (253, 64),
             "throughput-long/O42sb-1024.json": (759, 128), "throughput-long/O44sb-1024.json": (476, 192),
             "throughput-sb4/native1.json": (500, 64), "throughput-sb4/native2.json": (245, 40),
