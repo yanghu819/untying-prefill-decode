@@ -2,11 +2,18 @@
 # launch_aligned_more.sh WHICH GPUS PORT: the aligned loop adapter (arm a) on the other checkpoints, trained exactly as
 # their arm-S adapters. WHICH = 14: Ouro-1.4B (O14-a-universal, mix-data-48m), then its task-map benchmarks and RULER at
 # a41..a44 (run names O14x-<cell>-<task>, RULER O14-<cell>f). WHICH = think: Ouro-2.6B-Thinking (T26-a-universal,
-# mix-think-48m); its evaluation is queued separately (the Thinking benchmarks of Figure 4).
+# mix-think-48m); its evaluation is queued separately (the Thinking benchmarks of Figure 4). WHICH = think14:
+# Ouro-1.4B-Thinking (T14-a-universal), then its eight benchmarks.
 W=$1; GPUS=$2; PORT=$3; M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/aligned_q.txt; cd $R
 if [ $W = think ]; then
   [ -f $R/T26-a-universal/TRAIN_DONE ] || MODEL=$M/model-2.6b-think DATA=$M/mix-think-48m ./run_mix2.sh T26-a-universal a $GPUS $PORT 48000000 --micro 1
   exit $?
+fi
+if [ $W = think14 ]; then   # Ouro-1.4B-Thinking: same data choice as launch_think14.sh, then eval_think_aligned.sh 14
+  MOD=$M/model-1.4b-think; DATA=$M/mix-think-48m
+  cmp -s $MOD/tokenizer.json $M/model-2.6b-think/tokenizer.json 2>/dev/null || DATA=$M/mix-think14-48m
+  [ -f $R/T14-a-universal/TRAIN_DONE ] || MODEL=$MOD DATA=$DATA ./run_mix2.sh T14-a-universal a $GPUS $PORT 48000000 --micro 1 || exit 1
+  exec ./eval_think_aligned.sh $GPUS 14
 fi
 [ -f $R/O14-a-universal/TRAIN_DONE ] || MODEL=$M/model-1.4b DATA=$M/mix-data-48m ./run_mix2.sh O14-a-universal a $GPUS $PORT 48000000 --micro 1 || exit 1
 CK=$R/O14-a-universal/checkpoint-48m.pt
