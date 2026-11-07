@@ -589,7 +589,8 @@ def think_frontier():
             per[c].append(agg(v, ids))
     out = [dict(config=c, avg=round(float(np.mean(per[c])), 2), scores=[round(x, 2) for x in per[c]],
                 tokens_per_s=confs[c][2]) for c in confs]
-    want = {"native 2/2": 65.4, "native 4/4": 71.5, "distilled 2/2": 67.5, "adapter 2/2": 67.0, "adapter 4/2": 70.1}
+    want = {"native 2/2": 65.4, "native 4/4": 71.5, "distilled 2/2": 67.5, "adapter 2/2": 67.0, "adapter 4/2": 70.1,
+            "aligned 2/2": 66.4, "aligned 4/2": 70.6}
     for r in out:
         flag = "" if r["config"] not in want or abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
         print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s'] or 0:4d} tok/s  " +
