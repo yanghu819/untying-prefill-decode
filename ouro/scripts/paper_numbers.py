@@ -946,22 +946,12 @@ def replay_score(item, text, target):
     return float(pred == ref)
 
 
-def eval_key(cond, task):
-    """Item-score key of the full evaluation of a timed condition (for the scorer check), or None."""
-    bench = {"gsmfull": "GSM8K", "math": "MATH-500 4-shot", "bbh": "BBH 3-shot", "mmlupro": "MMLU-Pro"}[task]
-    if m := re.fullmatch(r"native(\d)st", cond):
-        return main_key(bench, "native", int(m[1]))
-    if (m := re.fullmatch(r"a(\d+)x(\d+)sb", cond)) and int(m[1]) <= 4:
-        return main_key(bench, "aligned", f"a{m[1]}{m[2]}")
-    return None
-
-
 def time_breakdown():
     """Section 3 / Figures 1-3: per-request prefill (to the first token), decode and total time with input / output
-    tokens (batch 1, one idle B300) for every timed condition and task, and the quality of the same replayed answers.
-    Prefill share = summed prefill time / summed total time. Check: on requests whose replayed text equals the
-    evaluated one, replay_score must equal the evaluation's item score."""
-    out, bad = [], 0
+    tokens (batch 1, one idle B300) for every timed condition and task, and the quality of the same replayed answers
+    (replay_score; checked against the evaluation's scores by check_replay_scorer.py). Prefill share = summed prefill
+    time / summed total time."""
+    out = []
     for f in sorted(E2E.glob("base-*.jsonl")):
         cond, task = f.stem[len("base-"):].rsplit("-", 1)
         if task not in TIME_TASKS:
@@ -970,16 +960,12 @@ def time_breakdown():
         if not rows:
             continue
         sc = [replay_score(r["id"], r["text"], r["target"]) for r in rows]
-        ref = load(eval_key(cond, task)) if eval_key(cond, task) else None
-        if ref:
-            bad += sum(1 for r, x in zip(rows, sc) if r["match"] and r["id"] in ref and ref[r["id"]] != x)
         pre, tot = sum(r["prefill_s"] for r in rows), sum(r["total_s"] for r in rows)
         out.append(dict(model="Ouro-2.6B", task=TIME_TASKS[task], cond=cond, n=len(rows), quality=round(100 * float(np.mean(sc)), 2),
                         prefill_s=round(pre / len(rows), 4), decode_s=round(sum(r["decode_s"] for r in rows) / len(rows), 3),
                         total_s=round(tot / len(rows), 3), prefill_share=round(100 * pre / tot, 3),
                         in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
-                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1),
-                        match=round(float(np.mean([r["match"] for r in rows])), 3)))
+                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
     for f in sorted(E2E.glob("think-*-helmet.jsonl")):
         rows = [json.loads(l) for l in open(f)][1:]   # the first record is the warm-up
         if not rows:
@@ -989,13 +975,11 @@ def time_breakdown():
                         quality=round(100 * float(np.mean([r["correct"] for r in rows])), 2), prefill_s=round(pre / len(rows), 4),
                         decode_s=round(sum(r["gen_s"] for r in rows) / len(rows), 3), total_s=round(tot / len(rows), 3),
                         prefill_share=round(100 * pre / tot, 3), in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
-                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1), match=None))
+                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
     for r in out:
         print(f"Time         {r['model'][-8:]:8s} {r['task']:9s} {r['cond']:11s} n={r['n']:4d} q={r['quality']:5.1f} "
               f"prefill {r['prefill_s']:7.3f}s decode {r['decode_s']:7.2f}s share {r['prefill_share']:6.2f}% "
-              f"in {r['in_tokens']:6.0f} out {r['out_tokens']:6.0f}" + ("" if r["match"] is None else f" match {r['match']:.2f}"))
-    if bad:
-        print(f"Time         replay scorer disagrees with the evaluation on {bad} matching requests  !! scorer")
+              f"in {r['in_tokens']:6.0f} out {r['out_tokens']:6.0f}")
     return out
 
 

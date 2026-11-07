@@ -1,8 +1,9 @@
 """Per-request time of real lm-evaluation-harness requests (batch 1, one idle GPU): replay the exact prompts and stop
 rules of a finished evaluation run and time prefill (time to first token: the p-loop prefill and the first-token
 logits), decode (every further token) and the whole answer, with the input and output lengths. The replayed answer is
-compared with the evaluated one and stored with the target, so paper_numbers.py scores the replayed answer itself with
-the evaluation's rule (item id `<task>/<doc_id>`): quality and time then come from the same requests.
+stored with the target and paper_numbers.py scores it with the evaluation's rule (item id `<task>/<doc_id>`;
+check_replay_scorer.py), so quality and time come from the same requests. `match`: the answer equals the one in
+SAMPLES_DIR (meaningful only when SAMPLES_DIR is the same condition's evaluation).
 
 usage: time_requests.py MODEL_DIR COND CKPT|- SAMPLES_DIR N OUT.jsonl
   COND: native<d>st | D<d>st (LoRA-distilled, merged; with CKPT) | S<p><d>sb | a<p><d>sb | a<p>x<d>sb (bench_throughput.make)
