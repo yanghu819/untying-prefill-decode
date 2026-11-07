@@ -47,10 +47,11 @@ inference time goes on tasks with short and long inputs and outputs. We then ada
 with $n$ loops can read the prompt states of any prefill depth $m$, and vary $m$ from 1 to 16 with one and two decode
 loops. On Ouro-2.6B with one decode loop, four prefill loops instead of one raise accuracy on four chain-of-thought
 benchmarks from \tbd{X} to \tbd{Y} for \tbd{Z\%} more time per request, measured on the same requests and the same
-weights. Over 11 benchmarks the average rises from 47.2 to 56.8, and the gain \tbd{levels off at $m\approx W$}. For the
-same measured time, the adapted model is more accurate than the original model and than models distilled to the same
-decode depth on the same data, also when they have as many trainable parameters. Deeper prefill does not help few-shot
-MATH or exact retrieval.
+weights. Over 11 benchmarks the average rises from 47.2 to 56.8, and the gain \tbd{levels off at $m\approx W$}. At the
+same number of decode loops, the adapted model is more accurate than the original model and than models distilled to
+that decode depth on the same data. On long chain-of-thought answers, however, deeper prefill often makes the answers
+longer, and spending the same time on a second decode loop buys more accuracy \tbd{numbers}. Deeper prefill does not
+help few-shot MATH or exact retrieval.
 \end{abstract}
 
 \section{Introduction}
@@ -158,14 +159,22 @@ marked.}
 \end{figure}
 
 Deep prefill is worth it only if no other use of the same time does better. Table~\ref{tab:main} compares
-configurations at the same number of decode loops, which on these tasks fixes the cost of each generated token (the
-answer length may still change); Figure~\ref{fig:budget} places them on measured time. At one decode loop, Ours 4/1 averages 56.8 against 44.2 for
-Original 1/1 and 49.8 for Distilled 1/1 trained on the same data and tokens (\tbd{rank 80: R}); at two decode loops 67.2
-against 63.0 and 65.3. The same holds without the training items that overlap the benchmarks (Appendix~\ref{app:training}).
-Spending the time on decode loops instead, Original 4/4 reaches 70.2 at \tbd{T}$\times$ the time of Ours 4/2.
-\tbd{Fixed-prefill-4 LoRA-only: F.} On Ouro-2.6B-Thinking, Ours 4/2 comes within 0.9 points of Original 4/4 over eight
-benchmarks (70.6 against 71.5) at $2.5\times$ its decode throughput, 3.1 points above Distilled 2/2; with one stored
-cache it is within 1.4 points at $3.2\times$ and answers GSM8K in $0.59\times$ the time (Appendix~\ref{app:extended}).
+configurations with the same number of decode loops. At one decode loop, Ours 4/1 averages 56.8 over 11 benchmarks,
+against 44.2 for Original 1/1 and 49.8 for Distilled 1/1 trained on the same data and tokens (\tbd{rank 80: R}); at two
+decode loops it averages 67.2, against 63.0 and 65.3. The same holds without the training items that overlap the
+benchmarks (Appendix~\ref{app:training}). \tbd{Fixed-prefill-4 LoRA-only: F.}
+
+Equal decode loops do not mean equal time. Figure~\ref{fig:budget} places the configurations on the measured time of
+the same requests of the four chain-of-thought tasks. Two effects make deep prefill more expensive than its prefill
+share suggests: the adapter's per-loop operations make each decode step slower at batch 1 (Limitations), and deeper
+prefill lengthens some answers (on MMLU-Pro from 118 to 386 tokens between $m=1$ and $m=4$). On these tasks, Ours 4/1
+is more accurate than Original and Distilled 1/1 but less accurate than Original 2/2 at about the same time, and Ours
+$m/2$ is on par with Distilled 2/2 at more time \tbd{exact numbers, batch 32}. Where answers are short relative to the
+prompt, the balance changes \tbd{HELMET, same requests: Ours 4/2 vs Original 2/2, 4/4 and Distilled 2/2, accuracy and
+time}. Against the deeper original model, the shallow decoder saves time: on Ouro-2.6B-Thinking, Ours 4/2 comes within
+0.9 points of Original 4/4 over eight benchmarks (70.6 against 71.5) at $2.5\times$ its decode throughput, 3.1 points
+above Distilled 2/2; with one stored cache it is within 1.4 points at $3.2\times$ and answers GSM8K in $0.59\times$ the
+time (Appendix~\ref{app:extended}).
 
 \begin{table*}[t]
 \centering\small
@@ -233,10 +242,12 @@ one looped model; an extended discussion is in Appendix~\ref{app:related}.
 
 \section{Conclusion}
 
-When answers are long and prompts short, a looped model spends nearly all its time decoding. There, reading the
-prompt with more loops than the decoder uses buys accuracy for a small share of the time, up to the depth where the
-gain saturates, and beats distilling the model to the same shallow decoder; with long prompts and short answers it
-does not pay. Untying the loops turns one depth into two knobs: one paid once per prompt, one per token.
+A looped model spends almost all of its generation time decoding, so reading the prompt with more loops than the
+decoder uses adds little direct cost. With a loop adapter, deeper prefill raises accuracy at a fixed number of decode
+loops, up to about three or four prefill loops, and by more than distilling the model to that decode depth. Measured
+end to end, the gain is not free: deeper prefill can lengthen chain-of-thought answers, and on such tasks a second
+decode loop buys more accuracy per second. Deeper prefill pays off most when the prompt carries the difficulty and the
+answer is short \tbd{confirm with HELMET timing}.
 
 \section*{Limitations}
 \label{sec:limits}
