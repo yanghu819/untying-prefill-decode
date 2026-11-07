@@ -233,7 +233,9 @@ does not pay. Untying the loops turns one depth into two knobs: one paid once pe
 \label{sec:limits}
 
 Time is measured at batch 1 on one GPU type; at large batch sizes decode is cheaper per token and the prefill share
-grows. The prefill depth is chosen per benchmark, not routed per prompt. Deeper prefill hurts few-shot MATH-500 and
+grows. Our decoder adds small per-loop operations (the key and value maps, a second attention call) that cost
+\tbd{20--55\%} more time per token than the original model at the same decode loops at batch 1; all times we report
+include them. The prefill depth is chosen per benchmark, not routed per prompt. Deeper prefill hurts few-shot MATH-500 and
 exact retrieval. Models are 2.6B with four native loops (1.4B, a 9B hybrid and decision models in the appendix);
 benchmarks are English.
 
