@@ -110,8 +110,9 @@ token) and decode, batch 1, one B300; labels: share of prefill and mean input / 
 
 Figure~\ref{fig:time} splits the time of a request into prefill and decode. On chain-of-thought tasks the output is
 long and the input short: on Ouro-2.6B-Thinking, GSM8K answers average 100 input and about 900 output tokens and
-prefill is 0.2--0.3\% of the time; on MATH-500 (3,000--3,500 output tokens) it is 0.1\%. On the base model
-\tbd{GSM8K / MATH / BBH / MMLU-Pro: prefill share P\%}. Long prompts with short answers are the opposite case: on
+prefill is 0.2--0.3\% of the time; on MATH-500 (3,000--3,500 output tokens) it is 0.1\%. On the base model, whose
+few-shot prompts are longer (300--1,400 tokens) and answers shorter (100--700 tokens), prefill is 0.5--2.8\% of the
+time per request at Original 1/1 and 2/2, lowest on MATH-500 and highest on MMLU-Pro \tbd{Ours 1/1, 1/2}. Long prompts with short answers are the opposite case: on
 HELMET (about 7,500 input and under 20 output tokens) prefill is \tbd{Q\%} of the time. Since prefill cost grows about
 linearly with its loops, a prefill share $p$ at one loop becomes about $m\,p$ at $m$ loops; tasks with small $p$ leave
 room for deep prefill, tasks with long prompts and short answers do not. The per-request distributions are in
