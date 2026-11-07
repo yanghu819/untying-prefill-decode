@@ -33,6 +33,11 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   3. Same-budget controls: rank-80 LoRA-distilled 1/1 and 2/2 (`RANK=80 launch_x26_distill.sh`, 62.9M parameters vs
      the adapter's 63.3M), fixed-prefill-4 LoRA-only (`launch_variant.sh fixed4`, identity maps), training-free aligned
      (`CELLS="ali41 ali42" raw_q.sh`).
+- Time breakdown (batch 1, 100 requests per task): prefill is 0.3-2.5% of the request time at Ours 1/1 and 1/2, as
+  at Original n/n. But the adapter's decode step costs more than the original's at the same loops: GSM8K 44 vs 36
+  ms/token at 1/1, 106 vs 69 at 1/2 (BBH 47 vs 30, 97 vs 62). At batch 1 the extra per-loop work (key/value maps, two
+  attention calls merged by log-sum-exp, an aligned bank per decode loop) is launch-bound; at large batch (Table 10)
+  it is hidden. Section 5's comparison on measured time has to include it.
 - Backups: `ouro/scripts/backup_ms.py` runs on both boxes every 2 h (first run at 19:50) and uploads new or changed
   lm-eval / bench outputs (one tar.gz per run), timings, training logs and final checkpoints, plus the prepared data
   (a1, once), to the private ModelScope model repo torushy/untying-prefill-decode-backup (folders a1/, a2/). The token

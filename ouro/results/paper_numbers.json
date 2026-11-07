@@ -19099,6 +19099,97 @@
   {
    "model": "Ouro-2.6B",
    "task": "BBH",
+   "cond": "a1x1sb",
+   "n": 100,
+   "quality": 35.0,
+   "prefill_s": 0.1148,
+   "decode_s": 10.85,
+   "total_s": 10.964,
+   "prefill_share": 1.047,
+   "in_tokens": 1052.2,
+   "out_tokens": 230.2
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "GSM8K",
+   "cond": "a1x1sb",
+   "n": 100,
+   "quality": 31.0,
+   "prefill_s": 0.1077,
+   "decode_s": 4.291,
+   "total_s": 4.398,
+   "prefill_share": 2.448,
+   "in_tokens": 322.2,
+   "out_tokens": 97.2
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "MATH-500",
+   "cond": "a1x1sb",
+   "n": 100,
+   "quality": 37.0,
+   "prefill_s": 0.102,
+   "decode_s": 27.304,
+   "total_s": 27.406,
+   "prefill_share": 0.372,
+   "in_tokens": 778.3,
+   "out_tokens": 633.0
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "MMLU-Pro",
+   "cond": "a1x1sb",
+   "n": 100,
+   "quality": 22.0,
+   "prefill_s": 0.1192,
+   "decode_s": 5.399,
+   "total_s": 5.518,
+   "prefill_share": 2.16,
+   "in_tokens": 1415.9,
+   "out_tokens": 118.5
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "BBH",
+   "cond": "a1x2sb",
+   "n": 66,
+   "quality": 56.06,
+   "prefill_s": 0.1739,
+   "decode_s": 19.903,
+   "total_s": 20.077,
+   "prefill_share": 0.866,
+   "in_tokens": 1028.6,
+   "out_tokens": 206.4
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "GSM8K",
+   "cond": "a1x2sb",
+   "n": 100,
+   "quality": 54.0,
+   "prefill_s": 0.167,
+   "decode_s": 10.899,
+   "total_s": 11.066,
+   "prefill_share": 1.509,
+   "in_tokens": 322.2,
+   "out_tokens": 103.1
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "MATH-500",
+   "cond": "a1x2sb",
+   "n": 39,
+   "quality": 66.67,
+   "prefill_s": 0.1523,
+   "decode_s": 47.959,
+   "total_s": 48.111,
+   "prefill_share": 0.316,
+   "in_tokens": 760.9,
+   "out_tokens": 571.6
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "BBH",
    "cond": "native1st",
    "n": 100,
    "quality": 26.0,
@@ -19204,14 +19295,14 @@
    "model": "Ouro-2.6B",
    "task": "BBH",
    "cond": "native4st",
-   "n": 79,
-   "quality": 83.54,
-   "prefill_s": 0.3143,
-   "decode_s": 29.325,
-   "total_s": 29.639,
-   "prefill_share": 1.06,
-   "in_tokens": 1045.6,
-   "out_tokens": 196.2
+   "n": 100,
+   "quality": 81.0,
+   "prefill_s": 0.315,
+   "decode_s": 30.279,
+   "total_s": 30.594,
+   "prefill_share": 1.03,
+   "in_tokens": 1052.2,
+   "out_tokens": 201.3
   },
   {
    "model": "Ouro-2.6B",
@@ -19230,14 +19321,27 @@
    "model": "Ouro-2.6B",
    "task": "MATH-500",
    "cond": "native4st",
-   "n": 58,
-   "quality": 58.62,
-   "prefill_s": 0.2744,
-   "decode_s": 49.502,
-   "total_s": 49.776,
-   "prefill_share": 0.551,
-   "in_tokens": 793.4,
-   "out_tokens": 378.1
+   "n": 100,
+   "quality": 55.0,
+   "prefill_s": 0.267,
+   "decode_s": 53.762,
+   "total_s": 54.029,
+   "prefill_share": 0.494,
+   "in_tokens": 778.3,
+   "out_tokens": 406.2
+  },
+  {
+   "model": "Ouro-2.6B",
+   "task": "MMLU-Pro",
+   "cond": "native4st",
+   "n": 100,
+   "quality": 55.0,
+   "prefill_s": 0.266,
+   "decode_s": 17.497,
+   "total_s": 17.763,
+   "prefill_share": 1.498,
+   "in_tokens": 1415.9,
+   "out_tokens": 141.6
   }
  ],
  "depth_sweep": [
@@ -19265,7 +19369,8 @@
     "3": 46.19,
     "4": 45.0,
     "5": 47.14,
-    "6": 48.1
+    "6": 48.1,
+    "16": 31.67
    }
   },
   {
@@ -19331,7 +19436,8 @@
     "4": 44.96,
     "5": 44.5,
     "6": 43.06,
-    "8": 38.29
+    "8": 38.29,
+    "16": 31.92
    }
   },
   {
@@ -19382,7 +19488,10 @@
     "2": 60.19,
     "3": 62.41,
     "4": 64.66,
-    "5": 61.4
+    "5": 61.4,
+    "6": 58.71,
+    "8": 58.85,
+    "12": 52.65
    }
   },
   {
@@ -19395,7 +19504,8 @@
     "2": 67.6,
     "3": 72.9,
     "4": 73.47,
-    "5": 72.73
+    "5": 72.73,
+    "6": 71.17
    }
   },
   {
@@ -19408,7 +19518,9 @@
     "2": 47.38,
     "3": 53.81,
     "4": 54.05,
-    "5": 54.05
+    "5": 54.05,
+    "6": 51.9,
+    "8": 51.67
    }
   },
   {
@@ -19422,7 +19534,8 @@
     "3": 73.7,
     "4": 73.46,
     "5": 71.6,
-    "6": 71.3
+    "6": 71.3,
+    "8": 69.81
    }
   },
   {
@@ -19473,7 +19586,8 @@
     "3": 68.69,
     "4": 66.26,
     "5": 66.79,
-    "6": 65.73
+    "6": 65.73,
+    "8": 61.87
    }
   },
   {
@@ -19487,7 +19601,8 @@
     "3": 48.0,
     "4": 45.8,
     "5": 48.8,
-    "6": 46.0
+    "6": 46.0,
+    "8": 47.4
    }
   },
   {
@@ -19524,7 +19639,8 @@
     "2": 68.62,
     "3": 76.12,
     "4": 73.53,
-    "5": 70.32
+    "5": 70.32,
+    "6": 69.22
    }
   }
  ],
