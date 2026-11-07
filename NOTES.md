@@ -31,6 +31,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   is the memory-saving variant (Thinking figures still one cache until T26-a lands).
 - Running: O14-a evals, T26-a training (then eval_think_aligned.sh), aligned seeds 2/3 (wait_gpus.sh), full aligned map,
   verify_q.sh re-runs. Related work: 30 verified citations added.
+- Six aligned lm-eval jobs hung (100% GPU, no progress for 1.5-12 h; the same configs finished elsewhere): killed by
+  PID and requeued (lm-eval resumes from its cache). Aligned seed 2: `ARM=a seed_main.sh 2` on a1 (trains, then queues
+  the a41/a42 main-table benchmarks); seed 3 (trained directly with run_mix2.sh --seed 3 on a2) gets its benchmarks
+  with `ARM=a seed_main.sh 3`, which skips training when the checkpoint exists.
 
 ### 2026-11-06 (mainstream restructure)
 - Main text follows comparable papers: Table 1 (fixed 4/n configurations vs native, training-free untying and
