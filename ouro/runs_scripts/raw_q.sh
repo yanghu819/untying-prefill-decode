@@ -16,7 +16,7 @@ for c in ${CELLS:-raw21 raw31 raw41 raw22 raw42 raw44}; do
   lm math "--tasks minerva_math500 --num_fewshot 4"; lm bbh "--tasks bbh_cot_fewshot --limit 60"
   lm arc "--tasks arc_challenge --num_fewshot 25"; lm mmlupro "--tasks mmlu_pro --limit 30"
   lm winogrande "--tasks winogrande --num_fewshot 5"
-  case $c in raw41|raw42) lm hellaswag "--tasks hellaswag --num_fewshot 10"
+  case $c in raw41|raw42|ali41|ali42) lm hellaswag "--tasks hellaswag --num_fewshot 10"
     lm evalplus "--tasks humanevalplus_chat_local,mbppplus_chat_local" ;; esac
   [ -z "$ONLY" ] && echo "cd /root/big-small && MODEL=$MP DATA=$M/bench BENCHES='ruler4k ruler16k' ./ouro/runs_scripts/bench3.sh $B-${c}f $c - \$GPU 1"
 done | flock $Q.lock sh -c "cat >> $Q"

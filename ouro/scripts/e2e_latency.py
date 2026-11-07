@@ -4,9 +4,10 @@ stop reason and correctness — for real greedy answers, not a fixed-token repla
 
 usage: e2e_latency.py MODEL_DIR COND [CKPT|-] TASK N OUT.jsonl   (env START=k: items k .. k+N-1, default 0)
   COND: native<d>st (static-cache native baseline) | D<d>st (LoRA-distilled native d/d, merged; with CKPT)
-        | S<p><d>sb (fused single-bank loop adapter)
+        | S<p><d>sb (fused single-bank loop adapter) | a<p><d>sb (aligned loop adapter, one prompt bank per decode loop)
   TASK: gsm8k_think | math500_think (chat template, zero-shot, \\boxed{} answer, math_verify; caps 4,096 / 8,192) | ruler16k (long prompt, short answer;
-        timing only — accuracy comes from the full-set evaluations)
+        timing only — accuracy comes from the full-set evaluations) | helmet (bench-mini HELMET, ~8K-token prompts, each
+        row's own answer budget and stop strings, scored with evaluate_bench.helmet_score on the timed answer)
 """
 import json
 import os
@@ -57,6 +58,10 @@ def items():
             msg = [{"role": "user", "content": r["problem"] + "\nPlease reason step by step, and put your final answer within \\boxed{}."}]
             ids = chat_ids(msg)
             yield i, ids, r["answer"], 8192
+    elif task == "helmet":
+        for line in list(open("/dev/shm/big-small-ouro/bench-mini/helmet.jsonl"))[start:start + n]:
+            r = json.loads(line)
+            yield r["id"], r["prompt_ids"], r, r["max_new_tokens"]
     else:
         for line in list(open(f"/dev/shm/big-small-ouro/bench/{task}.jsonl"))[start:start + n]:
             r = json.loads(line)
@@ -66,6 +71,9 @@ def items():
 def score(gold, text):
     if gold is None:
         return None
+    if isinstance(gold, dict):  # HELMET row
+        from ouro.evaluate_bench import helmet_score
+        return float(helmet_score(gold, text))
     from math_verify import parse, verify
     try:
         return float(verify(parse("$" + gold + "$"), parse(text)))
@@ -92,10 +100,16 @@ with torch.inference_mode(), open(out, "w") as f:
                 break
             if len(out_ids) == max_new:  # cap reached: no further decode step
                 break
+            if isinstance(gold, dict) and any(u in tok.decode(out_ids, skip_special_tokens=True) for u in gold.get("until", [])):
+                reason = "stop"
+                break
             logits, cache = runner.decode(torch.tensor([[nxt]], device="cuda"), cache)
             nxt = int(logits.argmax(-1))
         torch.cuda.synchronize(); gen = time.perf_counter() - t0
         text = tok.decode(out_ids, skip_special_tokens=True)
+        if isinstance(gold, dict):
+            for u in gold.get("until", []):
+                text = text.split(u)[0]
         rec = dict(id=idx, cond=cond, prompt_tokens=len(ids), new_tokens=len(out_ids), stop=reason, ttft_s=round(ttft, 4),
                    gen_s=round(gen, 3), total_s=round(ttft + gen, 3), ms_per_token=round(1000 * gen / max(1, len(out_ids)), 2),
                    correct=score(gold, text))

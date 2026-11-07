@@ -6,5 +6,7 @@ COND=$2; CK=""; [ "$3" != "-" ] && CK="--checkpoint $3"; IFS=, read -ra G <<< "$
 B=${BENCHES:-"bbh math500 helmet ruler4k ruler8k ruler16k longbench mmlu"}
 for s in $(seq 0 $((N - 1))); do
   $R/watchdog.sh 30 $O/s$s $O/s$s.log env PYTHONPATH=${PP:-} CUDA_VISIBLE_DEVICES=${G[$((s % ${#G[@]}))]} HF_HUB_OFFLINE=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True environments/ouro/.venv/bin/python -m ouro.evaluate_bench eval --model-path ${MODEL:-$M/model} --data ${DATA:-$M/bench} --output $O/s$s --condition $COND $CK --shard-index $s --num-shards $N --benches $B --batch-tokens ${BATCH:-0} &
+  P+=($!)
 done
-wait; touch $O/DONE-$(echo $B | tr " " _)
+ok=1; for p in "${P[@]}"; do wait $p || ok=0; done   # DONE only if every shard succeeded (an OOM shard leaves no DONE)
+[ $ok = 1 ] && touch $O/DONE-$(echo $B | tr " " _)

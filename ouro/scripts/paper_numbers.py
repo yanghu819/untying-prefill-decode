@@ -28,6 +28,7 @@ import numpy as np
 ITEMS = Path(__file__).resolve().parents[1] / "results" / "items"
 OUT = Path(__file__).resolve().parents[1] / "results" / "paper_numbers.json"
 GF = "exact_match:strict-match"   # GSM8K 3-shot CoT, strict match (Ouro, Table 16)
+GFLEX = "exact_match:flexible-extract"   # the same outputs, last number in the answer (Appendix B sensitivity)
 
 
 def gsm(run):
@@ -392,6 +393,7 @@ def keys():
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {main_key(b, "aligned", f"a{m}{n}") for b in MAIN_BENCH for m in range(1, 5) for n in range(1, 5)}
+    ks |= {main_key("GSM8K", kind, c).replace(GF, GFLEX) for _, kind, c in MAIN_ROWS}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -441,6 +443,16 @@ def helmet_boot(a, b, reps=5000):
             dd += w * (x - y)[rng.integers(0, len(items), (reps, len(items)))].mean(1)
     return dict(n=len(ids), a=100 * da, b=100 * db, diff=100 * (da - db), lo=100 * np.percentile(dd, 2.5),
                 hi=100 * np.percentile(dd, 97.5))
+
+
+def agg(v, ids):
+    """Score of item set `v` on `ids` in percent: the item mean, except HELMET, which is aggregated as its authors do
+    (mean per dataset, then per category, then over categories; helmet_boot)."""
+    ids = sorted(ids, key=str)
+    if ids and all(str(i).startswith("helmet/") for i in ids):
+        w = {i: v[i] for i in ids}
+        return helmet_boot(w, w, reps=1)["a"]
+    return 100 * float(np.mean([v[i] for i in ids]))
 
 
 def boot(a, b, reps=5000, groups=None):
@@ -572,10 +584,10 @@ def think_frontier():
             return []
         ids = set.intersection(*(set(v) for v in sets.values()))
         for c, v in sets.items():
-            per[c].append(100 * float(np.mean([v[i] for i in ids])))
+            per[c].append(agg(v, ids))
     out = [dict(config=c, avg=round(float(np.mean(per[c])), 2), scores=[round(x, 2) for x in per[c]],
                 tokens_per_s=confs[c][2]) for c in confs]
-    want = {"native 2/2": 64.2, "native 4/4": 70.2, "distilled 2/2": 67.3, "adapter 2/2": 66.4, "adapter 4/2": 70.4}
+    want = {"native 2/2": 65.4, "native 4/4": 71.5, "distilled 2/2": 67.5, "adapter 2/2": 67.0, "adapter 4/2": 70.1}
     for r in out:
         flag = "" if abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
         print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s']:4d} tok/s{flag}")
@@ -873,6 +885,33 @@ def main_key(bench, kind, c, model="Ouro-2.6B"):
     return key.format(c=c)
 
 
+GSM_PROTOCOL_PRINTED = {   # Appendix B (diff, lo, hi)
+    (GFLEX, "aligned adapter 4/1", "LoRA-distilled 1/1"): (6.7, 4.0, 9.3), (GF, "aligned adapter 4/1", "LoRA-distilled 1/1"): (4.5, None, None),
+    (GF, "aligned adapter 4/2", "native 2/2"): (3.4, 1.2, 5.6), (GFLEX, "aligned adapter 4/2", "native 2/2"): (1.2, -0.8, 3.3)}
+
+
+def gsm_protocol():
+    """Appendix B: Table 1's GSM8K comparisons under strict matching (the paper's metric) and flexible extraction of the
+    same generated answers: each adapter row against native n/n and LoRA-distilled n/n at its decode depth, on the
+    full 1,319 problems (paired bootstrap)."""
+    out = []
+    for metric in (GF, GFLEX):
+        sets = {label: load(main_key("GSM8K", kind, c).replace(GF, metric)) for label, kind, c in MAIN_ROWS}
+        for label in ("loop adapter 4/1", "loop adapter 4/2", "aligned adapter 4/1", "aligned adapter 4/2"):
+            n = label[-1]
+            for ref in (f"native {n}/{n}", f"LoRA-distilled {n}/{n}"):
+                if sets[label] is None or sets[ref] is None:
+                    print(f"GSM protocol {metric.split(':')[1]:16s} {label} vs {ref}: MISSING"); continue
+                r = boot(sets[label], sets[ref])
+                out.append(dict(metric=metric, row=label, ref=ref, **{k: round(float(v), 2) for k, v in r.items()}))
+                want = GSM_PROTOCOL_PRINTED.get((metric, label, ref))
+                if want and any(abs(r[k] - w) > 0.051 for k, w in zip(("diff", "lo", "hi"), want) if w is not None):
+                    print(f"GSM protocol {label} vs {ref} ({metric}): {r['diff']:+.2f}  !! paper: {want}")
+                print(f"GSM protocol {metric.split(':')[1]:16s} {label:20s} {r['a']:5.1f} vs {ref:18s} {r['b']:5.1f} "
+                      f"{r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] n={r['n']}")
+    return out
+
+
 def main_table_14():
     """Appendix: Table 1 on Ouro-1.4B with its own adapters and controls (GSM8K 400 and MMLU 20 per subject, as its
     task map); each benchmark on the items all rows share."""
@@ -1041,6 +1080,11 @@ def select_aware(cells, nat, ids, half, reps=5000):
 OVERLAP = Path(__file__).resolve().parents[1] / "results" / "overlap" / "mix-data-48m.json"
 
 
+OVERLAP_PRINTED = {("MMLU", "a41", "dist1"): 14.3, ("MMLU-Pro", "a41", "dist1"): 18.2, ("BBH 3-shot", "a41", "dist1"): 12.4,
+                   ("GSM8K", "a41", "dist1"): 4.6, ("HumanEval+", "a41", "dist1"): 10.0, ("MBPP+", "a41", "dist1"): 5.3,
+                   ("MMLU", "a42", "dist2"): 6.3, ("MMLU-Pro", "a42", "dist2"): 7.7, ("BBH 3-shot", "a42", "dist2"): 2.6}   # Appendix A
+
+
 def overlap_check():
     """Items whose question shares a 13-gram with the adapters' training mixture (overlap_audit.py) are dropped and the
     Ouro-2.6B selection of Table 1 and the 4-shot MATH-500 contrast are recomputed on the remaining items."""
@@ -1063,6 +1107,27 @@ def overlap_check():
         out["math_s14_s44"] = [round(r[k], 3) for k in ("diff", "lo", "hi")] + [len(keep)]
         print(f"Overlap      MATH-500 4-shot prefill 1 vs 4 at decode 4 without overlapping items: {r['diff']:+.1f} "
               f"[{r['lo']:+.1f}, {r['hi']:+.1f}] ({r['a']:.1f} vs {r['b']:.1f}, n={len(keep)})")
+    # Table 1's aligned rows against the controls at the same decode depth, on the benchmarks with overlapping items
+    out["main_rows"] = []
+    for bench in MAIN_BENCH:
+        for row, refs in (("a41", (("native", 1), ("dist", 1))), ("a42", (("native", 2), ("dist", 2)))):
+            a = load(main_key(bench, "aligned", row))
+            for kind, n in refs:
+                b = load(main_key(bench, kind, n))
+                if not a or not b:
+                    continue
+                both = set(a) & set(b)
+                keep = both - drop
+                if len(keep) == len(both):
+                    continue
+                r = boot({i: a[i] for i in keep}, {i: b[i] for i in keep})
+                out["main_rows"].append(dict(bench=bench, row=row, ref=f"{kind}{n}", dropped=len(both) - len(keep),
+                                             **{k: round(float(r[k]), 2) for k in ("n", "a", "b", "diff", "lo", "hi")}))
+                want = OVERLAP_PRINTED.get((bench, row, f"{kind}{n}"))
+                if want is not None and abs(r["diff"] - want) > 0.051:
+                    print(f"Overlap      {bench} {row} vs {kind}{n}: {r['diff']:+.2f}  !! paper: {want}")
+                print(f"Overlap      {bench:12s} {row} vs {kind} {n}/{n} without {len(both) - len(keep)} overlapping: "
+                      f"{r['a']:5.1f} vs {r['b']:5.1f} {r['diff']:+5.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] n={r['n']}")
     return out
 
 def taskmap_select(exclude=frozenset(), quiet=False):
@@ -1186,7 +1251,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

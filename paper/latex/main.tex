@@ -44,10 +44,11 @@ loop reads the prompt KV of a matching prefill loop through a learned map, or, t
 The resulting map has a clear shape: decode cheaply, prefill deeply. On Ouro-2.6B with one decode loop, prefilling with
 four loops raises the average over 11 benchmarks from 44.2 to 56.8 (49.8 for native 1/1 distilled on the same data),
 prefilling with two to four loops is best on 14 of 15 settings, and with as many decode as prefill loops the adapter
-matches the native model. On Ouro-2.6B-Thinking, with one stored cache, prefill 4 / decode 2 matches the average accuracy of native 4/4 over eight benchmarks at $3.2\times$ its decode
-throughput, and answers in $0.59\times$ the time at batch 1. Looped decision models follow the same rule from both sides:
-more prefill than decision loops helps on 12 of 13 pairs, and fewer hurts on all 13. Loops are best spent where they
-are paid once.
+matches the native model. On Ouro-2.6B-Thinking, with one stored cache, prefill 4 / decode 2 comes within 1.4 points
+of native 4/4 averaged over eight benchmarks at $3.2\times$ its decode throughput, 2.6 points above native 2/2 distilled
+on the same data, and answers in $0.59\times$ the time at batch 1. Looped decision models follow the same rule from both sides:
+more prefill than decision loops helps on 12 of 13 pairs, and fewer hurts on all 13. When decode loops are scarce,
+loops are best spent where they are paid once.
 \end{abstract}
 
 \section{Introduction}
@@ -99,11 +100,12 @@ best prefill count is two to four on 14 of 15 benchmark settings; within the sam
 loops instead of one raises MMLU from 51.4 to 66.6 and HumanEval+ from 51.2 to 65.9. A native model can only move along
 the diagonal of this map; the adapter opens the whole square. With prefill 4 the average over 11 benchmarks rises from
 44.2 to 56.4 at one decode loop and from 63.0 to 66.4 at two, above native models distilled on the same data
-(Table~\ref{tab:main}); without the adapter the same untied configuration collapses.
+(Table~\ref{tab:main}); without the adapter the untied model collapses.
 
 Untying pays off in time. On Ouro-2.6B-Thinking, prefill 4 / decode 2 stays within two points of native 4/4 on six of
-eight benchmarks (Figure~\ref{fig:equal}); averaged over them it matches native 4/4 at $3.2\times$ its decode
-throughput (Figure~\ref{fig:frontier}) and answers 192 timed GSM8K problems in $0.59\times$ the time at batch 1: the
+eight benchmarks (Figure~\ref{fig:equal}); averaged over them it comes within 1.4 points of native 4/4 at
+$3.2\times$ its decode throughput and is 2.6 points above native 2/2 distilled on the same data
+(Figure~\ref{fig:frontier}); it answers 192 timed GSM8K problems in $0.59\times$ the time at batch 1: the
 decode loops set the cost, and the prefill loops buy back the accuracy.
 
 The same rule holds in looped decision models, which score options over a long context without generating text
@@ -115,7 +117,7 @@ Our contributions are: (i) the observation that prefill loops and decode loops b
 full $m\times n$ map of two looped language models and of looped decision models; (ii) a loop adapter that unties them
 on existing checkpoints, with aligned prompt caches that match the native model at equal depth or with one exact
 prompt KV cache that stores $b(\ell+n\,t)$ bytes of KV instead of $b\,n(\ell+t)$;
-and (iii) measured savings: native-4/4 accuracy at $3.2\times$ the decode throughput, and $0.59\times$ the answer
+and (iii) measured savings: within 1.4 points of native-4/4 accuracy at $3.2\times$ the decode throughput, and $0.59\times$ the answer
 time at batch 1. Code, per-item results and a script that recomputes every statistic
 are released.
 
@@ -136,11 +138,13 @@ more than 10 GSM8K points when prefill does the same; our adapter is trained to 
 speeds up looped models without training through token-sparse loop updates, sparse attention and KV-residual quantisation.
 
 \paragraph{Adaptive and phase-specific computation.} Halting~\citep{act,pondernet}, token-level early
-exit~\citep{deebert,depthadaptive,calm,layerskip} and token routing~\citep{mod} spend depth per token; CALM must also
+exit~\citep{deebert,depthadaptive,calm,layerskip,skipdecode} and token routing~\citep{mod} spend depth per token; CALM must also
 fill the skipped layers' KV for later tokens, the problem our maps solve per loop. Speculative
 decoding~\citep{specdecoding,specsampling} pairs a cheap drafter with a deep verifier, and pause tokens add compute at
-prompt positions~\citep{pausetokens}. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
-decode and studies caches shared across depths; Position-Aware
+prompt positions~\citep{pausetokens}. Deep-encoder/shallow-decoder models~\citep{deepshallow,llm2slm,tandem} and
+SwiftKV~\citep{swiftkv} spend more depth on the prompt across separate networks. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
+decode and studies caches shared across depths; concurrently, LoopDuet~\citep{loopduet} sets the two loop budgets
+without training for Huginn, trained with random loop counts; fixed-depth Ouro collapses without training (Table~\ref{tab:main}). Position-Aware
 Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill} decodes with a width-pruned model;
 Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop}, SPEED~\citep{speed} and SEED~\citep{seedemit}
 prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
@@ -247,7 +251,7 @@ instead of $b\,n(\ell+t)$. Serving from one cache equals materialising a mapped 
 checked greedy tokens agree.
 
 \paragraph{Aligned caches.} With one cache, every decode loop reads the last prefill loop. The aligned variant keeps one
-prompt cache per decode loop and lets decode loop $k$ read prefill loop $m-n+k$ through its own map, so at $m=n$ every
+prompt cache per decode loop and lets decode loop $k$ read prefill loop $\max(m-n+k,1)$ through its own map, so at $m=n$ every
 decode loop reads exactly the KV the native model would. It stores the prompt $n$ times, as \nat{n} does, and is
 trained identically. It is the more accurate layout, most of all on long-context retrieval; the single cache is the
 smaller one.
@@ -280,18 +284,19 @@ paired over items with 95\% bootstrap intervals.
 \begin{table*}[t]
 \centering\small
 \setlength\tabcolsep{2.6pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}cl*{12}{c}@{}}
 \toprule
 $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER-16K & Avg. \\
 \midrule
 \csname @@input\endcsname ../figs/tab_main.tex
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\textbf{Main results.} Ouro-2.6B, accuracy (\%) grouped by the number of decode loops $n$; ``4/$n$'' prefills
 with four loops. Native: the unmodified model. Training-free: the frozen model prefills with four loops and decodes
 from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ distilled~\citep{kd} with LoRA~\citep{lora} on the same data,
 teacher (native 4/4) and tokens as the loop adapter. Bold: best in each group. Each column uses the items all rows
-share; MMLU and GSM8K are the full sets. One cache: all decode loops read the last prefill loop's cache; aligned: decode loop $k$ reads prefill loop $m-n+k$
+share; MMLU and GSM8K are the full sets. One cache: all decode loops read the last prefill loop's cache; aligned: decode loop $k$ reads prefill loop $\max(m-n+k,1)$
 (Section~\ref{sec:method}). Training seed 0; over three training seeds the one-cache average is $56.4\pm0.0$ at 4/1 and
 $66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.; Appendix~\ref{app:seed}). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
 \label{tab:main}
@@ -336,8 +341,8 @@ Table~\ref{tab:main} compares fixed configurations at the same number of decode 
 prefilling with four loops raises the average from 44.2 (native 1/1) to 56.8, above native 1/1 distilled on the same
 data (49.8); with two, the aligned adapter averages 67.2, against 63.0 for native 2/2 and 65.3 for its distilled
 version, within 3.0 points of native 4/4 with half the decode loops. The one-cache variant, at a fraction of the prompt
-memory, gives up under one point (56.4 and 66.4). The adapter is what makes untying work: without it the same untied
-configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, deeper
+memory, gives up under one point (56.4 and 66.4). The adapter is what makes untying work: without it, decoding from the last prefill loop's
+KV with Ouro's own reuse of the last loop's KV, the untied configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, deeper
 prefill alone adds up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
 prefill count per benchmark on held-out items instead of fixing it at four beats native 1/1 significantly on 14 of 15
 settings (Appendix~\ref{app:select}), and Ouro-1.4B shows the same pattern (Appendix~\ref{app:models}). Equal decode
@@ -384,11 +389,11 @@ batches; prefill 4
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Prefill 4 / decode 2 matches native 4/4 at $3.2\times$ its decode throughput.} Ouro-2.6B-Thinking:
+\caption{\textbf{Prefill 4 / decode 2 comes within 1.4 points of native 4/4 at $3.2\times$ its decode throughput.} Ouro-2.6B-Thinking:
 average accuracy over the eight benchmarks of Figure~\ref{fig:equal} (each on the items all five configurations share)
 against decode throughput (best tokens/s over batch sizes at an 8K-token prompt, Table~\ref{tab:serve}). Labels:
 prefill/decode loops. The adapter decodes at the same cost at 2/2 and 4/2, and distilled native 2/2 (LoRA merged) at
-that of native 2/2; the four prefill loops add 4.0 points.}
+that of native 2/2; the four prefill loops add 3.1 points. HELMET is averaged per dataset, then per category.}
 \label{fig:frontier}
 \end{figure}
 
@@ -442,10 +447,9 @@ many loops and the decision can then stop early.
 
 \section{Conclusion}
 
-A loop adapter makes the prefill and decode loops of an existing looped model independently configurable, reading
-aligned prompt caches or, to save memory, one stored cache. The two phases want different depths: with few decode loops, more prefill loops recover much of
-a deeper model's accuracy, so a looped model can decode cheaply and prefill deeply. Looped decision models show the same rule from both sides. Untying the loops turns a
-fixed depth into two knobs, one paid once per prompt and one paid per token.
+A loop adapter makes the prefill and decode loops of an existing looped model independently configurable. With few
+decode loops, more prefill loops recover much of a deeper model's accuracy, in language and in decision models: untying
+turns a fixed depth into two knobs, one paid once per prompt and one paid per token.
 
 \section*{Limitations}
 \label{sec:limits}
@@ -484,7 +488,10 @@ other audited benchmark (GSM8K, ARC-Challenge, HellaSwag, Winogrande, GPQA, IFEv
 shorter than 13 tokens cannot be assessed (2,696 MMLU, 296 HellaSwag, 254 BBH, 247 ARC-Challenge, 194 MMLU-Pro, at
 most 4 elsewhere) and are kept; RULER and HELMET are synthetic or long-document and not audited. Without the overlapping items the chosen $m$ of
 Table~\ref{tab:select} still wins significantly on 13 of 15 and 9 of 15 settings at one and two decode loops; at one decode loop MBPP+, which
-loses 93 of its 378 problems, becomes inconclusive ($+2.5$ [$-1.1$, $10.2$]).
+loses 93 of its 378 problems, becomes inconclusive ($+2.5$ [$-1.1$, $10.2$]). Against the same-data controls of Table~\ref{tab:main}, without the overlapping items the aligned adapter at prefill 4 /
+decode 1 stays significantly above LoRA-distilled 1/1 on MMLU ($+14.3$), MMLU-Pro ($+18.2$), BBH ($+12.4$), GSM8K ($+4.6$),
+HumanEval+ ($+10.0$ on the 70 remaining problems) and MBPP+ ($+5.3$), and at decode 2 above distilled 2/2 on MMLU
+($+6.3$), MMLU-Pro ($+7.7$) and BBH ($+2.6$); 4-shot MATH-500 keeps the opposite sign (Appendix~\ref{app:eval}).
 
 \paragraph{Optimisation.} AdamW ($\beta=(0.9,0.95)$, no weight decay), peak learning rate $10^{-4}$ with 2\% linear
 warm-up and cosine decay to $10^{-5}$, gradient clipping at 1.0, global batch 24 sequences on 4 B300 GPUs (6.75 hours for
@@ -526,8 +533,10 @@ scores within one point of the published numbers on MMLU, MMLU-Pro, BBH, ARC-Cha
 HumanEval(+) and MBPP(+) (Table~\ref{tab:repro}). Two scores differ for a documented reason: GSM8K strict matching
 requires the exemplars' ``The answer is'' sentence and gives 69.4, while flexible extraction of the last number gives
 86.7, bracketing the published 81.6; and MATH-500 with the public 4-shot Minerva prompt gives 53.6 against 90.9 with
-Ouro's unreleased 5-shot prompt and scorer. Every configuration in this paper is scored the same way, so these
-choices shift all rows together.
+Ouro's unreleased 5-shot prompt and scorer. Every configuration in this paper is scored the same way, but a protocol
+can change the size of a difference, not only the level. Rescoring the same GSM8K answers with flexible extraction,
+the aligned adapter at prefill 4 / decode 1 gains more over LoRA-distilled 1/1 ($+6.7$ [$+4.0$, $+9.3$] instead of
+$+4.5$), while at decode 2 its gain over native 2/2 shrinks from $+3.4$ [$+1.2$, $+5.6$] to $+1.2$ [$-0.8$, $+3.3$].
 
 \begin{table}[h]
 \centering\small
@@ -702,13 +711,14 @@ parentheses; paired 95\% bootstrap intervals that repeat the choice of $m$ in ev
 \begin{table*}[t]
 \centering\small
 \setlength\tabcolsep{2.6pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{@{}cl*{12}{c}@{}}
 \toprule
 $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER-16K & Avg. \\
 \midrule
 \csname @@input\endcsname ../figs/tab_main14.tex
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\textbf{Table~\ref{tab:main} on Ouro-1.4B}, with its own adapters and controls (MMLU 20 questions per subject
 and 400 GSM8K problems, as in its task map); each column on the items all rows share.}
 \label{tab:main14}
@@ -808,13 +818,14 @@ Ouro-2.6B-Thinking, most of all on BBH ($-37.2$) and HELMET ($-18.3$).
 \begin{table}[h]
 \centering\small
 \setlength\tabcolsep{3pt}
+\resizebox{\columnwidth}{!}{%
 \begin{tabular}{@{}llrrrr@{}}
 \toprule
 task / model & config & acc.\ (\%) & s / answer & tokens & $N$ \\
 \midrule
 \csname @@input\endcsname ../figs/tab_e2e.tex
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \caption{\textbf{End to end per answer}, prefill included (batch 1, one B300; mean seconds and generated tokens per
 answer over $N$ problems; GSM8K: consecutive problem IDs 1--192; budgets 4,096
 and 8,192 tokens). On GSM8K, prefill 4 / decode 2 spends $1.38\times$ the decode time per generated token of \nat{2}

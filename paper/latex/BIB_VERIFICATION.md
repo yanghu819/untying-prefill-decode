@@ -99,3 +99,9 @@ arXiv one. PLatour has no arXiv version yet; its authors are taken from the pape
 | `dory` | arXiv preprint arXiv:2611.03998 2026 | arXiv 2611.03998 |
 | `seedemit` | arXiv preprint arXiv:2611.06084 2026 | arXiv 2611.06084 |
 | `platour` | https://github.com/zhenyi4/platour 2026 | GitHub repo + paper PDF |
+| `swiftkv` | EMNLP 2025 | arXiv 2410.03960, ACL Anthology 2025.emnlp-main.1306 |
+| `skipdecode` | arXiv 2023 | arXiv 2307.02628 |
+| `llm2slm` | arXiv 2024 | arXiv 2402.16844 |
+| `tandem` | arXiv 2024 | arXiv 2402.08644 |
+| `deepshallow` | ICLR 2021 | arXiv 2006.10369 |
+| `loopduet` | arXiv 2026 (concurrent, submitted 2026-11-04) | arXiv 2611.07211 |
