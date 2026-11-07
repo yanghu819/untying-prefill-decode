@@ -389,6 +389,7 @@ def keys():
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
     ks |= {k for _, k, _ in REPRO}
+    ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {main_key(b, "aligned", f"a{m}{n}") for b in MAIN_BENCH for m in range(1, 5) for n in range(1, 5)}
     return sorted({k.partition("#")[0] for k in ks})
 
@@ -857,17 +858,38 @@ MAIN_CELLS = {("MMLU", "native 1/1"): 51.5, ("MMLU", "loop adapter 4/1"): 66.6, 
               ("GSM8K", "aligned adapter 4/1"): 45.0}
 
 
-def main_key(bench, kind, c):
-    """Item-score key of one main-table entry (Ouro-2.6B, the task-map settings)."""
-    spec = next(x for x in taskmap_specs() if x[0] == "Ouro-2.6B" and x[1] == bench)
+def main_key(bench, kind, c, model="Ouro-2.6B"):
+    """Item-score key of one main-table entry (the task-map settings of Ouro-2.6B or Ouro-1.4B)."""
+    spec = next(x for x in taskmap_specs() if x[0] == model and x[1] == bench)
     _, _, key, nkey, dkey = spec
     if kind == "native":
         return nkey.format(n=c)
     if kind == "dist":
         return dkey.format(d=DISTILLED[c])
-    if kind in ("raw", "aligned"):   # raw and aligned runs are named X26-<cell>-<task> for every benchmark
+    if kind in ("raw", "aligned") and model == "Ouro-2.6B":   # these runs are named X26-<cell>-<task> on Ouro-2.6B
         return key.replace("o26x-{c}", "X26-{c}").format(c=c)
     return key.format(c=c)
+
+
+def main_table_14():
+    """Appendix: Table 1 on Ouro-1.4B with its own adapters and controls (GSM8K 400 and MMLU 20 per subject, as its
+    task map); each benchmark on the items all rows share."""
+    out = []
+    for bench in MAIN_BENCH:
+        sets = {label: load(main_key(bench, kind, c, "Ouro-1.4B")) for label, kind, c in MAIN_ROWS}
+        have = [v for v in sets.values() if v]
+        ids = set.intersection(*(set(v) for v in have)) if have else set()
+        out.append(dict(bench=bench, items=len(ids),
+                        **{label: (round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None)
+                           for label, v in sets.items()}))
+    want = {"native 1/1": 34.5, "LoRA-distilled 1/1": 40.0, "aligned adapter 4/1": 43.9}   # Appendix (Ouro-1.4B)
+    for label, _, _ in MAIN_ROWS:
+        vals = [r[label] for r in out]
+        avg = None if None in vals else float(np.mean(vals))
+        flag = "" if label not in want or (avg is not None and abs(avg - want[label]) < 0.051) else f"  !! paper: {want[label]}"
+        print(f"Main 1.4B    {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
+              + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
+    return out
 
 
 MAIN_SEEDS = ("X26s2", "X26s3")   # further training seeds of the loop adapter (seed 0: X26-S-universal)
@@ -1162,7 +1184,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

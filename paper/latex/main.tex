@@ -694,12 +694,29 @@ parentheses; paired 95\% bootstrap intervals that repeat the choice of $m$ in ev
 \label{tab:select14}
 \end{table*}
 
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{2.6pt}
+\begin{tabular}{@{}cl*{12}{c}@{}}
+\toprule
+$n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER-16K & Avg. \\
+\midrule
+\csname @@input\endcsname ../figs/tab_main14.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Table~\ref{tab:main} on Ouro-1.4B}, with its own adapters and controls (MMLU 20 questions per subject
+and 400 GSM8K problems, as in its task map); each column on the items all rows share.}
+\label{tab:main14}
+\end{table*}
+
 Table~\ref{tab:select14} repeats the per-benchmark choice on Ouro-1.4B. As on Ouro-2.6B, the gain is largest with one
 decode loop (significant on 12 of 15 settings) and shrinks with more (2 of 15 at two decode loops, where 3-shot BBH is
 significantly worse than \nat{2}); within the adapter the chosen $m$ beats the adapter's own $n/n$ significantly on 6
 and 1 of 15. Against native 1/1 and 2/2 distilled with LoRA on the same data, teacher and
 tokens, it is significantly above on 6 and below on 3 of 15 at one decode loop (below on all three RULER lengths, where
-distillation alone helps more), and above on 4 and below on 4 at two. Nanbeige4.2-3B-Base, a non-looped model run with its blocks repeated and one loop adapter trained per
+distillation alone helps more), and above on 4 and below on 4 at two. With fixed configurations (Table~\ref{tab:main14}), the aligned adapter at 4/1 averages 43.9 against 34.5 for native
+1/1 and 40.0 for native 1/1 distilled on the same data; at two decode loops the distilled 2/2 is stronger on BBH,
+MATH-500 and RULER-16K, so the smaller model gains less than Ouro-2.6B. Nanbeige4.2-3B-Base, a non-looped model run with its blocks repeated and one loop adapter trained per
 $(m,n)$ pair, shows the same direction at one decode loop: \rw{2}{1} minus \rw{1}{1} is $+11.8$, $+11.7$ and $+14.2$ on
 RULER 4K/8K/16K and $+12.2$ on MMLU (GSM8K: Appendix~\ref{app:eval}).
 

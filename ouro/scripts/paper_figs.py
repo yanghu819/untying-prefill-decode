@@ -387,10 +387,10 @@ def tab_taskmap(model="Ouro-2.6B"):
     (OUT / "tab_taskmap.tex").write_text("\n".join(lines) + "\n")
 
 
-def tab_main():
+def tab_main(key="main_table", name="tab_main"):
     """Table 1: main results, fixed configurations grouped by decode loops (accuracy on the items all rows share; bold:
     best of each group; LaTeX rows from paper_numbers.json, main_table)."""
-    T = {r["bench"]: r for r in PN.get("main_table", [])}
+    T = {r["bench"]: r for r in PN.get(key, [])}
     benches = list(T)
     groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "loop adapter 4/1", "aligned adapter 4/1"]),
               (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "loop adapter 4/2", "aligned adapter 4/2"]),
@@ -412,7 +412,7 @@ def tab_main():
             lines.append(f"{n} & {show[l]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
         if n < 4:
             lines.append(r"\midrule")
-    (OUT / "tab_main.tex").write_text("\n".join(lines) + "\n")
+    (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
 
 
 def tab_ablation():
@@ -497,5 +497,5 @@ def tab_select_distilled():
 
 
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))
