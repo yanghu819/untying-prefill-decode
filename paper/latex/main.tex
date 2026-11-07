@@ -59,7 +59,7 @@ are paid once.
 Grey: the native model, which runs $n$ loops for both prefill and decode ($n/n$). Red: one loop adapter (aligned caches) that
 prefills with four loops and decodes with $n$. With few decode loops, four prefill loops recover much of the accuracy of
 the deeper native model; with three or four it matches native. Each panel uses the items all points share; all settings
-and every $(m,n)$ cell: Appendix~\ref{app:taskmap}.}
+and every $(m,n)$ cell: Appendix~\ref{app:taskmap} and Table~\ref{tab:alignedcells}.}
 \label{fig:grid}
 \end{figure*}
 
@@ -91,7 +91,8 @@ We write \rw{m}{n} for prefilling the prompt with $m$ loops and decoding every a
 KV produced by a different loop than their own. Our \emph{loop adapter} combines LoRA on the frozen model with a learned
 map on the prompt KV for every decode loop (Figure~\ref{fig:method}): decode loop $k$ reads prefill loop $m-n+k$
 (aligned caches), or every decode loop reads one stored prompt cache.
-We train one loop adapter and evaluate it at all 16 pairs $(m,n)$ with its parameters fixed.
+We train one loop adapter (pseudocode in Figure~\ref{alg:adapter}) and evaluate it at all 16 pairs $(m,n)$ with its
+parameters fixed.
 
 The resulting map (Figure~\ref{fig:grid}) has a clear shape: decode cheaply, prefill deeply. With one decode loop the
 best prefill count is two to four on 14 of 15 benchmark settings; within the same adapter, prefilling with three or four
@@ -292,7 +293,7 @@ from the last loop's prompt KV without an adapter. LoRA distill.: native $n/n$ d
 teacher (native 4/4) and tokens as the loop adapter. Bold: best in each group. Each column uses the items all rows
 share; MMLU and GSM8K are the full sets. One cache: all decode loops read the last prefill loop's cache; aligned: decode loop $k$ reads prefill loop $m-n+k$
 (Section~\ref{sec:method}). Training seed 0; over three training seeds the one-cache average is $56.4\pm0.0$ at 4/1 and
-$66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
+$66.6\pm0.2$ at 4/2 (mean $\pm$ s.d.; Appendix~\ref{app:seed}). Paired intervals and the per-benchmark choice of $m$: Appendix~\ref{app:select}.}
 \label{tab:main}
 \end{table*}
 
@@ -354,10 +355,10 @@ training tokens & LoRA rank & 4/1 avg. & 4/2 avg. \\
 \caption{\textbf{The loop adapter is cheap to train.} Ouro-2.6B, average over the benchmarks of Table~\ref{tab:main}
 (each on the items all runs share) at prefill 4 / decode 1 and 2, for adapters trained on fewer answer tokens of the
 same mixture and with other LoRA ranks.}
-\label{tab:ablation}
+\label{tab:traincost}
 \end{table}
 
-\paragraph{Training cost.} The adapter needs little data (Table~\ref{tab:ablation}): trained on 6M answer tokens, an
+\paragraph{Training cost.} The adapter needs little data (Table~\ref{tab:traincost}): trained on 6M answer tokens, an
 eighth of the default budget, it already averages 53.7 and 65.2 at prefill 4 / decode 1 and 2, against 56.4 and 66.4
 with 48M, and neither a smaller nor a larger LoRA rank changes the result.
 
@@ -369,8 +370,9 @@ Figure~\ref{fig:equal} applies the finding to a reasoning model, Ouro-2.6B-Think
 same number of decode loops as \nat{2}, \rw{4}{2} scores higher on all eight benchmarks, by up to 13 points on HELMET
 and 7 on MMLU-Pro and BBH; against \nat{4}, which decodes with twice the loops, it is within two points on six of the
 eight. The prefill loops themselves carry the gain: the same adapter at \rw{2}{2} is up to 8 points lower on MMLU-Pro and
-HELMET, and on Ouro-1.4B-Thinking four prefill loops instead of two are better on six of eight benchmarks. \rw{4}{2}
-also scores above native 2/2 distilled on the same data on all eight (Appendix~\ref{app:t14}).
+HELMET, and on Ouro-1.4B-Thinking four prefill loops instead of two are better on six of eight benchmarks
+(Appendix~\ref{app:t14}). \rw{4}{2}
+also scores above native 2/2 distilled on the same data on all eight (Table~\ref{tab:distill}).
 
 Against measured decode throughput (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
 at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
@@ -590,6 +592,9 @@ seed, full sets.}
 \FloatBarrier
 \section{Choosing the Prefill Loops per Benchmark}
 \label{app:select}
+
+Table~\ref{tab:select} chooses the prefill count per benchmark on held-out halves of its items and compares the choice
+with native $n/n$; Table~\ref{tab:selectdist} compares the same choice with native $n/n$ distilled on the same data.
 
 \begin{table*}[t]
 \centering\small
