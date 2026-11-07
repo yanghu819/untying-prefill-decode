@@ -35,6 +35,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   PID and requeued (lm-eval resumes from its cache). Aligned seed 2: `ARM=a seed_main.sh 2` on a1 (trains, then queues
   the a41/a42 main-table benchmarks); seed 3 (trained directly with run_mix2.sh --seed 3 on a2) gets its benchmarks
   with `ARM=a seed_main.sh 3`, which skips training when the checkpoint exists.
+- launch_aligned.sh skips benchmarks already on the box and skips training when the checkpoint exists (a2 holds a
+  copied X26-a-universal without TRAIN_DONE; one accidental restart there overwrote its logs for a minute, killed, logs
+  restored from a1, checkpoint md5 unchanged). Its SEED branch is removed (seeds go through seed_main.sh). Queued the
+  missing a34 benchmarks for the full aligned map. PLatour bib entry: authors from the paper PDF.
 
 ### 2026-11-06 (mainstream restructure)
 - Main text follows comparable papers: Table 1 (fixed 4/n configurations vs native, training-free untying and
