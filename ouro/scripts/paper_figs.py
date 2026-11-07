@@ -495,6 +495,12 @@ TIMED = ["GSM8K", "MATH-500", "BBH", "MMLU-Pro"]
 SWEEP_NAME = {"GSM8K": "GSM8K", "MATH-500": "MATH-500 4-shot", "BBH": "BBH 3-shot", "MMLU-Pro": "MMLU-Pro"}
 
 
+def drop(name):
+    """No data yet: remove a stale figure so that the LaTeX source shows its placeholder instead."""
+    for ext in ("pdf", "png"):
+        (OUT / f"{name}.{ext}").unlink(missing_ok=True)
+
+
 def _time(task, cond):
     return next((r for r in PN.get("time_breakdown", []) if r["task"] == task and r["cond"] == cond), None)
 
@@ -506,7 +512,7 @@ def fig_time():
     tasks = [t for t in TIMED + ["HELMET"] if any(_time(t, c) for c, _ in confs)
              or (t == "HELMET" and _time(t, "native4st"))]
     if not tasks:
-        return
+        return drop("fig_time")
     fig, ax = plt.subplots(figsize=(3.3, 0.32 * len(tasks) * len(confs) + 0.4))
     y, ticks, labs = 0, [], []
     for t in tasks:
@@ -523,7 +529,8 @@ def fig_time():
     ax.set_yticks(ticks); ax.set_yticklabels(labs, fontsize=7); ax.invert_yaxis()
     ax.set_xlabel("seconds per request (batch 1)")
     ax.legend([plt.Rectangle((0, 0), 1, 1, color=OURS), plt.Rectangle((0, 0), 1, 1, color=NAT_LIGHT)], ["prefill", "decode"],
-              loc="lower right", fontsize=7)
+              loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=7)
+    ax.set_xlim(0, 1.75 * max(r["total_s"] for t in tasks for c, _ in confs + [("native2st", "")] if (r := _time(t, c))))
     ax.grid(axis="x", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     save(fig, "fig_time")
 
@@ -534,8 +541,11 @@ def fig_depth():
     rows = PN.get("depth_sweep", [])
     tasks = [t for t in TIMED if any(r["bench"] == SWEEP_NAME[t] for r in rows)]
     if not tasks:
-        return
-    fig, axes = plt.subplots(3, len(tasks), figsize=(1.75 * len(tasks), 4.6), squeeze=False)
+        return drop("fig_depth")
+    timed = any(_time(t, f"a{m}x{n}sb") for t in tasks for m in (1, 2, 3, 4, 6, 8, 12, 16) for n in (1, 2))
+    nrow = 3 if timed else 1   # time rows only once per-request timings exist
+    fig, axes = plt.subplots(3, len(tasks), figsize=(1.75 * len(tasks), 4.6), squeeze=False) if timed else \
+        plt.subplots(1, len(tasks), figsize=(1.75 * len(tasks), 1.7), squeeze=False)
     for j, t in enumerate(tasks):
         for n, col in ((1, OURS), (2, OURS_LIGHT)):
             for wide, ls in ((False, "-"), (True, "--")):
@@ -546,7 +556,7 @@ def fig_depth():
                                     ls, color=col, marker="s", ms=2.5, lw=1.2)
             pts = [(m, _time(t, f"a{m}x{n}sb")) for m in (1, 2, 3, 4, 6, 8, 12, 16)]
             pts = [(m, r) for m, r in pts if r]
-            if pts:
+            if pts and timed:
                 axes[1, j].plot([m for m, _ in pts], [r["total_s"] for _, r in pts], "-", color=col, marker="s", ms=2.5, lw=1.2)
                 axes[1, j].plot([m for m, _ in pts], [r["prefill_s"] for _, r in pts], ":", color=col, lw=1)
                 axes[2, j].plot([r["total_s"] for _, r in pts], [r["quality"] for _, r in pts], "-", color=col, marker="s", ms=2.5, lw=1.2)
@@ -554,18 +564,23 @@ def fig_depth():
                     axes[2, j].annotate(str(m), (r["total_s"], r["quality"]), xytext=(0, 3), textcoords="offset points", fontsize=6, color=col, ha="center")
         for d in (1, 2, 4):
             r = _time(t, f"native{d}st")
-            if r:
+            if r and timed:
                 axes[2, j].scatter([r["total_s"]], [r["quality"]], color=NAT, s=10, marker="o", zorder=3)
                 axes[2, j].annotate(f"{d}/{d}", (r["total_s"], r["quality"]), xytext=(0, -8), textcoords="offset points", fontsize=6, color=NAT, ha="center")
         axes[0, j].set_title(t, fontsize=8.5, color=INK, pad=4)
-        for i in (0, 1):
+        for i in range(min(2, nrow)):
             axes[i, j].set_xscale("log", base=2); axes[i, j].set_xticks([1, 2, 4, 8, 16]); axes[i, j].set_xticklabels(["1", "2", "4", "8", "16"])
             axes[i, j].axvline(4, color=GRID, lw=0.8, zorder=0)
-        for i in range(3):
+        for i in range(nrow):
             axes[i, j].grid(color="#EDEDED", lw=0.5); axes[i, j].set_axisbelow(True)
-    axes[0, 0].set_ylabel("accuracy (%)"); axes[1, 0].set_ylabel("s / request"); axes[2, 0].set_ylabel("accuracy (%)")
+    axes[0, 0].set_ylabel("accuracy (%)")
+    if timed:
+        axes[1, 0].set_ylabel("s / request"); axes[2, 0].set_ylabel("accuracy (%)")
     for j in range(len(tasks)):
-        axes[1, j].set_xlabel("prefill loops m", fontsize=7.5); axes[2, j].set_xlabel("s / request", fontsize=7.5)
+        if timed:
+            axes[1, j].set_xlabel("prefill loops m", fontsize=7.5); axes[2, j].set_xlabel("s / request", fontsize=7.5)
+        else:
+            axes[0, j].set_xlabel("prefill loops m", fontsize=7.5)
     h = [plt.Line2D([], [], color=OURS, lw=1.2), plt.Line2D([], [], color=OURS_LIGHT, lw=1.2),
          plt.Line2D([], [], color=NAT, ls="--", lw=1.2), plt.Line2D([], [], color=NAT, marker="o", ls="none", ms=3)]
     fig.legend(h, ["decode n = 1", "decode n = 2", "trained on m ≤ 16", "Original n/n"], loc="upper center", ncol=4,
@@ -579,7 +594,7 @@ def fig_budget():
     n/n, Distilled 1/1 and 2/2, Ours m/1 and m/2."""
     tasks = [t for t in TIMED if _time(t, "native4st")]
     if not tasks:
-        return
+        return drop("fig_budget")
     def point(cond):
         rs = [_time(t, cond) for t in tasks]
         return None if None in rs else (float(np.mean([r["total_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
