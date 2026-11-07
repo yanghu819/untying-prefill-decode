@@ -863,6 +863,7 @@ MAIN_BENCH = ["MMLU", "MMLU-Pro", "BBH 3-shot", "ARC-C", "HellaSwag", "Winogrand
 MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 4/4", "native", 4),
              ("training-free 4/1", "raw", "raw41"), ("training-free 4/2", "raw", "raw42"),
              ("LoRA-distilled 1/1", "dist", 1), ("LoRA-distilled 2/2", "dist", 2),
+             ("distilled r80 1/1", "dist80", 1), ("distilled r80 2/2", "dist80", 2),
              ("loop adapter 4/1", "cell", "S41"), ("loop adapter 4/2", "cell", "S42"),
              ("aligned adapter 4/1", "aligned", "a41"), ("aligned adapter 4/2", "aligned", "a42")]
 
@@ -887,6 +888,8 @@ def main_key(bench, kind, c, model="Ouro-2.6B"):
         return nkey.format(n=c)
     if kind == "dist":
         return dkey.format(d=DISTILLED[c])
+    if kind == "dist80":   # rank-80 LoRA (as many trainable parameters as the adapter), RANK=80 launch_x26_distill.sh
+        return dkey.format(d=DISTILLED[c] + "r80")
     if kind in ("raw", "aligned") and model == "Ouro-2.6B":   # these runs are named X26-<cell>-<task> on Ouro-2.6B
         return key.replace("o26x-{c}", "X26-{c}").format(c=c)
     return key.format(c=c)
@@ -1143,8 +1146,9 @@ def main_table():
         sets = {label: load(main_key(bench, kind, c)) for label, kind, c in MAIN_ROWS}
         seeds = {label: [load(abl_key(bench, pre, c) if kind == "cell" else seed_key(bench, pre, c)) for pre in MAIN_SEEDS]
                  for label, kind, c in MAIN_ROWS if kind in ("cell", "aligned")}
-        full = max((len(v) for v in sets.values() if v), default=0)
-        seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}   # unfinished seed runs wait
+        full = float(np.median([len(v) for v in sets.values() if v])) if any(sets.values()) else 0   # typical item count
+        sets = {label: (v if v and len(v) >= 0.95 * full else None) for label, v in sets.items()}   # unfinished runs wait
+        seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}
         have = [v for v in sets.values() if v] + [v for vs in seeds.values() for v in vs if v]
         ids = set.intersection(*(set(v) for v in have)) if have else set()
         mean = lambda v: round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None

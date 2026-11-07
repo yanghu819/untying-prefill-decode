@@ -387,16 +387,18 @@ def tab_main(key="main_table", name="tab_main"):
     best of each group; LaTeX rows from paper_numbers.json, main_table)."""
     T = {r["bench"]: r for r in PN.get(key, [])}
     benches = list(T)
-    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "loop adapter 4/1", "aligned adapter 4/1"]),
-              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "loop adapter 4/2", "aligned adapter 4/2"]),
+    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "distilled r80 1/1", "loop adapter 4/1", "aligned adapter 4/1"]),
+              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "distilled r80 2/2", "loop adapter 4/2", "aligned adapter 4/2"]),
               (4, ["native 4/4"])]
     show = {"native 1/1": "Original 1/1", "native 2/2": "Original 2/2", "native 4/4": "Original 4/4",
             "training-free 4/1": "Training-free 4/1", "training-free 4/2": "Training-free 4/2",
             "LoRA-distilled 1/1": "Distilled 1/1", "LoRA-distilled 2/2": "Distilled 2/2",
+            "distilled r80 1/1": "Distilled 1/1, rank 80", "distilled r80 2/2": "Distilled 2/2, rank 80",
             "loop adapter 4/1": "Ours, one cache 4/1", "loop adapter 4/2": "Ours, one cache 4/2",
             "aligned adapter 4/1": r"\textbf{Ours, aligned 4/1}", "aligned adapter 4/2": r"\textbf{Ours, aligned 4/2}"}
     lines = []
     for n, labels in groups:
+        labels = [l for l in labels if any(T[b].get(l) is not None for b in benches)]   # rows not run for this model
         vals = {l: [T[b].get(l) for b in benches] for l in labels}
         avg = {l: (sum(v) / len(v) if None not in v else None) for l, v in vals.items()}
         cols = [[vals[l][j] for l in labels] for j in range(len(benches))] + [[avg[l] for l in labels]]
