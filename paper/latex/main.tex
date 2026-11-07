@@ -45,9 +45,10 @@ amounts of time: on Ouro-2.6B-Thinking, prefill takes under 0.4\% of the time of
 whether this time can be spent on a deeper prefill while the decoder stays shallow. We measure where inference time
 goes on tasks with short and long inputs and outputs, adapt a looped model so that a decoder with $n$ loops can read
 the prompt states of any prefill depth $m$, and sweep $m$ from 1 to 16 at one and two decode loops. On Ouro-2.6B with
-one decode loop, prefilling with four loops instead of one raises the average over 11 benchmarks from 47.2 to 56.8
-on the same weights, \tbd{at Y\% more time per request}; the gain \tbd{saturates at $m\approx Z$}. At the same measured
-time it is above the original model and above models distilled to the same decode depth on the same data, also with
+one decode loop and the same weights, four prefill loops instead of one raise accuracy on four chain-of-thought
+benchmarks from \tbd{X} to \tbd{Y} at \tbd{Z\%} more time per request, measured on the same requests; over 11
+benchmarks the average rises from 47.2 to 56.8, and the gain \tbd{saturates at $m\approx W$}. At the same measured time
+it is above the original model and above models distilled to the same decode depth on the same data, also with
 matched capacity. It does not help few-shot MATH or exact retrieval.
 \end{abstract}
 
@@ -87,7 +88,9 @@ adapter's data, teacher and 48M answer tokens, at rank 16 and at rank 80 (62.9M 
 prompt states of prefill depth $m$. The main adapter is trained on $m,n\le4$; a second one on $m\in\{1,\dots,16\}$.
 
 \paragraph{Benchmarks and timing.} Base model: 11 benchmarks with the Ouro evaluation protocol (Appendix~\ref{app:eval}),
-of which GSM8K, MATH-500, BBH and MMLU-Pro generate chain-of-thought answers. Thinking model: eight benchmarks including
+of which GSM8K, MATH-500, BBH and MMLU-Pro generate chain-of-thought answers; MMLU, ARC-C, HellaSwag and Winogrande
+score the answer options by likelihood, which costs one forward pass and no decoding, so we report their accuracy but
+time only the generation tasks. Thinking model: eight benchmarks including
 HELMET~\citep{helmet} (8K-token prompts). Time is measured per request at batch 1 on one otherwise idle B300 GPU in
 bfloat16 with greedy decoding: prefill time (to the first token), decode time and total time, on 100 requests per task
 that are the same for every configuration; the replayed answers are scored with the evaluation's rule, so quality and
@@ -147,8 +150,8 @@ marked.}
 \end{figure}
 
 Deep prefill is worth it only if no other use of the same time does better. Table~\ref{tab:main} compares
-configurations at the same number of decode loops, which on these tasks fixes the time per request up to the prefill
-share; Figure~\ref{fig:budget} places them on measured time. At one decode loop, Ours 4/1 averages 56.8 against 44.2 for
+configurations at the same number of decode loops, which on these tasks fixes the cost of each generated token (the
+answer length may still change); Figure~\ref{fig:budget} places them on measured time. At one decode loop, Ours 4/1 averages 56.8 against 44.2 for
 Original 1/1 and 49.8 for Distilled 1/1 trained on the same data and tokens (\tbd{rank 80: R}); at two decode loops 67.2
 against 63.0 and 65.3. The same holds without the training items that overlap the benchmarks (Appendix~\ref{app:training}).
 Spending the time on decode loops instead, Original 4/4 reaches 70.2 at \tbd{T}$\times$ the time of Ours 4/2.
@@ -220,9 +223,10 @@ one looped model; an extended discussion is in Appendix~\ref{app:related}.
 
 \section{Conclusion}
 
-In generation tasks a looped model spends almost all its time decoding. Reading the prompt with more loops than the
-decoder uses buys accuracy at little time, up to the depth where the gain saturates, and beats distilling the model
-to the same shallow decoder. Untying the loops turns one depth into two knobs: one paid once per prompt, one per token.
+When answers are long and prompts short, a looped model spends nearly all its time decoding. There, reading the
+prompt with more loops than the decoder uses buys accuracy for a small share of the time, up to the depth where the
+gain saturates, and beats distilling the model to the same shallow decoder; with long prompts and short answers it
+does not pay. Untying the loops turns one depth into two knobs: one paid once per prompt, one per token.
 
 \section*{Limitations}
 \label{sec:limits}
