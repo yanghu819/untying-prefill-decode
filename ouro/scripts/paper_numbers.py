@@ -1132,6 +1132,8 @@ def main_table():
         sets = {label: load(main_key(bench, kind, c)) for label, kind, c in MAIN_ROWS}
         seeds = {label: [load(abl_key(bench, pre, c) if kind == "cell" else seed_key(bench, pre, c)) for pre in MAIN_SEEDS]
                  for label, kind, c in MAIN_ROWS if kind in ("cell", "aligned")}
+        full = max((len(v) for v in sets.values() if v), default=0)
+        seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}   # unfinished seed runs wait
         have = [v for v in sets.values() if v] + [v for vs in seeds.values() for v in vs if v]
         ids = set.intersection(*(set(v) for v in have)) if have else set()
         mean = lambda v: round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None
