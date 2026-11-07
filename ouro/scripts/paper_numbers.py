@@ -389,6 +389,7 @@ def keys():
     ks |= {main_key(b, kind, c) for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
+    ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42")}
     ks |= {k for _, k, _ in REPRO}
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
@@ -1072,8 +1073,8 @@ def main_table():
     out = []
     for bench in MAIN_BENCH:
         sets = {label: load(main_key(bench, kind, c)) for label, kind, c in MAIN_ROWS}
-        seeds = {label: [load(abl_key(bench, pre, c)) for pre in MAIN_SEEDS] for label, kind, c in MAIN_ROWS
-                 if kind == "cell"}
+        seeds = {label: [load(abl_key(bench, pre, c) if kind == "cell" else seed_key(bench, pre, c)) for pre in MAIN_SEEDS]
+                 for label, kind, c in MAIN_ROWS if kind in ("cell", "aligned")}
         have = [v for v in sets.values() if v] + [v for vs in seeds.values() for v in vs if v]
         ids = set.intersection(*(set(v) for v in have)) if have else set()
         mean = lambda v: round(100 * float(np.mean([v[i] for i in ids])), 2) if v else None
@@ -1087,7 +1088,7 @@ def main_table():
         flag = "  !! paper: " + str(want) if want is not None and (avg is None or abs(avg - want) > 0.051) else ""
         print(f"Main table   {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
               + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
-    for label in [l for l, kind, _ in MAIN_ROWS if kind == "cell"]:
+    for label in [l for l, kind, _ in MAIN_ROWS if kind in ("cell", "aligned")]:
         per_seed = list(zip(*[r[f"{label} seeds"] for r in out]))
         avgs = [None if None in v else float(np.mean(v)) for v in per_seed]
         if None not in avgs:
@@ -1111,6 +1112,11 @@ ABLATIONS = [("6M tokens", "X26t6"), ("12M tokens", "X26t12"), ("24M tokens", "X
 
 ABL_PRINTED = {("6M tokens", "S41"): 53.7, ("6M tokens", "S42"): 65.2, ("48M tokens", "S41"): 56.4,
                ("48M tokens", "S42"): 66.4}   # quoted in Section 4.2
+
+
+def seed_key(bench, prefix, c):
+    """Item key of another training seed of the aligned adapter (ARM=a seed_main.sh: runs <prefix>-a4<n>-<task>)."""
+    return main_key(bench, "aligned", c).replace("X26-", prefix + "-", 1)
 
 
 def abl_key(bench, prefix, c):
