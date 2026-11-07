@@ -128,7 +128,7 @@ can simulate chain-of-thought steps in latent space~\citep{saunshi2025latent} an
 step counts~\citep{loopedlengthgen}, a vertical counterpart of continuous latent reasoning~\citep{coconut}. Relaxed
 Recursive Transformers~\citep{relaxedrecursive} convert pretrained models into looped ones with per-loop LoRA;
 Mixture-of-Recursions~\citep{mor} and Huginn~\citep{huginn} route or scale the loop count. Accordion~\citep{accordion} and Elastic Latent Recurrence~\citep{elr} train one
-model for several depth budgets; ELR also finds that keeping only the last loop's KV retains most of the gain. The
+model for several depth budgets; ELR finds that keeping only the last loop's KV retains most of the gain, as Dory1.0-4B~\citep{dory} does at any loop count. The
 Parallel Loop Transformer~\citep{plt}, LoopCoder-v2~\citep{loopcoder2} and shared-memory looped
 transformers~\citep{sharedmem} let later loops read the first loop's KV plus a short local window. All run the same
 number of loops for prefill and decode. Ouro~\citep{ouro} reuses the last loop's KV for generated tokens but loses
@@ -142,7 +142,7 @@ decoding~\citep{specdecoding,specsampling} pairs a cheap drafter with a deep ver
 prompt positions~\citep{pausetokens}. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
 decode and studies caches shared across depths; Position-Aware
 Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill} decodes with a width-pruned model;
-Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop} and SPEED~\citep{speed}
+Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop}, SPEED~\citep{speed} and SEED~\citep{seedemit}
 prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
 State-Prediction Separation~\citep{sps} add decode-side computation. Serving systems already run the two phases on
 separate hardware~\citep{distserve,splitwise,mooncake} or co-schedule them~\citep{sarathiserve} over paged KV
@@ -161,7 +161,7 @@ layers~\citep{cla,mlkv}, and evicted or compressed per token~\citep{streamingllm
 orthogonal to and composable with our per-loop reads. MELT~\citep{melt} post-trains Ouro to keep one gated KV cache per layer shared by
 all loops plus a small per-loop sliding-window cache, decoupling memory from depth; it does not separate prefill from decode loops or map which depths a task needs.
 Looped Latent Attention~\citep{lla} compresses KV across loops;
-BeNice!~\citep{benice} and LSTM-style looped transformers~\citep{lstmloop} share it; Cache-to-Cache~\citep{c2c},
+BeNice!~\citep{benice} and LSTM-style looped transformers~\citep{lstmloop} share it; PLatour~\citep{platour} injects a larger model's prefill states into a smaller decoder; Cache-to-Cache~\citep{c2c},
 HeteroFold~\citep{heterofold}, Swarm Telepathy~\citep{swat} and CacheLink~\citep{cachelink} transfer KV between models,
 and BellowsKV~\citep{bellows} shares one latent across layers. Like CacheLink, we train our maps through the receiver's
 output; within one model tokens, layers and positions align, so a RoPE-commuting scale and a value map suffice. For hybrid attention / linear-recurrence
@@ -454,8 +454,8 @@ The prefill count is chosen per benchmark on labeled items, not routed per promp
 depth; with three or four decode loops the aligned adapter matches but does not beat the native model, the single
 cache falls behind it on long-context retrieval, and a native model distilled on the same data closes part of the gap
 at two (Section~\ref{sec:select}). On few-shot MATH-500 one prefill loop is best
-(Appendix~\ref{app:eval}). More prefill loops raise the time to first token; time is measured at batch 1 on one GPU
-type. Thinking models are decoded greedily; models are 1.4B--9B and benchmarks English.
+(Appendix~\ref{app:eval}). More prefill loops raise time to first token, measured at batch 1 on one GPU type. Thinking models
+decode greedily; models are 1.4B--9B, benchmarks English.
 
 \FloatBarrier
 \bibliography{references}
