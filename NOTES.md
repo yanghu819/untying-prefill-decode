@@ -55,6 +55,8 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   already allows), honoured by run_lmeval.py; the default kernel choice is unchanged for comparability.
   X26-ali42-hellaswag finished on its cuDNN-off rerun; X26s2-a41-hellaswag hung (stack: Python blocked launching an
   RMSNorm kernel, i.e. the GPU queue full behind a stuck kernel) and was requeued the same way.
+  2026-11-08 07:55: two rank-80 distilled (native runner, not aligned) log-likelihood jobs hung as well, both on GPUs
+  shared by two jobs; requeued with OURO_NO_CUDNN_SDP=1 and their OURO_LORA_RANK=80 (requeue must keep a job's env).
 - Backups: `ouro/scripts/backup_ms.py` runs on both boxes every 2 h (first run at 19:50) and uploads new or changed
   lm-eval / bench outputs (one tar.gz per run), timings, training logs and final checkpoints, plus the prepared data
   (a1, once), to the private ModelScope model repo torushy/untying-prefill-decode-backup (folders a1/, a2/). The token
