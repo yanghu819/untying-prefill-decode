@@ -390,11 +390,11 @@ def tab_main(key="main_table", name="tab_main"):
     groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "loop adapter 4/1", "aligned adapter 4/1"]),
               (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "loop adapter 4/2", "aligned adapter 4/2"]),
               (4, ["native 4/4"])]
-    show = {"native 1/1": "Native 1/1", "native 2/2": "Native 2/2", "native 4/4": "Native 4/4",
+    show = {"native 1/1": "Original 1/1", "native 2/2": "Original 2/2", "native 4/4": "Original 4/4",
             "training-free 4/1": "Training-free 4/1", "training-free 4/2": "Training-free 4/2",
-            "LoRA-distilled 1/1": r"LoRA distill.\ 1/1", "LoRA-distilled 2/2": r"LoRA distill.\ 2/2",
-            "loop adapter 4/1": "Loop adapter, one cache 4/1", "loop adapter 4/2": "Loop adapter, one cache 4/2",
-            "aligned adapter 4/1": r"\textbf{Loop adapter, aligned 4/1}", "aligned adapter 4/2": r"\textbf{Loop adapter, aligned 4/2}"}
+            "LoRA-distilled 1/1": "Distilled 1/1", "LoRA-distilled 2/2": "Distilled 2/2",
+            "loop adapter 4/1": "Ours, one cache 4/1", "loop adapter 4/2": "Ours, one cache 4/2",
+            "aligned adapter 4/1": r"\textbf{Ours, aligned 4/1}", "aligned adapter 4/2": r"\textbf{Ours, aligned 4/2}"}
     lines = []
     for n, labels in groups:
         vals = {l: [T[b].get(l) for b in benches] for l in labels}

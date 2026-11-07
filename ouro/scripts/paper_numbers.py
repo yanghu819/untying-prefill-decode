@@ -890,6 +890,111 @@ GSM_PROTOCOL_PRINTED = {   # Appendix B (diff, lo, hi)
     (GF, "aligned adapter 4/2", "native 2/2"): (3.4, 1.2, 5.6), (GFLEX, "aligned adapter 4/2", "native 2/2"): (1.2, -0.8, 3.3)}
 
 
+SAME_WEIGHTS_PRINTED = {("a11", "avg"): 47.2, ("a41", "avg"): 56.8, ("a12", "avg"): 57.9, ("a42", "avg"): 67.2,
+                        ("a11", "MMLU"): 51.2, ("a41", "MMLU"): 67.1, ("a11", "HumanEval+"): 46.3, ("a41", "HumanEval+"): 65.2}
+
+
+def same_weights():
+    """Section 4: the aligned adapter at prefill 1 and 4 (decode 1 and 2), same weights, each benchmark of Table 1 on
+    the items all six cells and native 1/1, 4/4 share; the average over the 11 benchmarks."""
+    cells = ("a11", "a41", "a12", "a42", "a22", "a44")
+    rows = {}
+    for b in MAIN_BENCH:
+        sets = {c: load(main_key(b, "aligned", c)) for c in cells}
+        sets.update(nat1=load(main_key(b, "native", 1)), nat4=load(main_key(b, "native", 4)))
+        if any(v is None for v in sets.values()):
+            print(f"Same weights {b}: MISSING"); return {}
+        ids = set.intersection(*(set(v) for v in sets.values()))
+        rows[b] = {c: agg(v, ids) for c, v in sets.items()}
+    out = {b: {c: round(v, 2) for c, v in r.items()} for b, r in rows.items()}
+    out["avg"] = {c: round(float(np.mean([r[c] for r in rows.values()])), 2) for c in rows[MAIN_BENCH[0]]}
+    for (c, b), want in SAME_WEIGHTS_PRINTED.items():
+        got = out[b][c]
+        print(f"Same weights {c} {b:12s} {got:5.1f}" + ("" if abs(got - want) < 0.051 else f"  !! paper: {want}"))
+    return out
+
+
+# lm-evaluation-harness extraction and exact-match rules of the replayed generation tasks (task yaml files)
+LM_RULES = {"gsm8k_cot": (r"The answer is (\-?[0-9\.\,]+).", dict(case=True, drop=[",", r"\$", r"(?s).*#### ", r"\.$"])),
+            "bbh": (r"(?<=the answer is )(.*)(?=.)", {}),
+            "mmlu_pro": (r"answer is \(?([ABCDEFGHIJ])\)?", dict(case=True, punct=True))}
+TIME_TASKS = {"gsmfull": "GSM8K", "math": "MATH-500", "bbh": "BBH", "mmlupro": "MMLU-Pro"}
+
+
+def replay_score(item, text, target):
+    """Score a replayed answer (time_requests.py) with the evaluation's rule: final answer for MATH-500 (boxed), else
+    the task's lm-eval regex filter (first match) and exact match with its normalisation."""
+    import string
+    task = item.split("/")[0]
+    if task == "minerva_math500":
+        return boxed(target, text)
+    pat, o = LM_RULES["gsm8k_cot" if task == "gsm8k_cot" else task.split("_cot")[0] if task.startswith("bbh") else "mmlu_pro"]
+    m = re.findall(pat, text)
+    pred = (next((x for x in m[0] if x), "[invalid]") if isinstance(m[0], tuple) else m[0]).strip() if m else "[invalid]"
+    ref = str(target)
+    for rx in o.get("drop", []):
+        pred, ref = re.sub(rx, "", pred), re.sub(rx, "", ref)
+    if o.get("case"):
+        pred, ref = pred.lower(), ref.lower()
+    if o.get("punct"):
+        table = str.maketrans("", "", string.punctuation)
+        pred, ref = pred.translate(table), ref.translate(table)
+    return float(pred == ref)
+
+
+def eval_key(cond, task):
+    """Item-score key of the full evaluation of a timed condition (for the scorer check), or None."""
+    bench = {"gsmfull": "GSM8K", "math": "MATH-500 4-shot", "bbh": "BBH 3-shot", "mmlupro": "MMLU-Pro"}[task]
+    if m := re.fullmatch(r"native(\d)st", cond):
+        return main_key(bench, "native", int(m[1]))
+    if (m := re.fullmatch(r"a(\d+)x(\d+)sb", cond)) and int(m[1]) <= 4:
+        return main_key(bench, "aligned", f"a{m[1]}{m[2]}")
+    return None
+
+
+def time_breakdown():
+    """Section 3 / Figures 1-3: per-request prefill (to the first token), decode and total time with input / output
+    tokens (batch 1, one idle B300) for every timed condition and task, and the quality of the same replayed answers.
+    Prefill share = summed prefill time / summed total time. Check: on requests whose replayed text equals the
+    evaluated one, replay_score must equal the evaluation's item score."""
+    out, bad = [], 0
+    for f in sorted(E2E.glob("base-*.jsonl")):
+        cond, task = f.stem[len("base-"):].rsplit("-", 1)
+        if task not in TIME_TASKS:
+            continue
+        rows = [json.loads(l) for l in open(f)]
+        if not rows:
+            continue
+        sc = [replay_score(r["id"], r["text"], r["target"]) for r in rows]
+        ref = load(eval_key(cond, task)) if eval_key(cond, task) else None
+        if ref:
+            bad += sum(1 for r, x in zip(rows, sc) if r["match"] and r["id"] in ref and ref[r["id"]] != x)
+        pre, tot = sum(r["prefill_s"] for r in rows), sum(r["total_s"] for r in rows)
+        out.append(dict(model="Ouro-2.6B", task=TIME_TASKS[task], cond=cond, n=len(rows), quality=round(100 * float(np.mean(sc)), 2),
+                        prefill_s=round(pre / len(rows), 4), decode_s=round(sum(r["decode_s"] for r in rows) / len(rows), 3),
+                        total_s=round(tot / len(rows), 3), prefill_share=round(100 * pre / tot, 3),
+                        in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
+                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1),
+                        match=round(float(np.mean([r["match"] for r in rows])), 3)))
+    for f in sorted(E2E.glob("think-*-helmet.jsonl")):
+        rows = [json.loads(l) for l in open(f)][1:]   # the first record is the warm-up
+        if not rows:
+            continue
+        pre, tot = sum(r["ttft_s"] for r in rows), sum(r["total_s"] for r in rows)
+        out.append(dict(model="Ouro-2.6B-Thinking", task="HELMET", cond=f.stem[len("think-"):-len("-helmet")], n=len(rows),
+                        quality=round(100 * float(np.mean([r["correct"] for r in rows])), 2), prefill_s=round(pre / len(rows), 4),
+                        decode_s=round(sum(r["gen_s"] for r in rows) / len(rows), 3), total_s=round(tot / len(rows), 3),
+                        prefill_share=round(100 * pre / tot, 3), in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
+                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1), match=None))
+    for r in out:
+        print(f"Time         {r['model'][-8:]:8s} {r['task']:9s} {r['cond']:11s} n={r['n']:4d} q={r['quality']:5.1f} "
+              f"prefill {r['prefill_s']:7.3f}s decode {r['decode_s']:7.2f}s share {r['prefill_share']:6.2f}% "
+              f"in {r['in_tokens']:6.0f} out {r['out_tokens']:6.0f}" + ("" if r["match"] is None else f" match {r['match']:.2f}"))
+    if bad:
+        print(f"Time         replay scorer disagrees with the evaluation on {bad} matching requests  !! scorer")
+    return out
+
+
 def gsm_protocol():
     """Appendix B: Table 1's GSM8K comparisons under strict matching (the paper's metric) and flexible extraction of the
     same generated answers: each adapter row against native n/n and LoRA-distilled n/n at its decode depth, on the
@@ -1251,7 +1356,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
