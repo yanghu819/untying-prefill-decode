@@ -14,6 +14,10 @@ sys.path = [p for p in sys.path if os.path.abspath(p or ".") != os.path.dirname(
 
 faulthandler.register(signal.SIGUSR1, all_threads=True)  # `kill -USR1 <pid>` dumps every Python stack to stderr
 
+if os.environ.get("OURO_NO_CUDNN_SDP"):  # set when a job is requeued after a GPU hang (as in evaluate_bench.py)
+    import torch
+    torch.backends.cuda.enable_cudnn_sdp(False)
+
 from transformers import cache_utils
 
 for name in ("DynamicCache", "Cache"):

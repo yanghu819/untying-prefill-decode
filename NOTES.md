@@ -38,6 +38,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   ms/token at 1/1, 106 vs 69 at 1/2 (BBH 47 vs 30, 97 vs 62). At batch 1 the extra per-loop work (key/value maps, two
   attention calls merged by log-sum-exp, an aligned bank per decode loop) is launch-bound; at large batch (Table 10)
   it is hidden. Section 5's comparison on measured time has to include it.
+- Hung evaluations (100% GPU, no progress, seen about seven times on aligned conditions): `kill -USR1` on the lm-eval
+  process (faulthandler) showed the Python thread waiting in lmeval_ouro.score_batch on a GPU->CPU read, i.e. a CUDA
+  kernel that never returns. Requeued hung jobs now run with OURO_NO_CUDNN_SDP=1 (cuDNN SDPA off, as evaluate_bench
+  already allows), honoured by run_lmeval.py; the default kernel choice is unchanged for comparability.
 - Backups: `ouro/scripts/backup_ms.py` runs on both boxes every 2 h (first run at 19:50) and uploads new or changed
   lm-eval / bench outputs (one tar.gz per run), timings, training logs and final checkpoints, plus the prepared data
   (a1, once), to the private ModelScope model repo torushy/untying-prefill-decode-backup (folders a1/, a2/). The token
