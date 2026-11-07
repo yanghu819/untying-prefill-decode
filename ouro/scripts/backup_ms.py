@@ -40,14 +40,19 @@ def pack(src, dst):
 
 
 def link(src, dst):
-    if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime and dst.stat().st_size == src.stat().st_size:
+    """Stage src: a hard link for a final checkpoint (never rewritten), else a snapshot copy (logs and timings keep
+    growing while a run is live, and an upload fails if a file changes under it)."""
+    if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime and dst.stat().st_size == src.stat().st_size \
+            and (src.suffix == ".pt" or dst.stat().st_ino != src.stat().st_ino):
         return
     dst.parent.mkdir(parents=True, exist_ok=True)
     dst.unlink(missing_ok=True)
-    try:
-        os.link(src, dst)
-    except OSError:
-        shutil.copy2(src, dst)
+    if src.suffix == ".pt":
+        try:
+            return os.link(src, dst)
+        except OSError:
+            pass
+    shutil.copy2(src, dst)
 
 
 for d in sorted((R / "lmeval" / "out").iterdir()):
@@ -85,7 +90,14 @@ if todo:
         q = out / p.relative_to(STAGE); q.parent.mkdir(parents=True, exist_ok=True); os.link(p, q)
     from modelscope.hub.api import HubApi
     api = HubApi(); api.login(open("/root/.ms.token").read().strip())
-    api.upload_folder(REPO, folder_path=str(out), path_in_repo=BOX, commit_message=f"backup {BOX}: {len(todo)} files")
+    for attempt in range(3):   # the hub skips files already uploaded on a retry
+        try:
+            api.upload_folder(REPO, folder_path=str(out), path_in_repo=BOX, commit_message=f"backup {BOX}: {len(todo)} files")
+            break
+        except Exception as e:
+            print(f"{BOX}: upload attempt {attempt + 1} failed: {str(e)[:200]}", flush=True)
+    else:
+        sys.exit(1)
     for p in todo:
         done[str(p.relative_to(STAGE))] = [p.stat().st_size, int(p.stat().st_mtime)]
     manifest_path.write_text(json.dumps(done))
