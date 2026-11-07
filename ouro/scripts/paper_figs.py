@@ -491,6 +491,120 @@ def tab_select_distilled():
     (OUT / "tab_select_distilled.tex").write_text("\n".join(lines) + "\n")
 
 
+TIMED = ["GSM8K", "MATH-500", "BBH", "MMLU-Pro"]
+SWEEP_NAME = {"GSM8K": "GSM8K", "MATH-500": "MATH-500 4-shot", "BBH": "BBH 3-shot", "MMLU-Pro": "MMLU-Pro"}
+
+
+def _time(task, cond):
+    return next((r for r in PN.get("time_breakdown", []) if r["task"] == task and r["cond"] == cond), None)
+
+
+def fig_time():
+    """Figure 1: time per request split into prefill and decode, at the sweep's starting point (Ours 1/1 and 1/2) and
+    Original 4/4, for every timed task; label: prefill share."""
+    confs = [("a1x1sb", "Ours 1/1"), ("a1x2sb", "Ours 1/2"), ("native4st", "Original 4/4")]
+    tasks = [t for t in TIMED + ["HELMET"] if any(_time(t, c) for c, _ in confs)
+             or (t == "HELMET" and _time(t, "native4st"))]
+    if not tasks:
+        return
+    fig, ax = plt.subplots(figsize=(3.3, 0.32 * len(tasks) * len(confs) + 0.4))
+    y, ticks, labs = 0, [], []
+    for t in tasks:
+        for c, lab in (confs if t != "HELMET" else [("native2st", "Original 2/2"), ("native4st", "Original 4/4")]):
+            r = _time(t, c)
+            if r is None:
+                continue
+            ax.barh(y, r["prefill_s"], color=OURS, height=0.7)
+            ax.barh(y, r["decode_s"], left=r["prefill_s"], color=NAT_LIGHT, height=0.7)
+            ax.annotate(f"{r['prefill_share']:.1f}%  ({r['in_tokens']:.0f} in / {r['out_tokens']:.0f} out)",
+                        (r["total_s"], y), xytext=(3, 0), textcoords="offset points", va="center", fontsize=6.5, color=NAT)
+            ticks.append(y); labs.append(f"{t}, {lab}"); y += 1
+        y += 0.6
+    ax.set_yticks(ticks); ax.set_yticklabels(labs, fontsize=7); ax.invert_yaxis()
+    ax.set_xlabel("seconds per request (batch 1)")
+    ax.legend([plt.Rectangle((0, 0), 1, 1, color=OURS), plt.Rectangle((0, 0), 1, 1, color=NAT_LIGHT)], ["prefill", "decode"],
+              loc="lower right", fontsize=7)
+    ax.grid(axis="x", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+    save(fig, "fig_time")
+
+
+def fig_depth():
+    """Figure 2: per timed task, quality (full evaluation set) and time per request against prefill loops m at decode
+    n = 1 (dark) and 2 (light), and quality against time (same replayed requests)."""
+    rows = PN.get("depth_sweep", [])
+    tasks = [t for t in TIMED if any(r["bench"] == SWEEP_NAME[t] for r in rows)]
+    if not tasks:
+        return
+    fig, axes = plt.subplots(3, len(tasks), figsize=(1.75 * len(tasks), 4.6), squeeze=False)
+    for j, t in enumerate(tasks):
+        for n, col in ((1, OURS), (2, OURS_LIGHT)):
+            for wide, ls in ((False, "-"), (True, "--")):
+                r = next((r for r in rows if r["bench"] == SWEEP_NAME[t] and r["n"] == n and r["adapter"] == ("wide" if wide else "m<=4")), None)
+                if r:
+                    ms = sorted(int(m) for m in r["quality"])
+                    axes[0, j].plot(ms, [r["quality"][str(m)] if str(m) in r["quality"] else r["quality"][m] for m in ms],
+                                    ls, color=col, marker="s", ms=2.5, lw=1.2)
+            pts = [(m, _time(t, f"a{m}x{n}sb")) for m in (1, 2, 3, 4, 6, 8, 12, 16)]
+            pts = [(m, r) for m, r in pts if r]
+            if pts:
+                axes[1, j].plot([m for m, _ in pts], [r["total_s"] for _, r in pts], "-", color=col, marker="s", ms=2.5, lw=1.2)
+                axes[1, j].plot([m for m, _ in pts], [r["prefill_s"] for _, r in pts], ":", color=col, lw=1)
+                axes[2, j].plot([r["total_s"] for _, r in pts], [r["quality"] for _, r in pts], "-", color=col, marker="s", ms=2.5, lw=1.2)
+                for m, r in pts:
+                    axes[2, j].annotate(str(m), (r["total_s"], r["quality"]), xytext=(0, 3), textcoords="offset points", fontsize=6, color=col, ha="center")
+        for d in (1, 2, 4):
+            r = _time(t, f"native{d}st")
+            if r:
+                axes[2, j].scatter([r["total_s"]], [r["quality"]], color=NAT, s=10, marker="o", zorder=3)
+                axes[2, j].annotate(f"{d}/{d}", (r["total_s"], r["quality"]), xytext=(0, -8), textcoords="offset points", fontsize=6, color=NAT, ha="center")
+        axes[0, j].set_title(t, fontsize=8.5, color=INK, pad=4)
+        for i in (0, 1):
+            axes[i, j].set_xscale("log", base=2); axes[i, j].set_xticks([1, 2, 4, 8, 16]); axes[i, j].set_xticklabels(["1", "2", "4", "8", "16"])
+            axes[i, j].axvline(4, color=GRID, lw=0.8, zorder=0)
+        for i in range(3):
+            axes[i, j].grid(color="#EDEDED", lw=0.5); axes[i, j].set_axisbelow(True)
+    axes[0, 0].set_ylabel("accuracy (%)"); axes[1, 0].set_ylabel("s / request"); axes[2, 0].set_ylabel("accuracy (%)")
+    for j in range(len(tasks)):
+        axes[1, j].set_xlabel("prefill loops m", fontsize=7.5); axes[2, j].set_xlabel("s / request", fontsize=7.5)
+    h = [plt.Line2D([], [], color=OURS, lw=1.2), plt.Line2D([], [], color=OURS_LIGHT, lw=1.2),
+         plt.Line2D([], [], color=NAT, ls="--", lw=1.2), plt.Line2D([], [], color=NAT, marker="o", ls="none", ms=3)]
+    fig.legend(h, ["decode n = 1", "decode n = 2", "trained on m ≤ 16", "Original n/n"], loc="upper center", ncol=4,
+               fontsize=7.5, bbox_to_anchor=(0.5, 1.03))
+    fig.tight_layout(h_pad=0.6, w_pad=0.4)
+    save(fig, "fig_depth")
+
+
+def fig_budget():
+    """Figure 3: mean accuracy over the timed tasks against mean time per request (same replayed requests): Original
+    n/n, Distilled 1/1 and 2/2, Ours m/1 and m/2."""
+    tasks = [t for t in TIMED if _time(t, "native4st")]
+    if not tasks:
+        return
+    def point(cond):
+        rs = [_time(t, cond) for t in tasks]
+        return None if None in rs else (float(np.mean([r["total_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
+    fig, ax = plt.subplots(figsize=(3.3, 2.3))
+    nat = [(*point(f"native{d}st"), f"{d}/{d}") for d in (1, 2, 4) if point(f"native{d}st")]
+    for n, col in ((1, OURS), (2, OURS_LIGHT)):
+        ours = [(*point(f"a{m}x{n}sb"), str(m)) for m in (1, 2, 3, 4, 6, 8, 12, 16) if point(f"a{m}x{n}sb")]
+        if ours:
+            ax.plot([p[0] for p in ours], [p[1] for p in ours], "-", color=col, marker="s", ms=3, lw=1.3, label=f"Ours m/{n}")
+            for x, y, lab in ours:
+                ax.annotate(lab, (x, y), xytext=(0, 3), textcoords="offset points", fontsize=6.5, color=col, ha="center")
+    if nat:
+        ax.plot([p[0] for p in nat], [p[1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, label="Original n/n")
+        for x, y, lab in nat:
+            ax.annotate(lab, (x, y), xytext=(0, -9), textcoords="offset points", fontsize=6.5, color=NAT, ha="center")
+    for d in (1, 2):
+        p = point(f"D{d}st")
+        if p:
+            ax.scatter(*p, color=NAT, marker="^", s=16, zorder=3)
+            ax.annotate(f"Distilled {d}/{d}", p, xytext=(4, -3), textcoords="offset points", fontsize=6.5, color=NAT)
+    ax.set_xlabel("seconds per request (batch 1)"); ax.set_ylabel("mean accuracy (%)")
+    ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True); ax.legend(fontsize=7, loc="lower right")
+    save(fig, "fig_budget")
+
+
 if __name__ == "__main__":
-    fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_time(); fig_depth(); fig_budget(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

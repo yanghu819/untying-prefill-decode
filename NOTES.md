@@ -33,6 +33,12 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   3. Same-budget controls: rank-80 LoRA-distilled 1/1 and 2/2 (`RANK=80 launch_x26_distill.sh`, 62.9M parameters vs
      the adapter's 63.3M), fixed-prefill-4 LoRA-only (`launch_variant.sh fixed4`, identity maps), training-free aligned
      (`CELLS="ali41 ali42" raw_q.sh`).
+- Incident 16:25: a cleanup kill reached PID 1 of the a2 container; every process there restarted (/dev/shm intact).
+  Lost: aligned seed 3 at 46.8M/48M (no intermediate checkpoint; to be retrained), rank-80 distilled 1/1 (restarted),
+  running evals (requeued; lm-eval resumes from its cache). HELMET timing (e2e_latency.py) now follows the evaluation's
+  decoding exactly (NO_EMPTY=1, no stop inside leading whitespace): replayed answers equal the evaluated ones.
+- Thinking with aligned caches: Ours 4/2 70.6 vs Original 4/4 71.5 over eight benchmarks (HELMET 58.9 vs 57.0 with one
+  cache), at 314 vs 125 decode tokens/s; Distilled 2/2 67.5.
 - Red-team round 1 (Codex gpt-6-astra, three ARR personas, all 2-2.5/5): HELMET was item-averaged in Figure 6; corrected
   (adapter 4/2 70.1 vs native 4/4 71.5, +2.6 over distilled 2/2). GSM8K strict/flexible and overlap-excluded checks added.
 

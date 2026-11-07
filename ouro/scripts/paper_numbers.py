@@ -394,6 +394,7 @@ def keys():
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {main_key(b, "aligned", f"a{m}{n}") for b in MAIN_BENCH for m in range(1, 5) for n in range(1, 5)}
     ks |= {main_key("GSM8K", kind, c).replace(GF, GFLEX) for _, kind, c in MAIN_ROWS}
+    ks |= {sweep_key(b, m, n, w) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2) for w in (False, True)}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -574,7 +575,8 @@ def think_frontier():
     tput = {k: v["tokens_per_s"] for k, v in throughput().items()}
     confs = {"native 2/2": ("native", 2, tput["native2st"]), "native 4/4": ("native", 4, tput["native4st"]),
              "distilled 2/2": ("Df", None, tput["native2st"]), "adapter 2/2": ("S22", None, tput["S42sb"]),
-             "adapter 4/2": ("S42", None, tput["S42sb"])}
+             "adapter 4/2": ("S42", None, tput["S42sb"]),
+             "aligned 2/2": ("a22", None, tput.get("a42sb")), "aligned 4/2": ("a42", None, tput.get("a42sb"))}
     per = {c: [] for c in confs}
     for bench, ka, kb in EQUAL:
         keys = {c: (kb.format(n=n) if kind == "native" else ka.replace("S42", kind)) for c, (kind, n, _) in confs.items()}
@@ -589,8 +591,9 @@ def think_frontier():
                 tokens_per_s=confs[c][2]) for c in confs]
     want = {"native 2/2": 65.4, "native 4/4": 71.5, "distilled 2/2": 67.5, "adapter 2/2": 67.0, "adapter 4/2": 70.1}
     for r in out:
-        flag = "" if abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
-        print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s']:4d} tok/s{flag}")
+        flag = "" if r["config"] not in want or abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
+        print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s'] or 0:4d} tok/s  " +
+              " ".join(f"{b}={x:.1f}" for (b, _, _), x in zip(EQUAL, r["scores"])) + flag)
     return out
 
 
@@ -995,6 +998,36 @@ def time_breakdown():
     return out
 
 
+SWEEP_M = (1, 2, 3, 4, 5, 6, 8, 12, 16)
+
+
+def sweep_key(bench, m, n, wide=False):
+    """Item key of the aligned adapter at prefill m / decode n: X26-a<m><n> (m <= 4) or X26-a<m>x<n> (depth sweep,
+    sweep_depth.sh); wide: the adapter trained on prefill 1-16 (launch_variant.sh wide, run names X26w-a<m>x<n>)."""
+    key = main_key(bench, "aligned", f"a{m}{n}" if m <= 4 and not wide else f"a{m}x{n}")
+    return key.replace("X26-", "X26w-") if wide else key
+
+
+def depth_sweep():
+    """Section 4 / Figure 2: quality against prefill loops m at decode n = 1, 2 on the same weights: the adapter trained
+    on m <= 4 (beyond 4 it extrapolates) and the one trained on m <= 16. Each benchmark on the items all available m of
+    that adapter and n share; m without results are left out."""
+    out = []
+    for wide in (False, True):
+        for n in (1, 2):
+            for b in MAIN_BENCH:
+                sets = {m: load(sweep_key(b, m, n, wide)) for m in SWEEP_M}
+                sets = {m: v for m, v in sets.items() if v}
+                if len(sets) < 2:
+                    continue
+                ids = set.intersection(*(set(v) for v in sets.values()))
+                row = dict(adapter="wide" if wide else "m<=4", n=n, bench=b, items=len(ids),
+                           quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
+                out.append(row)
+                print(f"Depth sweep  {row['adapter']:5s} n={n} {b:16s} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+    return out
+
+
 def gsm_protocol():
     """Appendix B: Table 1's GSM8K comparisons under strict matching (the paper's metric) and flexible extraction of the
     same generated answers: each adapter row against native n/n and LoRA-distilled n/n at its decode depth, on the
@@ -1356,7 +1389,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), depth_sweep=depth_sweep(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

@@ -98,8 +98,8 @@ time come from the same requests. Comparisons are paired over items with 95\% bo
 
 \begin{figure}[t]
 \centering
-\pending{Figure 1: stacked prefill / decode time per request (seconds) for GSM8K, MATH-500, BBH, MMLU-Pro (base),
-GSM8K, MATH-500, HELMET (Thinking), at Ours 1/1, 1/2 and Original 4/4; with input / output tokens.}
+\IfFileExists{../figs/fig_time.pdf}{\includegraphics[width=\columnwidth]{../figs/fig_time.pdf}}{\pending{Figure 1: stacked prefill / decode time per request (seconds) for GSM8K, MATH-500, BBH, MMLU-Pro (base),
+GSM8K, MATH-500, HELMET (Thinking), at Ours 1/1, 1/2 and Original 4/4; with input / output tokens.}}
 \caption{\textbf{Decode dominates the time of generation tasks.} Time per request split into prefill (to the first
 token) and decode, batch 1, one B300; labels: share of prefill and mean input / output tokens.}
 \label{fig:time}
@@ -119,9 +119,9 @@ Appendix~\ref{app:time}.
 
 \begin{figure*}[t]
 \centering
-\pending{Figure 2: for each task (GSM8K, MATH-500, BBH, MMLU-Pro, MMLU, RULER-16K) at decode $n=1$ and $n=2$:
+\IfFileExists{../figs/fig_depth.pdf}{\includegraphics[width=\textwidth]{../figs/fig_depth.pdf}}{\pending{Figure 2: for each task (GSM8K, MATH-500, BBH, MMLU-Pro, MMLU, RULER-16K) at decode $n=1$ and $n=2$:
 (a) quality vs prefill loops $m\in\{1,\dots,16\}$; (b) total time vs $m$, split into prefill and decode; (c) quality
-vs total time. Solid: adapter trained on $m\le16$; dashed: adapter trained on $m\le4$ (extrapolation beyond 4).}
+vs total time. Solid: adapter trained on $m\le16$; dashed: adapter trained on $m\le4$ (extrapolation beyond 4).}}
 \caption{\textbf{Prefill depth at fixed decode depth.} Ouro-2.6B, same weights at every $m$.}
 \label{fig:depth}
 \end{figure*}
@@ -139,8 +139,8 @@ three consecutive depths) and reported on the other half.
 
 \begin{figure}[t]
 \centering
-\pending{Figure 3: average quality vs measured time per request (GSM8K, MATH-500, BBH, MMLU-Pro) for Original 1/1--4/4,
-Distilled 1/1 and 2/2 (rank 16 and 80), fixed-prefill-4 LoRA-only, and Ours $m/1$, $m/2$.}
+\IfFileExists{../figs/fig_budget.pdf}{\includegraphics[width=\columnwidth]{../figs/fig_budget.pdf}}{\pending{Figure 3: average quality vs measured time per request (GSM8K, MATH-500, BBH, MMLU-Pro) for Original 1/1--4/4,
+Distilled 1/1 and 2/2 (rank 16 and 80), fixed-prefill-4 LoRA-only, and Ours $m/1$, $m/2$.}}
 \caption{\textbf{Quality against measured time per request.} Points not dominated in both quality and time are
 marked.}
 \label{fig:budget}

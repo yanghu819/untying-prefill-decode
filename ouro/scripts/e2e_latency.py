@@ -81,6 +81,10 @@ def score(gold, text):
         return 0.0
 
 
+NO_EMPTY = os.environ.get("NO_EMPTY", "0") == "1"
+stop_mask = None   # set below: True at the stop token ids (NO_EMPTY)
+
+
 def timed(fn):
     torch.cuda.synchronize(); t = time.perf_counter(); r = fn(); torch.cuda.synchronize()
     return r, time.perf_counter() - t
@@ -91,7 +95,15 @@ with torch.inference_mode(), open(out, "w") as f:
         x = torch.tensor([ids], device="cuda")
         (logits, cache), ttft = timed(lambda: runner.prefill(x))
         out_ids, t0 = [], time.perf_counter()
-        nxt = int(logits.argmax(-1))
+        # HELMET rows follow evaluate_bench.greedy_batch: with NO_EMPTY=1 (as the evaluation) no stop before the first
+        # non-whitespace token, and stop strings are searched only after the leading whitespace
+        bench_row = isinstance(gold, dict)
+        if stop_mask is None or stop_mask.shape[-1] != logits.shape[-1]:
+            stop_mask = torch.zeros(logits.shape[-1], dtype=torch.bool, device=logits.device)
+            stop_mask[[t for t in stop if t is not None and t < logits.shape[-1]]] = True
+        started = False
+        pick = lambda lg: int((lg.masked_fill(stop_mask, float("-inf")) if bench_row and NO_EMPTY and not started else lg).argmax(-1))
+        nxt = pick(logits)
         reason = "length"
         for _ in range(max_new):
             out_ids.append(nxt)
@@ -100,14 +112,17 @@ with torch.inference_mode(), open(out, "w") as f:
                 break
             if len(out_ids) == max_new:  # cap reached: no further decode step
                 break
-            if isinstance(gold, dict) and any(u in tok.decode(out_ids, skip_special_tokens=True) for u in gold.get("until", [])):
-                reason = "stop"
-                break
+            if bench_row:
+                started = started or bool(tok.decode([nxt], skip_special_tokens=True).strip())
+                if started and any(u in tok.decode(out_ids, skip_special_tokens=True).lstrip() for u in gold.get("until", [])):
+                    reason = "stop"
+                    break
             logits, cache = runner.decode(torch.tensor([[nxt]], device="cuda"), cache)
-            nxt = int(logits.argmax(-1))
+            nxt = pick(logits)
         torch.cuda.synchronize(); gen = time.perf_counter() - t0
         text = tok.decode(out_ids, skip_special_tokens=True)
         if isinstance(gold, dict):
+            text = text.lstrip()
             for u in gold.get("until", []):
                 text = text.split(u)[0]
         rec = dict(id=idx, cond=cond, prompt_tokens=len(ids), new_tokens=len(out_ids), stop=reason, ttft_s=round(ttft, 4),
