@@ -258,10 +258,9 @@ def tab_sn():
     (OUT / "tab_sn.tex").write_text("\n".join(lines) + "\n")
 
 
-def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None, ours_n=(1, 2, 3, 4)):
-    """Task map: Ouro-2.6B, one loop adapter. Per benchmark, native n/n against the adapter's best prefill count m
-    at each number of decode loops n (point labels: that m), or with fixed=m against prefill m at every n (Figure 1);
-    all points of a panel on the same items (taskmap_cells)."""
+def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
+    """Appendix task map: Ouro-2.6B, one-cache loop adapter. Per benchmark, native n/n against the adapter's best prefill
+    count m at each number of decode loops n (point labels: that m); all points of a panel on the same items."""
     T = {r["bench"]: r for r in PN["taskmap_cells"] if r["model"] == "Ouro-2.6B"}
     title = {"BBH 3-shot": "BBH"}
     panels = [b for b in ("MMLU", "MMLU-Pro", "ARC-C", "GPQA-Diamond", "HellaSwag", "Winogrande", "BBH 3-shot", "IFEval",
@@ -275,16 +274,12 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4, fixed=None, ours_n=
         ax.axis("off")
     for ax, b in zip(axes.flat, panels):
         r = T[b]
-        ours = ([(n, r[f"S{fixed}{n}"], "") for n in ours_n] if fixed else
-                [(n, r[f"S{r['best'][str(n)]}{n}"], f"m={r['best'][str(n)]}") for n in range(1, 5)])
+        ours = [(n, r[f"S{r['best'][str(n)]}{n}"], f"m={r['best'][str(n)]}") for n in range(1, 5)]
         nat = [(n, r[f"native{n}"], "") for n in range(1, 5)]
         frontier(ax, nat, ours, title.get(b, b))
         ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
-    if fixed:
-        legend(fig, f"loop adapter, prefill {fixed} / decode n", "", y=1.0)
-    else:
-        legend(fig, "loop adapter, best prefill m", "labels: prefill loops m", y=1.0)
+    legend(fig, "loop adapter (one cache), best prefill m", "labels: prefill loops m", y=1.0)
     fig.subplots_adjust(wspace=0.32, hspace=0.5, left=0.07, right=0.99, top=1 - 0.38 / H, bottom=0.32 / H)
     save(fig, name)
 

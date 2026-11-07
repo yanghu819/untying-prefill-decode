@@ -47,7 +47,9 @@ software versions, times, checkpoint sha256 and training log, the cleaned evalua
 
 | checkpoint | used for | launcher |
 |---|---|---|
-| Ouro-2.6B loop adapter `X26-S-universal` | task map, cross-fitted table, Pareto, design variants | `launch_s.sh` (= `run_mix2.sh X26-S-universal S <gpus> <port> 48000000 --micro 1`) |
+| Ouro-2.6B aligned loop adapter `X26-a-universal` (arm a, the main method) | Table 1, Figure 1, aligned map, throughput | `launch_aligned.sh` (`SEED=2/3`: seeds; `TOK=6/12`: token ablation) |
+| Ouro-1.4B and Thinking aligned adapters `O14-a-`, `T26-a-`, `T14-a-universal` | Ouro-1.4B table, Thinking figures and appendix | `launch_aligned_more.sh 14 / think / think14`, then `eval_think_aligned.sh` |
+| Ouro-2.6B one-cache loop adapter `X26-S-universal` (arm S, the memory-saving variant) | one-cache rows of Table 1, task map, cross-fitted table, Pareto, design variants | `launch_s.sh` (= `run_mix2.sh X26-S-universal S <gpus> <port> 48000000 --micro 1`) |
 | second seed `X26-S-seed2` | training-seed appendix | `launch_seed2.sh` |
 | Ouro-1.4B loop adapter `O14-S-universal` | Ouro-1.4B task map, other checkpoints | `launch_scale.sh` |
 | Ouro-2.6B-Thinking `T26-S-universal` | Figure 4, timing, Thinking appendix | `launch_think.sh` |
@@ -81,21 +83,35 @@ reads (`CMP`, `MEANS`, `TASK_MAP`, `TASK_MAP_14`, `EQUAL`, `SN_EQUAL`, `SN_STATE
 
 | element | runs (launcher) | computed by |
 |---|---|---|
-| Figure 1 / full task map (Ouro-2.6B, 15 settings x 16 pairs + native; Ouro's protocol) | `grid_q*_a{1,2}.txt`, `mn_low_prefill.sh`, `mn_math_grid.sh`, `fullsets_q.txt`, `protocol_q.sh` (HellaSwag, Winogrande), `evalplus_q.sh` + `ouro/scripts/score_evalplus.py` (code) | `paper_numbers.py` (`Task map` means) → `paper_figs.py fig_taskmap` |
+| Table 1 (main results) | aligned: `launch_aligned.sh`; one cache: task-map runs; training-free rows: `raw_q.sh`; distilled rows: `launch_x26_distill.sh` + `after_x26_distill.sh`, `controls_first_chain.sh`, `distill_fullsets.sh`; seeds: `seed_main.sh`, `seed2_q.sh` | `paper_numbers.py` `main_table` → `paper_figs.py tab_main` |
+| ablation table (training tokens, LoRA rank) | `ablate_tokens.sh` | `paper_numbers.py` `ablations` → `tab_ablation` |
+| aligned map (appendix) and Figure 1 | `launch_aligned.sh` (`CELLS=...`) | `paper_numbers.py` `aligned_cells` → `fig_aligned`, `tab_aligned` |
+| smaller model at equal time; corrected distilled timing | `time_small.sh`; `time_t26d.sh` | `paper_numbers.py` `smaller_model`, `e2e_table` |
+| aligned-cache throughput | `tput_aligned.sh` (decoder checked by `ouro/scripts/check_aligned_runner.py`) | `paper_numbers.py` `appendix_checks` |
+| from-scratch re-runs | `verify_q.sh` | `ouro/scripts/verify_compare.py` → `ouro/results/verify_rerun.txt` |
+| Figure 1 / full task map (Ouro-2.6B, 15 settings x 16 pairs + native; Ouro's protocol) | `queues/grid_q*_a{1,2}.txt`, `mn_low_prefill.sh`, `mn_math_grid.sh`, `queues/fullsets_q.txt`, `protocol_q.sh` (HellaSwag, Winogrande), `evalplus_q.sh` + `ouro/scripts/score_evalplus.py` (code) | `paper_numbers.py` (`Task map` means) → `paper_figs.py fig_taskmap` |
 | Table 1, cross-fitted choice of prefill loops (and the Ouro-1.4B table) | as above; `grid14_q_*.txt` | `paper_numbers.py` `taskmap_select` → `paper_figs.py tab_select` |
-| Figure 4 and its numbers table (Ouro-2.6B-Thinking, eight benchmarks) | `launch_think.sh` evaluations, `grid_q3_a2.txt` (prefill 1 / decode 2) | `paper_numbers.py` `equal` → `fig_equal`, `tab_equal` |
+| Figure 4 and its numbers table (Ouro-2.6B-Thinking, eight benchmarks) | `launch_think.sh` evaluations, `queues/grid_q3_a2.txt` (prefill 1 / decode 2) | `paper_numbers.py` `equal` → `fig_equal`, `tab_equal` |
 | distillation table | `eval_t26d.sh` | `paper_numbers.py` (`Distillation baseline`) → `tab_distill` |
 | Pareto figure, throughput table | `tput_sb.sh` (`ouro/bench_throughput.py`) | `paper_numbers.py` `throughput`, `paper_figs.py fig_pareto` |
 | end-to-end time (Figure 6, timing table) | `ouro/scripts/e2e_latency.py` (batch 1, one idle GPU), `sn_e2e_after.sh` | `paper_numbers.py` (`RATIOS`) |
 | decision models (Lev), both directions | `ouro/lev/`, `ouro/runs_scripts/lev_mn.sh` | `paper_numbers.py` `lev` → `fig_lev`, `tab_lev` |
 | Ouro-1.4B-Thinking appendix | `t14_head.sh` | `paper_numbers.py` `equal` → `tab_equal` |
-| SenseNova and hybrid-state appendices | `sn_head.sh`, `sn_math_rest.sh`, `sn_rebalance*.sh`, `sn_arc_mix.sh`, `launch_sng.sh` | `paper_numbers.py` (`Hybrid state`, `sn_equal`) → `tab_hybrid`, `tab_sn` |
+| SenseNova and hybrid-state appendices | `sn_head.sh`, `sn_math_rest.sh`, `sn_rebalance*.sh`, `sn_followup.sh`, `sn_arc_mix.sh`, `launch_sng.sh` | `paper_numbers.py` (`Hybrid state`, `sn_equal`) → `tab_hybrid`, `tab_sn` |
 | single-cache exactness (512/512 tokens) | `ouro/scripts/single_bank_check.py` | — |
 | paper PDF and arXiv package | — | in order: `paper_numbers.py compute`, `paper_figs.py`, compile `paper/latex/main.tex`, `paper/build_arxiv.py` |
 
 `paper_numbers.py compute` also checks every number quoted in the text against hard-coded expectations (including the
 11-of-13 / 9-of-13 counts of Table 1 and 10 / 2 of 13 on Ouro-1.4B) and reports any mismatch with `!!`. Not covered: the long-answer throughput
 and batch-size measurements, the parser diagnostics and the MBPP+ format counts (reported as measured).
+
+## Helpers
+
+`grid_worker.sh` (queue runner, two jobs per GPU), `wait_gpus.sh` (start a job when K GPUs are free), `lm1.sh` (one
+lm-evaluation-harness job), `bench3.sh` (RULER / HELMET shards), `run_mix2.sh` (training), `mk_code_local.py` and
+`mk_gpqa_local.py` (local task files), `ouro/lev/levbench_compare.py` (Lev comparisons), `launch_think_o.sh` (answer
+stored once, Thinking), `mbpp3_q.sh` (the earlier MBPP+ prompt of Appendix B). Queue files with the exact commands of
+the grid runs are in `ouro/runs_scripts/queues/`; superseded launchers are in `ouro/runs_scripts/deprecated/`.
 
 ## What is not here
 

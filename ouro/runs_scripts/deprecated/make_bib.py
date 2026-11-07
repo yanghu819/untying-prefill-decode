@@ -1,3 +1,5 @@
+# DEPRECATED: generated the first references.bib from arXiv ids. references.bib now also holds hand-verified
+# entries (venues, non-arXiv papers); running this would drop them. Edit references.bib directly.
 """references.bib from arXiv metadata (export API) — no hand-typed authors or titles."""
 import re, sys, time, urllib.request, xml.etree.ElementTree as ET
 

@@ -27,7 +27,7 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
     (`launch_x26_distill.sh`, runs `X26-{E,D,H}48-*`; E/D on a2, H on a1). `after_x26_distill.sh` queues their 13
     benchmarks when training ends; `paper_numbers.py` `taskmap_select` then fills `distilled` / `diff_distilled`. Put
     the result into Table 1 (a column or a second table), the abstract and Limitations — whatever it shows.
-  - Ouro-1.4B replication on 10 benchmarks (`grid14b_q.txt`) and full GSM8K / MMLU / 1.4B RULER (`fullsets_q.txt`) on
+  - Ouro-1.4B replication on 10 benchmarks (`queues/grid14b_q.txt`) and full GSM8K / MMLU / 1.4B RULER (`queues/fullsets_q.txt`) on
     a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
     `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).

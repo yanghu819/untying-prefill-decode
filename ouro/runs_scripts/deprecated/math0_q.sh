@@ -1,4 +1,6 @@
 #!/bin/bash
+# DEPRECATED (2026-11-05): the zero-shot MATH-500 grid was stopped as a niche experiment; the paper uses only
+# the zero-shot cells of Table 16 (o26x-S11/S22/S41/S42-math0shot). Kept for the partial runs' provenance.
 # math0_q.sh GPU...: zero-shot MATH-500 (Minerva prompt without exemplars) for every Ouro-2.6B cell and native n/n, to
 # test whether the 4-shot reversal (prefill 1 best at every decode depth under final-answer scoring) comes from the
 # exemplars. Runs that already exist on this box are skipped. Two jobs per GPU.

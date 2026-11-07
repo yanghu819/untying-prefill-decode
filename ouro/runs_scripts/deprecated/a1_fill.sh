@@ -1,4 +1,5 @@
 #!/bin/bash
+# DEPRECATED: one-off GPU filler for a1; queues it fed are recorded in ouro/runs_scripts/queues/.
 # a1 scheduler while the Lev m < n runs finish: GPU 7 starts on the Ouro-1.4B queue at once; the first four GPUs that
 # fall idle train the native 3/3 distillation control (launch_x26_distill.sh H); every other GPU joins the queue.
 M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/grid14b_q.txt; cd $R
