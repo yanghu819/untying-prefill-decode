@@ -56,6 +56,8 @@ from ouro.prepare_adapter_data import AdapterDataset
 
 U_CELLS = [(p, d) for p in range(1, 5) for d in range(1, 4) if p >= d]  # (4, 4) is the native teacher itself
 V_CELLS = [(p, d) for p in range(1, 5) for d in range(1, 5)]  # loop-map connector: every cell, also p < d
+if os.environ.get("OURO_CELLS"):  # e.g. "4x1,4x2,4x3,4x4" (fixed prefill 4) or a wider prefill range for the depth sweep
+    V_CELLS = [tuple(int(v) for v in c.split("x")) for c in os.environ["OURO_CELLS"].split(",")]
 
 
 def learning_rate(tokens, planned_tokens):
@@ -147,7 +149,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     if rank == 0:
         setup = {
-            "event": "start", "arm": args.arm, "first_target": args.first_target, "freeze_maps": args.freeze_maps, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
+            "event": "start", "arm": args.arm, "cells": V_CELLS, "first_target": args.first_target, "freeze_maps": args.freeze_maps, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
             "global_batch": args.global_batch, "microbatch": 1,
             "gradient_accumulation": args.global_batch // world,
             "trainable_parameters": sum(p.numel() for p in trainable),

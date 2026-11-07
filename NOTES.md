@@ -22,6 +22,20 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-07 (restructure for the 4-page arXiv version, advisor review)
+- Story: in decode-dominated tasks, spend loops on prefill. Three experiment groups, each with its launcher:
+  1. Time breakdown per request (prefill / decode / total, in/out tokens), batch 1, dedicated GPUs:
+     `time_sweep.sh` (ouro/scripts/time_requests.py replays the exact lm-eval prompts and stop rules of GSM8K, MATH-500,
+     BBH, MMLU-Pro; 100 requests per task, same items for every condition; replayed answers stored and scored) and
+     `time_helmet.sh` (Thinking, HELMET, 1,108 long prompts, e2e_latency.py `helmet`).
+  2. Prefill-depth sweep m = 1..16 at n = 1, 2 on the same weights: `sweep_depth.sh` (extrapolation of X26-a-universal,
+     conditions a<m>x<n>) and `launch_variant.sh wide` (X26-a-wide, trained on m in {1,2,3,4,6,8,12,16}; OURO_CELLS).
+  3. Same-budget controls: rank-80 LoRA-distilled 1/1 and 2/2 (`RANK=80 launch_x26_distill.sh`, 62.9M parameters vs
+     the adapter's 63.3M), fixed-prefill-4 LoRA-only (`launch_variant.sh fixed4`, identity maps), training-free aligned
+     (`CELLS="ali41 ali42" raw_q.sh`).
+- Red-team round 1 (Codex gpt-6-astra, three ARR personas, all 2-2.5/5): HELMET was item-averaged in Figure 6; corrected
+  (adapter 4/2 70.1 vs native 4/4 71.5, +2.6 over distilled 2/2). GSM8K strict/flexible and overlap-excluded checks added.
+
 ### 2026-11-07 (aligned loop adapter)
 - Diagnosis: on its own diagonal the one-cache adapter fell below native on retrieval (RULER-16K 4/4: 73.4 vs 81.3; Lev-3B
   m=n: -1.8 in all seeds). Unrestricted per-loop maps did not help, training-free aligned caches helped GSM8K but not

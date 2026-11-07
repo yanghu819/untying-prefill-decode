@@ -11,9 +11,11 @@ import gc
 import glob
 import json
 from pathlib import Path
+import re
 import time
 
 import numpy as np
+
 import torch
 from transformers import AutoTokenizer
 
@@ -88,13 +90,14 @@ def make_runner(args):
             raise ValueError(f"Checkpoint arm {runner.arm} does not match {args.condition}")
         runner.time_adapter = args.timing
         return runner
-    if len(args.condition) == 3 and args.condition[0] in "UVSWTMOPa":  # universal connector at cell (p, d), e.g. U41 / V14
+    deep = re.fullmatch(r"([UVSWTMOPa])(\d+)x(\d+)", args.condition)  # a16x1: prefill depths beyond 9 (depth sweep)
+    if deep or (len(args.condition) == 3 and args.condition[0] in "UVSWTMOPa"):  # universal connector at cell (p, d), e.g. U41 / V14
         from ouro.adapter_model import load_adapter_runner
 
         runner = load_adapter_runner(args.model_path, args.checkpoint, device="cuda", dtype=torch.bfloat16, attention="sdpa")
         if runner.arm != args.condition[0]:
             raise ValueError(f"Checkpoint arm {runner.arm} is not the universal connector {args.condition[0]}")
-        p, d = int(args.condition[1]), int(args.condition[2])
+        p, d = (int(deep[2]), int(deep[3])) if deep else (int(args.condition[1]), int(args.condition[2]))
         runner.system.prefill_steps, runner.system.decode_steps = p, d
         runner.variant = Variant(p, d, "adapter")
         runner.variant_name = f"adapter-{args.condition}"

@@ -11,6 +11,7 @@ only the decode phase's memory limits the batch (prefill runs elsewhere in a P/D
 import argparse
 import json
 from pathlib import Path
+import re
 import time
 
 import torch
@@ -29,10 +30,12 @@ def make(condition, model_path, checkpoint, merge=False):
         runner = load_adapter_runner(model_path, checkpoint)
         if merge:
             merge_reader_lora(runner.system.reader)
+        deep = re.fullmatch(r"([SOa])(\d+)x(\d+)sb", condition)  # a16x1sb: prefill depths beyond 9 (depth sweep)
+        p, d = (int(deep[2]), int(deep[3])) if deep else (int(condition[1]), int(condition[2])) if len(condition) > 2 else (0, 0)
         if condition.endswith("sb") and condition[0] == "a":  # a<p><d>sb: aligned, one static prompt bank per decode loop
-            return AlignedRunner(runner.system, int(condition[1]), int(condition[2]))
+            return AlignedRunner(runner.system, p, d)
         if condition.endswith("sb"):  # S<p><d>sb: prompt KV stored once; O<p><d>sb: prompt and answer KV stored once
-            return SingleBankRunner(runner.system, int(condition[1]), int(condition[2]))
+            return SingleBankRunner(runner.system, p, d)
         if len(condition) == 3 and condition[0] in "UVSWT":  # universal connector at cell (p, d), materialised banks
             runner.system.prefill_steps, runner.system.decode_steps = int(condition[1]), int(condition[2])
         return runner
