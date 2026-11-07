@@ -38,6 +38,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   ms/token at 1/1, 106 vs 69 at 1/2 (BBH 47 vs 30, 97 vs 62). At batch 1 the extra per-loop work (key/value maps, two
   attention calls merged by log-sum-exp, an aligned bank per decode loop) is launch-bound; at large batch (Table 10)
   it is hidden. Section 5's comparison on measured time has to include it.
+- Deeper prefill changes the answer length, and that, not prefill, drives the time per request (same 100 requests,
+  decode 1): MMLU-Pro 118 -> 386 -> 461 output tokens at m = 1, 4, 8 (5.5 -> 18.1 -> 20.6 s; accuracy 22 -> 46 -> 44),
+  GSM8K and BBH nearly unchanged in length, MATH-500 shorter (633 -> 490 tokens; accuracy 37 -> 22). Prefill stays
+  1-6% of the time. The paper must report both: the direct prefill cost and the length effect.
 - Hung evaluations (100% GPU, no progress, seen about seven times on aligned conditions): `kill -USR1` on the lm-eval
   process (faulthandler) showed the Python thread waiting in lmeval_ouro.score_batch on a GPU->CPU read, i.e. a CUDA
   kernel that never returns. Requeued hung jobs now run with OURO_NO_CUDNN_SDP=1 (cuDNN SDPA off, as evaluate_bench

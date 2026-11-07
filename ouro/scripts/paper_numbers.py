@@ -960,7 +960,7 @@ def time_breakdown():
         if task not in TIME_TASKS:
             continue
         rows = [json.loads(l) for l in open(f)]
-        if not rows:
+        if len(rows) < 100:   # unfinished: every condition is timed on the same 100 requests
             continue
         sc = [replay_score(r["id"], r["text"], r["target"]) for r in rows]
         pre, tot = sum(r["prefill_s"] for r in rows), sum(r["total_s"] for r in rows)
@@ -971,7 +971,7 @@ def time_breakdown():
                         out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
     for f in sorted(E2E.glob("think-*-helmet.jsonl")):
         rows = [json.loads(l) for l in open(f)][1:]   # the first record is the warm-up
-        if not rows:
+        if len(rows) < 1107:   # unfinished: all 1,108 HELMET prompts minus the warm-up
             continue
         pre, tot = sum(r["ttft_s"] for r in rows), sum(r["total_s"] for r in rows)
         out.append(dict(model="Ouro-2.6B-Thinking", task="HELMET", cond=f.stem[len("think-"):-len("-helmet")], n=len(rows),
