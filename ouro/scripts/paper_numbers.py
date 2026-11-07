@@ -949,6 +949,18 @@ def replay_score(item, text, target):
     return float(pred == ref)
 
 
+_TB = None
+
+
+def time_breakdown_rows():
+    global _TB
+    if _TB is None:
+        import contextlib, io
+        with contextlib.redirect_stdout(io.StringIO()):
+            _TB = time_breakdown()
+    return _TB
+
+
 def time_breakdown():
     """Section 3 / Figures 1-3: per-request prefill (to the first token), decode and total time with input / output
     tokens (batch 1, one idle B300) for every timed condition and task, and the quality of the same replayed answers
@@ -1028,6 +1040,40 @@ def depth_sweep():
                     if (a, nn, bb) == (row["adapter"], n, b) and m in row["quality"] and abs(row["quality"][m] - want) > 0.051:
                         print(f"Depth sweep  {b} n={n} m={m}: {row['quality'][m]}  !! paper: {want}")
                 print(f"Depth sweep  {row['adapter']:5s} n={n} {b:16s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+    return out
+
+
+def batch_time(batches=(8, 32, 64)):
+    """Section 5 at batch > 1: estimated time per request = its measured prefill time (batch 1) + its measured output
+    tokens x the decode time per step at batch B (tput_batch.sh, prompt length 512 or 1,536, whichever is nearer the
+    task's mean input). Decode cost depends on n, not m: Ours m/n uses the step time measured for a4x<n>sb. Quality is
+    that of the same replayed requests (time_breakdown)."""
+    d = Path(__file__).resolve().parents[1] / "results" / "throughput-batch"
+    step = {}
+    for f in d.glob("*.json"):
+        cond, ctx = f.stem.rsplit("-", 1)
+        for r in json.loads(f.read_text()):
+            if "decode_ms_per_step" in r:
+                step[(cond, int(ctx), r["batch"])] = r["decode_ms_per_step"]
+    out = []
+    for r in time_breakdown_rows():
+        if r["model"] != "Ouro-2.6B":
+            continue
+        ctx = min((512, 1536), key=lambda c: abs(c - r["in_tokens"]))
+        m = re.fullmatch(r"a(\d+)x(\d+)sb", r["cond"])
+        tcond = f"a4x{m[2]}sb" if m else r["cond"]
+        for b in batches:
+            if (tcond, ctx, b) in step:
+                est = r["prefill_s"] + r["out_tokens"] * step[(tcond, ctx, b)] / 1000
+                out.append(dict(task=r["task"], cond=r["cond"], batch=b, est_s=round(est, 3), quality=r["quality"]))
+    for b in batches:
+        rows = [x for x in out if x["batch"] == b]
+        conds = sorted({x["cond"] for x in rows})
+        for c in conds:
+            xs = [x for x in rows if x["cond"] == c]
+            if len(xs) == len(TIME_TASKS):
+                print(f"Batch time   B={b:3d} {c:11s} mean est {np.mean([x['est_s'] for x in xs]):6.2f}s  "
+                      f"quality {np.mean([x['quality'] for x in xs]):5.1f}")
     return out
 
 
@@ -1397,7 +1443,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), depth_sweep=depth_sweep(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), depth_sweep=depth_sweep(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

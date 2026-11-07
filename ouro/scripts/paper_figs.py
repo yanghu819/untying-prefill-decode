@@ -590,33 +590,46 @@ def fig_depth():
 
 
 def fig_budget():
-    """Figure 3: mean accuracy over the timed tasks against mean time per request (same replayed requests): Original
-    n/n, Distilled 1/1 and 2/2, Ours m/1 and m/2."""
+    """Figure 3: mean accuracy over the timed tasks against time per request on the same replayed requests: measured at
+    batch 1 (left) and estimated at batch 32 from the decode cost per step (right, batch_time), for Original n/n,
+    Distilled 1/1 and 2/2, Ours m/1 and m/2."""
     tasks = [t for t in TIMED if _time(t, "native4st")]
     if not tasks:
         return drop("fig_budget")
-    def point(cond):
-        rs = [_time(t, cond) for t in tasks]
-        return None if None in rs else (float(np.mean([r["total_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
-    fig, ax = plt.subplots(figsize=(3.3, 2.3))
-    nat = [(*point(f"native{d}st"), f"{d}/{d}") for d in (1, 2, 4) if point(f"native{d}st")]
-    for n, col in ((1, OURS), (2, OURS_LIGHT)):
-        ours = [(*point(f"a{m}x{n}sb"), str(m)) for m in (1, 2, 3, 4, 6, 8, 12, 16) if point(f"a{m}x{n}sb")]
-        if ours:
-            ax.plot([p[0] for p in ours], [p[1] for p in ours], "-", color=col, marker="s", ms=3, lw=1.3, label=f"Ours m/{n}")
-            for x, y, lab in ours:
-                ax.annotate(lab, (x, y), xytext=(0, 3), textcoords="offset points", fontsize=6.5, color=col, ha="center")
-    if nat:
-        ax.plot([p[0] for p in nat], [p[1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, label="Original n/n")
-        for x, y, lab in nat:
-            ax.annotate(lab, (x, y), xytext=(0, -9), textcoords="offset points", fontsize=6.5, color=NAT, ha="center")
-    for d in (1, 2):
-        p = point(f"D{d}st")
-        if p:
-            ax.scatter(*p, color=NAT, marker="^", s=16, zorder=3)
-            ax.annotate(f"Distilled {d}/{d}", p, xytext=(4, -3), textcoords="offset points", fontsize=6.5, color=NAT)
-    ax.set_xlabel("seconds per request (batch 1)"); ax.set_ylabel("mean accuracy (%)")
-    ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True); ax.legend(fontsize=7, loc="lower right")
+    bt = PN.get("batch_time", [])
+    panels = [("batch 1, measured", None)] + ([("batch 32, estimated", 32)] if any(r["batch"] == 32 for r in bt) else [])
+
+    def point(cond, b):
+        if b is None:
+            rs = [_time(t, cond) for t in tasks]
+            return None if None in rs else (float(np.mean([r["total_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
+        rs = [next((r for r in bt if r["batch"] == b and r["task"] == t and r["cond"] == cond), None) for t in tasks]
+        return None if None in rs else (float(np.mean([r["est_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
+
+    fig, axes = plt.subplots(len(panels), 1, figsize=(3.3, 2.2 * len(panels)), squeeze=False)   # one column wide
+    for ax, (title, b) in zip(axes[:, 0], panels):
+        for n, col in ((1, OURS), (2, OURS_LIGHT)):
+            ours = [(*point(f"a{m}x{n}sb", b), str(m)) for m in (1, 2, 3, 4, 6, 8, 12, 16) if point(f"a{m}x{n}sb", b)]
+            if ours:
+                ax.plot([p[0] for p in ours], [p[1] for p in ours], "-", color=col, marker="s", ms=3, lw=1.3, label=f"Ours m/{n}")
+                for x, y, lab in ours:
+                    ax.annotate(lab, (x, y), xytext=(0, 3), textcoords="offset points", fontsize=6.5, color=col, ha="center")
+        nat = [(*point(f"native{d}st", b), f"{d}/{d}") for d in (1, 2, 4) if point(f"native{d}st", b)]
+        if nat:
+            ax.plot([p[0] for p in nat], [p[1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, label="Original n/n")
+            for x, y, lab in nat:
+                ax.annotate(lab, (x, y), xytext=(0, -9), textcoords="offset points", fontsize=6.5, color=NAT, ha="center")
+        for d in (1, 2):
+            p = point(f"D{d}st", b)
+            if p:
+                ax.scatter(*p, color=NAT, marker="^", s=16, zorder=3)
+                ax.annotate(f"Distilled {d}/{d}", p, xytext=(4, -3), textcoords="offset points", fontsize=6.5, color=NAT)
+        ax.set_title(title, fontsize=8.5, color=INK, pad=4)
+        ax.set_xlabel("seconds per request"); ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+    for ax in axes[:, 0]:
+        ax.set_ylabel("mean accuracy (%)")
+    axes[0, 0].legend(fontsize=7, loc="lower right")
+    fig.tight_layout(h_pad=0.8)
     save(fig, "fig_budget")
 
 
