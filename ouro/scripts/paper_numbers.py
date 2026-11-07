@@ -977,10 +977,12 @@ def time_breakdown():
                         decode_s=round(sum(r["gen_s"] for r in rows) / len(rows), 3), total_s=round(tot / len(rows), 3),
                         prefill_share=round(100 * pre / tot, 3), in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
                         out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
-    sh = [r["prefill_share"] for r in out if r["model"] == "Ouro-2.6B" and r["cond"] in ("native1st", "native2st")]
-    if len(sh) == 8:   # Section 3: range of the prefill share at Original 1/1 and 2/2 over the four timed tasks
-        got = (round(min(sh), 1), round(max(sh), 1))
-        print(f"Time         base Original 1/1, 2/2 prefill share range {got}" + ("" if got == (0.4, 2.8) else "  !! paper: (0.4, 2.8)"))
+    for conds, want in ((("native1st", "native2st"), (0.4, 2.8)), (("a1x1sb", "a1x2sb"), (0.3, 2.4)),
+                        (("native4st",), (0.5, 2.0))):   # Section 3
+        sh = [r["prefill_share"] for r in out if r["model"] == "Ouro-2.6B" and r["cond"] in conds]
+        if len(sh) == 4 * len(conds):   # range of the prefill share over the four timed tasks
+            got = (round(min(sh), 1), round(max(sh), 1))
+            print(f"Time         base {conds} prefill share range {got}" + ("" if got == want else f"  !! paper: {want}"))
     for r in out:
         print(f"Time         {r['model'][-8:]:8s} {r['task']:9s} {r['cond']:11s} n={r['n']:4d} q={r['quality']:5.1f} "
               f"prefill {r['prefill_s']:7.3f}s decode {r['decode_s']:7.2f}s share {r['prefill_share']:6.2f}% "
@@ -989,6 +991,8 @@ def time_breakdown():
 
 
 SWEEP_M = (1, 2, 3, 4, 5, 6, 8, 12, 16)
+DEPTH_PRINTED = {("m<=4", 1, "GSM8K", 4): 45.0, ("m<=4", 1, "GSM8K", 16): 31.9, ("m<=4", 1, "RULER-16K", 4): 64.7,
+                 ("m<=4", 1, "RULER-16K", 16): 39.9, ("m<=4", 1, "MMLU-Pro", 6): 48.1, ("m<=4", 1, "MMLU-Pro", 16): 31.7}   # Section 4
 
 
 def sweep_key(bench, m, n, wide=False):
@@ -1016,6 +1020,9 @@ def depth_sweep():
                 row = dict(adapter="wide" if wide else "m<=4", n=n, bench=b, items=len(ids),
                            quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
                 out.append(row)
+                for (a, nn, bb, m), want in DEPTH_PRINTED.items():
+                    if (a, nn, bb) == (row["adapter"], n, b) and m in row["quality"] and abs(row["quality"][m] - want) > 0.051:
+                        print(f"Depth sweep  {b} n={n} m={m}: {row['quality'][m]}  !! paper: {want}")
                 print(f"Depth sweep  {row['adapter']:5s} n={n} {b:16s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
     return out
 

@@ -508,12 +508,12 @@ def _time(task, cond):
 def fig_time():
     """Figure 1: time per request split into prefill and decode, at the sweep's starting point (Ours 1/1 and 1/2) and
     Original 4/4, for every timed task; label: prefill share."""
-    confs = [("a1x1sb", "Ours 1/1"), ("a1x2sb", "Ours 1/2"), ("native4st", "Original 4/4")]
+    confs = [("a1x1sb", "Ours 1/1"), ("a1x2sb", "Ours 1/2")]   # the sweep's starting point; Original 4/4 in the text
     tasks = [t for t in TIMED + ["HELMET"] if any(_time(t, c) for c, _ in confs)
              or (t == "HELMET" and _time(t, "native4st"))]
     if not tasks:
         return drop("fig_time")
-    fig, ax = plt.subplots(figsize=(3.3, 0.32 * len(tasks) * len(confs) + 0.4))
+    fig, ax = plt.subplots(figsize=(3.3, 0.2 * len(tasks) * len(confs) + 0.5))
     y, ticks, labs = 0, [], []
     for t in tasks:
         for c, lab in (confs if t != "HELMET" else [("native2st", "Original 2/2"), ("native4st", "Original 4/4")]):
@@ -544,7 +544,7 @@ def fig_depth():
         return drop("fig_depth")
     timed = any(_time(t, f"a{m}x{n}sb") for t in tasks for m in (1, 2, 3, 4, 6, 8, 12, 16) for n in (1, 2))
     nrow = 3 if timed else 1   # time rows only once per-request timings exist
-    fig, axes = plt.subplots(3, len(tasks), figsize=(1.75 * len(tasks), 4.6), squeeze=False) if timed else \
+    fig, axes = plt.subplots(3, len(tasks), figsize=(1.75 * len(tasks), 3.8), squeeze=False) if timed else \
         plt.subplots(1, len(tasks), figsize=(1.75 * len(tasks), 1.7), squeeze=False)
     for j, t in enumerate(tasks):
         for n, col in ((1, OURS), (2, OURS_LIGHT)):

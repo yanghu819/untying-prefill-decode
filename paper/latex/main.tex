@@ -105,8 +105,9 @@ time come from the same requests. Comparisons are paired over items with 95\% bo
 \centering
 \IfFileExists{../figs/fig_time.pdf}{\includegraphics[width=\columnwidth]{../figs/fig_time.pdf}}{\pending{Figure 1: stacked prefill / decode time per request (seconds) for GSM8K, MATH-500, BBH, MMLU-Pro (base),
 GSM8K, MATH-500, HELMET (Thinking), at Ours 1/1, 1/2 and Original 4/4; with input / output tokens.}}
-\caption{\textbf{Decode dominates the time of generation tasks.} Time per request split into prefill (to the first
-token) and decode, batch 1, one B300; labels: share of prefill and mean input / output tokens.}
+\caption{\textbf{Decode dominates the time of generation tasks.} Ouro-2.6B with the adapter at prefill 1 (the start of
+the depth sweep), time per request split into prefill (to the first token, red) and decode, batch 1, one B300, 100
+requests per task; labels: prefill share and mean input / output tokens.}
 \label{fig:time}
 \end{figure}
 
@@ -114,7 +115,8 @@ Figure~\ref{fig:time} splits the time of a request into prefill and decode. On c
 long and the input short: on Ouro-2.6B-Thinking, GSM8K answers average 100 input and about 900 output tokens and
 prefill is 0.2--0.3\% of the time; on MATH-500 (3,000--3,500 output tokens) it is 0.1\%. On the base model, whose
 few-shot prompts are longer (300--1,400 tokens) and answers shorter (100--700 tokens), prefill is 0.4--2.8\% of the
-time per request at Original 1/1 and 2/2, lowest on MATH-500 and highest on MMLU-Pro \tbd{Ours 1/1, 1/2}. Long prompts with short answers are the opposite case: on
+time per request at Original 1/1 and 2/2, 0.3--2.4\% at Ours 1/1 and 1/2 and 0.5--2.0\% at Original 4/4, lowest on
+MATH-500 and highest on GSM8K and MMLU-Pro. Long prompts with short answers are the opposite case: on
 HELMET (about 7,500 input and under 20 output tokens) prefill is \tbd{Q\%} of the time. Since prefill cost grows about
 linearly with its loops, a prefill share $p$ at one loop becomes about $m\,p$ at $m$ loops; tasks with small $p$ leave
 room for deep prefill, tasks with long prompts and short answers do not. The per-request distributions are in
@@ -135,7 +137,10 @@ vs total time. Solid: adapter trained on $m\le16$; dashed: adapter trained on $m
 With the decode loops fixed, we change only the prefill loops (Figure~\ref{fig:depth}). With the adapter trained on
 $m\le4$, going from one to four prefill loops raises the average over 11 benchmarks from 47.2 to 56.8 at one decode
 loop and from 57.9 to 67.2 at two, on the same weights; MMLU rises from 51.2 to 67.1 and HumanEval+ from 46.3 to 65.2.
-\tbd{Beyond four loops: gain continues / saturates at $m=Z$ on tasks A, B; extrapolated vs trained-range curves.}
+Beyond the depths it was trained on, this adapter loses accuracy: at one decode loop GSM8K falls from 45.0 at $m=4$ to
+31.9 at $m=16$ and RULER-16K from 64.7 to 39.9, while MMLU-Pro still rises to 48.1 at $m=6$ before falling to 31.7.
+This decline may come from the decoder never having seen such deep states rather than from the prefill itself;
+\tbd{the adapter trained on $m\le16$ separates the two: ...}.
 Time per request grows by \tbd{Y\%} from $m=1$ to $m=4$ and \tbd{Y'\%} to $m=16$, because prefill is a small share
 (Section~\ref{sec:time}). The plateau is decided on a development half of each benchmark (no gain above 0.5 points over
 three consecutive depths) and reported on the other half.
@@ -186,7 +191,7 @@ items all rows share; three training seeds: Appendix~\ref{app:seed}.}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.94\textwidth]{../figs/fig0_method.pdf}
+\includegraphics[width=0.8\textwidth]{../figs/fig0_method.pdf}
 \caption{\textbf{The loop adapter.} The frozen model prefills the prompt with $m$ loops. Each of the $n$ decode loops
 reads the prompt KV of a prefill loop through its own map: a scale on each rotary pair of the keys (moved onto the
 query, so the cache is never rewritten) and a value map applied after attention; prompt and answer attention share one
