@@ -389,6 +389,7 @@ def keys():
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
     ks |= {k for _, k, _ in REPRO}
+    ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {main_key(b, "aligned", f"a{m}{n}") for b in MAIN_BENCH for m in range(1, 5) for n in range(1, 5)}
     return sorted({k.partition("#")[0] for k in ks})
@@ -772,15 +773,16 @@ def equal_specs():
     return [("2.6B-T", *e) for e in EQUAL] + [("1.4B-T", e[0], *(t14(k) for k in e[1:])) for e in EQUAL]
 
 
-def equal():
+def equal(arm="S"):
     """Figure 4: prefill 4 / decode 2 vs native 2/2 and native 4/4 (Ouro-2.6B-Thinking), all three on the items every one
-    of them has, so the three scores and both paired differences share one item set."""
+    of them has, so the three scores and both paired differences share one item set. arm "a": the aligned adapter."""
     out = []
     for model, bench, ka, kb in equal_specs():
+        ka = ka.replace("S42", f"{arm}42")
         o, n2, n4 = load(ka), load(kb.format(n=2)), load(kb.format(n=4))
         if o is None or n2 is None or n4 is None:
-            print(f"Equal        {model} {bench:12s} MISSING"); continue
-        s22 = load(ka.replace("S42", "S22"))   # the same adapter reading 2 loops (same weights, same training)
+            print(f"Equal {arm}      {model} {bench:12s} MISSING"); continue
+        s22 = load(ka.replace(f"{arm}42", f"{arm}22"))   # the same adapter reading 2 loops (same weights, same training)
         ids = set(o) & set(n2) & set(n4)
         if s22 is not None and not ids <= set(s22):   # not yet on every shared item: report it alone, keep the triple
             print(f"Equal        {model} {bench:12s} same adapter 2/2 on {len(ids & set(s22))} of {len(ids)} shared items; not used")
@@ -797,7 +799,7 @@ def equal():
         r = boot(n4, n2)
         row["n4_vs2"] = [round(r[k], 3) for k in ("diff", "lo", "hi")]
         out.append(row)
-        print(f"Equal        {model} {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
+        print(f"Equal {arm}      {model} {bench:12s} n={len(ids):5d} ours {row['ours']:5.1f} | 2/2 {row['native2']:5.1f} "
               f"{row['vs2'][0]:+5.1f} [{row['vs2'][1]:+.1f}, {row['vs2'][2]:+.1f}] | 4/4 {row['native4']:5.1f} "
               f"{row['vs4'][0]:+5.1f} [{row['vs4'][1]:+.1f}, {row['vs4'][2]:+.1f}]"
               + (f" | same 2/2 {row['same22']:5.1f} {row['vs22'][0]:+5.1f} [{row['vs22'][1]:+.1f}, {row['vs22'][2]:+.1f}]"
@@ -1184,7 +1186,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

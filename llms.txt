@@ -7,23 +7,27 @@
 > Ouro-2.6B-Thinking, Ouro-1.4B-Thinking, SenseNova-Loop-9B-Preview and Lev looped decision models. The paper's statistics
 > are recomputed from released per-item scores by ouro/scripts/paper_numbers.py.
 
-Main findings (95% paired bootstrap intervals in the paper; Ouro's own evaluation protocol):
-- Prefill with more loops than you decode: with one decode loop the best prefill count is 2-4 on all 15 benchmark
-  settings of the Ouro-2.6B task map, never 1.
-- Choosing m per benchmark on held-out halves beats native Ouro-2.6B 1/1 significantly on 14 of 15 settings (+3.9 to
-  +21.3), the same adapter at prefill 1 on 10, and a LoRA-distilled native 1/1 (same data and teacher) on 9; at two
-  decode loops distillation matches it, at three or four the native model is as good. Ouro-1.4B: 13 and 3 of 15.
-- Ouro-2.6B-Thinking: prefill 4 / decode 2 above native 2/2 on all eight benchmarks (significant on four), above a
-  distilled 2/2 on MMLU-Pro (+6.0) and ARC-C (+3.2); 0.59x the answer time of native 4/4 on 192 timed GSM8K problems.
+Main findings (95% paired bootstrap intervals in the paper; Ouro base-model evaluation settings where available):
+- Decode cheaply, prefill deeply: on Ouro-2.6B with one decode loop, prefilling with four loops raises the average over
+  11 benchmarks from 44.2 (native 1/1) to 56.8 (49.8 for native 1/1 distilled with LoRA on the same data); with two
+  decode loops the adapter averages 67.2, within 3 points of native 4/4. Two to four prefill loops are best on 14 of
+  15 settings at one decode loop; few-shot MATH-500 is the exception.
+- Aligned caches (decode loop k reads prefill loop m-n+k) match the native model at equal depth and decode at about the
+  cost of native n/n; one stored prompt cache (RoPE-commuting key scale on the query) gives up under one point.
+- Without the adapter the same untied configurations average 26.6 and 30.9; 6M training tokens reach most of the
+  48M result; three training seeds agree within 0.2.
+- Ouro-2.6B-Thinking: prefill 4 / decode 2 matches native 4/4's average accuracy over eight benchmarks at 3.2x its
+  decode throughput (one cache) and answers 192 timed GSM8K problems in 0.59x the time at batch 1.
 - Lev looped decision models, both directions: more prefill than decision loops is significantly above a matched
-  control on 12 of 13 (m, n) pairs; fewer is below it on all 13 (significantly 11), in each of four seeds.
-- One stored prompt KV cache serves every decode loop exactly (RoPE-commuting key scale applied to the query).
+  control on 12 of 13 (m, n) pairs; fewer is below it on all 13 (significantly 11).
 
-Limitations stated by the author: the prefill count is calibrated per benchmark, not routed per prompt; the advantage is largest at one decode loop
-(at two, distillation matches it on the base model); with three or four decode loops native models are as good or better; comparisons with native models include adapter training; equal decode loops do not mean equal latency.
+Limitations stated by the author: the prefill count is calibrated per benchmark, not routed per prompt; the gain is
+largest at low decode depth; with three or four decode loops the aligned adapter matches but does not beat native; on
+Ouro-1.4B a distilled 2/2 is stronger on BBH, MATH-500 and RULER-16K; more prefill loops raise time to first token.
 
 ## Docs
 - README.md: findings, when to use, repository map
 - REPRODUCE.md: every table and figure -> script -> result file; training and evaluation commands
 - paper/untying-prefill-decode-loops.pdf: the paper
 - ouro/results/items/: per-item scores of every run the paper uses; ouro/results/paper_numbers.json: the recomputed statistics
+- ouro/results/provenance/: command, configuration, checkpoint hash, log and outputs of every run
