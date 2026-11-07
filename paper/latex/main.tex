@@ -39,43 +39,45 @@
 \maketitle
 
 \begin{abstract}
-Looped language models run one block of layers several times per token, and they use the same number of loops to read
-the prompt (prefill) and to generate each answer token (decode). In generation the two phases cost very different
-amounts of time: on Ouro-2.6B-Thinking, prefill takes under 0.4\% of the time of a GSM8K or MATH-500 answer. We ask
-whether this time can be spent on a deeper prefill while the decoder stays shallow. We measure where inference time
-goes on tasks with short and long inputs and outputs, adapt a looped model so that a decoder with $n$ loops can read
-the prompt states of any prefill depth $m$, and sweep $m$ from 1 to 16 at one and two decode loops. On Ouro-2.6B with
-one decode loop and the same weights, four prefill loops instead of one raise accuracy on four chain-of-thought
-benchmarks from \tbd{X} to \tbd{Y} at \tbd{Z\%} more time per request, measured on the same requests; over 11
-benchmarks the average rises from 47.2 to 56.8, and the gain \tbd{saturates at $m\approx W$}. At the same measured time
-it is above the original model and above models distilled to the same decode depth on the same data, also with
-matched capacity. It does not help few-shot MATH or exact retrieval.
+Looped language models run a block of layers several times for every token, and they use the same number of loops to
+read the prompt (prefill) and to generate each answer token (decode). In generation the two phases take very different
+amounts of time: on Ouro-2.6B-Thinking, prefill is under 0.4\% of the time spent on a GSM8K or MATH-500 answer. We
+study whether this time is better spent on a deeper prefill while decoding stays shallow. We first measure where
+inference time goes on tasks with short and long inputs and outputs. We then adapt a looped model so that a decoder
+with $n$ loops can read the prompt states of any prefill depth $m$, and vary $m$ from 1 to 16 with one and two decode
+loops. On Ouro-2.6B with one decode loop, four prefill loops instead of one raise accuracy on four chain-of-thought
+benchmarks from \tbd{X} to \tbd{Y} for \tbd{Z\%} more time per request, measured on the same requests and the same
+weights. Over 11 benchmarks the average rises from 47.2 to 56.8, and the gain \tbd{levels off at $m\approx W$}. For the
+same measured time, the adapted model is more accurate than the original model and than models distilled to the same
+decode depth on the same data, also when they have as many trainable parameters. Deeper prefill does not help few-shot
+MATH or exact retrieval.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 
-A looped language model~\citep{ut,ouro} spends compute by running a shared block of layers again: Ouro-2.6B runs its
-block four times for every token. It runs the same number of loops when it reads the prompt (prefill) and when it
-generates the answer (decode). The two phases are not alike. Prefill processes all prompt tokens at once, in parallel;
-decode runs again for every generated token, one after another. When answers are long, nearly all the time is decode:
-on Ouro-2.6B-Thinking a GSM8K answer takes about a minute, of which prefill is 0.2\%
+Looped language models such as Ouro~\citep{ut,ouro} reuse a block of layers several times for each token; Ouro-2.6B
+runs its block four times. The same four loops are used to process the prompt (prefill) and to generate each answer
+token (decode), although the two phases cost very different amounts of time. Prefill handles all prompt tokens in one
+parallel pass, while decoding repeats for every generated token. With long answers, decoding takes almost all of the
+time: an Ouro-2.6B-Thinking answer to a GSM8K problem takes about a minute, and prefill accounts for 0.2\% of it
 (Section~\ref{sec:time}).
 
-This suggests an asymmetric use of loops: read the prompt deeply, decode shallowly. More prefill loops cost little time
-when prefill is a small share, and fewer decode loops save time on every token. Whether this helps is an empirical
-question: a decoder with one loop may not be able to use states from a deeper prefill, and the gain may stop after a few
-loops. We measure it. Section~\ref{sec:time} shows where time goes across tasks; Section~\ref{sec:depth} sweeps the
-prefill depth until the gain stops; Section~\ref{sec:budget} compares deep prefill with other ways to spend the same
-time, including models distilled to the same decode depth on the same data.
+If prefill is this cheap, a model could read the prompt with more loops than it uses to decode. The extra prefill
+loops would add little time, and fewer decode loops would save time on every token. It is not obvious that this works.
+A decoder with one loop may be unable to use the states of a deeper prefill, and any gain may stop after a few loops.
+Section~\ref{sec:time} measures where the time goes on different tasks, Section~\ref{sec:depth} increases the prefill
+depth until the gain stops, and Section~\ref{sec:budget} compares deeper prefill with other ways of spending the same
+time.
 
-Running the frozen model this way does not work: decoding one loop on top of a four-loop prefill drops Ouro-2.6B from
-70.2 to 26.6 points on average (Table~\ref{tab:main}). We therefore train a small \emph{loop adapter} once
-(Section~\ref{sec:method}): LoRA on the decoder and a map from each prefill loop's prompt cache to each decode loop,
-trained by distillation from the native model on all $(m,n)$ pairs. Our contributions are (i) a per-task measurement
-of where the time of a looped model goes; (ii) the quality--time curve of prefill depth at fixed decode depth, up to
-16 loops, and where it saturates; (iii) a comparison at equal measured time against original, distilled and
-deeper-decode models. Code, per-request timings and per-item scores are released.
+Running the released model with more prefill than decode loops fails. With four prefill loops and one decode loop,
+Ouro-2.6B averages 26.6 points over 11 benchmarks, below the 44.2 it reaches with one loop for both
+(Table~\ref{tab:main}). We therefore train a small \emph{loop adapter} once (Section~\ref{sec:method}). It adds LoRA to
+the decoder and a learned map from each prefill loop's prompt cache to each decode loop, and it is distilled from the
+original model on all $(m,n)$ pairs up to four loops. We contribute a per-task measurement of where a looped model
+spends its time, quality and time as functions of the prefill depth at a fixed decode depth up to 16 loops, and a
+comparison at equal measured time against the original model, distilled models and models with more decode loops.
+Code, per-request timings and per-item scores are released.
 
 \section{Setup}
 \label{sec:setup}
