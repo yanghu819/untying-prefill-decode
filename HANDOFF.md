@@ -29,6 +29,8 @@ For the next agent taking over *Untying Prefill and Decode Loops in Looped Langu
     the result into Table 1 (a column or a second table), the abstract and Limitations — whatever it shows.
   - Ouro-1.4B replication on 10 benchmarks (`queues/grid14b_q.txt`) and full GSM8K / MMLU / 1.4B RULER (`queues/fullsets_q.txt`) on
     a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
+  - Code benchmarks (HumanEval+, MBPP+) need a scoring pass after their lm-eval runs: `runs/score_evalplus_all.sh` on
+    each box scores every run without evalplus_*_chat.jsonl (2026-11-08: 42 unscored runs found and scored).
   - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (looping every 2 h on each box, log /root/pn/backup-BOX.log) to
     the private ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
