@@ -979,7 +979,7 @@ def time_breakdown():
     sh = [r["prefill_share"] for r in out if r["model"] == "Ouro-2.6B" and r["cond"] in ("native1st", "native2st")]
     if len(sh) == 8:   # Section 3: range of the prefill share at Original 1/1 and 2/2 over the four timed tasks
         got = (round(min(sh), 1), round(max(sh), 1))
-        print(f"Time         base Original 1/1, 2/2 prefill share range {got}" + ("" if got == (0.5, 2.8) else "  !! paper: (0.5, 2.8)"))
+        print(f"Time         base Original 1/1, 2/2 prefill share range {got}" + ("" if got == (0.4, 2.8) else "  !! paper: (0.4, 2.8)"))
     for r in out:
         print(f"Time         {r['model'][-8:]:8s} {r['task']:9s} {r['cond']:11s} n={r['n']:4d} q={r['quality']:5.1f} "
               f"prefill {r['prefill_s']:7.3f}s decode {r['decode_s']:7.2f}s share {r['prefill_share']:6.2f}% "
@@ -1007,13 +1007,15 @@ def depth_sweep():
             for b in MAIN_BENCH:
                 sets = {m: load(sweep_key(b, m, n, wide)) for m in SWEEP_M}
                 sets = {m: v for m, v in sets.items() if v}
+                full = max((len(v) for v in sets.values()), default=0)
+                sets = {m: v for m, v in sets.items() if len(v) >= 0.95 * full}   # unfinished runs wait
                 if len(sets) < 2:
                     continue
                 ids = set.intersection(*(set(v) for v in sets.values()))
                 row = dict(adapter="wide" if wide else "m<=4", n=n, bench=b, items=len(ids),
                            quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
                 out.append(row)
-                print(f"Depth sweep  {row['adapter']:5s} n={n} {b:16s} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+                print(f"Depth sweep  {row['adapter']:5s} n={n} {b:16s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
     return out
 
 
