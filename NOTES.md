@@ -33,6 +33,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   3. Same-budget controls: rank-80 LoRA-distilled 1/1 and 2/2 (`RANK=80 launch_x26_distill.sh`, 62.9M parameters vs
      the adapter's 63.3M), fixed-prefill-4 LoRA-only (`launch_variant.sh fixed4`, identity maps), training-free aligned
      (`CELLS="ali41 ali42" raw_q.sh`).
+- Backups: `ouro/scripts/backup_ms.py` runs on both boxes every 2 h (first run at 19:50) and uploads new or changed
+  lm-eval / bench outputs (one tar.gz per run), timings, training logs and final checkpoints, plus the prepared data
+  (a1, once), to the private ModelScope model repo torushy/untying-prefill-decode-backup (folders a1/, a2/). The token
+  lives only in ~/.b300-handoff/ms.token and /root/.ms.token on the boxes.
 - Incident 16:25: a cleanup kill reached PID 1 of the a2 container; every process there restarted (/dev/shm intact).
   Lost: aligned seed 3 at 46.8M/48M (no intermediate checkpoint; to be retrained), rank-80 distilled 1/1 (restarted),
   running evals (requeued; lm-eval resumes from its cache). HELMET timing (e2e_latency.py) now follows the evaluation's
