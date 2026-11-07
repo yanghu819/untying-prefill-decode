@@ -199,23 +199,25 @@ softmax. Aligned: decode loop $k$ reads prefill loop $\max(m-n+k,1)$; one cache:
 \label{fig:method}
 \end{figure*}
 
-A decoder with $n$ loops sees, in a native model, prompt states made by the same $n$ loops. After a deeper prefill the
-prompt keys and values come from loops it has never read, and the frozen model fails (Table~\ref{tab:main},
-training-free). The loop adapter (Figure~\ref{fig:method}) closes this gap with three parts. LoRA~\citep{lora} (rank 16)
-on the decoder's attention lets the shallow decoder use deeper states. A map per decode loop, layer and KV head moves
-each prompt cache into the space that decode loop expects: the key map is one complex scale per rotary pair, which
-commutes with RoPE~\citep{rope} and is applied to the query; the value map is linear and applied to the attention
-output, so the stored cache is never rewritten. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$, so at $m=n$ it reads
-exactly the native model's cache; storing only the last prefill loop's cache instead saves memory at a small cost
-(Table~\ref{tab:main}). The adapter (63M parameters, 2.4\% of the model) is trained once by distillation: KL to the
-native 4/4 model over answer tokens, 48M tokens of reasoning, instruction, long-context and web data, one $(m,n)$ pair
-sampled per micro-batch (Appendix~\ref{app:training}).
+In the original model, a decoder with $n$ loops only ever reads prompt states produced by the same $n$ loops. After a
+deeper prefill, the prompt keys and values come from loops the decoder has never seen, and the frozen model fails
+(Table~\ref{tab:main}, training-free). The loop adapter (Figure~\ref{fig:method}) has three parts. Rank-16
+LoRA~\citep{lora} on the decoder's attention projections lets a shallow decoder use deeper states. A map for each decode
+loop, layer and KV head transforms the prompt cache that loop reads. The key map is one complex scale per rotary
+frequency pair; it commutes with RoPE~\citep{rope}, so it is applied to the query instead. The value map is linear and
+is applied to the attention output. Neither map rewrites the stored cache. Decode loop $k$ reads prefill loop
+$\max(m-n+k,1)$, so at $m=n$ every decode loop reads the cache the original model would read. A variant that keeps only
+the last prefill loop's cache uses less memory and is slightly less accurate (Table~\ref{tab:main}). The adapter has
+63M parameters (2.4\% of the model) and is trained once by distillation: the KL divergence to the original 4/4 model on
+answer tokens, over 48M tokens of reasoning, instruction, long-context and web data, with one $(m,n)$ pair sampled per
+micro-batch (Appendix~\ref{app:training}).
 
-\paragraph{Ablations and limits.} With the maps frozen at the identity, MMLU and GSM8K barely change but RULER-16K at
-4/1 drops 11.4 points: the maps matter for long prompts (Appendix~\ref{sec:ablation}). Deeper prefill does not help
-everywhere. On 4-shot MATH-500 one prefill loop is best, by 12 points over four, while zero-shot the sign reverses
-(Appendix~\ref{app:eval}); exact recall in HELMET falls from 100 at Original 4/4 to 58.8 at Ours 4/2
-(Appendix~\ref{app:hurt}).
+\paragraph{Ablations and limits.} In the one-cache variant, freezing the maps at the identity barely changes MMLU and
+GSM8K but costs 11.4 points on RULER-16K at 4/1, so the maps matter mainly for long prompts
+(Appendix~\ref{sec:ablation}). Deeper prefill does not help everywhere. On 4-shot MATH-500 one prefill loop is best:
+34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. With the one-cache adapter, removing the
+exemplars reverses the sign (Appendix~\ref{app:eval}). Exact recall in HELMET is 67.6 at Ours 4/2 on Ouro-2.6B-Thinking, the same as Original 2/2
+and far below the 100 of Original 4/4 (Appendix~\ref{app:hurt}).
 
 \section{Related Work}
 \label{sec:related}

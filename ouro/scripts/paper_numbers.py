@@ -561,6 +561,8 @@ def appendix_checks():
                            rec("B:T14ne-S41-helmet:helmet#recall") - rec("B:T14ne-S11-helmet:helmet#recall"), -23.5),
                           ("2.6B-T HELMET recall 4/2", rec("B:T26ne-S42-helmet:helmet#recall"), 58.8),
                           ("2.6B-T HELMET recall native 4/4", rec("B:T26ne-native4-helmet:helmet#recall"), 100.0),
+                          ("2.6B-T HELMET recall aligned 4/2", rec("B:T26ne-a42-helmet:helmet#recall"), 67.6),
+                          ("2.6B-T HELMET recall native 2/2", rec("B:T26ne-native2-helmet:helmet#recall"), 67.6),
                           ("1.4B native 4/4 MATH-500 final answer", rec("L:O14x-native4-math:boxed"), 70.6),
                           ("1.4B native 4/4 MATH-500 strict match", rec("L:O14x-native4-math:exact_match"), 4.4)):
         out[label] = round(got, 2)
@@ -992,7 +994,9 @@ def time_breakdown():
 
 SWEEP_M = (1, 2, 3, 4, 5, 6, 8, 12, 16)
 DEPTH_PRINTED = {("m<=4", 1, "GSM8K", 4): 45.0, ("m<=4", 1, "GSM8K", 16): 31.9, ("m<=4", 1, "RULER-16K", 4): 64.7,
-                 ("m<=4", 1, "RULER-16K", 16): 39.9, ("m<=4", 1, "MMLU-Pro", 6): 48.1, ("m<=4", 1, "MMLU-Pro", 16): 31.7}   # Section 4
+                 ("m<=4", 1, "RULER-16K", 16): 39.9, ("m<=4", 1, "MMLU-Pro", 6): 48.1, ("m<=4", 1, "MMLU-Pro", 16): 31.7,   # Section 4
+                 ("m<=4", 1, "MATH-500 4-shot", 1): 34.8, ("m<=4", 1, "MATH-500 4-shot", 4): 25.4,
+                 ("m<=4", 2, "MATH-500 4-shot", 1): 63.8, ("m<=4", 2, "MATH-500 4-shot", 4): 45.8}   # Section 6
 
 
 def sweep_key(bench, m, n, wide=False):
