@@ -987,7 +987,8 @@ def time_breakdown():
             continue
         pre, tot = sum(r["ttft_s"] for r in rows), sum(r["total_s"] for r in rows)
         out.append(dict(model="Ouro-2.6B-Thinking", task="HELMET", cond=f.stem[len("think-"):-len("-helmet")], n=len(rows),
-                        quality=round(100 * float(np.mean([r["correct"] for r in rows])), 2), prefill_s=round(pre / len(rows), 4),
+                        quality=round(agg({r["id"]: float(r["correct"]) for r in rows}, [r["id"] for r in rows]), 2),   # HELMET aggregation
+                        prefill_s=round(pre / len(rows), 4),
                         decode_s=round(sum(r["gen_s"] for r in rows) / len(rows), 3), total_s=round(tot / len(rows), 3),
                         prefill_share=round(100 * pre / tot, 3), in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
                         out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
@@ -997,6 +998,16 @@ def time_breakdown():
         if len(sh) == 4 * len(conds):   # range of the prefill share over the four timed tasks
             got = (round(min(sh), 1), round(max(sh), 1))
             print(f"Time         base {conds} prefill share range {got}" + ("" if got == want else f"  !! paper: {want}"))
+    want = {"native2st": (44.0, 1.37), "Df2st": (54.2, 1.31), "a42sb": (59.1, 2.10), "native4st": (65.7, 2.33)}   # Section 5
+    share = {"native2st": 27, "native4st": 30}   # Section 3, HELMET prefill share (rounded)
+    for r in out:
+        if r["task"] == "HELMET" and r["cond"] in share and round(r["prefill_share"]) != share[r["cond"]]:
+            print(f"Time         HELMET {r['cond']} prefill share {r['prefill_share']}  !! paper: {share[r['cond']]}")
+    for r in out:
+        if r["task"] == "HELMET" and r["cond"] in want:
+            q, t = want[r["cond"]]
+            if abs(r["quality"] - q) > 0.051 or abs(r["total_s"] - t) > 0.006:
+                print(f"Time         HELMET {r['cond']}: {r['quality']} {r['total_s']}s  !! paper: {q} {t}s")
     for r in out:
         print(f"Time         {r['model'][-8:]:8s} {r['task']:9s} {r['cond']:11s} n={r['n']:4d} q={r['quality']:5.1f} "
               f"prefill {r['prefill_s']:7.3f}s decode {r['decode_s']:7.2f}s share {r['prefill_share']:6.2f}% "

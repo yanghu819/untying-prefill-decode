@@ -118,7 +118,8 @@ prefill is 0.2--0.3\% of the time; on MATH-500 (3,000--3,500 output tokens) it i
 few-shot prompts are longer (300--1,400 tokens) and answers shorter (100--700 tokens), prefill is 0.4--2.8\% of the
 time per request at Original 1/1 and 2/2, 0.3--2.4\% at Ours 1/1 and 1/2 and 0.5--2.0\% at Original 4/4, lowest on
 MATH-500 and highest on GSM8K and MMLU-Pro. Long prompts with short answers are the opposite case: on
-HELMET (about 7,500 input and under 20 output tokens) prefill is \tbd{Q\%} of the time. Since prefill cost grows about
+HELMET (about 10,900 input and 15 output tokens with the chat template) prefill is 27--30\% of the time at Original
+2/2 and 4/4. Since prefill cost grows about
 linearly with its loops, a prefill share $p$ at one loop becomes about $m\,p$ at $m$ loops; tasks with small $p$ leave
 room for deep prefill, tasks with long prompts and short answers do not. The per-request distributions are in
 Appendix~\ref{app:time}.
@@ -169,9 +170,11 @@ the same requests of the four chain-of-thought tasks. Two effects make deep pref
 share suggests: the adapter's per-loop operations make each decode step slower at batch 1 (Limitations), and deeper
 prefill lengthens some answers (on MMLU-Pro from 118 to 386 tokens between $m=1$ and $m=4$). On these tasks, Ours 4/1
 is more accurate than Original and Distilled 1/1 but less accurate than Original 2/2 at about the same time, and Ours
-$m/2$ is on par with Distilled 2/2 at more time \tbd{exact numbers, batch 32}. Where answers are short relative to the
-prompt, the balance changes \tbd{HELMET, same requests: Ours 4/2 vs Original 2/2, 4/4 and Distilled 2/2, accuracy and
-time}. Against the deeper original model, the shallow decoder saves time: on Ouro-2.6B-Thinking, Ours 4/2 comes within
+$m/2$ is on par with Distilled 2/2 at more time \tbd{exact numbers, batch 32}. With long prompts and short answers the picture
+is different but not more favourable. On the 1,107 HELMET requests of Ouro-2.6B-Thinking (about 10,900 input and 15
+output tokens), Ours 4/2 scores 59.1 in 2.10\,s per request, against 44.0 in 1.37\,s for Original 2/2 and 54.2 in
+1.31\,s for Distilled 2/2; but because the answers are short, decoding is cheap, and Original 4/4 reaches 65.7 in
+2.33\,s. Against the deeper original model, the shallow decoder saves time: on Ouro-2.6B-Thinking, Ours 4/2 comes within
 0.9 points of Original 4/4 over eight benchmarks (70.6 against 71.5) at $2.5\times$ its decode throughput, 3.1 points
 above Distilled 2/2; with one stored cache it is within 1.4 points at $3.2\times$ and answers GSM8K in $0.59\times$ the
 time (Appendix~\ref{app:extended}).
@@ -246,8 +249,8 @@ A looped model spends almost all of its generation time decoding, so reading the
 decoder uses adds little direct cost. With a loop adapter, deeper prefill raises accuracy at a fixed number of decode
 loops, up to about three or four prefill loops, and by more than distilling the model to that decode depth. Measured
 end to end, the gain is not free: deeper prefill can lengthen chain-of-thought answers, and on such tasks a second
-decode loop buys more accuracy per second. Deeper prefill pays off most when the prompt carries the difficulty and the
-answer is short \tbd{confirm with HELMET timing}.
+decode loop buys more accuracy per second. When answers are short, decoding is cheap and the
+full-depth model costs little more.
 
 \section*{Limitations}
 \label{sec:limits}
