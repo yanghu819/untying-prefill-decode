@@ -46,6 +46,8 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   process (faulthandler) showed the Python thread waiting in lmeval_ouro.score_batch on a GPU->CPU read, i.e. a CUDA
   kernel that never returns. Requeued hung jobs now run with OURO_NO_CUDNN_SDP=1 (cuDNN SDPA off, as evaluate_bench
   already allows), honoured by run_lmeval.py; the default kernel choice is unchanged for comparability.
+  X26-ali42-hellaswag finished on its cuDNN-off rerun; X26s2-a41-hellaswag hung (stack: Python blocked launching an
+  RMSNorm kernel, i.e. the GPU queue full behind a stuck kernel) and was requeued the same way.
 - Backups: `ouro/scripts/backup_ms.py` runs on both boxes every 2 h (first run at 19:50) and uploads new or changed
   lm-eval / bench outputs (one tar.gz per run), timings, training logs and final checkpoints, plus the prepared data
   (a1, once), to the private ModelScope model repo torushy/untying-prefill-decode-backup (folders a1/, a2/). The token
