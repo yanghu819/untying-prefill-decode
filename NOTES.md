@@ -42,6 +42,9 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   decode 1): MMLU-Pro 118 -> 386 -> 461 output tokens at m = 1, 4, 8 (5.5 -> 18.1 -> 20.6 s; accuracy 22 -> 46 -> 44),
   GSM8K and BBH nearly unchanged in length, MATH-500 shorter (633 -> 490 tokens; accuracy 37 -> 22). Prefill stays
   1-6% of the time. The paper must report both: the direct prefill cost and the length effect.
+- Timing noise: a second pass of the same requests (identical answers) differs by up to 25% in time (rep-*, a1).
+  Some first-pass jobs shared their GPU with evaluations. 2026-11-08 14:00: a clean full pass of time_sweep.sh
+  (OUT=clean) on all eight a2 GPUs with nothing else on the box; keep a2 free of other jobs until it ends.
 - Training seeds (adapter and distilled controls) change the LoRA initialisation and the (m, n) pair drawn per
   micro-batch; the data order is the same for every seed. Distilled 2/2 seed 2 (`SEED=2 launch_x26_distill.sh D`) tests
   the small decode-2 gap (Ours 67.2 vs Distilled 65.3) against training noise.

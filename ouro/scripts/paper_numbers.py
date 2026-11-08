@@ -1200,19 +1200,21 @@ def timing_repeat():
     configuration and task, the relative difference between the two passes in mean time per request and in decode time
     per generated token, on the same 100 requests."""
     out = []
-    for f in sorted(E2E.glob("rep-*.jsonl")):
+    for f in sorted(E2E.glob("rep-*.jsonl")) + sorted(E2E.glob("clean-*.jsonl")):
         cond, task = f.stem.split("-", 1)[1].rsplit("-", 1)
+        if task not in TIME_TASKS:
+            continue
         g = E2E / f"base-{cond}-{task}.jsonl"
         a, b = [json.loads(l) for l in open(g)] if g.exists() else [], [json.loads(l) for l in open(f)]
         if len(a) < 100 or len(b) < 100:
             continue
         mean = lambda v: float(np.mean([r["total_s"] for r in v]))
         tok = lambda v: sum(r["decode_s"] for r in v) / sum(r["new_tokens"] for r in v)
-        row = dict(cond=cond, task=TIME_TASKS[task], total_diff=round(100 * (mean(b) / mean(a) - 1), 2),
+        row = dict(pass_=f.stem.split("-", 1)[0], cond=cond, task=TIME_TASKS[task], total_diff=round(100 * (mean(b) / mean(a) - 1), 2),
                    per_token_diff=round(100 * (tok(b) / tok(a) - 1), 2),
                    same_text=round(float(np.mean([x["text"] == y["text"] for x, y in zip(a, b)])), 3))
         out.append(row)
-        print(f"Repeat time  {cond:10s} {row['task']:9s} time/request {row['total_diff']:+5.1f}%  per token "
+        print(f"Repeat time  {row['pass_']:5s} {cond:10s} {row['task']:9s} time/request {row['total_diff']:+5.1f}%  per token "
               f"{row['per_token_diff']:+5.1f}%  same answer {row['same_text']:.2f}")
     return out
 

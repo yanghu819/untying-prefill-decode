@@ -4,13 +4,14 @@
 # items for every condition) of GSM8K, MATH-500, BBH and MMLU-Pro, for the original model at 1/1, 2/2 and 4/4, the
 # LoRA-distilled 1/1 and 2/2 (merged), and the aligned loop adapter at prefill m in {1,2,3,4,6,8,12,16} and decode 1, 2.
 # Records prefill (time to first token), decode and total time, input and output tokens, and the replayed answer,
-# which paper_numbers.py scores with the evaluation's rule. Output: runs/e2e/base-<cond>-<task>.jsonl.
+# which paper_numbers.py scores with the evaluation's rule. Output: runs/e2e/<OUT>-<cond>-<task>.jsonl (env OUT, default
+# base; OUT=clean: a second full pass on a box running nothing else, for run-to-run variation).
 M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/timing_q.txt; mkdir -p $R/e2e; cd $R
-A=$R/X26-a-universal/checkpoint-48m.pt
+A=$R/X26-a-universal/checkpoint-48m.pt; O=${OUT:-base}
 P=${PROMPTS:-$R/lmeval/out}   # lm-eval runs whose prompts are replayed (a copy in runs/e2e/prompts on a box without them)
 job() {  # COND CKPT
   for t in gsmfull math bbh mmlupro; do
-    echo "cd /root/big-small && CUDA_VISIBLE_DEVICES=\$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py $M/model-2.6b $1 $2 $P/X26-a41-$t 100 $R/e2e/base-$1-$t.jsonl > $R/e2e/base-$1-$t.log 2>&1"
+    echo "cd /root/big-small && CUDA_VISIBLE_DEVICES=\$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py $M/model-2.6b $1 $2 $P/X26-a41-$t 100 $R/e2e/$O-$1-$t.jsonl > $R/e2e/$O-$1-$t.log 2>&1"
   done
 }
 {
