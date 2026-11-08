@@ -46,11 +46,13 @@ study whether this time is better spent on a deeper prefill while decoding stays
 inference time goes on tasks with short and long inputs and outputs. We then adapt a looped model so that a decoder
 with $n$ loops can read the prompt states of any prefill depth $m$, and vary $m$ from 1 to 16 with one and two decode
 loops. On Ouro-2.6B with one decode loop, four prefill loops instead of one raise accuracy on four chain-of-thought
-benchmarks from \tbd{X} to \tbd{Y} for \tbd{Z\%} more time per request, measured on the same requests and the same
-weights. Over 11 benchmarks the average rises from 47.2 to 56.8, and the gain \tbd{levels off at $m\approx W$}. At the
+benchmarks from 31.2 to 43.0 for 21\% more time per request, measured on the same requests and the same weights.
+Over 11 benchmarks the average rises from 47.2 to 56.8, and the gain levels off at two to three prefill loops, also
+for an adapter trained on prefill depths up to 16. At the
 same number of decode loops, the adapted model is more accurate than the original model and than models distilled to
 that decode depth on the same data. On long chain-of-thought answers, however, deeper prefill often makes the answers
-longer, and spending the same time on a second decode loop buys more accuracy \tbd{numbers}. Deeper prefill does not
+longer, and spending the same time on a second decode loop buys more accuracy: 56.8 for the original model at two
+loops against 43.0 at prefill four and decode one, both in about 14.5 seconds per request. Deeper prefill does not
 help few-shot MATH or exact retrieval.
 \end{abstract}
 
@@ -141,11 +143,14 @@ $m\le4$, going from one to four prefill loops raises the average over 11 benchma
 loop and from 57.9 to 67.2 at two, on the same weights; MMLU rises from 51.2 to 67.1 and HumanEval+ from 46.3 to 65.2.
 Beyond the depths it was trained on, this adapter loses accuracy: at one decode loop GSM8K falls from 45.0 at $m=4$ to
 31.9 at $m=16$ and RULER-16K from 64.7 to 39.9, while MMLU-Pro still rises to 48.1 at $m=6$ before falling to 31.7.
-This decline may come from the decoder never having seen such deep states rather than from the prefill itself;
-\tbd{the adapter trained on $m\le16$ separates the two: ...}.
-Time per request grows by \tbd{Y\%} from $m=1$ to $m=4$ and \tbd{Y'\%} to $m=16$, because prefill is a small share
-(Section~\ref{sec:time}). The plateau is decided on a development half of each benchmark (no gain above 0.5 points over
-three consecutive depths) and reported on the other half.
+This decline could come from the decoder never having seen such deep states. An adapter trained on prefill depths up to
+16 (dashed) shows the same shape: by the plateau rule below, the gain stops at two or three prefill loops on most
+settings and at five on MMLU-Pro with one decode loop, and on the held-out half GSM8K at one decode loop reaches 47.0 at
+$m=2$ and falls to 36.9 at $m=16$. Training on the deeper depths softens the decline (31.9 at $m=16$ without it) but
+does not move the plateau.
+The plateau depth is decided on a development half of each benchmark (the first depth that none of the next three
+beats by more than 0.5 points) and reported on the other half. Time per request grows by 21\% from $m=1$ to $m=4$ at
+one decode loop on the four timed tasks, mostly because some answers get longer (Section~\ref{sec:budget}).
 
 \section{Is it the best use of the time?}
 \label{sec:budget}
@@ -170,7 +175,9 @@ the same requests of the four chain-of-thought tasks. Two effects make deep pref
 share suggests: the adapter's per-loop operations make each decode step slower at batch 1 (Limitations), and deeper
 prefill lengthens some answers (on MMLU-Pro from 118 to 386 tokens between $m=1$ and $m=4$). On these tasks, Ours 4/1
 is more accurate than Original and Distilled 1/1 but less accurate than Original 2/2 at about the same time, and Ours
-$m/2$ is on par with Distilled 2/2 at more time \tbd{exact numbers, batch 32}. With long prompts and short answers the picture
+$m/2$ is on par with Distilled 2/2 at more time: averaged over the four tasks, Ours 4/1 scores 43.0 in 14.6\,s per
+request against 56.8 in 14.2\,s for Original 2/2, and Ours 3/2 scores 59.2 in 18.0\,s against 58.5 in 15.4\,s for
+Distilled 2/2. Estimated at batch 32 from measured step times, the comparison is the same (Figure~\ref{fig:budget}). With long prompts and short answers the picture
 is different but not more favourable. On the 1,107 HELMET requests of Ouro-2.6B-Thinking (about 10,900 input and 15
 output tokens), Ours 4/2 scores 59.1 in 2.10\,s per request, against 44.0 in 1.37\,s for Original 2/2 and 54.2 in
 1.31\,s for Distilled 2/2; but because the answers are short, decoding is cheap, and Original 4/4 reaches 65.7 in

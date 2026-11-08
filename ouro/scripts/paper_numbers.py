@@ -1002,6 +1002,17 @@ def time_breakdown():
         if len(sh) == 4 * len(conds):   # range of the prefill share over the four timed tasks
             got = (round(min(sh), 1), round(max(sh), 1))
             print(f"Time         base {conds} prefill share range {got}" + ("" if got == want else f"  !! paper: {want}"))
+    base = {c: [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c] for c in ("a1x1sb", "a4x1sb")}
+    if all(len(v) == 4 for v in base.values()):   # abstract: same requests, same weights, prefill 1 -> 4 at decode 1
+        q = {c: float(np.mean([r["quality"] for r in v])) for c, v in base.items()}
+        t = {c: float(np.mean([r["total_s"] for r in v])) for c, v in base.items()}
+        got = (round(q["a1x1sb"], 1), round(q["a4x1sb"], 1), round(100 * (t["a4x1sb"] / t["a1x1sb"] - 1)))
+        print(f"Time         abstract: quality {got[0]} -> {got[1]}, time +{got[2]}%" + ("" if got == (31.2, 43.0, 21) else "  !! paper: (31.2, 43.0, 21)"))
+    for c, w in (("a4x1sb", (43.0, 14.6)), ("native2st", (56.8, 14.2)), ("a3x2sb", (59.2, 18.0)), ("D2st", (58.5, 15.4))):
+        v = [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c]   # abstract and Section 5, batch 1
+        if len(v) == 4:
+            got = (round(float(np.mean([r["quality"] for r in v])), 1), round(float(np.mean([r["total_s"] for r in v])), 1))
+            print(f"Time         {c} mean over the four tasks {got}" + ("" if got == w else f"  !! paper: {w}"))
     want = {"native2st": (44.0, 1.37), "Df2st": (54.2, 1.31), "a42sb": (59.1, 2.10), "native4st": (65.7, 2.33)}   # Section 5
     share = {"native2st": 27, "native4st": 30}   # Section 3, HELMET prefill share (rounded)
     for r in out:
@@ -1089,6 +1100,42 @@ def batch_time(batches=(8, 32, 64)):
             if len(xs) == len(TIME_TASKS):
                 print(f"Batch time   B={b:3d} {c:11s} mean est {np.mean([x['est_s'] for x in xs]):6.2f}s  "
                       f"quality {np.mean([x['quality'] for x in xs]):5.1f}")
+    return out
+
+
+def plateau(adapter="wide", min_gain=0.5, window=3):
+    """Section 4's plateau rule: on a development half of each benchmark (items by a hash of their id), the plateau
+    depth m* is the first prefill depth of the sweep that none of the next `window` depths beats by more than
+    `min_gain` points; m* and the accuracy at m* and at the deepest depth are reported on the other (test) half."""
+    import hashlib
+    half = lambda i: int(hashlib.md5(str(i).encode()).hexdigest(), 16) % 2
+    out = []
+    for n in (1, 2):
+        for b in MAIN_BENCH:
+            sets = {m: load(sweep_key(b, m, n, adapter == "wide")) for m in SWEEP_M}
+            sets = {m: v for m, v in sets.items() if v}
+            if len(sets) < window + 2:
+                continue
+            full = float(np.median([len(v) for v in sets.values()]))
+            sets = {m: v for m, v in sets.items() if len(v) >= 0.95 * full}
+            ids = set.intersection(*(set(v) for v in sets.values()))
+            dev, test = [i for i in ids if half(i) == 0], [i for i in ids if half(i) == 1]
+            ms = sorted(sets)
+            qd = {m: agg(sets[m], dev) for m in ms}
+            star = next((m for k, m in enumerate(ms) if len(ms[k + 1:k + 1 + window]) == window
+                         and all(qd[x] <= qd[m] + min_gain for x in ms[k + 1:k + 1 + window])), None)
+            if star is None:
+                print(f"Plateau      n={n} {b:16s} no plateau within m <= {ms[-1]}"); continue
+            qt = {m: agg(sets[m], test) for m in ms}
+            row = dict(n=n, bench=b, m_star=star, deepest=ms[-1], test_at_star=round(qt[star], 2),
+                       test_deepest=round(qt[ms[-1]], 2), test_m1=round(qt[ms[0]], 2))
+            out.append(row)
+            want = {(1, "GSM8K"): (2, 47.0, 36.9), (1, "MMLU-Pro"): (5, None, None)}.get((n, b))   # Section 4
+            if want and (star != want[0] or any(w is not None and abs(g - w) > 0.051
+                                                for g, w in ((row["test_at_star"], want[1]), (row["test_deepest"], want[2])))):
+                print(f"Plateau      n={n} {b}: m*={star} {row['test_at_star']} {row['test_deepest']}  !! paper: {want}")
+            print(f"Plateau      n={n} {b:16s} m*={star:2d} (dev)  test: m1 {row['test_m1']:5.1f}  m* {row['test_at_star']:5.1f}  "
+                  f"m{ms[-1]} {row['test_deepest']:5.1f}")
     return out
 
 
@@ -1489,7 +1536,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), plateau=plateau(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
