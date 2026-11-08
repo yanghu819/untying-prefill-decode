@@ -621,7 +621,14 @@ def fig_budget(batch=None, name="fig_budget"):
                 ax.plot([p[0] for p in ours], [p[1] for p in ours], "-", color=col, marker="s", ms=3, lw=1.3, label=f"Ours m/{n}")
                 for x, y, lab in ours:
                     ax.annotate(lab, (x, y), xytext=(0, 3), textcoords="offset points", fontsize=6.5, color=col, ha="center")
-        nat = [(*point(f"native{d}st", b), f"{d}/{d}") for d in (1, 2, 4) if point(f"native{d}st", b)]
+            folded = [(*point(f"a{m}x{n}pm", b), str(m)) for m in (1, 3, 4) if point(f"a{m}x{n}pm", b)]
+            if folded:   # maps folded into the banks at prefill (no per-step map work)
+                ax.plot([p[0] for p in folded], [p[1] for p in folded], "--", color=col, marker="s", ms=3, lw=1.1,
+                        mfc="white", label=f"Ours m/{n}, maps folded")
+            p4 = point(f"f4x{n}pm", b)
+            if p4:   # prefill-4 LoRA with identity maps
+                ax.scatter(*p4, color=col, marker="D", s=16, zorder=3, label=f"Prefill-4 LoRA 4/{n}")
+        nat = [(*point(f"native{d}st", b), f"{d}/{d}") for d in (1, 2, 3, 4) if point(f"native{d}st", b)]
         if nat:
             ax.plot([p[0] for p in nat], [p[1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, label="Original n/n")
             for x, y, lab in nat:
@@ -631,6 +638,9 @@ def fig_budget(batch=None, name="fig_budget"):
             if p:
                 ax.scatter(*p, color=NAT, marker="^", s=16, zorder=3)
                 ax.annotate(f"Distilled {d}/{d}", p, xytext=(4, -3), textcoords="offset points", fontsize=6.5, color=NAT)
+            p = point(f"D{d}r80st", b)
+            if p:   # rank 80: as many trainable parameters as the adapter
+                ax.scatter(*p, color=NAT, marker="v", s=16, zorder=3, facecolors="none")
         ax.set_title(title, fontsize=8.5, color=INK, pad=4)
         ax.set_xlabel("seconds per request"); ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     for ax in axes[:, 0]:

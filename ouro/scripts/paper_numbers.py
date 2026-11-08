@@ -981,14 +981,14 @@ def time_breakdown():
     (replay_score; checked against the evaluation's scores by check_replay_scorer.py). Prefill share = summed prefill
     time / summed total time."""
     out = []
-    for f in sorted(E2E.glob("base-*.jsonl")) + sorted(E2E.glob("thinkb-*.jsonl")):
+    files = {}   # (model, cond, task) -> file; the clean pass (a box running nothing else) replaces the first pass
+    for f in sorted(E2E.glob("base-*.jsonl")) + sorted(E2E.glob("thinkb-*.jsonl")) + sorted(E2E.glob("clean-*.jsonl")):
         model = "Ouro-2.6B-Thinking" if f.stem.startswith("thinkb-") else "Ouro-2.6B"
         cond, task = f.stem.split("-", 1)[1].rsplit("-", 1)
-        if task not in TIME_TASKS:
-            continue
+        if task in TIME_TASKS and sum(1 for _ in open(f)) >= 100:
+            files[(model, cond, task)] = f
+    for (model, cond, task), f in sorted(files.items()):
         rows = [json.loads(l) for l in open(f)]
-        if len(rows) < 100:   # unfinished: every condition is timed on the same 100 requests
-            continue
         sc = [replay_score(r["id"], r["text"], r["target"]) for r in rows]
         pre, tot = sum(r["prefill_s"] for r in rows), sum(r["total_s"] for r in rows)
         pct = lambda v, q: round(float(np.percentile(v, q)), 3)
@@ -997,7 +997,7 @@ def time_breakdown():
                     total_p90=pct([r["total_s"] for r in rows], 90),
                     share_median=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 50),
                     share_p90=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 90))
-        out.append(dict(model=model, task=TIME_TASKS[task], cond=cond, n=len(rows), quality=round(100 * float(np.mean(sc)), 2),
+        out.append(dict(model=model, task=TIME_TASKS[task], cond=cond, n=len(rows), source=f.stem.split("-", 1)[0], quality=round(100 * float(np.mean(sc)), 2),
                         prefill_s=round(pre / len(rows), 4), decode_s=round(sum(r["decode_s"] for r in rows) / len(rows), 3),
                         total_s=round(tot / len(rows), 3), prefill_share=round(100 * pre / tot, 3),
                         in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
