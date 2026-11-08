@@ -396,6 +396,7 @@ def keys():
     ks |= {main_key(b, "aligned", f"a{m}{n}") for b in MAIN_BENCH for m in range(1, 5) for n in range(1, 5)}
     ks |= {main_key("GSM8K", kind, c).replace(GF, GFLEX) for _, kind, c in MAIN_ROWS}
     ks |= {sweep_key(b, m, n, w) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2) for w in (False, True)}
+    ks |= {key.format(c=c) for _, key in THINK_SWEEP for m in (1, 2, 3, 4, 6, 8) for c in (f"a{m}x2", f"a{m}2")}
     return sorted({k.partition("#")[0] for k in ks})
 
 
@@ -1091,6 +1092,34 @@ def batch_time(batches=(8, 32, 64)):
     return out
 
 
+THINK_SWEEP = [("ARC-C", "L:T26x-{c}-arc:acc_norm"), ("BBH", "L:T26x-{c}-bbh:exact_match"),
+               ("MMLU-Pro", "L:T26x-{c}-mmlupro:exact_match"), ("HELMET", "B:T26ne-{c}-helmet:helmet")]
+
+
+def think_sweep_key(key, m):
+    """sweep_think.sh names a<m>x2; the cells evaluated before (a22, a42) keep their names."""
+    k = key.format(c=f"a{m}x2")
+    return k if load(k) is not None or m not in (2, 4) else key.format(c=f"a{m}2")
+
+
+def think_sweep():
+    """Prefill-depth sweep on Ouro-2.6B-Thinking (sweep_think.sh): aligned adapter at decode 2, prefill m; each
+    benchmark on the items all available m share (HELMET with its own aggregation)."""
+    out = []
+    for bench, key in THINK_SWEEP:
+        sets = {m: load(think_sweep_key(key, m)) for m in (1, 2, 3, 4, 6, 8)}
+        sets = {m: v for m, v in sets.items() if v}
+        if len(sets) < 2:
+            continue
+        full = float(np.median([len(v) for v in sets.values()]))
+        sets = {m: v for m, v in sets.items() if len(v) >= 0.95 * full}
+        ids = set.intersection(*(set(v) for v in sets.values()))
+        row = dict(bench=bench, items=len(ids), quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
+        out.append(row)
+        print(f"Think sweep  n=2 {bench:9s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+    return out
+
+
 def gsm_protocol():
     """Appendix B: Table 1's GSM8K comparisons under strict matching (the paper's metric) and flexible extraction of the
     same generated answers: each adapter row against native n/n and LoRA-distilled n/n at its decode depth, on the
@@ -1460,7 +1489,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), depth_sweep=depth_sweep(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
