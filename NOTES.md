@@ -50,6 +50,11 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   table, method figure and the batch-32 panel moved to the appendix), provenance regenerated (181 new runs). Open:
   clean timing pass (a2), timing of the fixed-prefill-4 and rank-80 controls and Original 3/3, maps folded into the
   aligned banks at prefill (no per-step map cost), a universal aligned LoRA-only control.
+- Clean pass vs first pass (same 100 requests, identical answers in every cell): times differ in both directions by
+  up to about 29%, median about 9%, for Original and Ours alike (Original 2/2 MMLU-Pro +20%, Ours 4/2 MMLU-Pro -22%).
+  Batch-1 replay is launch-bound and varies run to run even on an idle box. Plan: figures and Section 5 from the clean
+  pass (all configurations under the same conditions), the spread reported, time differences below about 20% not
+  claimed.
 - Maps folded into the aligned banks at prefill (AlignedRunner premap, condition a<m>x<n>pm): decode then runs the native
   attention path. On 10 GSM8K requests (shared GPU) 4/2 drops from 88.0 to 61.2 ms/token, 4/1 from 47.8 to 36.3;
   6/10 and 8/10 greedy answers are identical (bf16 rounding of the folded banks), so its quality is measured on the
