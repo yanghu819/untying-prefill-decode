@@ -981,14 +981,26 @@ def time_breakdown():
     (replay_score; checked against the evaluation's scores by check_replay_scorer.py). Prefill share = summed prefill
     time / summed total time."""
     out = []
-    files = {}   # (model, cond, task) -> file; the clean pass (a box running nothing else) replaces the first pass
-    for f in sorted(E2E.glob("base-*.jsonl")) + sorted(E2E.glob("thinkb-*.jsonl")) + sorted(E2E.glob("clean-*.jsonl")):
+    # (model, cond, task) -> timing files. The clean passes (clean, clean3: a box running nothing else, opposite
+    # orders) replace the first pass (base-, some of whose GPUs also ran evaluations); with several clean passes each
+    # request's times are averaged over them (the replayed answers are the same in every pass).
+    files = {}
+    for f in sorted(E2E.glob("base-*.jsonl")) + sorted(E2E.glob("thinkb-*.jsonl")) + sorted(E2E.glob("clean*-*.jsonl")):
         model = "Ouro-2.6B-Thinking" if f.stem.startswith("thinkb-") else "Ouro-2.6B"
-        cond, task = f.stem.split("-", 1)[1].rsplit("-", 1)
+        src, rest = f.stem.split("-", 1)
+        cond, task = rest.rsplit("-", 1)
         if task in TIME_TASKS and sum(1 for _ in open(f)) >= 100:
-            files[(model, cond, task)] = f
-    for (model, cond, task), f in sorted(files.items()):
-        rows = [json.loads(l) for l in open(f)]
+            files.setdefault((model, cond, task), {})[src] = f
+    for (model, cond, task), by_src in sorted(files.items()):
+        clean = [by_src[k] for k in sorted(by_src) if k.startswith("clean")]
+        use = clean or list(by_src.values())
+        passes = [[json.loads(l) for l in open(g)] for g in use]
+        rows = passes[0]
+        if len(passes) > 1:
+            by_id = [{r["id"]: r for r in p} for p in passes]
+            rows = [dict(r, **{k: float(np.mean([b[r["id"]][k] for b in by_id if r["id"] in b]))
+                               for k in ("prefill_s", "decode_s", "total_s")}) for r in passes[0]]
+        f = use[0]
         sc = [replay_score(r["id"], r["text"], r["target"]) for r in rows]
         pre, tot = sum(r["prefill_s"] for r in rows), sum(r["total_s"] for r in rows)
         pct = lambda v, q: round(float(np.percentile(v, q)), 3)
@@ -997,7 +1009,7 @@ def time_breakdown():
                     total_p90=pct([r["total_s"] for r in rows], 90),
                     share_median=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 50),
                     share_p90=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 90))
-        out.append(dict(model=model, task=TIME_TASKS[task], cond=cond, n=len(rows), source=f.stem.split("-", 1)[0], quality=round(100 * float(np.mean(sc)), 2),
+        out.append(dict(model=model, task=TIME_TASKS[task], cond=cond, n=len(rows), source="+".join(g.stem.split("-", 1)[0] for g in use), quality=round(100 * float(np.mean(sc)), 2),
                         prefill_s=round(pre / len(rows), 4), decode_s=round(sum(r["decode_s"] for r in rows) / len(rows), 3),
                         total_s=round(tot / len(rows), 3), prefill_share=round(100 * pre / tot, 3),
                         in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
@@ -1200,11 +1212,11 @@ def timing_repeat():
     configuration and task, the relative difference between the two passes in mean time per request and in decode time
     per generated token, on the same 100 requests."""
     out = []
-    for f in sorted(E2E.glob("rep-*.jsonl")) + sorted(E2E.glob("clean-*.jsonl")):
+    for f in sorted(E2E.glob("rep-*.jsonl")) + sorted(E2E.glob("clean-*.jsonl")) + sorted(E2E.glob("clean3-*.jsonl")):
         cond, task = f.stem.split("-", 1)[1].rsplit("-", 1)
         if task not in TIME_TASKS:
             continue
-        g = E2E / f"base-{cond}-{task}.jsonl"
+        g = E2E / f"{'clean' if f.stem.startswith('clean3-') else 'base'}-{cond}-{task}.jsonl"   # pass 3 against pass 2
         a, b = [json.loads(l) for l in open(g)] if g.exists() else [], [json.loads(l) for l in open(f)]
         if len(a) < 100 or len(b) < 100:
             continue
@@ -1216,6 +1228,11 @@ def timing_repeat():
         out.append(row)
         print(f"Repeat time  {row['pass_']:5s} {cond:10s} {row['task']:9s} time/request {row['total_diff']:+5.1f}%  per token "
               f"{row['per_token_diff']:+5.1f}%  same answer {row['same_text']:.2f}")
+    for p in ("clean", "clean3"):
+        d = [abs(r["total_diff"]) for r in out if r["pass_"] == p]
+        if d:
+            print(f"Repeat time  {p:6s} vs previous pass: |difference in time per request| median {np.median(d):.1f}%, "
+                  f"max {max(d):.1f}% over {len(d)} configuration-task cells")
     return out
 
 
