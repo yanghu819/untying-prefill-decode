@@ -18,5 +18,5 @@ job() {  # COND CKPT
   for d in 1 2 4; do job native${d}st -; done
   job D1st $R/X26-E48f-p1d1/checkpoint-48m.pt; job D2st $R/X26-D48f-p2d2/checkpoint-48m.pt
   for m in 1 4 16 2 8 3 6 12; do for n in 1 2; do job a${m}x${n}sb $A; done; done
-} | flock $Q.lock sh -c "cat >> $Q"
+} | { [ -n "$REVERSE" ] && tac || cat; } | flock $Q.lock sh -c "cat >> $Q"   # REVERSE=1: the opposite order (counterbalancing)
 for g in "$@"; do setsid nohup ./grid_worker.sh $g $Q 1 > /dev/null 2>&1 < /dev/null & done

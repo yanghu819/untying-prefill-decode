@@ -17,5 +17,5 @@ job() {  # COND CKPT NAME [ENV]
   job a4x1pm $F f4x1pm; job a4x2pm $F f4x2pm
   job D1st $E80 D1r80st "OURO_LORA_RANK=80"; job D2st $D80 D2r80st "OURO_LORA_RANK=80"
   job native3st - native3st
-} | flock $Q.lock sh -c "cat >> $Q"
+} | { [ -n "$REVERSE" ] && tac || cat; } | flock $Q.lock sh -c "cat >> $Q"
 for g in "$@"; do setsid nohup ./grid_worker.sh $g $Q 1 > /dev/null 2>&1 < /dev/null & done
