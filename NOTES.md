@@ -42,6 +42,9 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   decode 1): MMLU-Pro 118 -> 386 -> 461 output tokens at m = 1, 4, 8 (5.5 -> 18.1 -> 20.6 s; accuracy 22 -> 46 -> 44),
   GSM8K and BBH nearly unchanged in length, MATH-500 shorter (633 -> 490 tokens; accuracy 37 -> 22). Prefill stays
   1-6% of the time. The paper must report both: the direct prefill cost and the length effect.
+- Training seeds (adapter and distilled controls) change the LoRA initialisation and the (m, n) pair drawn per
+  micro-batch; the data order is the same for every seed. Distilled 2/2 seed 2 (`SEED=2 launch_x26_distill.sh D`) tests
+  the small decode-2 gap (Ours 67.2 vs Distilled 65.3) against training noise.
 - Quality vs time per request on the four chain-of-thought tasks (same 100 requests; Figure 3): batch 1 measured and
   batch 32 estimated (measured step cost x measured output tokens) agree. At batch 32: Original 2/2 56.8 at 15.0 s,
   Distilled 2/2 58.5 at 16.5 s, Ours 4/1 43.0 at 13.5 s, Ours 6/2 60.8 at 20.5 s, Original 4/4 64.8 at 29.3 s. On these
