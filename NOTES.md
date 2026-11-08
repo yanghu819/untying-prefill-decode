@@ -55,6 +55,13 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   Batch-1 replay is launch-bound and varies run to run even on an idle box. Plan: figures and Section 5 from the clean
   pass (all configurations under the same conditions), the spread reported, time differences below about 20% not
   claimed.
+- Controls on the measured-time plane (clean pass 2, four CoT tasks, mean accuracy / s per request): at one decode
+  loop Distilled 1/1 34.2 / ~10 s and rank 80 33.5 / 10.2 s, Ours 4/1 with maps folded 41.3 / 11.6 s, 3/1 41.5 / 11.4,
+  prefill-4 LoRA 4/1 42.0 / 11.0; at two decode loops Original 2/2 56.8 / 15.7, Distilled 2/2 58.5 / 16.4, rank 80
+  60.5 / 15.8, Ours 3/2 folded 59.5 / 16.3, 4/2 59.0 / 16.4, prefill-4 LoRA 59.5 / 15.7. Folding the maps makes deep
+  prefill at one decode loop a point between n=1 and n=2 that nothing else reaches (+7-8 points over distilled 1/1 for
+  ~10% more time); at two decode loops all are within noise. The prefill-4 LoRA matches the adapter here as well.
+  Pending: pass 3 (reverse order) to average with pass 2.
 - Maps folded into the aligned banks at prefill (AlignedRunner premap, condition a<m>x<n>pm): decode then runs the native
   attention path. On 10 GSM8K requests (shared GPU) 4/2 drops from 88.0 to 61.2 ms/token, 4/1 from 47.8 to 36.3;
   6/10 and 8/10 greedy answers are identical (bf16 rounding of the folded banks), so its quality is measured on the
