@@ -348,8 +348,8 @@ $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH
 the released model. Training-free: the frozen model decodes from a four-loop prefill without an adapter. Distilled:
 LoRA on the $n$-loop model distilled from native 4/4 with the adapter's data, teacher and tokens. Ours: one cache (all
 decode loops read prefill loop $m$) or aligned (decode loop $k$ reads prefill loop $\max(m-n+k,1)$). Each column on the
-items all rows share. Ours (aligned) over three training seeds averages $56.7\pm0.1$ at 4/1 and $67.1\pm0.2$ at 4/2
-(mean $\pm$ s.d.); the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
+items all rows share. Over three training seeds (mean $\pm$ s.d.), Ours (aligned) averages $56.7\pm0.1$ at 4/1 and
+$67.1\pm0.2$ at 4/2, Distilled 2/2 $65.1\pm0.2$; the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
 \label{tab:main}
 \end{table*}
 

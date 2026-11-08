@@ -1364,7 +1364,7 @@ def main_table():
         if None not in avgs:
             got = (round(float(np.mean(avgs)), 1), round(float(np.std(avgs, ddof=1)), 1))
             want = {"loop adapter 4/1": (56.4, 0.0), "loop adapter 4/2": (66.6, 0.2), "aligned adapter 4/1": (56.7, 0.1),
-                    "aligned adapter 4/2": (67.1, 0.2)}.get(label)   # Table 1 caption
+                    "aligned adapter 4/2": (67.1, 0.2), "LoRA-distilled 2/2": (65.1, 0.2)}.get(label)   # Table 1 caption
             print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
                   + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}

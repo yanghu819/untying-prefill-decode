@@ -325,3 +325,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   small-p approximation; frozen prefill loops added to Limitations; Figure 2 bottom row (quality vs time, unreadable,
   per-step maps) dropped, Figure 3 is the only quality-time figure. Open: the maps' value under the aligned layout
   (X26-a-lora on a1 is exactly the requested control); per-task frontier under fixed budgets (possible appendix).
+- Distilled 2/2 over three seeds (D48f, s2, s3): 65.3 / 65.0 / 65.0, mean 65.1 s.d. 0.2, vs Ours 4/2 67.1 s.d. 0.2: the 2-point gap is ten seed s.d. (Table 1 caption).
