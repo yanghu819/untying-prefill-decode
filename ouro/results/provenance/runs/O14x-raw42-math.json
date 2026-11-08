@@ -1,0 +1,45 @@
+{
+ "run": "O14x-raw42-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=raw42,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T03:57:52.260735+00:00",
+ "seconds": "1046.3567571938038",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.0,
+   "exact_match_stderr,none": 0.0,
+   "math_verify,none": 0.0,
+   "math_verify_stderr,none": 0.0
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-05T12-15-16.641655.jsonl",
+   "sha256": "905ccf896b35e064f42efc82a683bf273395b877f10bec300619e33959373514",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 11:57:44 gpu3: ./lm1.sh $GPU O14x-raw42-math - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=raw42,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\""
+ ]
+}

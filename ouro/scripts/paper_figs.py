@@ -594,15 +594,17 @@ def fig_depth():
     save(fig, "fig_depth")
 
 
-def fig_budget():
+def fig_budget(batch=None, name="fig_budget"):
     """Figure 3: mean accuracy over the timed tasks against time per request on the same replayed requests: measured at
     batch 1 (left) and estimated at batch 32 from the decode cost per step (right, batch_time), for Original n/n,
     Distilled 1/1 and 2/2, Ours m/1 and m/2."""
     tasks = [t for t in TIMED if _time(t, "native4st")]
     if not tasks:
-        return drop("fig_budget")
+        return drop(name)
     bt = PN.get("batch_time", [])
-    panels = [("batch 1, measured", None)] + ([("batch 32, estimated", 32)] if any(r["batch"] == 32 for r in bt) else [])
+    if batch and not any(r["batch"] == batch for r in bt):
+        return drop(name)
+    panels = [(f"batch {batch}, estimated from measured step times", batch)] if batch else [("batch 1, measured", None)]
 
     def point(cond, b):
         if b is None:
@@ -635,7 +637,7 @@ def fig_budget():
         ax.set_ylabel("mean accuracy (%)")
     axes[0, 0].legend(fontsize=7, loc="lower right")
     fig.tight_layout(h_pad=0.8)
-    save(fig, "fig_budget")
+    save(fig, name)
 
 
 def tab_time():
@@ -653,6 +655,30 @@ def tab_time():
     (OUT / "tab_time.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_plateau():
+    """Appendix: stopping depth of the prefill gain per benchmark and decode depth (paper_numbers.plateau)."""
+    lines = []
+    for key, name in (("plateau_extrapolated", r"trained $\le4$"), ("plateau", r"trained $\le16$")):
+        for r in PN.get(key, []):
+            lines.append(f"{name} & {r['bench']} & {r['n']} & {r['m_star']} & {r['test_m1']:.1f} & {r['test_at_star']:.1f} & "
+                         f"{r['test_deepest']:.1f} ({r['deepest']}) \\\\")
+    (OUT / "tab_plateau.tex").write_text("\n".join(lines) + "\n")
+
+
+def tab_avg():
+    """Main text: Table 1's averages over the 11 benchmarks, one row per method and a column per decode depth."""
+    T = PN["main_table"]
+    avg = lambda l: (None if any(r.get(l) is None for r in T) else sum(r[l] for r in T) / len(T))
+    rows = [("Original $n/n$", "native 1/1", "native 2/2"), ("Training-free $4/n$", "training-free 4/1", "training-free 4/2"),
+            ("Distilled $n/n$", "LoRA-distilled 1/1", "LoRA-distilled 2/2"),
+            ("Distilled $n/n$, rank 80", "distilled r80 1/1", "distilled r80 2/2"),
+            ("Prefill-4 LoRA $4/n$", "fixed-4 LoRA 4/1", "fixed-4 LoRA 4/2"),
+            ("Ours $4/n$, one cache", "loop adapter 4/1", "loop adapter 4/2"), ("Ours $4/n$, aligned", "aligned adapter 4/1", "aligned adapter 4/2")]
+    f = lambda x: "--" if x is None else f"{x:.1f}"
+    lines = [f"{name} & {f(avg(a))} & {f(avg(b))} \\\\" for name, a, b in rows]
+    (OUT / "tab_avg.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig_time(); tab_time(); fig_depth(); fig_budget(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_time(); tab_time(); tab_plateau(); tab_avg(); fig_depth(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

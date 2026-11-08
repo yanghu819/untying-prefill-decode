@@ -1,0 +1,61 @@
+{
+ "run": "X26-a41-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-06T08:06:16.423876+00:00",
+ "seconds": "1221.6396456598304",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.192,
+   "exact_match_stderr,none": 0.017632180454361008,
+   "math_verify,none": 0.232,
+   "math_verify_stderr,none": 0.01889619359195203
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-06T16-26-35.920697.jsonl",
+   "sha256": "c551c9df97d9816cb0a03e86abdc03142efb8d9e5729a8adb8828b9fd8e9649c",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [
+  "aligned_q.txt.log: 16:06:08 gpu0: ./lm1.sh $GPU X26-a41-math - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\"",
+  "timing_q.txt.log: 20:56:25 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a8x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a8x1sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a8x1sb-math.log 2>&1",
+  "timing_q.txt.log: 21:49:00 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a8x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a8x2sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a8x2sb-math.log 2>&1",
+  "timing_q.txt.log: 22:43:54 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a3x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a3x1sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a3x1sb-math.log 2>&1",
+  "timing_q.txt.log: 23:18:28 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a3x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a3x2sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a3x2sb-math.log 2>&1",
+  "timing_q.txt.log: 23:50:17 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a6x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a6x1sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a6x1sb-math.log 2>&1",
+  "timing_q.txt.log: 00:25:15 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a6x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a6x2sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a6x2sb-math.log 2>&1",
+  "timing_q.txt.log: 01:10:22 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a12x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a12x1sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a12x1sb-math.log 2>&1",
+  "timing_q.txt.log: 01:40:58 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a12x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a12x2sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a12x2sb-math.log 2>&1",
+  "timing_q.txt.log: 02:27:06 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a2x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a2x1sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a2x1sb-math.log 2>&1",
+  "timing_q.txt.log: 02:51:38 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a2x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-math 100 /dev/shm/big-small-ouro/runs/e2e/base-a2x2sb-math.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a2x2sb-math.log 2>&1"
+ ],
+ "checkpoint": {
+  "run": "X26-a-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "73b9c888e3bdb978c3c1bbd52fdc10f0d4b513aa0556204886d7b28a4fae4b79",
+  "bytes": 760170173
+ }
+}

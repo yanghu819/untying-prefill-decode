@@ -1,0 +1,45 @@
+{
+ "run": "O14x-raw41-gsm",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=raw41,max_length=16384",
+ "limit": 400.0,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 400
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "cf8efac44d1e4958914e2cb93fb6e8319d30c9fb794f4ef442bd9f0cbd1acd23"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T03:57:36.376135+00:00",
+ "seconds": "120.88536693295464",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.0,
+   "exact_match_stderr,strict-match": 0.0,
+   "exact_match,flexible-extract": 0.0,
+   "exact_match_stderr,flexible-extract": 0.0
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-05T11-59-35.362738.jsonl",
+   "sha256": "e0b30f1138ffa1672946c8bb30555e0a4a3bcd6acbf7d6bacfaa5e0e1508d4ed",
+   "items": 800
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 11:57:29 gpu2: ./lm1.sh $GPU O14x-raw41-gsm - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=raw41,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3 --limit 400\""
+ ]
+}

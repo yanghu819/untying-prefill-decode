@@ -19,5 +19,15 @@
   }
  ],
  "log": true,
- "commands": []
+ "commands": [
+  "jobs.txt.log: 2026-10-31 07:12:36 gpu3: ./lm1.sh $GPU NBX-p1d1-arc /dev/shm/big-small-ouro/tf457: \"path=/dev/shm/big-small-ouro/nanbeige-3b-base,condition=X,checkpoint=/dev/shm/big-small-ouro/runs/NBX-p1d1/checkpoint-final.pt,max_length=16384\" \"--tasks arc_challenge --num_fewshot 25\"",
+  "jobs.txt.log: 2026-10-31 07:13:38 gpu6: ./lm1.sh $GPU NBX-p1d1-bbh /dev/shm/big-small-ouro/tf457: \"path=/dev/shm/big-small-ouro/nanbeige-3b-base,condition=X,checkpoint=/dev/shm/big-small-ouro/runs/NBX-p1d1/checkpoint-final.pt,max_length=16384\" \"--tasks bbh_cot_fewshot --num_fewshot 3 --limit 60\"",
+  "jobs.txt.log: 2026-10-31 15:28:20 gpu3: MODEL=/dev/shm/big-small-ouro/nanbeige-3b-base PP=/dev/shm/big-small-ouro/tf457: DATA=/dev/shm/big-small-ouro/bench-mini BENCHES=helmet BATCH=65536 ./bench3.sh NBX-p1d1-helmet X /dev/shm/big-small-ouro/runs/NBX-p1d1/checkpoint-final.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "NBX-p1d1",
+  "checkpoint": "checkpoint-final.pt",
+  "sha256": "83c94c69187fb789fa2796119612757d6422004f2c5bf8e02626d6bc85ab5af2",
+  "bytes": 60610235
+ }
 }

@@ -1,0 +1,51 @@
+{
+ "run": "T26-a42-math500_think_s4",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b-think,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/T26-a-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64",
+ "limit": null,
+ "n_shot": {
+  "math500_think_s4": 0
+ },
+ "n_samples": {
+  "math500_think_s4": {
+   "original": 100,
+   "effective": 100
+  }
+ },
+ "task_versions": {
+  "math500_think_s4": 1.0
+ },
+ "task_hashes": {
+  "math500_think_s4": "995ba06edde4289954227b1d307b62c3fdd6a1fe99ea910bdbeae9fc9a0bc516"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-07T05:12:33.347774+00:00",
+ "seconds": "6120.167533907108",
+ "results": {
+  "math500_think_s4": {
+   "alias": "math500_think_s4",
+   "math_verify,none": 0.8,
+   "math_verify_stderr,none": 0.04020151261036849
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_math500_think_s4_2026-11-07T14-54-31.599725.jsonl",
+   "sha256": "e636eb12b824e80766c9d920418102cc226768016058bb0db0896a013324bfef",
+   "items": 100
+  }
+ ],
+ "log": true,
+ "commands": [
+  "aligned_q.txt.log: 06:39:50 gpu7: ./lm1.sh $GPU T26-a42-math500_think_s4 - \"path=/dev/shm/big-small-ouro/model-2.6b-think,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/T26-a-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64\" \"--tasks math500_think_s4 --apply_chat_template\"",
+  "aligned_q.txt.log: 11:19:34 gpu3: ./lm1.sh $GPU T26-a42-math500_think_s4 - \"path=/dev/shm/big-small-ouro/model-2.6b-think,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/T26-a-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64\" \"--tasks math500_think_s4 --apply_chat_template\"",
+  "aligned_q.txt.log: 13:12:26 gpu4: ./lm1.sh $GPU T26-a42-math500_think_s4 - path=/dev/shm/big-small-ouro/model-2.6b-think,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/T26-a-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64 '--tasks math500_think_s4 --apply_chat_template'"
+ ],
+ "checkpoint": {
+  "run": "T26-a-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "e7a2b0d7a9a62430df2eb6c940b8e64da32cdbda86f8cd9ad5f8f72e9a0d46f1",
+  "bytes": 760170173
+ }
+}

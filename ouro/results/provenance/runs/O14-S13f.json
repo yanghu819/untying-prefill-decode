@@ -4,22 +4,23 @@
  "outputs": [
   {
    "file": "O14-S13f/s0/ruler16k.jsonl",
-   "sha256": "3f22b9bf002b3bbd6eedc2639756f4bf82672af3a9e7e8c94e428667aaaf8b5e",
+   "sha256": "4bb8e9fb2a5b252bb5b0dae14f86ffdd9081c86d12c57eea453aea8797bb1413",
    "items": 520
   },
   {
    "file": "O14-S13f/s0/ruler4k.jsonl",
-   "sha256": "ab30cc5746a774032e16a37f667abe32bc09bf5478fc4c8ddcd556b6388e5337",
+   "sha256": "d915f3f54c5cf17376f6dbda9e06c1ea7352b7d1970a06e48097aa37c442c109",
    "items": 520
   },
   {
    "file": "O14-S13f/s0/ruler8k.jsonl",
-   "sha256": "35a2178d68deadf478d91a09e2b414d3cf98c5c69e0efd160c884469d34d46c9",
+   "sha256": "0e41f8e9cdee4b2539100d82c94bcc194cd2a0e55e941453bed373b57643815e",
    "items": 520
   }
  ],
  "log": true,
  "commands": [
+  "aligned_q.txt.log: 12:45:27 gpu3: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-1.4b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' BATCH=24576 OURO_NO_CUDNN_SDP=1 ./ouro/runs_scripts/bench3.sh O14-S13f S13 /dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt $GPU 1",
   "grid14b_q.txt.log: 23:23:17 gpu3: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-1.4b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' BATCH=24576 OURO_NO_CUDNN_SDP=1 ./ouro/runs_scripts/bench3.sh O14-S13f S13 /dev/shm/big-small-ouro/runs/O14-S-universal/checkpoint-48m.pt $GPU 1"
  ],
  "checkpoint": {

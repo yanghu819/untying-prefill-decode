@@ -19,5 +19,7 @@
   }
  ],
  "log": true,
- "commands": []
+ "commands": [
+  "jobs.txt.log: 2026-10-31 05:20:36 gpu6: until grep -q OURO14_DONE /dev/shm/dl14.log; do sleep 30; done; MODEL=/dev/shm/big-small-ouro/model-1.4b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' BATCH=24576 OURO_NO_CUDNN_SDP=1 ./bench3.sh O14-native2f native2 - $GPU 1"
+ ]
 }

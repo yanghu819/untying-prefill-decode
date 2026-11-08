@@ -1,0 +1,21 @@
+{
+ "run": "T14ne-a42-helmet",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "T14ne-a42-helmet/s0/helmet.jsonl",
+   "sha256": "11a9d42be3391ee7de39c5afb765af3427f3e45c463b626fdf82a5ff31270c39",
+   "items": 1108
+  }
+ ],
+ "log": true,
+ "commands": [
+  "aligned_q.txt.log: 11:48:19 gpu5: cd /root/big-small && NO_EMPTY=1 MODEL=/dev/shm/big-small-ouro/model-1.4b-think DATA=/dev/shm/big-small-ouro/bench-mini BENCHES=helmet BATCH=65536 ./ouro/runs_scripts/bench3.sh T14ne-a42-helmet a42 /dev/shm/big-small-ouro/runs/T14-a-universal/checkpoint-48m.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "T14-a-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "0f29bfe10007963dcd97efbce933915c0f679675d05c672d9a13416a15c290a7",
+  "bytes": 380093211
+ }
+}

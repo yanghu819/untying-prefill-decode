@@ -1,0 +1,20 @@
+{
+ "run": "O14-raw42f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "O14-raw42f/s0/ruler16k.jsonl",
+   "sha256": "d95aa69177be809cf442797d607c005324118a032522fd79484a82c87f7113ae",
+   "items": 520
+  },
+  {
+   "file": "O14-raw42f/s0/ruler4k.jsonl",
+   "sha256": "736e7c93357c4348868872cfcd253497577d086abfb9fe349b1ddfb818b85cb2",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 12:32:37 gpu0: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-1.4b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler16k' ./ouro/runs_scripts/bench3.sh O14-raw42f raw42 - $GPU 1"
+ ]
+}

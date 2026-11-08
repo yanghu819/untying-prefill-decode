@@ -1,0 +1,45 @@
+{
+ "run": "O14x-raw41-arc",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=raw41,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "arc_challenge": 25
+ },
+ "n_samples": {
+  "arc_challenge": {
+   "original": 1172,
+   "effective": 1172
+  }
+ },
+ "task_versions": {
+  "arc_challenge": 1.0
+ },
+ "task_hashes": {
+  "arc_challenge": "55e883475b5650b20d8d9dc1e9cdf59ef645a257fcd74bf43a9dbb5c632c529c"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T03:59:44.479577+00:00",
+ "seconds": "236.4633698295802",
+ "results": {
+  "arc_challenge": {
+   "alias": "arc_challenge",
+   "acc,none": 0.2977815699658703,
+   "acc_stderr,none": 0.013363080107244428,
+   "acc_norm,none": 0.3174061433447099,
+   "acc_norm_stderr,none": 0.013602239088038159
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_arc_challenge_2026-11-05T12-03-38.997027.jsonl",
+   "sha256": "0e91fea64db386f1bcb11700e7aae7fe24db1b2411fe51013cf9dfa86db59e42",
+   "items": 1172
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 11:59:37 gpu2: ./lm1.sh $GPU O14x-raw41-arc - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=raw41,max_length=16384\" \"--tasks arc_challenge --num_fewshot 25\""
+ ]
+}

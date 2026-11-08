@@ -1,0 +1,21 @@
+{
+ "run": "X26f4-a41f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "X26f4-a41f/s0/ruler16k.jsonl",
+   "sha256": "1b2797b24f56dc1d3a8a2e0c110d87281cfe6b2470bfbc1e107a38460903c600",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "sweep_q.txt.log: 10:22:26 gpu1: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-2.6b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler16k' ./ouro/runs_scripts/bench3.sh X26f4-a41f a41 /dev/shm/big-small-ouro/runs/X26-a-fixed4-lora/checkpoint-48m.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "X26-a-fixed4-lora",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "973a86a3a84b1d3e67a22591c59781c2ce4e1a63e1c8743b075724ad4f03baa0",
+  "bytes": 354369433
+ }
+}

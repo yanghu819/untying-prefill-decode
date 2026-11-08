@@ -1,0 +1,70 @@
+{
+ "run": "O14x-raw42-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b,condition=raw42,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-05T04:27:04.379604+00:00",
+ "seconds": "486.4724303591065",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-05T12-35-08.863414.jsonl",
+   "sha256": "23098f5268baa679eeb5eef3d3d437c78ace583e2ba440d5fde5076a8a542449",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-05T12-35-08.863414.jsonl",
+   "sha256": "a89f1d835066e8d93e89429855c8392d3937f180b9dcaa97d182070434ffc353",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "3f259728db1dab882f1935a01eeff287c314838a6ca7c975c9d4ee82ed952910"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "4412a93e941d0ea1aff664469dfae7c901103a8af806e1be6e479bf06ae29bfc"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "raw_q.txt.log: 12:26:57 gpu3: ./lm1.sh $GPU O14x-raw42-evalplus - \"path=/dev/shm/big-small-ouro/model-1.4b,condition=raw42,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ]
+}

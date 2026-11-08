@@ -1,0 +1,49 @@
+{
+ "run": "T14-a22-gsm8k_think_s1",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-1.4b-think,condition=a22,checkpoint=/dev/shm/big-small-ouro/runs/T14-a-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_think_s1": 0
+ },
+ "n_samples": {
+  "gsm8k_think_s1": {
+   "original": 330,
+   "effective": 330
+  }
+ },
+ "task_versions": {
+  "gsm8k_think_s1": 1.0
+ },
+ "task_hashes": {
+  "gsm8k_think_s1": "1992d59059adcc5c0269b5fb9ffbd83a9834991f2e59eae3f958461073e4e0a1"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-07T04:01:44.636347+00:00",
+ "seconds": "2863.328637802042",
+ "results": {
+  "gsm8k_think_s1": {
+   "alias": "gsm8k_think_s1",
+   "math_verify,none": 0.8696969696969697,
+   "math_verify_stderr,none": 0.018559372450748065
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_think_s1_2026-11-07T12-49-25.922234.jsonl",
+   "sha256": "444f6c0f5422666dbeaaa4a5a1f1170fa404c1004e37b573f8d4a0e87ef37214",
+   "items": 330
+  }
+ ],
+ "log": true,
+ "commands": [
+  "aligned_q.txt.log: 12:01:37 gpu4: ./lm1.sh $GPU T14-a22-gsm8k_think_s1 - \"path=/dev/shm/big-small-ouro/model-1.4b-think,condition=a22,checkpoint=/dev/shm/big-small-ouro/runs/T14-a-universal/checkpoint-48m.pt,max_length=16384,batch_tokens=160000,max_batch=64\" \"--tasks gsm8k_think_s1 --apply_chat_template\""
+ ],
+ "checkpoint": {
+  "run": "T14-a-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "0f29bfe10007963dcd97efbce933915c0f679675d05c672d9a13416a15c290a7",
+  "bytes": 380093211
+ }
+}

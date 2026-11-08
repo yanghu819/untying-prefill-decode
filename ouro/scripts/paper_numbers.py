@@ -1153,16 +1153,16 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
             star = next((m for k, m in enumerate(ms) if len(ms[k + 1:k + 1 + window]) == window
                          and all(qd[x] <= qd[m] + min_gain for x in ms[k + 1:k + 1 + window])), None)
             if star is None:
-                print(f"Plateau      n={n} {b:16s} no plateau within m <= {ms[-1]}"); continue
+                print(f"Plateau      {adapter:5s} n={n} {b:16s} no stop within m <= {ms[-1]}"); continue
             qt = {m: agg(sets[m], test) for m in ms}
             row = dict(n=n, bench=b, m_star=star, deepest=ms[-1], test_at_star=round(qt[star], 2),
                        test_deepest=round(qt[ms[-1]], 2), test_m1=round(qt[ms[0]], 2))
             out.append(row)
             want = {(1, "GSM8K"): (2, 47.0, 36.9), (1, "MMLU-Pro"): (5, None, None)}.get((n, b))   # Section 4
-            if want and (star != want[0] or any(w is not None and abs(g - w) > 0.051
+            if adapter == "wide" and want and (star != want[0] or any(w is not None and abs(g - w) > 0.051
                                                 for g, w in ((row["test_at_star"], want[1]), (row["test_deepest"], want[2])))):
                 print(f"Plateau      n={n} {b}: m*={star} {row['test_at_star']} {row['test_deepest']}  !! paper: {want}")
-            print(f"Plateau      n={n} {b:16s} m*={star:2d} (dev)  test: m1 {row['test_m1']:5.1f}  m* {row['test_at_star']:5.1f}  "
+            print(f"Plateau      {adapter:5s} n={n} {b:16s} m*={star:2d} (dev)  test: m1 {row['test_m1']:5.1f}  m* {row['test_at_star']:5.1f}  "
                   f"m{ms[-1]} {row['test_deepest']:5.1f}")
     return out
 
@@ -1588,7 +1588,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), plateau=plateau(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

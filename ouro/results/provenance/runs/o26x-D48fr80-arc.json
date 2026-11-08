@@ -1,0 +1,52 @@
+{
+ "run": "o26x-D48fr80-arc",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48fr80-p2d2/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "arc_challenge": 25
+ },
+ "n_samples": {
+  "arc_challenge": {
+   "original": 1172,
+   "effective": 1172
+  }
+ },
+ "task_versions": {
+  "arc_challenge": 1.0
+ },
+ "task_hashes": {
+  "arc_challenge": "55e883475b5650b20d8d9dc1e9cdf59ef645a257fcd74bf43a9dbb5c632c529c"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-07T23:58:11.644843+00:00",
+ "seconds": "115.01172195933759",
+ "results": {
+  "arc_challenge": {
+   "alias": "arc_challenge",
+   "acc,none": 0.591296928327645,
+   "acc_stderr,none": 0.014365750345427017,
+   "acc_norm,none": 0.6262798634812287,
+   "acc_norm_stderr,none": 0.014137708601759029
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_arc_challenge_2026-11-08T08-00-04.737408.jsonl",
+   "sha256": "78cde1958863d1bb8952939d597a85ac445080fc63c53aa057597e18854125e3",
+   "items": 1172
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 06:01:11 gpu5: OURO_LORA_RANK=80 ./lm1.sh $GPU o26x-D48fr80-arc - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48fr80-p2d2/checkpoint-48m.pt,max_length=16384\" \"--tasks arc_challenge --num_fewshot 25\"",
+  "distill_q.txt.log: 07:58:05 gpu5: OURO_NO_CUDNN_SDP=1 OURO_LORA_RANK=80 ./lm1.sh $GPU o26x-D48fr80-arc - path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48fr80-p2d2/checkpoint-48m.pt,max_length=16384 '--tasks arc_challenge --num_fewshot 25'"
+ ],
+ "checkpoint": {
+  "run": "X26-D48fr80-p2d2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "edf504d1716fa2c9592bd037857d2b160439ffa802fbbb964a69dd11f837755d",
+  "bytes": 755451405
+ }
+}

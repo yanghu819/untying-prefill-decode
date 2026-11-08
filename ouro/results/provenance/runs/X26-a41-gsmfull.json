@@ -1,0 +1,67 @@
+{
+ "run": "X26-a41-gsmfull",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 1319
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "adaf2c05fa61ed165c933cb08acb93cd77e43714d152d7ec5c63ebb4a63c6878"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-06T08:06:16.535460+00:00",
+ "seconds": "428.12244252488017",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.4495830174374526,
+   "exact_match_stderr,strict-match": 0.013702290047884744,
+   "exact_match,flexible-extract": 0.5428354814253222,
+   "exact_match_stderr,flexible-extract": 0.013721849968709723
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-06T16-13-22.616589.jsonl",
+   "sha256": "d952c4d7d1d8479fa90510264762ec0bb1c7fbf724064384991520979b17f6fd",
+   "items": 2638
+  }
+ ],
+ "log": true,
+ "commands": [
+  "aligned_q.txt.log: 16:06:08 gpu3: ./lm1.sh $GPU X26-a41-gsmfull - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3\"",
+  "timing_q.txt.log: 20:47:42 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a8x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a8x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a8x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 21:33:32 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a8x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a8x2sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a8x2sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 22:35:54 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a3x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a3x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a3x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 23:04:35 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a3x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a3x2sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a3x2sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 23:47:37 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a6x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a6x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a6x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 00:19:53 gpu5: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a6x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a6x2sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a6x2sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 01:04:45 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a12x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a12x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a12x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 01:32:45 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a12x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a12x2sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a12x2sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 02:27:06 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a2x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a2x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a2x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 02:51:08 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a2x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/base-a2x2sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/base-a2x2sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 12:53:11 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a4x2sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/rep-a4x2sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/rep-a4x2sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 13:08:00 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a4x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/rep-a4x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/rep-a4x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 13:25:23 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b a1x1sb /dev/shm/big-small-ouro/runs/X26-a-universal/checkpoint-48m.pt /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/rep-a1x1sb-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/rep-a1x1sb-gsmfull.log 2>&1",
+  "timing_q.txt.log: 13:33:02 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b native4st - /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/rep-native4st-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/rep-native4st-gsmfull.log 2>&1",
+  "timing_q.txt.log: 14:00:34 gpu2: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b native2st - /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/rep-native2st-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/rep-native2st-gsmfull.log 2>&1",
+  "timing_q.txt.log: 14:13:10 gpu7: cd /root/big-small && CUDA_VISIBLE_DEVICES=$GPU HF_HUB_OFFLINE=1 PYTHONPATH=/root/big-small environments/ouro/.venv/bin/python ouro/scripts/time_requests.py /dev/shm/big-small-ouro/model-2.6b native1st - /dev/shm/big-small-ouro/runs/e2e/prompts/X26-a41-gsmfull 100 /dev/shm/big-small-ouro/runs/e2e/rep-native1st-gsmfull.jsonl > /dev/shm/big-small-ouro/runs/e2e/rep-native1st-gsmfull.log 2>&1"
+ ],
+ "checkpoint": {
+  "run": "X26-a-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "73b9c888e3bdb978c3c1bbd52fdc10f0d4b513aa0556204886d7b28a4fae4b79",
+  "bytes": 760170173
+ }
+}

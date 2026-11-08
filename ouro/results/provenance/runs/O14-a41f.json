@@ -1,0 +1,31 @@
+{
+ "run": "O14-a41f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "O14-a41f/s0/ruler16k.jsonl",
+   "sha256": "747240448d86117287115a0409ae75286064a467363360d2e2993c8be504afe0",
+   "items": 520
+  },
+  {
+   "file": "O14-a41f/s0/ruler4k.jsonl",
+   "sha256": "e25e19be40f64008bb1f79fd0d1acc379b039f0187128a4a92f6e733b5a3e782",
+   "items": 520
+  },
+  {
+   "file": "O14-a41f/s0/ruler8k.jsonl",
+   "sha256": "7d3d5cda96c3a9aae635f621ba3bb7d098a4c14f098d8d805f8b669d4a877234",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "aligned_q.txt.log: 04:39:56 gpu2: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-1.4b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' ./ouro/runs_scripts/bench3.sh O14-a41f a41 /dev/shm/big-small-ouro/runs/O14-a-universal/checkpoint-48m.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "O14-a-universal",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "da954eaab494147c7785b462adbf5cb68a32d8597534f0f266bfe6810d5019c5",
+  "bytes": 380093211
+ }
+}
