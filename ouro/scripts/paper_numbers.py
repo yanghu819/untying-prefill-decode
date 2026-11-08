@@ -981,11 +981,17 @@ def time_breakdown():
             continue
         sc = [replay_score(r["id"], r["text"], r["target"]) for r in rows]
         pre, tot = sum(r["prefill_s"] for r in rows), sum(r["total_s"] for r in rows)
+        pct = lambda v, q: round(float(np.percentile(v, q)), 3)
+        dist = dict(in_median=pct([r["prompt_tokens"] for r in rows], 50), out_median=pct([r["new_tokens"] for r in rows], 50),
+                    out_p90=pct([r["new_tokens"] for r in rows], 90), total_median=pct([r["total_s"] for r in rows], 50),
+                    total_p90=pct([r["total_s"] for r in rows], 90),
+                    share_median=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 50),
+                    share_p90=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 90))
         out.append(dict(model="Ouro-2.6B", task=TIME_TASKS[task], cond=cond, n=len(rows), quality=round(100 * float(np.mean(sc)), 2),
                         prefill_s=round(pre / len(rows), 4), decode_s=round(sum(r["decode_s"] for r in rows) / len(rows), 3),
                         total_s=round(tot / len(rows), 3), prefill_share=round(100 * pre / tot, 3),
                         in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
-                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
+                        out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1), **dist))
     for f in sorted(E2E.glob("think-*-helmet.jsonl")):
         rows = [json.loads(l) for l in open(f)][1:]   # the first record is the warm-up
         if len(rows) < 1107:   # unfinished: all 1,108 HELMET prompts minus the warm-up

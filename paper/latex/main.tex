@@ -278,7 +278,25 @@ benchmarks are English.
 \section{Per-Request Time}
 \label{app:time}
 
-\tbd{Distributions of prefill share, input and output tokens, and time per request for every task and configuration of Figures~\ref{fig:time} and~\ref{fig:budget}; repeated runs and their spread.}
+Table~\ref{tab:time} gives the per-request distributions behind Figure~\ref{fig:time}: medians and 90th percentiles of
+the output length, the time per request and the prefill share, over the same 100 requests per task for every
+configuration (batch 1, one B300, greedy). At the 90th percentile the prefill share stays below 5\% on GSM8K, MATH-500
+and BBH; on MMLU-Pro, where many answers are short, it reaches 6--17\%. The time per request follows the output
+length, whose 90th percentile is up to about four times its median within a task.
+
+\begin{table*}[h]
+\centering\small
+\begin{tabular}{@{}llrrrrrrr@{}}
+\toprule
+task & configuration & input & output & output p90 & s / request & p90 & prefill \% & p90 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_time.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Per-request time, Ouro-2.6B.} Medians unless marked p90 (90th percentile); input and output in
+tokens; prefill \%: prefill time over total time per request.}
+\label{tab:time}
+\end{table*}
 
 \section{Extended Results}
 \label{app:extended}

@@ -635,6 +635,21 @@ def fig_budget():
     save(fig, "fig_budget")
 
 
+def tab_time():
+    """Appendix: per-request distributions behind Figure 1 (100 requests per task, batch 1)."""
+    rows = [r for r in PN.get("time_breakdown", []) if "total_median" in r]
+    confs = [("a1x1sb", "Ours 1/1"), ("a1x2sb", "Ours 1/2"), ("native1st", "Original 1/1"), ("native2st", "Original 2/2"),
+             ("native4st", "Original 4/4")]
+    lines = []
+    for t in TIMED:
+        for c, lab in confs:
+            r = next((r for r in rows if r["task"] == t and r["cond"] == c), None)
+            if r:
+                lines.append(f"{t} & {lab} & {r['in_median']:.0f} & {r['out_median']:.0f} & {r['out_p90']:.0f} & "
+                             f"{r['total_median']:.1f} & {r['total_p90']:.1f} & {r['share_median']:.2f} & {r['share_p90']:.2f} \\\\")
+    (OUT / "tab_time.tex").write_text("\n".join(lines) + "\n")
+
+
 if __name__ == "__main__":
-    fig_time(); fig_depth(); fig_budget(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_time(); tab_time(); fig_depth(); fig_budget(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))
