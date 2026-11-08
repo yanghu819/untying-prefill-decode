@@ -78,10 +78,10 @@ Running the released model with more prefill than decode loops fails. With four 
 Ouro-2.6B averages 26.6 points over 11 benchmarks, below the 44.2 it reaches with one loop for both
 (Table~\ref{tab:avg}). We therefore train a small \emph{loop adapter} once (Section~\ref{sec:method}). It adds LoRA to
 the decoder and a learned map from each prefill loop's prompt cache to each decode loop, and it is distilled from the
-original model on all $(m,n)$ pairs up to four loops. We contribute a per-task measurement of where a looped model
-spends its time, quality and time as functions of the prefill depth at a fixed decode depth up to 16 loops, and a
-comparison at equal measured time against the original model, distilled models and models with more decode loops.
-Code, per-request timings and per-item scores are released.
+original model on all $(m,n)$ pairs up to four loops. With it we measure where a looped model spends its time on
+each task, how quality and time change as prefill grows from 1 to 16 loops at a fixed decode depth, and how deeper
+prefill compares at equal measured time with the original model, distilled models and more decode loops. Code,
+per-request timings and per-item scores are released.
 
 \section{Setup}
 \label{sec:setup}
