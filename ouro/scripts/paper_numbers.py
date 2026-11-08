@@ -1191,6 +1191,28 @@ def think_sweep():
     return out
 
 
+def timing_repeat():
+    """Appendix: run-to-run variation of the per-request times (time_repeat.sh, a second pass in reverse order): for each
+    configuration and task, the relative difference between the two passes in mean time per request and in decode time
+    per generated token, on the same 100 requests."""
+    out = []
+    for f in sorted(E2E.glob("rep-*.jsonl")):
+        cond, task = f.stem.split("-", 1)[1].rsplit("-", 1)
+        g = E2E / f"base-{cond}-{task}.jsonl"
+        a, b = [json.loads(l) for l in open(g)] if g.exists() else [], [json.loads(l) for l in open(f)]
+        if len(a) < 100 or len(b) < 100:
+            continue
+        mean = lambda v: float(np.mean([r["total_s"] for r in v]))
+        tok = lambda v: sum(r["decode_s"] for r in v) / sum(r["new_tokens"] for r in v)
+        row = dict(cond=cond, task=TIME_TASKS[task], total_diff=round(100 * (mean(b) / mean(a) - 1), 2),
+                   per_token_diff=round(100 * (tok(b) / tok(a) - 1), 2),
+                   same_text=round(float(np.mean([x["text"] == y["text"] for x, y in zip(a, b)])), 3))
+        out.append(row)
+        print(f"Repeat time  {cond:10s} {row['task']:9s} time/request {row['total_diff']:+5.1f}%  per token "
+              f"{row['per_token_diff']:+5.1f}%  same answer {row['same_text']:.2f}")
+    return out
+
+
 def gsm_protocol():
     """Appendix B: Table 1's GSM8K comparisons under strict matching (the paper's metric) and flexible extraction of the
     same generated answers: each adapter row against native n/n and LoRA-distilled n/n at its decode depth, on the
@@ -1560,7 +1582,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), plateau=plateau(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), plateau=plateau(), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
