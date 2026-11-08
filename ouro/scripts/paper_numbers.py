@@ -1149,13 +1149,13 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
     `min_gain` points; m* and the accuracy at m* and at the deepest depth are reported on the other (test) half."""
     import hashlib
     half = lambda i: int(hashlib.md5(str(i).encode()).hexdigest(), 16) % 2
-    out = []
+    out, omitted = [], set()
     for n in (1, 2):
         for b in MAIN_BENCH:
             sets = {m: load(sweep_key(b, m, n, adapter == "wide")) for m in SWEEP_M}
             sets = {m: v for m, v in sets.items() if v}
             if len(sets) < window + 2:
-                continue
+                omitted |= {(n, b)} if sets else set(); continue
             full = float(np.median([len(v) for v in sets.values()]))
             sets = {m: v for m, v in sets.items() if len(v) >= 0.95 * full}
             ids = set.intersection(*(set(v) for v in sets.values()))
@@ -1165,6 +1165,7 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
             star = next((m for k, m in enumerate(ms) if len(ms[k + 1:k + 1 + window]) == window
                          and all(qd[x] <= qd[m] + min_gain for x in ms[k + 1:k + 1 + window])), None)
             if star is None:
+                omitted.add((n, b))
                 print(f"Plateau      {adapter:5s} n={n} {b:16s} no stop within m <= {ms[-1]}"); continue
             qt = {m: agg(sets[m], test) for m in ms}
             row = dict(n=n, bench=b, m_star=star, deepest=ms[-1], test_at_star=round(qt[star], 2),
@@ -1176,7 +1177,19 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
                 print(f"Plateau      n={n} {b}: m*={star} {row['test_at_star']} {row['test_deepest']}  !! paper: {want}")
             print(f"Plateau      {adapter:5s} n={n} {b:16s} m*={star:2d} (dev)  test: m1 {row['test_m1']:5.1f}  m* {row['test_at_star']:5.1f}  "
                   f"m{ms[-1]} {row['test_deepest']:5.1f}")
+    if omitted != PLATEAU_OMITTED[adapter]:
+        print(f"Plateau      {adapter} left out {sorted(omitted)}  !! paper: {sorted(PLATEAU_OMITTED[adapter])}")
+    stops = [r["m_star"] for r in out]
+    counts = (len(out) + len(omitted), sum(m in (2, 3) for m in stops))
+    if adapter == "wide" and counts != (18, 10):   # Section 4: "10 of the 18 settings"
+        print(f"Plateau      wide settings, stops at 2-3: {counts}  !! paper: (18, 10)")
     return out
+
+
+# Appendix C: settings without a stopping depth (accuracy still rising or too few deeper depths), (n, benchmark)
+PLATEAU_OMITTED = {"m<=4": {(1, "MMLU"), (1, "MMLU-Pro"), (1, "BBH 3-shot"), (1, "ARC-C"), (2, "MMLU-Pro"), (2, "ARC-C"),
+                            (1, "HellaSwag"), (2, "HellaSwag"), (1, "Winogrande"), (2, "Winogrande")},
+                   "wide": {(1, "HumanEval+"), (2, "MMLU-Pro"), (2, "ARC-C"), (2, "HumanEval+"), (2, "MBPP+")}}
 
 
 THINK_SWEEP = [("GSM8K", "T:T26-{c}-gsm8k_think:math_verify"), ("ARC-C", "L:T26x-{c}-arc:acc_norm"), ("BBH", "L:T26x-{c}-bbh:exact_match"),
