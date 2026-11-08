@@ -977,8 +977,9 @@ def time_breakdown():
     (replay_score; checked against the evaluation's scores by check_replay_scorer.py). Prefill share = summed prefill
     time / summed total time."""
     out = []
-    for f in sorted(E2E.glob("base-*.jsonl")):
-        cond, task = f.stem[len("base-"):].rsplit("-", 1)
+    for f in sorted(E2E.glob("base-*.jsonl")) + sorted(E2E.glob("thinkb-*.jsonl")):
+        model = "Ouro-2.6B-Thinking" if f.stem.startswith("thinkb-") else "Ouro-2.6B"
+        cond, task = f.stem.split("-", 1)[1].rsplit("-", 1)
         if task not in TIME_TASKS:
             continue
         rows = [json.loads(l) for l in open(f)]
@@ -992,7 +993,7 @@ def time_breakdown():
                     total_p90=pct([r["total_s"] for r in rows], 90),
                     share_median=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 50),
                     share_p90=pct([100 * r["prefill_s"] / r["total_s"] for r in rows], 90))
-        out.append(dict(model="Ouro-2.6B", task=TIME_TASKS[task], cond=cond, n=len(rows), quality=round(100 * float(np.mean(sc)), 2),
+        out.append(dict(model=model, task=TIME_TASKS[task], cond=cond, n=len(rows), quality=round(100 * float(np.mean(sc)), 2),
                         prefill_s=round(pre / len(rows), 4), decode_s=round(sum(r["decode_s"] for r in rows) / len(rows), 3),
                         total_s=round(tot / len(rows), 3), prefill_share=round(100 * pre / tot, 3),
                         in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
