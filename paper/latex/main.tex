@@ -110,22 +110,23 @@ with 95\% bootstrap intervals.
 \centering
 \IfFileExists{../figs/fig_time.pdf}{\includegraphics[width=\columnwidth]{../figs/fig_time.pdf}}{\pending{Figure 1: stacked prefill / decode time per request (seconds) for GSM8K, MATH-500, BBH, MMLU-Pro (base),
 GSM8K, MATH-500, HELMET (Thinking), at Ours 1/1, 1/2 and Original 4/4; with input / output tokens.}}
-\caption{\textbf{Decode dominates the time of generation tasks.} Ouro-2.6B with the adapter at prefill 1 (the start of
-the depth sweep), time per request split into prefill (to the first token, red) and decode, batch 1, one B300, 100
-requests per task; labels: prefill share and mean input / output tokens.}
+\caption{\textbf{Decode dominates the time of generation tasks.} Time per request split into prefill (to the first
+token, red) and decode, batch 1, one B300. Ouro-2.6B with the adapter at prefill 1 (the start of the depth sweep),
+100 requests per task; HELMET: Ouro-2.6B-Thinking, Original 2/2 and 4/4, 1,107 requests. Labels: prefill share and mean
+input / output tokens.}
 \label{fig:time}
 \end{figure}
 
-Figure~\ref{fig:time} splits the time of a request into prefill and decode. On chain-of-thought tasks the output is
-long and the input short: on Ouro-2.6B-Thinking, GSM8K answers average 100 input and about 900 output tokens and
-prefill is 0.2--0.3\% of the time; on MATH-500 (3,000--3,500 output tokens) it is 0.1\%. On the base model, whose
+Figure~\ref{fig:time} splits the time of each request into prefill and decode. Chain-of-thought tasks have short
+inputs and long outputs. On 192 GSM8K problems, Ouro-2.6B-Thinking reads about 100 tokens and writes about 900, and
+prefill is 0.2--0.3\% of the time; on MATH-500, with 3,000--3,500 output tokens, it is 0.1\%. On the base model, whose
 few-shot prompts are longer (300--1,400 tokens) and answers shorter (100--700 tokens), prefill is 0.4--2.8\% of the
 time per request at Original 1/1 and 2/2, 0.3--2.4\% at Ours 1/1 and 1/2 and 0.5--2.0\% at Original 4/4, lowest on
 MATH-500 and highest on GSM8K and MMLU-Pro. Long prompts with short answers are the opposite case: on
 HELMET (about 10,900 input and 15 output tokens with the chat template) prefill is 27--30\% of the time at Original
-2/2 and 4/4. Since prefill cost grows about
-linearly with its loops, a prefill share $p$ at one loop becomes about $m\,p$ at $m$ loops; tasks with small $p$ leave
-room for deep prefill, tasks with long prompts and short answers do not. The per-request distributions are in
+2/2 and 4/4. Prefill cost grows about linearly
+with its loops, so a share $p$ at one loop becomes about $m\,p$ at $m$ loops. Tasks with a small share leave room for a
+deeper prefill; tasks with long prompts and short answers do not. The per-request distributions are in
 Appendix~\ref{app:time}.
 
 \section{How far deeper prefill goes}
@@ -134,16 +135,19 @@ Appendix~\ref{app:time}.
 \begin{figure*}[t]
 \centering
 \IfFileExists{../figs/fig_depth.pdf}{\includegraphics[width=\textwidth]{../figs/fig_depth.pdf}}{\pending{Figure 2: for each task (GSM8K, MATH-500, BBH, MMLU-Pro, MMLU, RULER-16K) at decode $n=1$ and $n=2$:
-(a) quality vs prefill loops $m\in\{1,\dots,16\}$; (b) total time vs $m$, split into prefill and decode; (c) quality
-vs total time. Solid: adapter trained on $m\le16$; dashed: adapter trained on $m\le4$ (extrapolation beyond 4).}}
-\caption{\textbf{Prefill depth at fixed decode depth.} Ouro-2.6B, same weights at every $m$.}
+(a) quality vs prefill loops; (b) total time vs $m$; (c) quality vs total time.}}
+\caption{\textbf{Prefill depth at fixed decode depth.} Ouro-2.6B, same weights at every $m$; decode $n=1$ (dark) and
+$n=2$ (light). Top: accuracy on the full evaluation sets, solid for the adapter trained on $m\le4$ (it extrapolates
+right of the grey vertical line at $m=4$), dashed for the one trained on $m\in\{1,2,3,4,6,8,12,16\}$. Middle: time per request
+(dotted: its prefill part). Bottom: accuracy against time on the same 100 timed requests per task, with Original
+$n/n$ (dots).}
 \label{fig:depth}
 \end{figure*}
 
-With the decode loops fixed, we change only the prefill loops (Figure~\ref{fig:depth}). With the adapter trained on
-$m\le4$, going from one to four prefill loops raises the average over 11 benchmarks from 47.2 to 56.8 at one decode
-loop and from 57.9 to 67.2 at two, on the same weights; MMLU rises from 51.2 to 67.1 and HumanEval+ from 46.3 to 65.2.
-Beyond the depths it was trained on, this adapter loses accuracy: at one decode loop GSM8K falls from 45.0 at $m=4$ to
+We now fix the decode loops and change only the prefill loops (Figure~\ref{fig:depth}). With the adapter trained on
+$m\le4$ and the same weights throughout, four prefill loops instead of one raise the average over 11 benchmarks from
+47.2 to 56.8 at one decode loop and from 57.9 to 67.2 at two. MMLU rises from 51.2 to 67.1 and HumanEval+ from 46.3
+to 65.2. Beyond the depths it was trained on, this adapter loses accuracy: at one decode loop GSM8K falls from 45.0 at $m=4$ to
 31.9 at $m=16$ and RULER-16K from 64.7 to 39.9, while MMLU-Pro still rises to 48.1 at $m=6$ before falling to 31.7.
 This decline could come from the decoder never having seen such deep states. An adapter trained on prefill depths up to
 16 (dashed) shows a similar shape. A stopping heuristic fixed in advance (below) places the end of the gain at two to
