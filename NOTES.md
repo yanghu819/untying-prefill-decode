@@ -307,3 +307,16 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   -18.0 [-22.2,-14.0] (n=2); 0-shot +8.0 [+4.0,+11.8] (n=1), +10.4 [+6.6,+14.2] (n=2). The exemplar reversal seen with
   the one-cache adapter holds for Ours; Section 6 now states it for Ours (math0_q.sh ARM=a).
 - Started Distilled 1/1 seed 3 (X26-E48f-p1d1-s3, a1 GPUs 1,4); DIST_SEEDS = s2, s3 for both 1/1 and 2/2.
+
+### 2026-11-09 timing pass 3 done: Section 5 on folded maps, two-pass means
+- All times are the mean of clean + clean3 (opposite orders, idle a2). clean3 vs clean: |diff| median 5.9%, max 22.5%
+  over 128 configuration-task cells; replayed answers identical in both passes.
+- Per-step maps (sb) cost +19..+40% decode time per token vs Original (was quoted 31-51% from the contaminated pass);
+  folded maps (pm) are within 10% (-10, -9, -2, -1, +5%), i.e. no overhead.
+- Four CoT tasks, quality / s per request (pm for Ours): Ours 1/1 31.2/9.7, 4/1 41.2/11.2, Original 1/1 27.0/11.1,
+  Distilled 1/1 34.2/10.2 (r80 33.5/10.6); Original 2/2 56.8/15.7, Ours 3/2 59.5/16.1, 4/2 59.0/17.2, Distilled 2/2
+  58.5/16.1 (r80 60.5/15.5), prefill-4 LoRA 4/2 59.5/15.5; Original 3/3 63.5/21.7, 4/4 64.8/29.4.
+  At n=1 Ours beats Original and Distilled at equal time; a second decode loop buys more; at n=2 Ours, Distilled and
+  the prefill-4 LoRA are within noise. Prefill 1->4 at n=1 (pm): +16% time, all from longer answers (276 -> 319 tokens).
+- Paper: abstract, Setup, Sections 3-6, Limitations and the timing appendix rewritten on these numbers; Figure 3 shows
+  Ours with folded maps only (the per-step sweep to m=16 is in Figure 2); body still 4 pages.

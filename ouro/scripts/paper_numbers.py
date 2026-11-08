@@ -944,7 +944,7 @@ def same_weights():
 LM_RULES = {"gsm8k_cot": (r"The answer is (\-?[0-9\.\,]+).", dict(case=True, drop=[",", r"\$", r"(?s).*#### ", r"\.$"])),
             "bbh": (r"(?<=the answer is )(.*)(?=.)", {}),
             "mmlu_pro": (r"answer is \(?([ABCDEFGHIJ])\)?", dict(case=True, punct=True))}
-OVERHEAD_PRINTED = (31, 51)   # Limitations: adapter decode time per token vs Original at the same decode loops (%)
+OVERHEAD_PRINTED = (19, 40)   # Limitations: adapter decode time per token vs Original at the same decode loops (%)
 TIME_TASKS = {"gsmfull": "GSM8K", "math": "MATH-500", "bbh": "BBH", "mmlupro": "MMLU-Pro"}
 
 
@@ -1031,24 +1031,37 @@ def time_breakdown():
                         decode_s=round(sum(r["gen_s"] for r in rows) / len(rows), 3), total_s=round(tot / len(rows), 3),
                         prefill_share=round(100 * pre / tot, 3), in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
                         out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
-    for conds, want in ((("native1st", "native2st"), (0.4, 2.8)), (("a1x1sb", "a1x2sb"), (0.3, 2.4)),
+    for conds, want in ((("native1st", "native2st"), (0.4, 2.8)), (("a1x1sb", "a1x2sb"), (0.3, 2.3)),
                         (("native4st",), (0.5, 2.0))):   # Section 3
         sh = [r["prefill_share"] for r in out if r["model"] == "Ouro-2.6B" and r["cond"] in conds]
         if len(sh) == 4 * len(conds):   # range of the prefill share over the four timed tasks
             got = (round(min(sh), 1), round(max(sh), 1))
             print(f"Time         base {conds} prefill share range {got}" + ("" if got == want else f"  !! paper: {want}"))
-    base = {c: [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c] for c in ("a1x1sb", "a4x1sb")}
-    if all(len(v) == 4 for v in base.values()):   # abstract: same requests, same weights, prefill 1 -> 4 at decode 1
+    base = {c: [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c] for c in ("a1x1pm", "a4x1pm")}
+    if all(len(v) == 4 for v in base.values()):   # abstract / Section 4: same requests, same weights, prefill 1 -> 4 at decode 1
         q = {c: float(np.mean([r["quality"] for r in v])) for c, v in base.items()}
         t = {c: float(np.mean([r["total_s"] for r in v])) for c, v in base.items()}
-        got = (round(q["a1x1sb"], 1), round(q["a4x1sb"], 1), round(100 * (t["a4x1sb"] / t["a1x1sb"] - 1)))
-        print(f"Time         abstract: quality {got[0]} -> {got[1]}, time +{got[2]}%" + ("" if got == (31.2, 43.0, 21) else "  !! paper: (31.2, 43.0, 21)"))
-    for c, w in (("a4x1sb", (43.0, 14.6)), ("native2st", (56.8, 14.2)), ("a3x2sb", (59.2, 18.0)), ("D2st", (58.5, 15.4))):
+        o = {c: round(float(np.mean([r["out_tokens"] for r in v]))) for c, v in base.items()}
+        mp = {c: round(next(r["out_tokens"] for r in v if r["task"] == "MMLU-Pro")) for c, v in base.items()}
+        got = (round(q["a1x1pm"], 1), round(q["a4x1pm"], 1), round(100 * (t["a4x1pm"] / t["a1x1pm"] - 1)),
+               o["a1x1pm"], o["a4x1pm"], mp["a1x1pm"], mp["a4x1pm"])
+        want = (31.2, 41.2, 16, 276, 319, 134, 397)
+        print(f"Time         abstract: quality, time %, out tokens, MMLU-Pro out tokens {got}" + ("" if got == want else f"  !! paper: {want}"))
+    for c, w in (("a4x1pm", (41.2, 11.2)), ("native1st", (27.0, 11.1)), ("D1st", (34.2, 10.2)), ("native2st", (56.8, 15.7)),
+                 ("a3x2pm", (59.5, 16.1)), ("D2st", (58.5, 16.1)), ("D2r80st", (60.5, 15.5)),
+                 ("f4x2pm", (59.5, 15.5)), ("a4x1sb", (43.0, None))):
         v = [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c]   # abstract and Section 5, batch 1
         if len(v) == 4:
             got = (round(float(np.mean([r["quality"] for r in v])), 1), round(float(np.mean([r["total_s"] for r in v])), 1))
-            print(f"Time         {c} mean over the four tasks {got}" + ("" if got == w else f"  !! paper: {w}"))
+            ok = got[0] == w[0] and (w[1] is None or got[1] == w[1])
+            print(f"Time         {c} mean over the four tasks {got}" + ("" if ok else f"  !! paper: {w}"))
     tok = lambda c: [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c]
+    for c in sorted({r["cond"] for r in out if r["model"] == "Ouro-2.6B"}):   # Figure 3 points, for the text
+        v = tok(c)
+        if len(v) == 4:
+            print(f"Time point   {c:10s} quality {np.mean([r['quality'] for r in v]):5.1f}  time {np.mean([r['total_s'] for r in v]):6.2f}s  "
+                  f"decode ms/token {1000 * sum(r['decode_s'] for r in v) / sum(r['out_tokens'] for r in v):5.1f}  "
+                  f"out tokens {np.mean([r['out_tokens'] for r in v]):5.0f}  passes {v[0].get('source', '')}")
     over = []
     for ours, nat in (("a1x1sb", "native1st"), ("a4x1sb", "native1st"), ("a1x2sb", "native2st"), ("a4x2sb", "native2st")):
         a, b = tok(ours), tok(nat)
@@ -1059,6 +1072,12 @@ def time_breakdown():
     if len(over) == 4:
         got = (round(min(over)), round(max(over)))
         print(f"Time         decode overhead range {got}" + ("" if got == OVERHEAD_PRINTED else f"  !! paper: {OVERHEAD_PRINTED}"))
+    ms = lambda v: sum(r["decode_s"] for r in v) / sum(r["out_tokens"] for r in v)
+    folded = [100 * (ms(tok(a)) / ms(tok(b)) - 1) for a, b in (("a1x1pm", "native1st"), ("a4x1pm", "native1st"),
+              ("a1x2pm", "native2st"), ("a3x2pm", "native2st"), ("a4x2pm", "native2st")) if len(tok(a)) == len(tok(b)) == 4]
+    if len(folded) == 5:   # Section 5: folded maps within 10% of the original model per decode token
+        print(f"Time         folded maps decode per token vs Original: {[round(x) for x in folded]}"
+              + ("" if max(abs(x) for x in folded) < 10 else "  !! paper: within 10%"))
     want = {"native2st": (44.0, 1.37), "Df2st": (54.2, 1.31), "a42sb": (59.1, 2.10), "native4st": (65.7, 2.33)}   # Section 5
     share = {"native2st": 27, "native4st": 30}   # Section 3, HELMET prefill share (rounded)
     for r in out:
@@ -1255,8 +1274,12 @@ def timing_repeat():
     for p in ("clean", "clean3"):
         d = [abs(r["total_diff"]) for r in out if r["pass_"] == p]
         if d:
-            print(f"Repeat time  {p:6s} vs previous pass: |difference in time per request| median {np.median(d):.1f}%, "
-                  f"max {max(d):.1f}% over {len(d)} configuration-task cells")
+            got = (round(float(np.median(d)), 1), round(max(d), 1), len(d))
+            bad = p == "clean3" and got != (5.9, 22.5, 128)   # Appendix (Per-Request Time)
+            same = min(r["same_text"] for r in out if r["pass_"] == p)
+            print(f"Repeat time  {p:6s} vs previous pass: |difference in time per request| median {got[0]:.1f}%, "
+                  f"max {got[1]:.1f}% over {got[2]} configuration-task cells, min same answer {same:.2f}"
+                  + ("  !! paper: (5.9, 22.5, 128)" if bad else "") + ("  !! paper: identical answers" if p == "clean3" and same < 1 else ""))
     return out
 
 
