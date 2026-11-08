@@ -390,6 +390,7 @@ def keys():
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
     ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42")}
+    ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {k for _, k, _ in REPRO}
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
@@ -1309,6 +1310,8 @@ def main_table():
         sets = {label: load(main_key(bench, kind, c)) for label, kind, c in MAIN_ROWS}
         seeds = {label: [load(abl_key(bench, pre, c) if kind == "cell" else seed_key(bench, pre, c)) for pre in MAIN_SEEDS]
                  for label, kind, c in MAIN_ROWS if kind in ("cell", "aligned")}
+        seeds.update({label: [load(dist_seed_key(bench, c, sd)) for sd in DIST_SEEDS[c]]
+                      for label, kind, c in MAIN_ROWS if kind == "dist"})
         full = float(np.median([len(v) for v in sets.values() if v])) if any(sets.values()) else 0   # typical item count
         sets = {label: (v if v and len(v) >= 0.95 * full else None) for label, v in sets.items()}   # unfinished runs wait
         seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}
@@ -1325,7 +1328,7 @@ def main_table():
         flag = "  !! paper: " + str(want) if want is not None and (avg is None or abs(avg - want) > 0.051) else ""
         print(f"Main table   {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
               + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
-    for label in [l for l, kind, _ in MAIN_ROWS if kind in ("cell", "aligned")]:
+    for label in [l for l, kind, _ in MAIN_ROWS if kind in ("cell", "aligned", "dist")]:
         per_seed = list(zip(*[r[f"{label} seeds"] for r in out]))
         avgs = [None if None in v else float(np.mean(v)) for v in per_seed]
         if None not in avgs:
@@ -1350,6 +1353,15 @@ ABLATIONS = [("6M tokens", "X26t6"), ("12M tokens", "X26t12"), ("24M tokens", "X
 
 ABL_PRINTED = {("6M tokens", "S41"): 53.7, ("6M tokens", "S42"): 65.2, ("48M tokens", "S41"): 56.4,
                ("48M tokens", "S42"): 66.4}   # quoted in Section 4.2
+
+
+DIST_SEEDS = {1: ("s2",), 2: ("s2", "s3")}   # further training seeds of Distilled n/n (SEED=<k> launch_x26_distill.sh)
+
+
+def dist_seed_key(bench, c, sd):
+    """Item key of another training seed of Distilled c/c: runs o26x-<D>s<k>-<task> and RULER X26-<D>s<k>f."""
+    d = DISTILLED[c]
+    return main_key(bench, "dist", c).replace(f"-{d}", f"-{d}{sd}", 1)
 
 
 def seed_key(bench, prefix, c):
