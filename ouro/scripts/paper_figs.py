@@ -504,23 +504,25 @@ def drop(name):
         (OUT / f"{name}.{ext}").unlink(missing_ok=True)
 
 
-def _time(task, cond):
-    return next((r for r in PN.get("time_breakdown", []) if r["task"] == task and r["cond"] == cond), None)
+def _time(task, cond, model="Ouro-2.6B"):
+    return next((r for r in PN.get("time_breakdown", []) if r["task"] == task and r["cond"] == cond
+                 and r.get("model", "Ouro-2.6B") == model), None)
 
 
 def fig_time():
     """Figure 1: time per request split into prefill and decode, at the sweep's starting point (Ours 1/1 and 1/2) and
     Original 4/4, for every timed task; label: prefill share."""
     confs = [("a1x1sb", "Ours 1/1"), ("a1x2sb", "Ours 1/2")]   # the sweep's starting point; Original 4/4 in the text
-    tasks = [t for t in TIMED + ["HELMET"] if any(_time(t, c) for c, _ in confs)
-             or (t == "HELMET" and _time(t, "native4st"))]
+    mdl = lambda t: "Ouro-2.6B-Thinking" if t == "HELMET" else "Ouro-2.6B"   # HELMET is timed on the Thinking model
+    tasks = [t for t in TIMED + ["HELMET"] if any(_time(t, c, mdl(t)) for c, _ in confs)
+             or (t == "HELMET" and _time(t, "native4st", mdl(t)))]
     if not tasks:
         return drop("fig_time")
     fig, ax = plt.subplots(figsize=(3.3, 0.2 * len(tasks) * len(confs) + 0.5))
     y, ticks, labs = 0, [], []
     for t in tasks:
         for c, lab in (confs if t != "HELMET" else [("native2st", "Original 2/2"), ("native4st", "Original 4/4")]):
-            r = _time(t, c)
+            r = _time(t, c, mdl(t))
             if r is None:
                 continue
             ax.barh(y, r["prefill_s"], color=OURS, height=0.7)
@@ -533,7 +535,7 @@ def fig_time():
     ax.set_xlabel("seconds per request (batch 1)")
     ax.legend([plt.Rectangle((0, 0), 1, 1, color=OURS), plt.Rectangle((0, 0), 1, 1, color=NAT_LIGHT)], ["prefill", "decode"],
               loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=7)
-    ax.set_xlim(0, 1.75 * max(r["total_s"] for t in tasks for c, _ in confs + [("native2st", "")] if (r := _time(t, c))))
+    ax.set_xlim(0, 1.75 * max(r["total_s"] for t in tasks for c, _ in confs + [("native2st", "")] if (r := _time(t, c, mdl(t)))))
     ax.grid(axis="x", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     save(fig, "fig_time")
 
