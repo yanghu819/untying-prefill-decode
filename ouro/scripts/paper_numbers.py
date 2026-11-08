@@ -1167,7 +1167,7 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
     return out
 
 
-THINK_SWEEP = [("ARC-C", "L:T26x-{c}-arc:acc_norm"), ("BBH", "L:T26x-{c}-bbh:exact_match"),
+THINK_SWEEP = [("GSM8K", "T:T26-{c}-gsm8k_think:math_verify"), ("ARC-C", "L:T26x-{c}-arc:acc_norm"), ("BBH", "L:T26x-{c}-bbh:exact_match"),
                ("MMLU-Pro", "L:T26x-{c}-mmlupro:exact_match"), ("HELMET", "B:T26ne-{c}-helmet:helmet")]
 
 
