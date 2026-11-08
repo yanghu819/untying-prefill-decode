@@ -155,7 +155,9 @@ This decline could come from the decoder never having seen such deep states. An 
 four prefill loops on most settings where it applies, at five on MMLU-Pro with one decode loop, and finds no stop
 within the tested depths on the rest; on the held-out half, GSM8K at one decode loop reaches 47.0 at $m=2$ and falls to
 36.9 at $m=16$. Training on the deeper depths softens the decline (31.9 at $m=16$ without it) and shifts the stop by
-one or two loops on some settings (Appendix~\ref{app:plateau}).
+one or two loops on some settings (Appendix~\ref{app:plateau}). The reasoning model behaves the same way: at two decode
+loops, Ouro-2.6B-Thinking goes from 90.7 to 94.1 on GSM8K and from 36.4 to 51.0 on MMLU-Pro between $m=1$ and $m=4$,
+and six prefill loops add nothing (93.9 and 48.1).
 The stopping depth is decided on a development half of each benchmark (the first sampled depth that none of the next
 three sampled depths beats by more than 0.5 points; no interval or equivalence test) and reported on the other half;
 it marks where the gain ends on these depths, not a proven ceiling. Time per request grows by 21\% from $m=1$ to $m=4$ at
@@ -339,7 +341,8 @@ $n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH
 the released model. Training-free: the frozen model decodes from a four-loop prefill without an adapter. Distilled:
 LoRA on the $n$-loop model distilled from native 4/4 with the adapter's data, teacher and tokens. Ours: one cache (all
 decode loops read prefill loop $m$) or aligned (decode loop $k$ reads prefill loop $\max(m-n+k,1)$). Each column on the
-items all rows share; the one-cache adapter over three training seeds: Appendix~\ref{app:seed}.}
+items all rows share. Ours (aligned) over three training seeds averages $56.7\pm0.1$ at 4/1 and $67.1\pm0.2$ at 4/2
+(mean $\pm$ s.d.); the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
 \label{tab:main}
 \end{table*}
 

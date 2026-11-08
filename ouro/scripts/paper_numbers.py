@@ -1203,8 +1203,13 @@ def think_sweep():
         ids = set.intersection(*(set(v) for v in sets.values()))
         row = dict(bench=bench, items=len(ids), quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
         out.append(row)
-        print(f"Think sweep  n=2 {bench:9s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+        bad = {m: q for m, q in THINK_PRINTED.get(bench, {}).items() if abs(row["quality"].get(m, -99) - q) > 0.051}
+        print(f"Think sweep  n=2 {bench:9s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items())
+              + (f"  !! paper: {bad}" if bad else ""))
     return out
+
+
+THINK_PRINTED = {"GSM8K": {1: 90.7, 4: 94.1, 6: 93.9}, "MMLU-Pro": {1: 36.4, 4: 51.0, 6: 48.1}}   # Section 4
 
 
 def timing_repeat():
@@ -1312,7 +1317,8 @@ def main_table():
         avgs = [None if None in v else float(np.mean(v)) for v in per_seed]
         if None not in avgs:
             got = (round(float(np.mean(avgs)), 1), round(float(np.std(avgs, ddof=1)), 1))
-            want = {"loop adapter 4/1": (56.4, 0.0), "loop adapter 4/2": (66.6, 0.2)}.get(label)   # Table 1 caption
+            want = {"loop adapter 4/1": (56.4, 0.0), "loop adapter 4/2": (66.6, 0.2), "aligned adapter 4/1": (56.7, 0.1),
+                    "aligned adapter 4/2": (67.1, 0.2)}.get(label)   # Table 1 caption
             print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
                   + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}

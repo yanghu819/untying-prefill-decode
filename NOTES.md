@@ -294,3 +294,12 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Codex third review (paper/codex_review_untie3.md): weak accept; "would defend acceptance". Applied: last decode-cost
   phrase removed; conclusion rewritten to what the figures and tables show; distillation control now has its own table
   (tab:distill, generated); Section 4.2 and the Pareto paragraph tightened (body ends on page 7).
+
+### 2026-11-08 aligned seeds, Thinking depth sweep, distilled 1/1 seed 2
+- Aligned adapter (Ours) over three training seeds (X26-a, X26s2-a, X26s3-a), 11-benchmark average on shared items:
+  4/1 56.8 / 56.7 / 56.7 (mean 56.7 s.d. 0.1), 4/2 67.2 / 66.9 / 67.2 (mean 67.1 s.d. 0.2). In the Table 1 caption.
+- Ouro-2.6B-Thinking, aligned adapter, decode 2, prefill m = 1,2,3,4,6(,8): GSM8K 90.7 92.3 92.9 94.1 93.9; MMLU-Pro
+  36.4 41.4 49.3 51.0 48.1 48.3; BBH 60.1 .. 74.9 (m4) .. 71.8 (m8); HELMET peaks at m3 (60.7). Same saturation as the
+  base model; one sentence in Section 4 (guard THINK_PRINTED).
+- Started Distilled 1/1 seed 2 (X26-E48f-p1d1-s2, a1 GPUs 2,7; evals auto-queued as o26x-E48fs2-*) so the n=1
+  same-budget comparison (Ours 4/1 vs Distilled 1/1) has a seed check like Distilled 2/2.
