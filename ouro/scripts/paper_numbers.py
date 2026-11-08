@@ -114,7 +114,9 @@ CMP += [
     ("Table 5", "1.4B decode 1 MATH 4-shot", "L:o14x-S41-math4shot:boxed", "L:o14x-S11-math4shot:boxed", (-4.4, -8.4, -0.6)),
     ("Table 5", "1.4B decode 1 MATH 0-shot", "L:o14x-S41-math0shot:boxed", "L:o14x-S11-math0shot:boxed", (4.8, 1.2, 8.4)),
     # the same exemplar check for the aligned adapter (Ours; math0_q.sh ARM=a), same weights, prefill 4 vs 1
-    *[("Aligned MATH", f"2.6B aligned decode {n} MATH {k}", f"L:X26-a4{n}-{t}:boxed", f"L:X26-a1{n}-{t}:boxed", None)
+    *[("Aligned MATH", f"2.6B aligned decode {n} MATH {k}", f"L:X26-a4{n}-{t}:boxed", f"L:X26-a1{n}-{t}:boxed",
+       {(1, "math0shot"): (8.0, 4.0, 11.8), (2, "math0shot"): (10.4, 6.6, 14.2), (1, "math"): (-9.4, -13.6, -5.4),
+        (2, "math"): (-18.0, -22.2, -14.0)}.get((n, t)))   # Section 6 and Appendix (prompt format)
       for n in (1, 2) for k, t in (("4-shot", "math"), ("0-shot", "math0shot"))],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")

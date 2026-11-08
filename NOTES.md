@@ -303,3 +303,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   base model; one sentence in Section 4 (guard THINK_PRINTED).
 - Started Distilled 1/1 seed 2 (X26-E48f-p1d1-s2, a1 GPUs 2,7; evals auto-queued as o26x-E48fs2-*) so the n=1
   same-budget comparison (Ours 4/1 vs Distilled 1/1) has a seed check like Distilled 2/2.
+- Aligned adapter, MATH-500 prefill 4 vs 1 (same weights, paired, 500 problems): 4-shot -9.4 [-13.6,-5.4] (n=1),
+  -18.0 [-22.2,-14.0] (n=2); 0-shot +8.0 [+4.0,+11.8] (n=1), +10.4 [+6.6,+14.2] (n=2). The exemplar reversal seen with
+  the one-cache adapter holds for Ours; Section 6 now states it for Ours (math0_q.sh ARM=a).
+- Started Distilled 1/1 seed 3 (X26-E48f-p1d1-s3, a1 GPUs 1,4); DIST_SEEDS = s2, s3 for both 1/1 and 2/2.

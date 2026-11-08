@@ -231,8 +231,8 @@ micro-batch (Appendix~\ref{app:training}).
 \paragraph{Ablations and limits.} In the one-cache variant, freezing the maps at the identity barely changes MMLU and
 GSM8K but costs 11.4 points on RULER-16K at 4/1, so the maps matter mainly for long prompts
 (Appendix~\ref{sec:ablation}). Deeper prefill does not help everywhere. On 4-shot MATH-500 one prefill loop is best:
-34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. With the one-cache adapter, removing the
-exemplars reverses the sign (Appendix~\ref{app:eval}). Exact recall in HELMET is 67.6 at Ours 4/2 on Ouro-2.6B-Thinking, the same as Original 2/2
+34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. Without the exemplars four prefill loops
+are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two (Appendix~\ref{app:eval}). Exact recall in HELMET is 67.6 at Ours 4/2 on Ouro-2.6B-Thinking, the same as Original 2/2
 and far below the 100 of Original 4/4 (Appendix~\ref{app:hurt}).
 
 \section{Related Work}
@@ -1275,7 +1275,9 @@ SenseNova; intervals are in \texttt{paper\_numbers.json}.}
 The effect of the prefill loops depends on the prompt format (Table~\ref{tab:hurt}). At one decode loop, more
 prefill loops give a negative but inconclusive estimate on RULER-4K, where answers are copied verbatim, and lower 4-shot
 MATH-500 on both model sizes; without exemplars the same comparison turns positive on two model sizes and two decode loop
-counts. Removing exemplars also changes length and format, so we read this as an interaction with the prompt.
+counts. The aligned adapter (Ours) behaves the same way: four prefill loops instead of one change 4-shot MATH-500 by
+$-9.4$\ci{-13.6}{-5.4} and $-18.0$\ci{-22.2}{-14.0} points at one and two decode loops, and 0-shot MATH-500 by
+$+8.0$ and $+10.4$. Removing exemplars also changes length and format, so we read this as an interaction with the prompt.
 
 \begin{table}[h]
 \centering\small
