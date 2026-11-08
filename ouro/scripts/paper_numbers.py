@@ -1358,7 +1358,7 @@ ABL_PRINTED = {("6M tokens", "S41"): 53.7, ("6M tokens", "S42"): 65.2, ("48M tok
                ("48M tokens", "S42"): 66.4}   # quoted in Section 4.2
 
 
-DIST_SEEDS = {1: ("s2",), 2: ("s2", "s3")}   # further training seeds of Distilled n/n (SEED=<k> launch_x26_distill.sh)
+DIST_SEEDS = {1: ("s2", "s3"), 2: ("s2", "s3")}   # further training seeds of Distilled n/n (SEED=<k> launch_x26_distill.sh)
 
 
 def dist_seed_key(bench, c, sd):
