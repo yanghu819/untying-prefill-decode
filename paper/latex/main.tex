@@ -66,7 +66,8 @@ parallel pass, while decoding repeats for every generated token. With long answe
 time: an Ouro-2.6B-Thinking answer to a GSM8K problem takes about a minute, and prefill accounts for 0.2\% of it
 (Section~\ref{sec:time}).
 
-If prefill is this cheap, a model could read the prompt with more loops than it uses to decode. The extra prefill
+If prefill is this cheap, a model could read the prompt with more loops than it uses to decode, as a deep encoder
+with a shallow decoder does in machine translation~\citep{deepshallow}, here within one looped model. The extra prefill
 loops would add little time, and fewer decode loops would save time on every token. It is not obvious that this works.
 A decoder with one loop may be unable to use the states of a deeper prefill, and any gain may stop after a few loops.
 Section~\ref{sec:time} measures where the time goes on different tasks, Section~\ref{sec:depth} increases the prefill
