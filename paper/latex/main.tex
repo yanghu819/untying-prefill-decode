@@ -631,7 +631,8 @@ Details are in Appendix~\ref{app:training}.
 \paragraph{Looped and elastic depth.} Weight-tied depth recurrence goes back to Universal Transformers and
 cross-layer sharing~\citep{ut,albert}; looped transformers are computationally universal~\citep{giannou2023looped},
 can simulate chain-of-thought steps in latent space~\citep{saunshi2025latent} and generalise in length with adaptive
-step counts~\citep{loopedlengthgen}, a vertical counterpart of continuous latent reasoning~\citep{coconut}. Relaxed
+step counts~\citep{loopedlengthgen}; continuous latent reasoning~\citep{coconut} instead feeds hidden states back as
+input tokens. Relaxed
 Recursive Transformers~\citep{relaxedrecursive} convert pretrained models into looped ones with per-loop LoRA;
 Mixture-of-Recursions~\citep{mor} and Huginn~\citep{huginn} route or scale the loop count. Accordion~\citep{accordion} and Elastic Latent Recurrence~\citep{elr} train one
 model for several depth budgets; ELR finds that keeping only the last loop's KV retains most of the gain, as Dory1.0-4B~\citep{dory} does at any loop count. The
@@ -647,8 +648,9 @@ fill the skipped layers' KV for later tokens, the problem our maps solve per loo
 decoding~\citep{specdecoding,specsampling} pairs a cheap drafter with a deep verifier, and pause tokens add compute at
 prompt positions~\citep{pausetokens}. Deep-encoder/shallow-decoder models~\citep{deepshallow,llm2slm,tandem} spend more
 depth on the prompt across separate networks; SwiftKV~\citep{swiftkv} instead skips later layers for prompt tokens. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
-decode and studies caches shared across depths; concurrently, LoopDuet~\citep{loopduet} sets the two loop budgets
-without training for Huginn, trained with random loop counts; fixed-depth Ouro collapses without training (Table~\ref{tab:main}). Position-Aware
+decode and studies caches shared across depths. LoopDuet~\citep{loopduet}, concurrent with us, sets the two loop
+budgets of Huginn without training; Huginn was trained with random loop counts, whereas fixed-depth Ouro fails without
+training (Table~\ref{tab:main}). Position-Aware
 Depth Decay~\citep{padd} skips more layers for later tokens; OverFill~\citep{overfill} decodes with a width-pruned model;
 Fixed Points Part~II~\citep{fixedpoints2} distils a light prefill network; POP~\citep{pop}, SPEED~\citep{speed} and SEED~\citep{seedemit}
 prefill shallower than they decode; Decode-Branch Transformers~\citep{decodebranch}, PHD~\citep{phd} and
