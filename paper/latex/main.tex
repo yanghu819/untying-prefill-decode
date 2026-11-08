@@ -169,7 +169,11 @@ configurations with the same number of decode loops. At one decode loop, Ours 4/
 against 44.2 for Original 1/1 and 49.8 for Distilled 1/1 trained on the same data and tokens; at two decode loops it
 averages 67.2, against 63.0 and 65.3. Giving the distilled models as many trainable parameters as the adapter (rank 80)
 leaves them at 50.2 and 65.4. The same holds without the training items that overlap the
-benchmarks (Appendix~\ref{app:training}). \tbd{Fixed-prefill-4 LoRA-only: F.}
+benchmarks (Appendix~\ref{app:training}). A plain LoRA trained only at prefill four, with the maps fixed at the
+identity, does as well at the depth it was trained for: 57.1 at 4/1 and 67.3 at 4/2. At one chosen depth, the maps
+and the training over all $(m,n)$ pairs add little accuracy; what they add is one set of weights for every pair, which
+the depth sweep of Section~\ref{sec:depth} relies on, and better long-context retrieval at one decode loop (RULER-16K
+64.7 against 58.3).
 
 Equal decode loops do not mean equal time. Figure~\ref{fig:budget} places the configurations on the measured time of
 the same requests of the four chain-of-thought tasks. Two effects make deep prefill more expensive than its prefill

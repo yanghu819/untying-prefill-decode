@@ -397,14 +397,18 @@ def keys():
     ks |= {main_key("GSM8K", kind, c).replace(GF, GFLEX) for _, kind, c in MAIN_ROWS}
     ks |= {sweep_key(b, m, n, w) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2) for w in (False, True)}
     ks |= {key.format(c=c) for _, key in THINK_SWEEP for m in (1, 2, 3, 4, 6, 8) for c in (f"a{m}x2", f"a{m}2")}
-    return sorted({k.partition("#")[0] for k in ks})
+    return sorted({k.partition("#")[0] for k in ks if not k.startswith("L:none-")})   # placeholders of absent rows
 
 
 def export(runs, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
     missing = []
     for k in keys():
-        s = load_raw(runs, k)
+        try:
+            s = load_raw(runs, k)
+        except Exception as e:   # one malformed or unreadable key must not end the export (2026-11-08: it did)
+            print(f"  error {k}: {e!r}")
+            s = None
         if not s:
             missing.append(k)
             continue
@@ -871,7 +875,7 @@ MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 
 
 
 # quoted in the abstract, introduction and Section 4.2
-MAIN_AVG = {"distilled r80 1/1": 50.2, "distilled r80 2/2": 65.4, "native 1/1": 44.2, "LoRA-distilled 1/1": 49.8, "loop adapter 4/1": 56.4, "native 2/2": 63.0,
+MAIN_AVG = {"distilled r80 1/1": 50.2, "distilled r80 2/2": 65.4, "fixed-4 LoRA 4/1": 57.1, "fixed-4 LoRA 4/2": 67.3, "native 1/1": 44.2, "LoRA-distilled 1/1": 49.8, "loop adapter 4/1": 56.4, "native 2/2": 63.0,
             "LoRA-distilled 2/2": 65.3, "loop adapter 4/2": 66.4, "native 4/4": 70.2,
             "training-free 4/1": 26.6, "training-free 4/2": 30.9, "aligned adapter 4/1": 56.8, "aligned adapter 4/2": 67.2}
 MAIN_CELLS = {("MMLU", "native 1/1"): 51.5, ("MMLU", "loop adapter 4/1"): 66.6, ("BBH 3-shot", "native 1/1"): 30.9,
@@ -891,10 +895,10 @@ def main_key(bench, kind, c, model="Ouro-2.6B"):
     if kind == "dist":
         return dkey.format(d=DISTILLED[c])
     if kind == "dist80":   # rank-80 LoRA (as many trainable parameters as the adapter), RANK=80 launch_x26_distill.sh
-        return dkey.format(d=DISTILLED[c] + "r80") if model == "Ouro-2.6B" else f"L:none-{kind}-{c}"
+        return dkey.format(d=DISTILLED[c] + "r80") if model == "Ouro-2.6B" else f"L:none-{kind}-{c}:none"
     if kind == "fixed4":   # trained only at prefill 4 with identity maps (launch_variant.sh fixed4, runs X26f4-a4<n>)
         if model != "Ouro-2.6B":
-            return f"L:none-{kind}-{c}"   # no such control for the other checkpoints: the row stays empty
+            return f"L:none-{kind}-{c}:none"   # no such control for the other checkpoints: the row stays empty
         return main_key(bench, "aligned", c).replace("X26-", "X26f4-", 1)
     if kind in ("raw", "aligned") and model == "Ouro-2.6B":   # these runs are named X26-<cell>-<task> on Ouro-2.6B
         return key.replace("o26x-{c}", "X26-{c}").format(c=c)
