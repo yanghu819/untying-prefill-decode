@@ -541,16 +541,15 @@ def fig_time():
 
 
 def fig_depth():
-    """Figure 2: per timed task, quality (full evaluation set) and time per request against prefill loops m at decode
-    n = 1 (dark) and 2 (light), and quality against time (same replayed requests)."""
+    """Figure 2: per timed task, quality (full evaluation set) and time per request (per-step maps; same replayed
+    requests) against prefill loops m at decode n = 1 (dark) and 2 (light). Quality against time is Figure 3."""
     rows = PN.get("depth_sweep", [])
     tasks = [t for t in TIMED if any(r["bench"] == SWEEP_NAME[t] for r in rows)]
     if not tasks:
         return drop("fig_depth")
     timed = any(_time(t, f"a{m}x{n}sb") for t in tasks for m in (1, 2, 3, 4, 6, 8, 12, 16) for n in (1, 2))
-    nrow = 3 if timed else 1   # time rows only once per-request timings exist
-    fig, axes = plt.subplots(3, len(tasks), figsize=(1.75 * len(tasks), 3.8), squeeze=False) if timed else \
-        plt.subplots(1, len(tasks), figsize=(1.75 * len(tasks), 1.7), squeeze=False)
+    nrow = 2 if timed else 1   # the time row only once per-request timings exist
+    fig, axes = plt.subplots(nrow, len(tasks), figsize=(1.75 * len(tasks), 1.3 + 1.25 * nrow), squeeze=False)
     for j, t in enumerate(tasks):
         for n, col in ((1, OURS), (2, OURS_LIGHT)):
             for wide, ls in ((False, "-"), (True, "--")):
@@ -564,32 +563,19 @@ def fig_depth():
             if pts and timed:
                 axes[1, j].plot([m for m, _ in pts], [r["total_s"] for _, r in pts], "-", color=col, marker="s", ms=2.5, lw=1.2)
                 axes[1, j].plot([m for m, _ in pts], [r["prefill_s"] for _, r in pts], ":", color=col, lw=1)
-                axes[2, j].plot([r["total_s"] for _, r in pts], [r["quality"] for _, r in pts], "-", color=col, marker="s", ms=2.5, lw=1.2)
-                for m, r in pts:
-                    axes[2, j].annotate(str(m), (r["total_s"], r["quality"]), xytext=(0, 3), textcoords="offset points", fontsize=6, color=col, ha="center")
-        for d in (1, 2, 4):
-            r = _time(t, f"native{d}st")
-            if r and timed:
-                axes[2, j].scatter([r["total_s"]], [r["quality"]], color=NAT, s=10, marker="o", zorder=3)
-                axes[2, j].annotate(f"{d}/{d}", (r["total_s"], r["quality"]), xytext=(0, -8), textcoords="offset points", fontsize=6, color=NAT, ha="center")
         axes[0, j].set_title(t, fontsize=8.5, color=INK, pad=4)
-        for i in range(min(2, nrow)):
+        for i in range(nrow):
             axes[i, j].set_xscale("log", base=2); axes[i, j].set_xticks([1, 2, 4, 8, 16]); axes[i, j].set_xticklabels(["1", "2", "4", "8", "16"])
             axes[i, j].axvline(4, color=GRID, lw=0.8, zorder=0)
-        for i in range(nrow):
             axes[i, j].grid(color="#EDEDED", lw=0.5); axes[i, j].set_axisbelow(True)
+        axes[nrow - 1, j].set_xlabel("prefill loops m", fontsize=7.5)
     axes[0, 0].set_ylabel("accuracy (%)")
     if timed:
-        axes[1, 0].set_ylabel("s / request"); axes[2, 0].set_ylabel("accuracy (%)")
-    for j in range(len(tasks)):
-        if timed:
-            axes[1, j].set_xlabel("prefill loops m", fontsize=7.5); axes[2, j].set_xlabel("s / request", fontsize=7.5)
-        else:
-            axes[0, j].set_xlabel("prefill loops m", fontsize=7.5)
+        axes[1, 0].set_ylabel("s / request")
     h = [plt.Line2D([], [], color=OURS, lw=1.2), plt.Line2D([], [], color=OURS_LIGHT, lw=1.2),
-         plt.Line2D([], [], color=NAT, ls="--", lw=1.2), plt.Line2D([], [], color=NAT, marker="o", ls="none", ms=3)]
-    fig.legend(h, ["decode n = 1", "decode n = 2", "trained on m ≤ 16", "Original n/n"], loc="upper center", ncol=4,
-               fontsize=7.5, bbox_to_anchor=(0.5, 1.03))
+         plt.Line2D([], [], color=NAT, ls="--", lw=1.2)]
+    fig.legend(h, ["decode n = 1", "decode n = 2", "trained on m ≤ 16"], loc="upper center", ncol=3,
+               fontsize=7.5, bbox_to_anchor=(0.5, 1.04))
     fig.tight_layout(h_pad=0.6, w_pad=0.4)
     save(fig, "fig_depth")
 

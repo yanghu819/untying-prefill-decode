@@ -320,3 +320,8 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   the prefill-4 LoRA are within noise. Prefill 1->4 at n=1 (pm): +16% time, all from longer answers (276 -> 319 tokens).
 - Paper: abstract, Setup, Sections 3-6, Limitations and the timing appendix rewritten on these numbers; Figure 3 shows
   Ours with folded maps only (the per-step sweep to m=16 is in Figure 2); body still 4 pages.
+- Red team round 3 (Codex gpt-6-astra ultra, 2/5): fixed Thinking GSM8K time (63 s at 2/2, 119 s at 4/4 -> "one to
+  two minutes"), held-out comparison in Section 4 (32.3 not 31.9), timing scope (100 requests / two passes = base model),
+  small-p approximation; frozen prefill loops added to Limitations; Figure 2 bottom row (quality vs time, unreadable,
+  per-step maps) dropped, Figure 3 is the only quality-time figure. Open: the maps' value under the aligned layout
+  (X26-a-lora on a1 is exactly the requested control); per-task frontier under fixed budgets (possible appendix).
