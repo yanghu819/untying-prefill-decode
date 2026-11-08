@@ -63,7 +63,7 @@ Looped language models such as Ouro~\citep{ut,ouro} reuse a block of layers seve
 runs its block four times. The same four loops are used to process the prompt (prefill) and to generate each answer
 token (decode), although the two phases cost very different amounts of time. Prefill handles all prompt tokens in one
 parallel pass, while decoding repeats for every generated token. With long answers, decoding takes almost all of the
-time: an Ouro-2.6B-Thinking answer to a GSM8K problem takes about a minute, and prefill accounts for 0.2\% of it
+time: an Ouro-2.6B-Thinking answer to a GSM8K problem takes one to two minutes, and prefill accounts for 0.2--0.3\% of it
 (Section~\ref{sec:time}).
 
 If prefill is this cheap, a model could read the prompt with more loops than it uses to decode, as a deep encoder
@@ -96,10 +96,10 @@ prompt states of prefill depth $m$. The main adapter is trained on $m,n\le4$; a 
 \paragraph{Benchmarks and timing.} Base model: 11 benchmarks with the Ouro evaluation protocol (Appendix~\ref{app:eval}),
 of which we time the four that write chain-of-thought answers: GSM8K, MATH-500, BBH and MMLU-Pro. Thinking model:
 eight benchmarks including HELMET~\citep{helmet} (8K-token prompts). Time is measured per request at batch 1 on one
-B300 GPU in bfloat16 with greedy decoding, split into prefill (to the first token) and decode, on 100 requests per task
-shared by all configurations; the replayed answers are scored with the evaluation's rule, so quality and time come
-from the same requests. Times average two passes in opposite orders on an otherwise idle machine
-(Appendix~\ref{app:time}). Comparisons are paired over items with 95\% bootstrap intervals.
+B300 GPU in bfloat16 with greedy decoding, split into prefill (to the first token) and decode; the replayed answers are
+scored with the evaluation's rule, so quality and time come from the same requests. On the base model we time 100
+requests per task, the same for every configuration, and average two passes in opposite orders on an otherwise idle
+machine (Appendix~\ref{app:time}). Comparisons are paired over items with 95\% bootstrap intervals.
 
 \section{Where the time goes}
 \label{sec:time}
@@ -123,7 +123,7 @@ time per request at Original 1/1 and 2/2, 0.3--2.3\% at Ours 1/1 and 1/2 and 0.5
 MATH-500 and highest on GSM8K and MMLU-Pro. Long prompts with short answers are the opposite case: on
 HELMET (about 10,900 input and 15 output tokens with the chat template) prefill is 27--30\% of the time at Original
 2/2 and 4/4. Prefill cost grows about linearly
-with its loops, so a share $p$ at one loop becomes about $m\,p$ at $m$ loops. Tasks with a small share leave room for a
+with its loops, so a small share $p$ at one loop becomes about $m\,p$ at $m$ loops. Tasks with a small share leave room for a
 deeper prefill; tasks with long prompts and short answers do not. The per-request distributions are in
 Appendix~\ref{app:time}.
 
@@ -151,7 +151,7 @@ This decline could come from the decoder never having seen such deep states. An 
 16 (dashed) shows a similar shape. For it, a stopping rule fixed in advance puts the end of the gain at two or
 three prefill loops on 10 of the 18 benchmark and decode-depth settings, at five on MMLU-Pro with one decode loop and at
 one on MATH-500, and finds no stop within the evaluated depths on the other five; on the held-out half, GSM8K at one decode loop reaches 47.0 at $m=2$ and falls to
-36.9 at $m=16$. Training on the deeper depths softens the decline (31.9 at $m=16$ without it) and shifts the stop by
+36.9 at $m=16$. Training on the deeper depths softens the decline (32.3 at $m=16$ without it, same half) and shifts the stop by
 one or two loops on some settings. The reasoning model behaves the same way: at two decode
 loops, Ouro-2.6B-Thinking goes from 90.7 to 94.1 on GSM8K and from 36.4 to 51.0 on MMLU-Pro between $m=1$ and $m=4$,
 and six prefill loops add nothing (93.9 and 48.1).
@@ -178,7 +178,7 @@ Ours $4/n$ is above Original and Distilled $n/n$, also when the distilled models
 (rank 80) and also without the benchmark items whose text overlaps the training data (Table~\ref{tab:avg};
 Appendix~\ref{app:training}). A plain LoRA trained only at prefill four, with the maps fixed at the identity, does as
 well at that depth. The maps and the training over all $(m,n)$ pairs add one set of weights for every pair, which the
-sweep of Section~\ref{sec:depth} relies on, and long-context retrieval at one decode loop (RULER-16K 64.7 against 58.3).
+sweep of Section~\ref{sec:depth} relies on, and better long-context retrieval at one decode loop (RULER-16K 64.7 against 58.3).
 
 Equal decode loops do not mean equal time. Figure~\ref{fig:budget} places the configurations on the measured time of
 the same requests, with the adapter's maps folded into the prompt cache; decode time per token is then within 10\% of
@@ -256,7 +256,8 @@ Time is measured at batch 1 on one GPU type; at large batch sizes decode is chea
 grows. Applied at every decode step, the adapter's maps and a second attention call cost 19--40\% more decode time per
 generated token than the original model at batch 1; folding the maps into the prompt cache removes this cost but
 stores one prompt cache per decode loop, as the original model does at $n$ loops. The depth sweep and the batch-32
-estimate use the per-step form. The prefill depth is chosen per benchmark, not routed per prompt. Deeper prefill hurts few-shot MATH-500 and
+estimate use the per-step form. The prefill depth is chosen per benchmark, not routed per prompt. The prefill loops stay frozen, so the gain might
+stop later if they were trained for deeper use as well. Deeper prefill hurts few-shot MATH-500 and
 exact recall in HELMET (34 items). Models are 2.6B with four native loops (1.4B, a 9B hybrid and decision models in the appendix);
 benchmarks are English.
 

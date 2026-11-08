@@ -1196,6 +1196,8 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
             row = dict(n=n, bench=b, m_star=star, deepest=ms[-1], test_at_star=round(qt[star], 2),
                        test_deepest=round(qt[ms[-1]], 2), test_m1=round(qt[ms[0]], 2))
             out.append(row)
+            if adapter == "m<=4" and (n, b) == (1, "GSM8K") and abs(row["test_deepest"] - 32.3) > 0.051:   # Section 4
+                print(f"Plateau      m<=4 n=1 GSM8K held-out m={ms[-1]}: {row['test_deepest']}  !! paper: 32.3")
             want = {(1, "GSM8K"): (2, 47.0, 36.9), (1, "MMLU-Pro"): (5, None, None)}.get((n, b))   # Section 4
             if adapter == "wide" and want and (star != want[0] or any(w is not None and abs(g - w) > 0.051
                                                 for g, w in ((row["test_at_star"], want[1]), (row["test_deepest"], want[2])))):
