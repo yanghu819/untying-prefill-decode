@@ -12,5 +12,6 @@ ARM=$1; GPUS=$2; PORT=$3; F=$([ "$4" = first ] && echo f); FLAG=$([ "$4" = first
 S=${SIZE:-26}; MODEL=$([ $S = 14 ] && echo model-1.4b || echo model-2.6b)
 case $ARM in E) NAME=X$S-E48$F-p1d1 ;; D) NAME=X$S-D48$F-p2d2 ;; H) NAME=X$S-H48$F-p3d3 ;; *) echo "arm must be E, D or H"; exit 2 ;; esac
 [ -n "$RANK" ] && { NAME=${NAME/-p/r$RANK-p}; export OURO_LORA_RANK=$RANK; }
+EXTRA=""; [ -n "$SEED" ] && { NAME=$NAME-s$SEED; EXTRA="--seed $SEED"; }   # env SEED: another training seed (runs ...-s<SEED>)
 M=/dev/shm/big-small-ouro; R=$M/runs; cd $R
-[ -f $R/$NAME/TRAIN_DONE ] || MODEL=$M/$MODEL DATA=$M/mix-data-48m ./run_mix2.sh $NAME $ARM $GPUS $PORT 48000000 --micro 1 $FLAG
+[ -f $R/$NAME/TRAIN_DONE ] || MODEL=$M/$MODEL DATA=$M/mix-data-48m ./run_mix2.sh $NAME $ARM $GPUS $PORT 48000000 --micro 1 $FLAG $EXTRA
