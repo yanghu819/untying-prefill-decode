@@ -30,7 +30,9 @@ def make(condition, model_path, checkpoint, merge=False):
         runner = load_adapter_runner(model_path, checkpoint)
         if merge:
             merge_reader_lora(runner.system.reader)
-        deep = re.fullmatch(r"([SOa])(\d+)x(\d+)sb", condition)  # a16x1sb: prefill depths beyond 9 (depth sweep)
+        deep = re.fullmatch(r"([SOa])(\d+)x(\d+)(sb|pm)", condition)  # a16x1sb: prefill depths beyond 9 (depth sweep)
+        if deep and deep[4] == "pm":   # a<p>x<d>pm: aligned, maps folded into the banks at prefill (native decode path)
+            return AlignedRunner(runner.system, int(deep[2]), int(deep[3]), premap=True)
         p, d = (int(deep[2]), int(deep[3])) if deep else (int(condition[1]), int(condition[2])) if len(condition) > 2 else (0, 0)
         if condition.endswith("sb") and condition[0] == "a":  # a<p><d>sb: aligned, one static prompt bank per decode loop
             return AlignedRunner(runner.system, p, d)

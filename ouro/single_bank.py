@@ -154,12 +154,18 @@ class SingleBankRunner(AdapterRunner):
 class AlignedRunner(AdapterRunner):
     """Aligned connector (arm a) at cell (p, d) for throughput: decode loop k reads prefill loop clip(p - d + k) from its
     own static prompt bank (one bank per decode loop, as the native d-loop model stores), through the same fused
-    attention, key scale and value map as the single-bank decoder."""
+    attention, key scale and value map as the single-bank decoder.
 
-    def __init__(self, system, p, d):
+    premap=True folds the maps into the banks once after prefill, so decoding runs the native attention path with no
+    per-step map work: the key scale commutes with RoPE, so instead of q' = q*A + roll(q)*S on every query the stored
+    key becomes k' = k*A + roll(k)*S' (S' = S with its halves' signs swapped, the same inner product); the value map is
+    linear, so v' = (I + V) v instead of mapping the attention output. Same function, bf16 rounding aside."""
+
+    def __init__(self, system, p, d, premap=False):
         assert system.arm == "a"
         super().__init__(system)
         system.prefill_steps, system.decode_steps = p, d
+        self.premap = premap
 
     @torch.inference_mode()
     def prefill(self, input_ids, attention_mask=None):
@@ -172,11 +178,21 @@ class AlignedRunner(AdapterRunner):
         keys = [prefix.all_keys[j * depth + l] for j in src for l in range(depth)]
         values = [prefix.all_values[j * depth + l] for j in src for l in range(depth)]
         del prefix
+        if self.premap:
+            maps = self.system.loop_adapter
+            for i in range(len(keys)):   # bank i = decode loop k, layer l; new tensors (m < n repeats a prefill bank)
+                k, l = divmod(i, depth)
+                a, s = maps.k_rot[k, l, :, 0, None], maps.k_rot[k, l, :, 1, None]   # [H, 1, D/2]
+                A, S = torch.cat((1 + a, 1 + a), -1), torch.cat((-s, s), -1)
+                kf = keys[i].float()
+                keys[i] = torch.addcmul(kf * A, torch.roll(kf, kf.shape[-1] // 2, -1), S).to(keys[i].dtype)
+                W = maps.v_delta[k, l].float() + torch.eye(maps.v_delta.shape[-1], device=maps.v_delta.device)
+                values[i] = torch.einsum("bhti,hoi->bhto", values[i].float(), W).to(values[i].dtype)
         return self.decode(input_ids[:, -1:], SingleBankCache(keys, values, d, per_loop=True))
 
     @torch.inference_mode()
     def decode(self, input_ids, cache, attention_mask=None):
-        with active(cache, self.system.loop_adapter):
+        with active(cache, None if self.premap else self.system.loop_adapter):
             hidden, cache = backbone(self.model, input_ids, cache, self.system.decode_steps)
         return self.model.lm_head(hidden[:, -1:])[:, 0], cache
 

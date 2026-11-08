@@ -50,6 +50,11 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   table, method figure and the batch-32 panel moved to the appendix), provenance regenerated (181 new runs). Open:
   clean timing pass (a2), timing of the fixed-prefill-4 and rank-80 controls and Original 3/3, maps folded into the
   aligned banks at prefill (no per-step map cost), a universal aligned LoRA-only control.
+- Maps folded into the aligned banks at prefill (AlignedRunner premap, condition a<m>x<n>pm): decode then runs the native
+  attention path. On 10 GSM8K requests (shared GPU) 4/2 drops from 88.0 to 61.2 ms/token, 4/1 from 47.8 to 36.3;
+  6/10 and 8/10 greedy answers are identical (bf16 rounding of the folded banks), so its quality is measured on the
+  replayed requests themselves. time_controls.sh times it, the fixed-prefill-4 LoRA, rank-80 distilled and
+  Original 3/3 on the same requests (a2, after the clean pass).
 - Timing noise: a second pass of the same requests (identical answers) differs by up to 25% in time (rep-*, a1).
   Some first-pass jobs shared their GPU with evaluations. 2026-11-08 14:00: a clean full pass of time_sweep.sh
   (OUT=clean) on all eight a2 GPUs with nothing else on the box; keep a2 free of other jobs until it ends.
