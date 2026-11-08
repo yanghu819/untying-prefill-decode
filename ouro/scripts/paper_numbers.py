@@ -929,6 +929,7 @@ def same_weights():
 LM_RULES = {"gsm8k_cot": (r"The answer is (\-?[0-9\.\,]+).", dict(case=True, drop=[",", r"\$", r"(?s).*#### ", r"\.$"])),
             "bbh": (r"(?<=the answer is )(.*)(?=.)", {}),
             "mmlu_pro": (r"answer is \(?([ABCDEFGHIJ])\)?", dict(case=True, punct=True))}
+OVERHEAD_PRINTED = (31, 51)   # Limitations: adapter decode time per token vs Original at the same decode loops (%)
 TIME_TASKS = {"gsmfull": "GSM8K", "math": "MATH-500", "bbh": "BBH", "mmlupro": "MMLU-Pro"}
 
 
@@ -1013,6 +1014,17 @@ def time_breakdown():
         if len(v) == 4:
             got = (round(float(np.mean([r["quality"] for r in v])), 1), round(float(np.mean([r["total_s"] for r in v])), 1))
             print(f"Time         {c} mean over the four tasks {got}" + ("" if got == w else f"  !! paper: {w}"))
+    tok = lambda c: [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c]
+    over = []
+    for ours, nat in (("a1x1sb", "native1st"), ("a4x1sb", "native1st"), ("a1x2sb", "native2st"), ("a4x2sb", "native2st")):
+        a, b = tok(ours), tok(nat)
+        if len(a) == len(b) == 4:   # decode time per generated token, pooled over the four tasks (equal request counts)
+            ms = lambda v: sum(r["decode_s"] for r in v) / sum(r["out_tokens"] for r in v)
+            over.append(100 * (ms(a) / ms(b) - 1))
+            print(f"Time         decode time per token {ours} vs {nat}: +{over[-1]:.0f}%")
+    if len(over) == 4:
+        got = (round(min(over)), round(max(over)))
+        print(f"Time         decode overhead range {got}" + ("" if got == OVERHEAD_PRINTED else f"  !! paper: {OVERHEAD_PRINTED}"))
     want = {"native2st": (44.0, 1.37), "Df2st": (54.2, 1.31), "a42sb": (59.1, 2.10), "native4st": (65.7, 2.33)}   # Section 5
     share = {"native2st": 27, "native4st": 30}   # Section 3, HELMET prefill share (rounded)
     for r in out:
