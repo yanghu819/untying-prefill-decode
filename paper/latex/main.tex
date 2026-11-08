@@ -166,8 +166,9 @@ marked.}
 
 Deep prefill is worth it only if no other use of the same time does better. Table~\ref{tab:main} compares
 configurations with the same number of decode loops. At one decode loop, Ours 4/1 averages 56.8 over 11 benchmarks,
-against 44.2 for Original 1/1 and 49.8 for Distilled 1/1 trained on the same data and tokens (\tbd{rank 80: R}); at two
-decode loops it averages 67.2, against 63.0 and 65.3. The same holds without the training items that overlap the
+against 44.2 for Original 1/1 and 49.8 for Distilled 1/1 trained on the same data and tokens; at two decode loops it
+averages 67.2, against 63.0 and 65.3. Giving the distilled models as many trainable parameters as the adapter (rank 80)
+leaves them at 50.2 and 65.4. The same holds without the training items that overlap the
 benchmarks (Appendix~\ref{app:training}). \tbd{Fixed-prefill-4 LoRA-only: F.}
 
 Equal decode loops do not mean equal time. Figure~\ref{fig:budget} places the configurations on the measured time of
