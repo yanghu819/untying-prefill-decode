@@ -174,12 +174,13 @@ the maps folded into the prompt cache. Labels: prefill loops $m$ or $n/n$.}
 \label{fig:budget}
 \end{figure}
 
-Deep prefill is worth it only if no other use of the same time does better. At the same number of decode loops,
-Ours $4/n$ is above Original and Distilled $n/n$, also when the distilled models have as many trainable parameters
-(rank 80) and also without the benchmark items whose text overlaps the training data (Table~\ref{tab:avg};
-Appendix~\ref{app:training}). A plain LoRA trained only at prefill four, with the maps fixed at the identity, does as
-well at that depth. The maps and the training over all $(m,n)$ pairs add one set of weights for every pair, which the
-sweep of Section~\ref{sec:depth} relies on, and better long-context retrieval at one decode loop (RULER-16K 64.7 against 58.3).
+Deeper prefill is worth it only if no other use of the same time does better. At the same number of decode loops,
+Ours $4/n$ is above Original and Distilled $n/n$ (Table~\ref{tab:avg}). This holds when the distilled models have as
+many trainable parameters (rank 80) and when benchmark items whose text overlaps the training data are left out
+(Appendix~\ref{app:training}). A plain LoRA trained only at prefill four, with the maps fixed at the identity, does as
+well at that depth. What the maps and the training over all $(m,n)$ pairs add is one set of weights for every pair,
+which the sweep of Section~\ref{sec:depth} needs, and better long-context retrieval at one decode loop (RULER-16K 64.7
+against 58.3).
 
 Equal decode loops do not mean equal time. Figure~\ref{fig:budget} places the configurations on the measured time of
 the same requests, with the adapter's maps folded into the prompt cache; decode time per token is then within 10\% of
@@ -188,10 +189,10 @@ $m=1$ to $m=4$). On the four chain-of-thought tasks, Ours 4/1 scores 41.2 in 11.
 11.1\,s for Original 1/1 and 34.2 in 10.2\,s for Distilled 1/1, but Original 2/2 scores 56.8 in 15.7\,s. At two
 decode loops, Ours 3/2 (59.5 in 16.1\,s), Distilled 2/2 (58.5 in 16.1\,s; rank 80: 60.5 in 15.5\,s) and the
 prefill-4 LoRA (59.5 in 15.5\,s) are within noise of each other on 400 requests. At batch 32 (estimated, per-step
-maps) a second decode loop still buys more (Figure~\ref{fig:budget32}). Long prompts with short answers do not change this.
-On the 1,107 HELMET requests of Ouro-2.6B-Thinking, Ours 4/2 scores 59.1 in 2.10\,s, against 44.0 in 1.37\,s for
-Original 2/2 and 54.2 in 1.31\,s for Distilled 2/2, but decoding is cheap there and Original 4/4 reaches 65.7 in
-2.33\,s.
+maps) a second decode loop still buys more (Figure~\ref{fig:budget32}). Long prompts with short answers lead to the
+same conclusion. On the 1,107 HELMET requests of Ouro-2.6B-Thinking, Ours 4/2 scores 59.1 in 2.10\,s, above Original
+2/2 (44.0 in 1.37\,s) and Distilled 2/2 (54.2 in 1.31\,s), but with 15-token answers extra decode loops cost little,
+and Original 4/4 reaches 65.7 in 2.33\,s.
 
 
 
@@ -221,9 +222,9 @@ deeper prefill, the prompt keys and values come from loops the decoder has never
 LoRA~\citep{lora} on the decoder's attention projections lets a shallow decoder use deeper states. A map for each decode
 loop, layer and KV head transforms the prompt cache that loop reads. The key map is one complex scale per rotary
 frequency pair; it commutes with RoPE~\citep{rope}, so it is applied to the query instead. The value map is linear and
-is applied to the attention output. Equivalently, both maps can be folded into the prompt cache once at prefill, one
-mapped copy per decode loop, after which decoding runs the original model's attention; we time this form. Decode loop $k$ reads prefill loop
-$\max(m-n+k,1)$, so at $m=n$ every decode loop reads the cache the original model would read. A variant that keeps only
+is applied to the attention output. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$, so at $m=n$ every decode loop
+reads the cache the original model would read. Both maps can also be folded into the prompt cache once at prefill,
+one mapped copy per decode loop; decoding then runs the original model's attention, and we time this form. A variant that keeps only
 the last prefill loop's cache uses less memory and is slightly less accurate (Table~\ref{tab:avg}). The adapter has
 63M parameters (2.4\% of the model) and is trained once by distillation: the KL divergence to the original 4/4 model on
 answer tokens, over 48M tokens of reasoning, instruction, long-context and web data, with one $(m,n)$ pair sampled per
