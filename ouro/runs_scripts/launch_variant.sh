@@ -16,6 +16,7 @@ case $W in
   lora) N=X26-a-lora; P=X26lo; FLAGS="--freeze-maps" ;;
   *) echo "WHICH must be wide, fixed4 or lora"; exit 2 ;;
 esac
+[ -n "$SEED" ] && { N=$N-s$SEED; P=${P}s$SEED; FLAGS="$FLAGS --seed $SEED"; }   # env SEED: another training seed (X26-a-lora-s2, X26los2-...)
 [ -f $R/$N/TRAIN_DONE ] || [ -f $R/$N/checkpoint-48m.pt ] || \
   DATA=$M/mix-data-48m ./run_mix2.sh $N a $GPUS $PORT 48000000 --micro 1 $FLAGS || exit 1
 unset OURO_CELLS
