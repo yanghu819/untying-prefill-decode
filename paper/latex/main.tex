@@ -639,10 +639,12 @@ decode loop reads exactly the KV the native model would. It stores the prompt $n
 trained identically. It is the more accurate layout, most of all on long-context retrieval; the single cache is the
 smaller one.
 
-\paragraph{What the maps do.} With the same training and the maps frozen at the identity, the decoder is within 0.4 points
-on MMLU (significantly lower at 1/1 and 2/2, by 0.4 and 0.3) has no significantly negative GSM8K difference (at 4/1 it scores $2.3$ points higher\ci{0.2}{4.5}), but
-loses 11.4 points on RULER-16K at prefill 4 / decode 1 (Appendix~\ref{sec:ablation}): in these ablations the maps matter
-for long prompts.
+\paragraph{What the maps do.} For the aligned adapter, the same training with the maps frozen at the identity moves ten
+of the 11 benchmarks by at most 2.8 points at 4/1 but lowers RULER-16K from 64.7 to 49.8 (Table~\ref{tab:main}). The
+one-cache variant shows the same pattern: with frozen maps it is within 0.4 points on MMLU (significantly lower at 1/1
+and 2/2, by 0.4 and 0.3), has no significantly negative GSM8K difference (at 4/1 it scores $2.3$ points
+higher\ci{0.2}{4.5}), but loses 11.4 points on RULER-16K at 4/1 (Appendix~\ref{sec:ablation}). The maps matter for
+long prompts.
 
 \paragraph{Training.} We distil~\citep{kd}: we minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
 native 4/4 model as teacher, on 48M answer tokens of reasoning traces, instruction data, long-context data and web text.
