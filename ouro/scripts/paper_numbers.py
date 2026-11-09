@@ -397,6 +397,7 @@ def keys():
     ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42")}
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
+    ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {k for _, k, _ in REPRO}
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
@@ -1432,6 +1433,29 @@ def dist_seed_key(bench, c, sd):
     return main_key(bench, "dist", c).replace(f"-{d}", f"-{d}{sd}", 1)
 
 
+LR_VARIANTS = ("lr0.3", "lr3", "r80", "r80lr3")   # Distilled n/n: learning rate x0.3 / x3, rank 80 at x1 / x3 (LRS, RANK)
+
+
+def lr_check():
+    """Baseline tuning check: the 11-benchmark average of Distilled n/n at the default learning rate (rank 16) and at
+    the LR_VARIANTS, each benchmark on the items all variants of that n share; None until a variant is complete."""
+    out = {}
+    for c in (1, 2):
+        names = ("",) + LR_VARIANTS
+        per = {v: [] for v in names}
+        for b in MAIN_BENCH:
+            sets = {v: load(dist_seed_key(b, c, v)) for v in names}
+            full = float(np.median([len(x) for x in sets.values() if x])) if any(sets.values()) else 0
+            sets = {v: (x if x and len(x) >= 0.95 * full else None) for v, x in sets.items()}
+            have = [x for x in sets.values() if x]
+            ids = set.intersection(*(set(x) for x in have)) if have else set()
+            for v, x in sets.items():
+                per[v].append(agg(x, ids) if x else None)
+        out[c] = {v or "lr1": (None if None in q else round(float(np.mean(q)), 2)) for v, q in per.items()}
+        print(f"LR check     Distilled {c}/{c}: " + "  ".join(f"{v} {'--' if a is None else f'{a:.1f}'}" for v, a in out[c].items()))
+    return out
+
+
 def seed_key(bench, prefix, c):
     """Item key of another training seed of the aligned adapter (ARM=a seed_main.sh: runs <prefix>-a4<n>-<task>)."""
     return main_key(bench, "aligned", c).replace("X26-", prefix + "-", 1)
@@ -1704,7 +1728,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_sweep_14=depth_sweep_14(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_sweep_14=depth_sweep_14(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
