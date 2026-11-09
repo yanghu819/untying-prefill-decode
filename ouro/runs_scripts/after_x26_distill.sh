@@ -10,6 +10,7 @@ case $ARM in E) NAME=X$S-E48$F-p1d1 ;; D) NAME=X$S-D48$F-p2d2 ;; H) NAME=X$S-H48
 M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/distill_q.txt; C=${ARM}48$F; cd $R
 E=""; [ -n "$RANK" ] && { NAME=${NAME/-p/r$RANK-p}; C=${C}r$RANK; E="OURO_LORA_RANK=$RANK "; }   # see launch_x26_distill.sh
 [ -n "$SEED" ] && { NAME=$NAME-s$SEED; C=${C}s$SEED; }   # another training seed (C = D48fs2 ...)
+[ -n "$LRS" ] && { NAME=$NAME-lr$LRS; C=${C}lr$LRS; }   # learning rate x LRS (C = D48flr3 ...)
 MODEL=$([ $S = 14 ] && echo model-1.4b || echo model-2.6b); LM=$([ $S = 14 ] && echo O14x || echo o26x); BN=$([ $S = 14 ] && echo O14 || echo X26)
 until [ -f $R/$NAME/TRAIN_DONE ]; do sleep 300; done
 CK=$R/$NAME/checkpoint-48m.pt; [ -f $CK ] || CK=$(ls $R/$NAME/checkpoint*.pt | tail -1)

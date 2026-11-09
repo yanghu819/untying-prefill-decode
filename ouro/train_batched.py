@@ -60,12 +60,15 @@ if os.environ.get("OURO_CELLS"):  # e.g. "4x1,4x2,4x3,4x4" (fixed prefill 4) or 
     V_CELLS = [tuple(int(v) for v in c.split("x")) for c in os.environ["OURO_CELLS"].split(",")]
 
 
+LR_SCALE = float(os.environ.get("OURO_LR_SCALE", "1"))   # baseline check: the whole schedule times this factor
+
+
 def learning_rate(tokens, planned_tokens):
     warmup = planned_tokens * 0.02
     if tokens <= warmup:
-        return 1e-4 * tokens / warmup
+        return LR_SCALE * 1e-4 * tokens / warmup
     progress = min(1.0, (tokens - warmup) / (planned_tokens - warmup))
-    return 1e-5 + 0.5 * (1e-4 - 1e-5) * (1 + math.cos(math.pi * progress))
+    return LR_SCALE * (1e-5 + 0.5 * (1e-4 - 1e-5) * (1 + math.cos(math.pi * progress)))
 
 
 def main():
