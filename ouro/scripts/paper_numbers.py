@@ -118,6 +118,10 @@ CMP += [
        {(1, "math0shot"): (8.0, 4.0, 11.8), (2, "math0shot"): (10.4, 6.6, 14.2), (1, "math"): (-9.4, -13.6, -5.4),
         (2, "math"): (-18.0, -22.2, -14.0)}.get((n, t)))   # Section 6 and Appendix (prompt format)
       for n in (1, 2) for k, t in (("4-shot", "math"), ("0-shot", "math0shot"))],
+    # the maps by context length, aligned layout: Ours vs the same all-pairs LoRA with frozen maps (X26lo) and vs the
+    # prefill-4-only LoRA with identity maps (X26f4); RULER at 4K, 8K, 16K
+    *[("Maps by length", f"{c} RULER-{k}K Ours vs {name}", ruler(f"X26-{c}", k), ruler(f"{pre}-{c}", k), None)
+      for c in ("a41", "a42") for k in (4, 8, 16) for name, pre in (("maps frozen", "X26lo"), ("prefill-4 LoRA", "X26f4"))],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
