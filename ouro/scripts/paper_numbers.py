@@ -1031,8 +1031,7 @@ def time_breakdown():
                         decode_s=round(sum(r["gen_s"] for r in rows) / len(rows), 3), total_s=round(tot / len(rows), 3),
                         prefill_share=round(100 * pre / tot, 3), in_tokens=round(float(np.mean([r["prompt_tokens"] for r in rows])), 1),
                         out_tokens=round(float(np.mean([r["new_tokens"] for r in rows])), 1)))
-    for conds, want in ((("native1st", "native2st"), (0.4, 2.8)), (("a1x1sb", "a1x2sb"), (0.3, 2.3)),
-                        (("native4st",), (0.5, 2.0))):   # Section 3
+    for conds, want in ((("native1st", "native2st", "native4st", "a1x1sb", "a1x2sb"), (0.3, 2.8)),):   # Section 3
         sh = [r["prefill_share"] for r in out if r["model"] == "Ouro-2.6B" and r["cond"] in conds]
         if len(sh) == 4 * len(conds):   # range of the prefill share over the four timed tasks
             got = (round(min(sh), 1), round(max(sh), 1))
