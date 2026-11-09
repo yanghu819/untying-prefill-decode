@@ -399,7 +399,7 @@ def keys():
     ks |= {main_key(b, kind, c) for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for _, pre in ABLATIONS for c in ("S41", "S42")}
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
-    ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42")}
+    ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42", "a11", "a12")}
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
@@ -932,6 +932,34 @@ GSM_PROTOCOL_PRINTED = {   # Appendix B (diff, lo, hi)
 
 SAME_WEIGHTS_PRINTED = {("a11", "avg"): 47.2, ("a41", "avg"): 56.8, ("a12", "avg"): 57.9, ("a42", "avg"): 67.2,
                         ("a11", "MMLU"): 51.2, ("a41", "MMLU"): 67.1, ("a11", "HumanEval+"): 46.3, ("a41", "HumanEval+"): 65.2}
+
+
+def same_weights_seeds():
+    """Section 4 over training seeds: the aligned adapter's 11-benchmark average at prefill 1 and 4 (decode 1 and 2) for
+    seed 0 (X26-a) and MAIN_SEEDS (X26s2-a, X26s3-a; seed_main.sh ARM=a CELLS="11 12"), each seed on the items its four
+    cells share; the gain 4/n - 1/n as mean and s.d. over seeds once every seed is complete."""
+    cells = ("a11", "a41", "a12", "a42")
+    per = {}
+    for pre in ("X26",) + MAIN_SEEDS:
+        avg = {}
+        for c in cells:
+            vals = []
+            for b in MAIN_BENCH:
+                sets = {cc: load(main_key(b, "aligned", cc) if pre == "X26" else seed_key(b, pre, cc)) for cc in cells}
+                if any(v is None for v in sets.values()):
+                    vals = None; break
+                ids = set.intersection(*(set(v) for v in sets.values()))
+                vals.append(agg(sets[c], ids))
+            avg[c] = None if vals is None else float(np.mean(vals))
+        per[pre] = avg
+        print(f"Same w seeds {pre:6s} " + "  ".join(f"{c} {'--' if v is None else f'{v:5.1f}'}" for c, v in avg.items()))
+    out = dict(per=per)
+    for n in (1, 2):
+        g = [per[p][f"a4{n}"] - per[p][f"a1{n}"] for p in per if None not in (per[p][f"a4{n}"], per[p][f"a1{n}"])]
+        if len(g) == len(per):
+            out[f"gain{n}"] = (round(float(np.mean(g)), 1), round(float(np.std(g, ddof=1)), 1))
+            print(f"Same w seeds gain 4/{n} - 1/{n}: {[round(x, 1) for x in g]} mean {np.mean(g):.1f} sd {np.std(g, ddof=1):.1f}")
+    return out
 
 
 def same_weights():
@@ -1751,7 +1779,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_sweep_14=depth_sweep_14(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_sweep_14=depth_sweep_14(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
