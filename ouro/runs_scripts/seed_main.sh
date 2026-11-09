@@ -7,7 +7,7 @@
 S=$1; GPUS=$2; PORT=$3; A=${ARM:-S}; M=/dev/shm/big-small-ouro; R=$M/runs; Q=$R/seed${S}main${A#S}_q.txt; N=X26-$A-seed$S; P=X26s$S; cd $R
 [ -f $R/$N/checkpoint-48m.pt ] || { DATA=$M/mix-data-48m ./run_mix2.sh $N $A $GPUS $PORT 48000000 --micro 1 --seed $S || exit 1; }
 CK=$R/$N/checkpoint-48m.pt
-for c in ${A}41 ${A}42; do
+for c in $(for x in ${CELLS:-41 42}; do echo $A$x; done); do   # env CELLS="11 12": the prefill-1 cells (same-weights depth gain)
   MA="path=$M/model-2.6b,condition=$c,checkpoint=$CK,max_length=16384"
   lm() { ls lmeval/out/$P-$c-$1/*/samples_* > /dev/null 2>&1 || echo "./lm1.sh \$GPU $P-$c-$1 - \"$MA\" \"$2\""; }
   lm gsmfull "--tasks gsm8k_cot --num_fewshot 3"; lm mmlufull "--tasks mmlu --num_fewshot 5"
