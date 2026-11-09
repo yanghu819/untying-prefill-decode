@@ -335,6 +335,26 @@ evaluated depth, in parentheses.}
 \label{tab:plateau}
 \end{table}
 
+\section{Prefill Depth on Ouro-1.4B}
+\label{app:depth14}
+
+Table~\ref{tab:depth14} repeats the sweep of Section~\ref{sec:depth} on Ouro-1.4B with its loop adapter (trained on
+$m,n\le4$), on the same benchmarks and protocol.
+
+\begin{table*}[h]
+\centering\small
+\IfFileExists{../figs/tab_depth14.tex}{\begin{tabular}{@{}lrrrrrrrrr@{}}
+\toprule
+benchmark & $n$ & $m{=}1$ & 2 & 3 & 4 & 6 & 8 & 12 & 16 \\
+\midrule
+\csname @@input\endcsname ../figs/tab_depth14.tex
+\bottomrule
+\end{tabular}}{\pending{Ouro-1.4B depth sweep}}
+\caption{\textbf{Prefill depth on Ouro-1.4B.} Accuracy (\%) against prefill loops $m$ at decode $n$; best $m$ of each
+row in bold; --: not evaluated.}
+\label{tab:depth14}
+\end{table*}
+
 \section{Extended Results}
 \label{app:extended}
 
