@@ -364,3 +364,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   for the longest prompts at one decode loop; Method says so (guard 1.4).
 - LR check so far: Distilled 1/1 x3 = 50.1 vs x1 49.8 (rank 80: 50.2); others pending.
 - Prefill-4 LoRA seed 2 (SEED=2 launch_variant.sh fixed4, X26-a-fixed4-lora-s2, a2 GPUs 1,3; evals X26f4s2-a4<n>-*).
+- LR check, Distilled 1/1 (11-bench avg): x0.3 49.2, x1 49.8, x3 50.1, rank 80 50.2, rank 80 x3 50.0 -> range 49.2-50.2, Ours 4/1 56.8. The n=1 baseline is not under-tuned. 2/2 and Ours variants pending. Also queued aligned seeds 2/3 at a11/a12 (CELLS="11 12" seed_main.sh, a2) for the same-weights depth gain over seeds.
