@@ -1048,7 +1048,7 @@ def time_breakdown():
         want = (31.2, 41.2, 16, 276, 319, 134, 397)
         print(f"Time         abstract: quality, time %, out tokens, MMLU-Pro out tokens {got}" + ("" if got == want else f"  !! paper: {want}"))
     for c, w in (("a4x1pm", (41.2, 11.2)), ("native1st", (27.0, 11.1)), ("D1st", (34.2, 10.2)), ("native2st", (56.8, 15.7)),
-                 ("a3x2pm", (59.5, 16.1)), ("D2st", (58.5, 16.1)), ("D2r80st", (60.5, 15.5)),
+                 ("a3x2pm", (59.5, 16.1)), ("a4x2pm", (59.0, 17.2)), ("D2st", (58.5, 16.1)), ("D2r80st", (60.5, 15.5)),
                  ("f4x2pm", (59.5, 15.5)), ("a4x1sb", (43.0, None))):
         v = [r for r in out if r["model"] == "Ouro-2.6B" and r["cond"] == c]   # abstract and Section 5, batch 1
         if len(v) == 4:

@@ -332,3 +332,17 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Ouro-1.4B depth sweep (O14-a<m>x<n>, adapter trained on m<=4), partial: n=1 peaks at m=3-4 and falls after (MMLU
   42.8 -> 63.7 at m=3 -> 31.9 at m=16; ARC-C 45.4 -> 56.3 at m=4 -> 35.6); BBH collapses at m>=2 (known 1.4B early stop
   under arm a); code is 0 at m=16 (format breaks). n=2 still running.
+
+### 2026-11-09 baseline audit (user: "没有压低baseline")
+- Protocol: every row scored identically; native 4/4 within 1 point of Ouro's published MMLU, MMLU-Pro, BBH, ARC-C,
+  HellaSwag (Table repro). GSM8K strict vs flexible and MATH-500 4-shot vs Ouro's unreleased prompt are documented;
+  flexible GSM8K shrinks Ours 4/2 - Original 2/2 to +1.2 [-0.8, +3.3] (appendix states it).
+- Timing: Original n/n uses the fastest native implementation (static per-loop banks + the same fused two-call flash
+  attention as Ours; appendix lists the slower dynamic / contiguous caches). Native and folded-map decode run the same
+  code path; per-token times overlap (n=1: 32-43 ms per task-pass for every config), the -9% for Ours at n=1 is pass
+  noise (native1st clean3 MATH 43.4, BBH 38.1), so the paper only claims "within 10%".
+- Distilled: same data, batch 24, 48M KL tokens, LR schedule and micro 1 as the adapter, plus first-token supervision;
+  rank 16 and rank 80. Neither side's LR was tuned -> 3x-LR Distilled 1/1 (a2 GPUs 4-7) and 2/2 (a1 GPUs 2,3)
+  launched (LRS=3, runs X26-E48f-p1d1-lr3, X26-D48f-p2d2-lr3); if either beats the 1x control, it becomes the baseline.
+- Section 5 now quotes Ours 4/2 (the Table 1 configuration) first, 3/2 (best of Ours) in parentheses.
+- Table 1 Ours rows are the pre-set m=4, not a per-task best m.
