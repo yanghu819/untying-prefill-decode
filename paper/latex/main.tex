@@ -248,8 +248,9 @@ SwiftKV~\citep{swiftkv} puts less. More in Appendix~\ref{app:related}.
 \section{Conclusion}
 
 Generation with a looped model is almost all decoding, so deeper prefill costs little. With a loop adapter it raises
-accuracy at a fixed decode depth up to two to four prefill loops, beyond distilling the model to that depth. On long
-chain-of-thought answers, a second decode loop still buys more per second.
+accuracy at a fixed decode depth until two to four prefill loops, more than distilling the model to that depth does,
+and at one decode loop it is ahead at equal measured time. On long chain-of-thought answers, a second decode loop
+still buys more per second.
 
 \section*{Limitations}
 \label{sec:limits}
@@ -259,8 +260,8 @@ grows. Applied at every decode step, the adapter's maps and a second attention c
 generated token than the original model at batch 1; folding the maps into the prompt cache removes this cost but
 stores one prompt cache per decode loop, as the original model does at $n$ loops. The depth sweep and the batch-32
 estimate use the per-step form. The prefill depth is chosen per benchmark, not routed per prompt. The prefill loops stay frozen, so the gain might
-stop later if they were trained for deeper use as well. Deeper prefill hurts few-shot MATH-500 and
-exact recall in HELMET (34 items). Models are 2.6B with four native loops (1.4B, a 9B hybrid and decision models in the appendix);
+stop later if they were trained for deeper use as well. Deeper prefill does not help few-shot MATH-500 or
+exact recall in HELMET (34 items). Models are 2.6B with four loops (1.4B, a 9B hybrid and decision models in the appendix);
 benchmarks are English.
 
 \FloatBarrier
