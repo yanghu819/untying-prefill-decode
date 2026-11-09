@@ -396,6 +396,7 @@ def keys():
     ks |= {abl_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("S41", "S42")}
     ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42")}
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
+    ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
     ks |= {k for _, k, _ in REPRO}
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
@@ -1133,6 +1134,30 @@ def depth_sweep():
     return out
 
 
+def sweep14_key(bench, m, n):
+    """Ouro-1.4B depth sweep (sweep_depth.sh MP=model-1.4b P=O14, adapter O14-a-universal trained on m <= 4): runs
+    O14-a<m>x<n>-<task> and RULER O14-a<m>x<n>f, every m including 1-4."""
+    return main_key(bench, "aligned", f"a{m}x{n}").replace("X26-", "O14-", 1)
+
+
+def depth_sweep_14():
+    """Appendix: Section 4's sweep on Ouro-1.4B (same benchmarks and protocol as the Ouro-2.6B sweep)."""
+    out = []
+    for n in (1, 2):
+        for b in MAIN_BENCH:
+            sets = {m: load(sweep14_key(b, m, n)) for m in SWEEP_M}
+            sets = {m: v for m, v in sets.items() if v}
+            full = max((len(v) for v in sets.values()), default=0)
+            sets = {m: v for m, v in sets.items() if len(v) >= 0.95 * full}
+            if len(sets) < 2:
+                continue
+            ids = set.intersection(*(set(v) for v in sets.values()))
+            row = dict(n=n, bench=b, items=len(ids), quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
+            out.append(row)
+            print(f"Depth 1.4B   n={n} {b:16s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+    return out
+
+
 def batch_time(batches=(8, 32, 64)):
     """Section 5 at batch > 1: estimated time per request = its measured prefill time (batch 1) + its measured output
     tokens x the decode time per step at batch B (tput_batch.sh, prompt length 512 or 1,536, whichever is nearer the
@@ -1665,7 +1690,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_sweep_14=depth_sweep_14(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
