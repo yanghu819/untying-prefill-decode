@@ -348,3 +348,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Table 1 Ours rows are the pre-set m=4, not a per-task best m.
 - Also 0.3x LR: X26-D48f-p2d2-lr0.3 (a1 GPUs 5,6), X26-E48f-p1d1-lr0.3 (a2 GPUs 1,3): Distilled gets an LR sweep {0.3, 1, 3}; the adapter keeps its single untuned LR.
 - Strongest baseline also tuned: rank-80 Distilled 2/2 at 3x LR (X26-D48fr80-p2d2-lr3, a1 GPUs 0,7).
+- Aligned LoRA-only control (X26lo: aligned layout, all (m,n) pairs, maps frozen at identity): avg 55.0 (4/1), 66.8
+  (4/2) vs Ours 56.8 / 67.2; at 4/1 the ten non-RULER benchmarks move by <= 2.8 points, RULER-16K 49.8 vs 64.7
+  (-14.9). The maps are what keep one all-pairs adapter good on long prompts (prefill-4-only LoRA: 58.3). Method's
+  ablation sentence now uses this aligned control; Table 1 has the row "Ours 4/n, maps frozen".
+- Ouro-1.4B sweep complete: best m is 3 or 4 on 13 of 18 settings, lower beyond; BBH n=1 collapses at m>=2 (known
+  1.4B early stop), code 0 at m=16. Section 4 sentence + Appendix table (tab_depth14).
+- Body trimmed to 4 pages (intro roadmap sentence removed, HELMET sentence and Conclusion shortened).

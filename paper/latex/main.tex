@@ -70,9 +70,6 @@ If prefill is this cheap, a model could read the prompt with more loops than it 
 with a shallow decoder does in machine translation~\citep{deepshallow}, here within one looped model. The extra prefill
 loops would add little time, and fewer decode loops would save time on every token. It is not obvious that this works.
 A decoder with one loop may be unable to use the states of a deeper prefill, and any gain may stop after a few loops.
-Section~\ref{sec:time} measures where the time goes on different tasks, Section~\ref{sec:depth} increases the prefill
-depth until the gain stops, and Section~\ref{sec:budget} compares deeper prefill with other ways of spending the same
-time.
 
 Running the released model with more prefill than decode loops fails. With four prefill loops and one decode loop,
 Ouro-2.6B averages 26.6 points over 11 benchmarks, below the 44.2 it reaches with one loop for both
@@ -156,7 +153,8 @@ or three prefill loops on 11 of the 18 benchmark and decode-depth settings, at f
 HumanEval+ at one decode loop, MBPP+ at two) and at one on MATH-500; on the other two there is no stop within the
 evaluated depths. On the held-out half of
 GSM8K at one decode loop, this adapter reaches 47.0 at $m=2$ and 36.9 at $m=16$, against 32.3 at $m=16$ for the
-adapter trained on $m\le4$. The stop marks where the gain ends on these depths, not a proven ceiling.
+adapter trained on $m\le4$. The stop marks where the gain ends on these depths, not a proven ceiling. On Ouro-1.4B
+the best prefill depth is three or four on 13 of 18 settings, with lower accuracy beyond (Appendix~\ref{app:depth14}).
 
 With the maps folded into the prompt cache (Section~\ref{sec:method}), time per request grows by 16\% from $m=1$ to
 $m=4$ at one decode loop on the four timed tasks, almost all of it because answers get longer (276 to 319 output
@@ -180,8 +178,8 @@ Ours $4/n$ is above Original and Distilled $n/n$ (Table~\ref{tab:avg}). This hol
 many trainable parameters (rank 80) and when benchmark items whose text overlaps the training data are left out
 (Appendix~\ref{app:training}). A plain LoRA trained only at prefill four, with the maps fixed at the identity, does as
 well at that depth. What the maps and the training over all $(m,n)$ pairs add is one set of weights for every pair,
-which the sweep of Section~\ref{sec:depth} needs, and better long-context retrieval at one decode loop (RULER-16K 64.7
-against 58.3).
+which the sweep of Section~\ref{sec:depth} needs, and long-context retrieval at one decode loop (RULER-16K 64.7
+against 58.3, and 49.8 when the same all-pairs LoRA is trained without maps).
 
 Equal decode loops do not mean equal time. Figure~\ref{fig:budget} places the configurations on the measured time of
 the same requests, with the adapter's maps folded into the prompt cache; decode time per token is then within 10\% of
@@ -191,9 +189,8 @@ $m=1$ to $m=4$). On the four chain-of-thought tasks, Ours 4/1 scores 41.2 in 11.
 decode loops, Ours 4/2 (59.0 in 17.2\,s; 3/2: 59.5 in 16.1\,s), Distilled 2/2 (58.5 in 16.1\,s; rank 80: 60.5 in
 15.5\,s) and the prefill-4 LoRA (59.5 in 15.5\,s) are within noise of each other on 400 requests. At batch 32 (estimated, per-step
 maps) a second decode loop still buys more (Figure~\ref{fig:budget32}). Long prompts with short answers lead to the
-same conclusion. On the 1,107 HELMET requests of Ouro-2.6B-Thinking, Ours 4/2 scores 59.1 in 2.10\,s, above Original
-2/2 (44.0 in 1.37\,s) and Distilled 2/2 (54.2 in 1.31\,s), but with 15-token answers extra decode loops cost little,
-and Original 4/4 reaches 65.7 in 2.33\,s.
+same conclusion: on 1,107 HELMET requests (Ouro-2.6B-Thinking, 15-token answers), Ours 4/2 scores 59.1 in 2.10\,s,
+above Original 2/2 (44.0, 1.37\,s) and Distilled 2/2 (54.2, 1.31\,s), but Original 4/4 reaches 65.7 in 2.33\,s.
 
 
 
@@ -231,9 +228,9 @@ the last prefill loop's cache uses less memory and is slightly less accurate (Ta
 answer tokens, over 48M tokens of reasoning, instruction, long-context and web data, with one $(m,n)$ pair sampled per
 micro-batch (Appendix~\ref{app:training}).
 
-\paragraph{Ablations and limits.} In the one-cache variant, freezing the maps at the identity barely changes MMLU and
-GSM8K but costs 11.4 points on RULER-16K at 4/1, so the maps matter mainly for long prompts
-(Appendix~\ref{sec:ablation}). Deeper prefill does not help everywhere. On 4-shot MATH-500 one prefill loop is best:
+\paragraph{Ablations and limits.} Training the same adapter with the maps frozen at the identity changes ten of the 11
+benchmarks by at most 2.8 points at 4/1 but costs 14.9 on RULER-16K (Table~\ref{tab:main}), so the maps matter mainly
+for long prompts. Deeper prefill does not help everywhere. On 4-shot MATH-500 one prefill loop is best:
 34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. Without the exemplars four prefill loops
 are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two (Appendix~\ref{app:eval}). Exact recall in HELMET does not improve either (Appendix~\ref{app:hurt}).
 
@@ -249,9 +246,8 @@ SwiftKV~\citep{swiftkv} puts less. More in Appendix~\ref{app:related}.
 \section{Conclusion}
 
 Generation with a looped model is almost all decoding, so deeper prefill costs little. With a loop adapter it raises
-accuracy at a fixed decode depth until two to four prefill loops, more than distilling the model to that depth does,
-and at one decode loop it is ahead at equal measured time. On long chain-of-thought answers, a second decode loop
-still buys more per second.
+accuracy at a fixed decode depth until two to four prefill loops, more than distillation does, and at one decode loop
+it leads at equal measured time. On long chain-of-thought answers a second decode loop buys more.
 
 \section*{Limitations}
 \label{sec:limits}

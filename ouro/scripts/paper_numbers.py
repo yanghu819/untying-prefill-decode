@@ -883,7 +883,7 @@ MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 
 
 
 # quoted in the abstract, introduction and Section 4.2
-MAIN_AVG = {"distilled r80 1/1": 50.2, "distilled r80 2/2": 65.4, "fixed-4 LoRA 4/1": 57.1, "fixed-4 LoRA 4/2": 67.3, "native 1/1": 44.2, "LoRA-distilled 1/1": 49.8, "loop adapter 4/1": 56.4, "native 2/2": 63.0,
+MAIN_AVG = {"aligned LoRA-only 4/1": 55.0, "aligned LoRA-only 4/2": 66.8, "distilled r80 1/1": 50.2, "distilled r80 2/2": 65.4, "fixed-4 LoRA 4/1": 57.1, "fixed-4 LoRA 4/2": 67.3, "native 1/1": 44.2, "LoRA-distilled 1/1": 49.8, "loop adapter 4/1": 56.4, "native 2/2": 63.0,
             "LoRA-distilled 2/2": 65.3, "loop adapter 4/2": 66.4, "native 4/4": 70.2,
             "training-free 4/1": 26.6, "training-free 4/2": 30.9, "aligned adapter 4/1": 56.8, "aligned adapter 4/2": 67.2}
 MAIN_CELLS = {("MMLU", "native 1/1"): 51.5, ("MMLU", "loop adapter 4/1"): 66.6, ("BBH 3-shot", "native 1/1"): 30.9,
@@ -891,7 +891,8 @@ MAIN_CELLS = {("MMLU", "native 1/1"): 51.5, ("MMLU", "loop adapter 4/1"): 66.6, 
               ("HumanEval+", "loop adapter 4/1"): 64.6, ("GSM8K", "training-free 4/2"): 11.7,
               ("GSM8K", "loop adapter 4/2"): 66.7, ("MMLU", "aligned adapter 4/1"): 67.1,
               ("BBH 3-shot", "aligned adapter 4/1"): 52.7, ("HumanEval+", "aligned adapter 4/1"): 65.2,
-              ("GSM8K", "aligned adapter 4/1"): 45.0}
+              ("GSM8K", "aligned adapter 4/1"): 45.0, ("RULER-16K", "aligned LoRA-only 4/1"): 49.8,
+              ("RULER-16K", "aligned adapter 4/1"): 64.7, ("RULER-16K", "fixed-4 LoRA 4/1"): 58.3}
 
 
 def main_key(bench, kind, c, model="Ouro-2.6B"):
@@ -1160,6 +1161,9 @@ def depth_sweep_14():
             row = dict(n=n, bench=b, items=len(ids), quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
             out.append(row)
             print(f"Depth 1.4B   n={n} {b:16s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items()))
+    best = [max(r["quality"], key=r["quality"].get) for r in out]
+    got = (sum(m in (3, 4) for m in best), len(best))
+    print(f"Depth 1.4B   best m in (3, 4): {got}" + ("" if got == (13, 18) else "  !! paper: (13, 18)"))   # Section 4
     return out
 
 
@@ -1398,6 +1402,10 @@ def main_table():
             print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
                   + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}
+    if all(T[b]["aligned LoRA-only 4/1"] is not None for b in MAIN_BENCH):   # Section 6: maps frozen vs Ours at 4/1
+        d = {b: T[b]["aligned adapter 4/1"] - T[b]["aligned LoRA-only 4/1"] for b in MAIN_BENCH}
+        got = (round(max(abs(v) for b, v in d.items() if b != "RULER-16K"), 1), round(d["RULER-16K"], 1))
+        print(f"Main table   maps frozen at 4/1: max |diff| off RULER, RULER gap {got}" + ("" if got == (2.8, 14.9) else "  !! paper: (2.8, 14.9)"))
     for (bench, label), want in MAIN_CELLS.items():
         got = T[bench][label]
         if got is None or abs(got - want) > 0.051:
