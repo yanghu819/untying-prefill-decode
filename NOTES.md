@@ -368,3 +368,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Maps-frozen control seed 3 (SEED=3 launch_variant.sh lora, X26-a-lora-s3, a1 GPUs 4,5).
 - Prefill-4 LoRA seed 3 (SEED=3 launch_variant.sh fixed4, X26-a-fixed4-lora-s3, a1 GPUs 1,7).
 - Wide adapter seed 2 (SEED=2 launch_variant.sh wide, X26-a-wide-s2, 32 cells m<=16, a2 GPUs 0,2); its depth sweep (X26ws2-*) runs after training via sweep_depth.sh.
+- Wide adapter seed 3 (X26-a-wide-s3, a1 GPUs 0,3,6).
