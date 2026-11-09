@@ -47,8 +47,8 @@ inference time goes on tasks with short and long inputs and outputs. We then ada
 with $n$ loops can read the prompt states of any prefill depth $m$, and vary $m$ from 1 to 16 with one and two decode
 loops. On Ouro-2.6B with one decode loop, four prefill loops instead of one raise accuracy on four chain-of-thought
 benchmarks from 31.2 to 41.2 for 16\% more time per request, measured on the same requests and the same weights.
-Over 11 benchmarks the average rises from 47.2 to 56.8, and the gain stops at two to four prefill loops, also
-for an adapter trained on prefill depths up to 16. At the
+Over 11 benchmarks the average rises from 47.2 to 56.8, and on most benchmarks the gain stops at two to four
+prefill loops, also for an adapter trained on prefill depths up to 16. At the
 same number of decode loops, the adapted model is more accurate than the original model and than models distilled to
 that decode depth on the same data, and at one decode loop also at the same measured time (41.2 against 27.0 in about
 11 seconds per request). A second decode loop buys more, though: the original model at two loops scores 56.8 in 15.7
@@ -152,8 +152,9 @@ from 64.7 to 39.9, while MMLU-Pro still rises to 48.1 at $m=6$ before falling to
 deep states, but one trained on prefill depths up to 16 (dashed) shows a similar shape. To place the end of the gain,
 we take on one half of each benchmark the first depth that none of the next three depths beats by more than 0.5
 points, and report the other half (Appendix~\ref{app:plateau}). For the adapter trained up to 16 this stop is at two
-or three prefill loops on 10 of the 18 benchmark and decode-depth settings, at five on MMLU-Pro with one decode loop
-and at one on MATH-500; on the other five there is no stop within the evaluated depths. On the held-out half of
+or three prefill loops on 11 of the 18 benchmark and decode-depth settings, at four or five on three (MMLU-Pro and
+HumanEval+ at one decode loop, MBPP+ at two) and at one on MATH-500; on the other two there is no stop within the
+evaluated depths. On the held-out half of
 GSM8K at one decode loop, this adapter reaches 47.0 at $m=2$ and 36.9 at $m=16$, against 32.3 at $m=16$ for the
 adapter trained on $m\le4$. The stop marks where the gain ends on these depths, not a proven ceiling.
 
@@ -316,8 +317,8 @@ next three sampled depths beats by more than 0.5 points on a development half of
 id); the accuracy at $m^\ast$ and at the deepest evaluated depth is reported on the other half
 (Table~\ref{tab:plateau}). The rule has no interval or equivalence test. Settings where no evaluated depth meets it,
 because accuracy still rises or too few deeper depths were evaluated, are left out: for the main adapter MMLU,
-MMLU-Pro, BBH and ARC-C at $n=1$, MMLU-Pro and ARC-C at $n=2$, and HellaSwag and Winogrande at both; for the adapter trained up to 16, HumanEval+ at
-$n=1$ and MMLU-Pro, ARC-C, HumanEval+ and MBPP+ at $n=2$.
+MMLU-Pro, BBH and ARC-C at $n=1$, MMLU-Pro and ARC-C at $n=2$, and HellaSwag and Winogrande at both; for the adapter trained up to 16, MMLU-Pro and ARC-C at
+$n=2$.
 
 \begin{table}[h]
 \centering\small

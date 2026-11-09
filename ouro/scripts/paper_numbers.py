@@ -1232,15 +1232,16 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
         print(f"Plateau      {adapter} left out {sorted(omitted)}  !! paper: {sorted(PLATEAU_OMITTED[adapter])}")
     stops = [r["m_star"] for r in out]
     counts = (len(out) + len(omitted), sum(m in (2, 3) for m in stops))
-    if adapter == "wide" and counts != (18, 10):   # Section 4: "10 of the 18 settings"
-        print(f"Plateau      wide settings, stops at 2-3: {counts}  !! paper: (18, 10)")
+    deep = sum(m in (4, 5) for m in stops)
+    if adapter == "wide" and (*counts, deep) != (18, 11, 3):   # Section 4: "11 of the 18 settings", "four or five on three"
+        print(f"Plateau      wide settings, stops at 2-3, at 4-5: {(*counts, deep)}  !! paper: (18, 11, 3)")
     return out
 
 
 # Appendix C: settings without a stopping depth (accuracy still rising or too few deeper depths), (n, benchmark)
 PLATEAU_OMITTED = {"m<=4": {(1, "MMLU"), (1, "MMLU-Pro"), (1, "BBH 3-shot"), (1, "ARC-C"), (2, "MMLU-Pro"), (2, "ARC-C"),
                             (1, "HellaSwag"), (2, "HellaSwag"), (1, "Winogrande"), (2, "Winogrande")},
-                   "wide": {(1, "HumanEval+"), (2, "MMLU-Pro"), (2, "ARC-C"), (2, "HumanEval+"), (2, "MBPP+")}}
+                   "wide": {(2, "MMLU-Pro"), (2, "ARC-C")}}
 
 
 THINK_SWEEP = [("GSM8K", "T:T26-{c}-gsm8k_think:math_verify"), ("ARC-C", "L:T26x-{c}-arc:acc_norm"), ("BBH", "L:T26x-{c}-bbh:exact_match"),

@@ -326,3 +326,9 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   per-step maps) dropped, Figure 3 is the only quality-time figure. Open: the maps' value under the aligned layout
   (X26-a-lora on a1 is exactly the requested control); per-task frontier under fixed budgets (possible appendix).
 - Distilled 2/2 over three seeds (D48f, s2, s3): 65.3 / 65.0 / 65.0, mean 65.1 s.d. 0.2, vs Ours 4/2 67.1 s.d. 0.2: the 2-point gap is ten seed s.d. (Table 1 caption).
+- Wide adapter HumanEval+/MBPP+ sweep cells were unscored until 11-09 (score_evalplus_all.sh); with them the plateau
+  rule gives 11 of 18 settings at m*=2-3, three at 4-5 (MMLU-Pro n=1 5, HumanEval+ n=1 5, MBPP+ n=2 4), MATH-500 at 1,
+  no stop on MMLU-Pro / ARC-C n=2. Section 4, Appendix C and the guards updated; abstract says "on most benchmarks".
+- Ouro-1.4B depth sweep (O14-a<m>x<n>, adapter trained on m<=4), partial: n=1 peaks at m=3-4 and falls after (MMLU
+  42.8 -> 63.7 at m=3 -> 31.9 at m=16; ARC-C 45.4 -> 56.3 at m=4 -> 35.6); BBH collapses at m>=2 (known 1.4B early stop
+  under arm a); code is 0 at m=16 (format breaks). n=2 still running.
