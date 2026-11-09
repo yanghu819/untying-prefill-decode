@@ -363,3 +363,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   4/2 4K +1.1, 8K +0.8, 16K +2.0 [+0.4,+3.6]. Vs prefill-4 LoRA: 4/1 16K +6.4, 4K/8K within 0.5. The maps matter only
   for the longest prompts at one decode loop; Method says so (guard 1.4).
 - LR check so far: Distilled 1/1 x3 = 50.1 vs x1 49.8 (rank 80: 50.2); others pending.
+- Prefill-4 LoRA seed 2 (SEED=2 launch_variant.sh fixed4, X26-a-fixed4-lora-s2, a2 GPUs 1,3; evals X26f4s2-a4<n>-*).
