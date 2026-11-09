@@ -359,3 +359,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Red team round 4 (Codex): 3/5 borderline (was 2/5). Fixed: rank-80 'about as many' parameters (62.9M vs 63.3M), both MATH-500 settings at m*=1, three sentences rewritten. Queued RULER-4K/8K for the maps-frozen control (maps' benefit beyond RULER-16K). Open: LR-tuned Distilled (running); training prefill across depths (Limitations).
 - Ours also gets the LR check: X26-a-lr3 (main aligned adapter, LR x3; a2 GPUs 4,6; evals X26alr3-a4<n>-*). Early Distilled 1/1 x3 vs x1: GSM8K 39.1 vs 40.4, Winogrande 65.9 vs 66.5, MMLU 53.7 vs 52.7 (no clear gain).
 - Ours at 0.3x LR: X26-a-lr0.3 (a2 GPUs 7,5). Ours and Distilled both get LR in {0.3, 1, 3}.
+- Maps by RULER length (Ours vs maps frozen, aligned): 4/1 4K -0.1, 8K +1.4 [-0.6,+3.2], 16K +14.9 [+11.8,+18.1];
+  4/2 4K +1.1, 8K +0.8, 16K +2.0 [+0.4,+3.6]. Vs prefill-4 LoRA: 4/1 16K +6.4, 4K/8K within 0.5. The maps matter only
+  for the longest prompts at one decode loop; Method says so (guard 1.4).
+- LR check so far: Distilled 1/1 x3 = 50.1 vs x1 49.8 (rank 80: 50.2); others pending.

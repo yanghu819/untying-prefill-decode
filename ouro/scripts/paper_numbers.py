@@ -120,7 +120,8 @@ CMP += [
       for n in (1, 2) for k, t in (("4-shot", "math"), ("0-shot", "math0shot"))],
     # the maps by context length, aligned layout: Ours vs the same all-pairs LoRA with frozen maps (X26lo) and vs the
     # prefill-4-only LoRA with identity maps (X26f4); RULER at 4K, 8K, 16K
-    *[("Maps by length", f"{c} RULER-{k}K Ours vs {name}", ruler(f"X26-{c}", k), ruler(f"{pre}-{c}", k), None)
+    *[("Maps by length", f"{c} RULER-{k}K Ours vs {name}", ruler(f"X26-{c}", k), ruler(f"{pre}-{c}", k),
+       (14.9, 11.8, 18.1) if (c, k, pre) == ("a41", 16, "X26lo") else None)
       for c in ("a41", "a42") for k in (4, 8, 16) for name, pre in (("maps frozen", "X26lo"), ("prefill-4 LoRA", "X26f4"))],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
@@ -1408,6 +1409,11 @@ def main_table():
             print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
                   + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}
+    short = [boot(load(ruler(f"X26-{c}", k)), load(ruler(f"X26lo-{c}", k)))["diff"] for c in ("a41", "a42") for k in (4, 8)
+             if load(ruler(f"X26-{c}", k)) and load(ruler(f"X26lo-{c}", k))]
+    if len(short) == 4:   # Section 6: maps frozen vs Ours at 4K and 8K, both decode depths
+        got = round(max(abs(x) for x in short), 1)
+        print(f"Main table   maps frozen at RULER 4K/8K: max |diff| {got}" + ("" if got == 1.4 else "  !! paper: 1.4"))
     if all(T[b]["aligned LoRA-only 4/1"] is not None for b in MAIN_BENCH):   # Section 6: maps frozen vs Ours at 4/1
         d = {b: T[b]["aligned adapter 4/1"] - T[b]["aligned LoRA-only 4/1"] for b in MAIN_BENCH}
         got = (round(max(abs(v) for b, v in d.items() if b != "RULER-16K"), 1), round(d["RULER-16K"], 1))
