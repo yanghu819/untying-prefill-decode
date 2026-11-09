@@ -355,3 +355,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Ouro-1.4B sweep complete: best m is 3 or 4 on 13 of 18 settings, lower beyond; BBH n=1 collapses at m>=2 (known
   1.4B early stop), code 0 at m=16. Section 4 sentence + Appendix table (tab_depth14).
 - Body trimmed to 4 pages (intro roadmap sentence removed, HELMET sentence and Conclusion shortened).
+- Distilled 1/1 over three seeds: 49.8 / 49.4 / 50.0, mean 49.7 s.d. 0.3 (Ours 4/1 56.7 s.d. 0.1). Table 1 caption.
