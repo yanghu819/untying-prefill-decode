@@ -123,6 +123,8 @@ CMP += [
     *[("Maps by length", f"{c} RULER-{k}K Ours vs {name}", ruler(f"X26-{c}", k), ruler(f"{pre}-{c}", k),
        (14.9, 11.8, 18.1) if (c, k, pre) == ("a41", 16, "X26lo") else None)
       for c in ("a41", "a42") for k in (4, 8, 16) for name, pre in (("maps frozen", "X26lo"), ("prefill-4 LoRA", "X26f4"))],
+    *[("Maps by length", f"{c} RULER-16K Ours vs maps frozen, seed 2", ruler(f"X26-{c}", 16), ruler(f"X26los2-{c}", 16), None)
+      for c in ("a41", "a42")],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
@@ -402,6 +404,7 @@ def keys():
     ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42", "a11", "a12")}
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
+    ks |= {main_key(b, "loraonly", c).replace("X26lo-", "X26los2-", 1) for b in MAIN_BENCH for c in ("a41", "a42")}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {main_key(b, "aligned", c).replace("X26-", f"X26a{v}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for v in ("lr0.3", "lr3")}
     ks |= {k for _, k, _ in REPRO}
@@ -1411,6 +1414,8 @@ def main_table():
                  for label, kind, c in MAIN_ROWS if kind in ("cell", "aligned")}
         seeds.update({label: [load(dist_seed_key(bench, c, sd)) for sd in DIST_SEEDS[c]]
                       for label, kind, c in MAIN_ROWS if kind == "dist"})
+        seeds.update({label: [load(main_key(bench, kind, c).replace("X26lo-", "X26los2-", 1))]
+                      for label, kind, c in MAIN_ROWS if kind == "loraonly"})   # maps-frozen control, seed 2
         full = float(np.median([len(v) for v in sets.values() if v])) if any(sets.values()) else 0   # typical item count
         sets = {label: (v if v and len(v) >= 0.95 * full else None) for label, v in sets.items()}   # unfinished runs wait
         seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}
@@ -1427,7 +1432,7 @@ def main_table():
         flag = "  !! paper: " + str(want) if want is not None and (avg is None or abs(avg - want) > 0.051) else ""
         print(f"Main table   {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
               + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
-    for label in [l for l, kind, _ in MAIN_ROWS if kind in ("cell", "aligned", "dist")]:
+    for label in [l for l, kind, _ in MAIN_ROWS if kind in ("cell", "aligned", "dist", "loraonly")]:
         per_seed = list(zip(*[r[f"{label} seeds"] for r in out]))
         avgs = [None if None in v else float(np.mean(v)) for v in per_seed]
         if None not in avgs:
