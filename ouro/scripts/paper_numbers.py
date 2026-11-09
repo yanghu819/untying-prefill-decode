@@ -123,8 +123,8 @@ CMP += [
     *[("Maps by length", f"{c} RULER-{k}K Ours vs {name}", ruler(f"X26-{c}", k), ruler(f"{pre}-{c}", k),
        (14.9, 11.8, 18.1) if (c, k, pre) == ("a41", 16, "X26lo") else None)
       for c in ("a41", "a42") for k in (4, 8, 16) for name, pre in (("maps frozen", "X26lo"), ("prefill-4 LoRA", "X26f4"))],
-    *[("Maps by length", f"{c} RULER-16K Ours vs maps frozen, seed 2", ruler(f"X26-{c}", 16), ruler(f"X26los2-{c}", 16), None)
-      for c in ("a41", "a42")],
+    *[("Maps by length", f"{c} RULER-16K Ours vs maps frozen, seed {sd}", ruler(f"X26-{c}", 16), ruler(f"X26los{sd}-{c}", 16), None)
+      for c in ("a41", "a42") for sd in (2, 3)],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
@@ -404,7 +404,7 @@ def keys():
     ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42", "a11", "a12")}
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
-    ks |= {main_key(b, "loraonly", c).replace("X26lo-", "X26los2-", 1) for b in MAIN_BENCH for c in ("a41", "a42")}
+    ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {main_key(b, "aligned", c).replace("X26-", f"X26a{v}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for v in ("lr0.3", "lr3")}
     ks |= {k for _, k, _ in REPRO}
@@ -1414,8 +1414,8 @@ def main_table():
                  for label, kind, c in MAIN_ROWS if kind in ("cell", "aligned")}
         seeds.update({label: [load(dist_seed_key(bench, c, sd)) for sd in DIST_SEEDS[c]]
                       for label, kind, c in MAIN_ROWS if kind == "dist"})
-        seeds.update({label: [load(main_key(bench, kind, c).replace("X26lo-", "X26los2-", 1))]
-                      for label, kind, c in MAIN_ROWS if kind == "loraonly"})   # maps-frozen control, seed 2
+        seeds.update({label: [load(main_key(bench, kind, c).replace("X26lo-", f"X26los{sd}-", 1)) for sd in (2, 3)]
+                      for label, kind, c in MAIN_ROWS if kind == "loraonly"})   # maps-frozen control, seeds 2 and 3
         full = float(np.median([len(v) for v in sets.values() if v])) if any(sets.values()) else 0   # typical item count
         sets = {label: (v if v and len(v) >= 0.95 * full else None) for label, v in sets.items()}   # unfinished runs wait
         seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}
