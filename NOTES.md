@@ -357,3 +357,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Body trimmed to 4 pages (intro roadmap sentence removed, HELMET sentence and Conclusion shortened).
 - Distilled 1/1 over three seeds: 49.8 / 49.4 / 50.0, mean 49.7 s.d. 0.3 (Ours 4/1 56.7 s.d. 0.1). Table 1 caption.
 - Red team round 4 (Codex): 3/5 borderline (was 2/5). Fixed: rank-80 'about as many' parameters (62.9M vs 63.3M), both MATH-500 settings at m*=1, three sentences rewritten. Queued RULER-4K/8K for the maps-frozen control (maps' benefit beyond RULER-16K). Open: LR-tuned Distilled (running); training prefill across depths (Limitations).
+- Ours also gets the LR check: X26-a-lr3 (main aligned adapter, LR x3; a2 GPUs 4,6; evals X26alr3-a4<n>-*). Early Distilled 1/1 x3 vs x1: GSM8K 39.1 vs 40.4, Winogrande 65.9 vs 66.5, MMLU 53.7 vs 52.7 (no clear gain).
