@@ -6,6 +6,8 @@
 #           inside the training range; evaluated by sweep_depth.sh at every m (run names X26w-a<m>x<n>-<task>).
 #   fixed4: X26-a-fixed4-lora, prefill fixed at 4 (cells 4/1..4/4) and identity maps (--freeze-maps): the simple
 #           "deep prefill + LoRA" control; evaluated on the main-table benchmarks at 4/1 and 4/2 (X26f4-a4<n>-<task>).
+#   lr:     X26-a-lr<LRS>, the main adapter with the learning-rate schedule x LRS (env LRS), so Ours gets the same LR
+#           check as the Distilled baseline; main-table benchmarks at 4/1 and 4/2 (X26alr<LRS>-a4<n>-<task>).
 #   lora:   X26-a-lora, all 16 cells as the main adapter but identity maps (--freeze-maps): isolates the maps in the
 #           aligned layout (red-team round 2); main-table benchmarks at 4/1 and 4/2 (X26lo-a4<n>-<task>).
 W=$1; GPUS=$2; PORT=$3; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R
@@ -14,7 +16,8 @@ case $W in
         export OURO_CELLS=$(for m in 1 2 3 4 6 8 12 16; do for n in 1 2 3 4; do printf "%sx%s," $m $n; done; done | sed 's/,$//') ;;
   fixed4) N=X26-a-fixed4-lora; P=X26f4; FLAGS="--freeze-maps"; export OURO_CELLS=4x1,4x2,4x3,4x4 ;;
   lora) N=X26-a-lora; P=X26lo; FLAGS="--freeze-maps" ;;
-  *) echo "WHICH must be wide, fixed4 or lora"; exit 2 ;;
+  lr) N=X26-a-lr${LRS:?set LRS}; P=X26alr${LRS}; FLAGS=""; export OURO_LR_SCALE=$LRS ;;   # Ours at LR x LRS (tuning check)
+  *) echo "WHICH must be wide, fixed4, lora or lr"; exit 2 ;;
 esac
 [ -n "$SEED" ] && { N=$N-s$SEED; P=${P}s$SEED; FLAGS="$FLAGS --seed $SEED"; }   # env SEED: another training seed (X26-a-lora-s2, X26los2-...)
 [ -f $R/$N/TRAIN_DONE ] || [ -f $R/$N/checkpoint-48m.pt ] || \
