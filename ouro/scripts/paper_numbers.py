@@ -402,7 +402,7 @@ def keys():
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
-    ks |= {main_key(b, "aligned", c).replace("X26-", "X26alr3-", 1) for b in MAIN_BENCH for c in ("a41", "a42")}
+    ks |= {main_key(b, "aligned", c).replace("X26-", f"X26a{v}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for v in ("lr0.3", "lr3")}
     ks |= {k for _, k, _ in REPRO}
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
     ks |= {main_key(b, kind, c, "Ouro-1.4B") for b in MAIN_BENCH for _, kind, c in MAIN_ROWS}
@@ -1459,10 +1459,10 @@ def lr_check():
         out[c] = {v or "lr1": (None if None in q else round(float(np.mean(q)), 2)) for v, q in per.items()}
         print(f"LR check     Distilled {c}/{c}: " + "  ".join(f"{v} {'--' if a is None else f'{a:.1f}'}" for v, a in out[c].items()))
     for cell in ("a41", "a42"):   # Ours (aligned) at x1 and x3 (launch_variant.sh lr, runs X26alr3-a4<n>-*)
-        q = {v: [] for v in ("lr1", "lr3")}
+        q = {v: [] for v in ("lr1", "lr0.3", "lr3")}
         for b in MAIN_BENCH:
             k1 = main_key(b, "aligned", cell)
-            sets = {"lr1": load(k1), "lr3": load(k1.replace("X26-", "X26alr3-", 1))}
+            sets = {"lr1": load(k1), **{v: load(k1.replace("X26-", f"X26a{v}-", 1)) for v in ("lr0.3", "lr3")}}
             have = [x for x in sets.values() if x]
             ids = set.intersection(*(set(x) for x in have)) if have else set()
             full = max((len(x) for x in have), default=0)
