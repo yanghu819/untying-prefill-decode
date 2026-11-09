@@ -877,6 +877,7 @@ MAIN_ROWS = [("native 1/1", "native", 1), ("native 2/2", "native", 2), ("native 
              ("LoRA-distilled 1/1", "dist", 1), ("LoRA-distilled 2/2", "dist", 2),
              ("distilled r80 1/1", "dist80", 1), ("distilled r80 2/2", "dist80", 2),
              ("fixed-4 LoRA 4/1", "fixed4", "a41"), ("fixed-4 LoRA 4/2", "fixed4", "a42"),
+             ("aligned LoRA-only 4/1", "loraonly", "a41"), ("aligned LoRA-only 4/2", "loraonly", "a42"),
              ("loop adapter 4/1", "cell", "S41"), ("loop adapter 4/2", "cell", "S42"),
              ("aligned adapter 4/1", "aligned", "a41"), ("aligned adapter 4/2", "aligned", "a42")]
 
@@ -907,6 +908,10 @@ def main_key(bench, kind, c, model="Ouro-2.6B"):
         if model != "Ouro-2.6B":
             return f"L:none-{kind}-{c}:none"   # no such control for the other checkpoints: the row stays empty
         return main_key(bench, "aligned", c).replace("X26-", "X26f4-", 1)
+    if kind == "loraonly":   # aligned layout, all (m, n) pairs, maps frozen at the identity (launch_variant.sh lora, X26lo)
+        if model != "Ouro-2.6B":
+            return f"L:none-{kind}-{c}:none"
+        return main_key(bench, "aligned", c).replace("X26-", "X26lo-", 1)
     if kind in ("raw", "aligned") and model == "Ouro-2.6B":   # these runs are named X26-<cell>-<task> on Ouro-2.6B
         return key.replace("o26x-{c}", "X26-{c}").format(c=c)
     return key.format(c=c)

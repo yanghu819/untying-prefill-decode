@@ -347,3 +347,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Section 5 now quotes Ours 4/2 (the Table 1 configuration) first, 3/2 (best of Ours) in parentheses.
 - Table 1 Ours rows are the pre-set m=4, not a per-task best m.
 - Also 0.3x LR: X26-D48f-p2d2-lr0.3 (a1 GPUs 5,6), X26-E48f-p1d1-lr0.3 (a2 GPUs 1,3): Distilled gets an LR sweep {0.3, 1, 3}; the adapter keeps its single untuned LR.
+- Strongest baseline also tuned: rank-80 Distilled 2/2 at 3x LR (X26-D48fr80-p2d2-lr3, a1 GPUs 0,7).
