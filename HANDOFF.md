@@ -1,49 +1,41 @@
-# Handoff (2026-11-03)
+# Handoff (2026-11-09)
 
-For the next agent taking over *Untying Prefill and Decode Loops in Looped Language Models*. Read this file, then
-`NOTES.md` (lab log), `REPRODUCE.md` (result → script map) and `DEPRECATED.md`. Cluster addresses and login are
-**not** in this public repo: they are in `~/.b300-handoff/CLUSTER.md` on the user's Mac.
+For the next agent taking over *Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models*.
+Read this file, then `NOTES.md` (lab log), `REPRODUCE.md` (result -> script map) and `DEPRECATED.md`. Cluster addresses
+and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.md` on the user's Mac.
 
 ## 1. Where things stand
 
-- **Paper**: `paper/latex/main.tex` (ACL review format, anonymous). Body ends on page 7 (limit 8), 17 pages with
-  appendix. Codex's last review: weak accept. arXiv package builds (`paper/arxiv/arxiv.tar.gz`); **the user submits
-  it with their own account** (never submit or post in their name).
-- **Target**: ACL 2027 via ARR, deadline **2027-01-04 AoE**. `paper/ARR_CHECKLIST.md` has draft answers; its TODOs
-  (licenses, total GPU hours, AI-assistance wording, anonymous code link, preprint policy) need the user.
-- **Story (main text, one story only)**: a loop adapter makes prefill loops m and decode loops n independently
-  choosable on a frozen looped LM (one stored prompt KV cache).
-  1. The best m depends on the task (task map, Figure 1).
-  2. Choosing m per benchmark on held-out halves beats native n/n significantly on 12/13 benchmarks at n=1 and 10/13
-     at n=2 (Table 1; Ouro-1.4B: 5/5 and 3/5).
-  3. Thinking model: prefill 4 / decode 2 is close to native 4/4, above a LoRA-distillation control.
-  4. Fewer decode loops → 0.55× end-to-end time.
-  5. Looped decision models (Lev, Section 4.5): more prefill than decision loops beats a same-training control on 12/13
-     (m, n) pairs, fewer loses on all 13 (both directions, Table `tab:lev`). The user wants striking results in the
-     main text.
-  Appendix: Lev setup and checks, hybrid SenseNova-Loop-9B, seeds, design variants, prompt-format effects.
-- **In flight (2026-11-03)**:
-  - Same-training controls for Table 1: LoRA distillation of native 1/1, 2/2, 3/3 on base Ouro-2.6B
-    (`launch_x26_distill.sh`, runs `X26-{E,D,H}48-*`; E/D on a2, H on a1). `after_x26_distill.sh` queues their 13
-    benchmarks when training ends; `paper_numbers.py` `taskmap_select` then fills `distilled` / `diff_distilled`. Put
-    the result into Table 1 (a column or a second table), the abstract and Limitations — whatever it shows.
-  - Ouro-1.4B replication on 10 benchmarks (`queues/grid14b_q.txt`) and full GSM8K / MMLU / 1.4B RULER (`queues/fullsets_q.txt`) on
-    a1 `grid_worker.sh` queues. When done: add the new benchmarks to `TASK_MAP_14`, update the 1.4B counts and guards.
-  - Code benchmarks (HumanEval+, MBPP+) need a scoring pass after their lm-eval runs: `runs/score_evalplus_all.sh` on
-    each box scores every run without evalplus_*_chat.jsonl (2026-11-08: 42 unscored runs found and scored).
-  - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (looping every 2 h on each box, log /root/pn/backup-BOX.log) to
-    the private ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
-  - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]` (exports on both boxes, merges into
-    `ouro/results/items`, runs numbers/figures/LaTeX/arXiv on a2 and copies outputs back).
-- **Next, in order of value** (user 2026-11-05..07: mainstream experiments only, every GPU busy (use spare cards for
-  re-verification), keep auditing the paper, more verified citations, detailed fact checks, better figures):
-  1. Aligned loop adapter (arm a) is the main method. Pending: T26-a evals (eval_think_aligned.sh) -> switch Figures 4/6
-     and the Thinking text to aligned; O14-a evals -> Ouro-1.4B appendix; seeds 2/3 -> Table 1 mean +- s.d.; full
-     aligned map -> appendix map; throughput of the aligned layout (n prompt caches) -> state the memory/speed trade.
-  2. Story checks still open: Lev with aligned caches (Lev-3B diagonal), 1.4B BBH early stop under arm a, MATH 4-shot
-     exemplar effect under arm a.
-  3. verify_q.sh re-runs: compare item-level with the originals (write ouro/scripts/verify_compare.py).
-  4. ARR checklist TODOs with the user -> anonymized code mirror -> final polish. The user submits to arXiv.
+- **Paper**: `paper/latex/main.tex`, restructured on the advisor's review (2026-11-07) into a **4-page arXiv paper**
+  (body = Introduction..Conclusion must end on page 4; Limitations, references and appendix follow). The user submits
+  to arXiv personally (never submit or post in their name).
+- **Story (advisor order)**: (1) where the time goes: prefill 0.1-3% of time on chain-of-thought tasks (Figure 1);
+  (2) prefill depth at fixed decode depth, same weights, m = 1..16: 11-bench average 47.2 -> 56.8 at n=1, gain stops
+  at 2-4 loops on most benchmarks, also for an adapter trained to m=16, on Ouro-2.6B-Thinking and on Ouro-1.4B
+  (Figure 2, Appendix C/D); (3) same measured budget (two clean timing passes, maps folded into the prompt cache):
+  at n=1 Ours 4/1 beats Original 1/1 and Distilled 1/1 at equal time, a second decode loop buys more on long CoT, at
+  n=2 Ours / Distilled / prefill-4 LoRA are within noise (Figure 3, Table 1); (4) method: aligned loop adapter
+  (Ours); maps matter for long prompts (frozen maps: RULER-16K 64.7 -> 49.8); exceptions: 4-shot MATH-500 (0-shot
+  reverses it), HELMET exact recall. Naming: Original / Distilled / Ours, "m/n".
+- **Seeds in Table 1 caption**: Ours 56.7+-0.1 / 67.1+-0.2, Distilled 2/2 65.1+-0.2 (3 seeds each).
+- **Guards**: every number quoted in the text is checked in `ouro/scripts/paper_numbers.py` (`!!` lines); the pipeline
+  must print "0 printed values differ" and no `!!`.
+- **In flight (2026-11-09)**:
+  - Baseline tuning (user: "没有压低baseline"): Distilled 1/1 and 2/2 at 0.3x and 3x learning rate, rank 80 at 3x
+    (`LRS=... RANK=... launch_x26_distill.sh`, runs `X26-{E,D}48f[r80]-*-lr{0.3,3}`, a1 and a2). `lr_check()` prints
+    their averages; if any variant beats the 1x control, use it as the Distilled baseline (Table 1, Section 5).
+  - Distilled 1/1 seed 3 (`X26-E48f-p1d1-s3`, evals nearly done) -> Distilled 1/1 mean+-s.d. in the Table 1 caption.
+  - Maps-frozen aligned control seed 2 (`SEED=2 launch_variant.sh lora`, `X26-a-lora-s2`, a1 GPUs 1,4).
+  - Code benchmarks need `runs/score_evalplus_all.sh` on each box after their lm-eval runs.
+  - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (every 2 h, log /root/pn/backup-BOX.log) to the private
+    ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
+  - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]`.
+- **Operational lessons (2026-11-09)**: queues are per box; before moving queue lines between boxes check that every
+  checkpoint they use exists on the target. `grid_worker.sh GPU Q MAX` only starts a job when the GPU has fewer than
+  MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle.
+- **Next, in order of value**: (1) fold the LR check, Distilled 1/1 seeds and the frozen-maps seed into Table 1 /
+  Section 5 / Section 6; (2) final red-team round and repeated de-AI readability passes on the 4-page body;
+  (3) regenerate provenance, verify the bib once more, build the arXiv package; (4) ARR checklist TODOs with the user.
 
 ## 2. The user's rules (all still in force)
 
