@@ -214,11 +214,11 @@ Table~\ref{tab:main}.}
 
 In the original model, a decoder with $n$ loops only ever reads prompt states produced by the same $n$ loops. After a
 deeper prefill, the prompt keys and values come from loops the decoder has never seen, and the frozen model fails
-(Table~\ref{tab:avg}, training-free). The loop adapter (Figure~\ref{fig:method} in Appendix~\ref{app:method}) has three parts. Rank-16
-LoRA~\citep{lora} on the decoder's attention projections lets a shallow decoder use deeper states. A map for each decode
-loop, layer and KV head transforms the prompt cache that loop reads. The key map is one complex scale per rotary
-frequency pair; it commutes with RoPE~\citep{rope}, so it is applied to the query instead. The value map is linear and
-is applied to the attention output. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$, so at $m=n$ every decode loop
+(Table~\ref{tab:avg}, training-free). The loop adapter (Figure~\ref{fig:method} in Appendix~\ref{app:method}) has three parts: rank-16
+LoRA~\citep{lora} on the decoder's attention projections, and a key map and a value map for each decode loop, layer
+and KV head, which transform the prompt cache that loop reads. The key map is one complex scale per rotary frequency
+pair; it commutes with RoPE~\citep{rope}, so it can be applied to the query. The value map is linear and is applied
+to the attention output. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$, so at $m=n$ every decode loop
 reads the cache the original model would read. Both maps can also be folded into the prompt cache once at prefill,
 one mapped copy per decode loop; decoding then runs the original model's attention, and we time this form. A variant that keeps only
 the last prefill loop's cache uses less memory and is slightly less accurate (Table~\ref{tab:avg}). The adapter has
