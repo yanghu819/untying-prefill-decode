@@ -367,3 +367,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - LR check, Distilled 1/1 (11-bench avg): x0.3 49.2, x1 49.8, x3 50.1, rank 80 50.2, rank 80 x3 50.0 -> range 49.2-50.2, Ours 4/1 56.8. The n=1 baseline is not under-tuned. 2/2 and Ours variants pending. Also queued aligned seeds 2/3 at a11/a12 (CELLS="11 12" seed_main.sh, a2) for the same-weights depth gain over seeds.
 - Maps-frozen control seed 3 (SEED=3 launch_variant.sh lora, X26-a-lora-s3, a1 GPUs 4,5).
 - Prefill-4 LoRA seed 3 (SEED=3 launch_variant.sh fixed4, X26-a-fixed4-lora-s3, a1 GPUs 1,7).
+- Wide adapter seed 2 (SEED=2 launch_variant.sh wide, X26-a-wide-s2, 32 cells m<=16, a2 GPUs 0,2); its depth sweep (X26ws2-*) runs after training via sweep_depth.sh.
