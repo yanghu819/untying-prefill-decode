@@ -934,8 +934,7 @@ GSM_PROTOCOL_PRINTED = {   # Appendix B (diff, lo, hi)
     (GF, "aligned adapter 4/2", "native 2/2"): (3.4, 1.2, 5.6), (GFLEX, "aligned adapter 4/2", "native 2/2"): (1.2, -0.8, 3.3)}
 
 
-SAME_WEIGHTS_PRINTED = {("a11", "avg"): 47.2, ("a41", "avg"): 56.8, ("a12", "avg"): 57.9, ("a42", "avg"): 67.2,
-                        ("a11", "MMLU"): 51.2, ("a41", "MMLU"): 67.1, ("a11", "HumanEval+"): 46.3, ("a41", "HumanEval+"): 65.2}
+SAME_WEIGHTS_PRINTED = {("a11", "avg"): 47.2, ("a41", "avg"): 56.8, ("a12", "avg"): 57.9, ("a42", "avg"): 67.2}
 
 
 def same_weights_seeds():
@@ -962,6 +961,9 @@ def same_weights_seeds():
         g = [per[p][f"a4{n}"] - per[p][f"a1{n}"] for p in per if None not in (per[p][f"a4{n}"], per[p][f"a1{n}"])]
         if len(g) == len(per):
             out[f"gain{n}"] = (round(float(np.mean(g)), 1), round(float(np.std(g, ddof=1)), 1))
+            want = {1: (9.0, 0.6), 2: (9.1, 0.2)}[n]   # Section 4
+            if out[f"gain{n}"] != want:
+                print(f"Same w seeds gain {n}: {out[f'gain{n}']}  !! paper: {want}")
             print(f"Same w seeds gain 4/{n} - 1/{n}: {[round(x, 1) for x in g]} mean {np.mean(g):.1f} sd {np.std(g, ddof=1):.1f}")
     return out
 
@@ -1500,6 +1502,18 @@ def lr_check():
                 per[v].append(agg(x, ids) if x else None)
         out[c] = {v or "lr1": (None if None in q else round(float(np.mean(q)), 2)) for v, q in per.items()}
         print(f"LR check     Distilled {c}/{c}: " + "  ".join(f"{v} {'--' if a is None else f'{a:.1f}'}" for v, a in out[c].items()))
+        want = {1: dict(lr1=49.8, **{"lr0.3": 49.2}, lr3=50.1, r80=50.2, r80lr3=50.0),
+                2: dict(lr1=65.3, **{"lr0.3": 64.7}, lr3=65.2, r80=65.4, r80lr3=65.6)}[c]   # Appendix (baseline LR)
+        bad = {v: a for v, a in out[c].items() if a is None or abs(a - want[v]) > 0.051}
+        if bad:
+            print(f"LR check     Distilled {c}/{c}: {bad}  !! paper: {want}")
+        if None not in out[c].values():
+            d = max(abs(out[c][v] - out[c]["lr1"]) for v in ("lr0.3", "lr3"))
+            d = max(d, abs(out[c]["r80lr3"] - out[c]["r80"]))
+            out[c]["max_change"] = round(d, 1)
+    ch = [out[c].get("max_change") for c in (1, 2)]
+    if None not in ch:   # Setup: "changes its average by at most 0.6 points"
+        print(f"LR check     max change from scaling the LR: {max(ch)}" + ("" if max(ch) == 0.6 else "  !! paper: 0.6"))
     for cell in ("a41", "a42"):   # Ours (aligned) at x1 and x3 (launch_variant.sh lr, runs X26alr3-a4<n>-*)
         q = {v: [] for v in ("lr1", "lr0.3", "lr3")}
         for b in MAIN_BENCH:

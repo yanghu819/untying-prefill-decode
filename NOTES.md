@@ -369,3 +369,9 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Prefill-4 LoRA seed 3 (SEED=3 launch_variant.sh fixed4, X26-a-fixed4-lora-s3, a1 GPUs 1,7).
 - Wide adapter seed 2 (SEED=2 launch_variant.sh wide, X26-a-wide-s2, 32 cells m<=16, a2 GPUs 0,2); its depth sweep (X26ws2-*) runs after training via sweep_depth.sh.
 - Wide adapter seed 3 (X26-a-wide-s3, a1 GPUs 0,3,6).
+- LR check complete for Distilled: 1/1 49.2 / 49.8 / 50.1 (x0.3 / x1 / x3), rank 80 50.2 / 50.0 (x1 / x3); 2/2 64.7 /
+  65.3 / 65.2, rank 80 65.4 / 65.6. Max change from scaling the LR 0.6. Setup sentence + Appendix "Baseline learning
+  rate". Ours x3: 4/1 57.4 (x1 56.8); 4/2 and x0.3 pending.
+- Same-weights depth gain over three seeds: 4/1 - 1/1 = 9.6 / 8.5 / 8.8 (9.0 +- 0.6), 4/2 - 1/2 = 9.3 / 9.0 / 9.0
+  (9.1 +- 0.2). Section 4 (replaces the MMLU / HumanEval+ examples).
+- Maps-frozen seed 2: RULER-16K Ours vs frozen +22.3 [+18.5,+26.0] at 4/1, +6.9 at 4/2 (seed 0: +14.9, +2.0).

@@ -85,7 +85,8 @@ per-request timings and per-item scores are released.
 \paragraph{Models and notation.} Ouro-2.6B and Ouro-2.6B-Thinking~\citep{ouro} (four loops). ``$m/n$'' prefills the
 prompt with $m$ loops and decodes each answer token with $n$ loops. \emph{Original $n/n$} is the released checkpoint run
 with $n$ loops. \emph{Distilled $n/n$} trains LoRA on the $n$-loop model to match Original 4/4, with the
-adapter's data, teacher and 48M answer tokens, at rank 16 and at rank 80 (62.9M parameters, about as many as the adapter's 63.3M).
+adapter's data, teacher and 48M answer tokens, at rank 16 and at rank 80 (62.9M parameters, about as many as the adapter's 63.3M); a threefold higher or lower
+learning rate changes its average by at most 0.6 points (Appendix~\ref{app:method}).
 \emph{Ours $m/n$} is the frozen model with one loop adapter (Section~\ref{sec:method}); a decoder with $n$ loops reads the
 prompt states of prefill depth $m$. The main adapter is trained on $m,n\le4$; a second one on $m\in\{1,2,3,4,6,8,12,16\}$ and $n\le4$.
 
@@ -120,8 +121,7 @@ MMLU-Pro. Long prompts with short answers are the opposite case: on
 HELMET (about 10,900 input and 15 output tokens with the chat template) prefill is 27--30\% of the time at Original
 2/2 and 4/4. Prefill cost grows about linearly
 with its loops, so a small share $p$ at one loop becomes about $m\,p$ at $m$ loops. Tasks with a small share leave room for a
-deeper prefill; tasks with long prompts and short answers do not. The per-request distributions are in
-Appendix~\ref{app:time}.
+deeper prefill; tasks with long prompts and short answers do not.
 
 \section{How far deeper prefill goes}
 \label{sec:depth}
@@ -139,8 +139,8 @@ request on 100 timed requests per task, with the maps applied at each decode ste
 
 We now fix the decode loops and change only the prefill loops (Figure~\ref{fig:depth}). With the adapter trained on
 $m\le4$ and the same weights throughout, four prefill loops instead of one raise the average over 11 benchmarks from
-47.2 to 56.8 at one decode loop and from 57.9 to 67.2 at two. MMLU rises from 51.2 to 67.1 and HumanEval+ from 46.3
-to 65.2. The reasoning model behaves the same way: at two decode loops, Ouro-2.6B-Thinking goes from 90.7 to 94.1 on
+47.2 to 56.8 at one decode loop and from 57.9 to 67.2 at two; over three training seeds the gain is $9.0\pm0.6$
+and $9.1\pm0.2$ points. The reasoning model behaves the same way: at two decode loops, Ouro-2.6B-Thinking goes from 90.7 to 94.1 on
 GSM8K and from 36.4 to 51.0 on MMLU-Pro between $m=1$ and $m=4$, and six prefill loops add nothing (93.9 and 48.1).
 
 Beyond four loops accuracy falls. At one decode loop, GSM8K drops from 45.0 at $m=4$ to 31.9 at $m=16$ and RULER-16K
@@ -155,9 +155,8 @@ GSM8K at one decode loop, this adapter reaches 47.0 at $m=2$ and 36.9 at $m=16$,
 adapter trained on $m\le4$. The stop marks where the gain ends on these depths, not a proven ceiling. On Ouro-1.4B
 the best prefill depth is three or four on 13 of 18 settings, with lower accuracy beyond (Appendix~\ref{app:depth14}).
 
-With the maps folded into the prompt cache (Section~\ref{sec:method}), time per request grows by 16\% from $m=1$ to
-$m=4$ at one decode loop on the four timed tasks, almost all of it because answers get longer (276 to 319 output
-tokens on average).
+With folded maps (Section~\ref{sec:method}), time per request grows by 16\% from $m=1$ to $m=4$ at one decode loop,
+almost all because answers get longer (276 to 319 output tokens on average).
 
 \section{Is it the best use of the time?}
 \label{sec:budget}
@@ -243,9 +242,9 @@ SwiftKV~\citep{swiftkv} puts less. More in Appendix~\ref{app:related}.
 
 \section{Conclusion}
 
-Generation with a looped model is almost all decoding, so deeper prefill costs little. With a loop adapter it raises
-accuracy at a fixed decode depth until two to four prefill loops, more than distillation does, and at one decode loop
-it leads at equal measured time. On long chain-of-thought answers a second decode loop buys more.
+Generation with a looped model is almost all decoding. With a loop adapter, deeper prefill raises accuracy at a fixed
+decode depth up to two to four loops, more than distillation does, and leads at equal time at one decode loop; on
+long chain-of-thought answers a second decode loop buys more.
 
 \section*{Limitations}
 \label{sec:limits}
@@ -643,6 +642,11 @@ one-cache variant shows the same pattern: with frozen maps it is within 0.4 poin
 and 2/2, by 0.4 and 0.3), has no significantly negative GSM8K difference (at 4/1 it scores $2.3$ points
 higher\ci{0.2}{4.5}), but loses 11.4 points on RULER-16K at 4/1 (Appendix~\ref{sec:ablation}). The maps matter for
 long prompts.
+
+\paragraph{Baseline learning rate.} The distilled controls use the adapter's learning-rate schedule. Scaling the whole
+schedule by 0.3 or 3 gives 11-benchmark averages of 49.2 and 50.1 for Distilled 1/1 (49.8 at the default) and 64.7
+and 65.2 for Distilled 2/2 (65.3); at rank 80 with the threefold rate they are 50.0 and 65.6 (50.2 and 65.4 at the
+default). None reaches Ours at 4/1 or 4/2 (56.8, 67.2).
 
 \paragraph{Training.} We distil~\citep{kd}: we minimise $\mathrm{KL}(\text{teacher}\,\|\,\text{student})$ over answer positions, with the
 native 4/4 model as teacher, on 48M answer tokens of reasoning traces, instruction data, long-context data and web text.
