@@ -37,7 +37,9 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]`.
 - **Operational lessons (2026-11-09)**: queues are per box; before moving queue lines between boxes check that every
   checkpoint they use exists on the target. `grid_worker.sh GPU Q MAX` only starts a job when the GPU has fewer than
-  MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle.
+  MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
+  of it is still running: bash reads scripts as it goes, and the running copy then fails after training (11-10:
+  fixed4-s3 and lora-s3 lost their eval step; re-run the launcher, which skips the finished training).
 - **Next, in order of value**: (1) fold the LR check, Distilled 1/1 seeds and the frozen-maps seed into Table 1 /
   Section 5 / Section 6; (2) final red-team round and repeated de-AI readability passes on the 4-page body;
   (3) regenerate provenance, verify the bib once more, build the arXiv package; (4) ARR checklist TODOs with the user.
