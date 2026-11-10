@@ -1030,6 +1030,62 @@ def time_breakdown_rows():
     return _TB
 
 
+def timed_requests(cond, model="Ouro-2.6B"):
+    """Per-request (score, total seconds) of one timed configuration over the four timed tasks of the base model, each
+    request's time averaged over the clean passes (clean, clean3), as in time_breakdown; {} if a task is missing."""
+    out = {}
+    for task in TIME_TASKS:
+        use = [f for f in (E2E / f"clean-{cond}-{task}.jsonl", E2E / f"clean3-{cond}-{task}.jsonl") if f.exists()]
+        passes = [[json.loads(l) for l in open(f)] for f in use]
+        passes = [p for p in passes if len(p) >= 100]
+        if not passes:
+            return {}
+        by_id = [{r["id"]: r for r in p} for p in passes]
+        for r in passes[0]:
+            t = float(np.mean([b[r["id"]]["total_s"] for b in by_id if r["id"] in b]))
+            out[f"{task}/{r['id']}"] = (replay_score(r["id"], r["text"], r["target"]), t)
+    return out
+
+
+BUDGET_PAIRS = [("a4x1pm", "native1st"), ("a4x1pm", "D1st"), ("a4x1pm", "D1r80st"), ("a4x2pm", "D2st"),
+                ("a4x2pm", "D2r80st"), ("a4x2pm", "f4x2pm"), ("a4x2pm", "native2st"), ("a3x2pm", "D2st"),
+                ("native2st", "a4x1pm")]
+
+
+def budget_pairs(reps=5000):
+    """Section 5: paired comparisons on the same 400 timed requests: accuracy difference (points) and the ratio of mean
+    time per request, each with a 95% bootstrap interval over requests."""
+    out = []
+    rng = np.random.default_rng(0)
+    for a, b in BUDGET_PAIRS:
+        A, B = timed_requests(a), timed_requests(b)
+        ids = sorted(set(A) & set(B))
+        if len(ids) < 400:
+            print(f"Budget pair  {a} vs {b}: MISSING"); continue
+        qa, qb = np.array([A[i][0] for i in ids]), np.array([B[i][0] for i in ids])
+        ta, tb = np.array([A[i][1] for i in ids]), np.array([B[i][1] for i in ids])
+        draws = rng.integers(0, len(ids), (reps, len(ids)))
+        dq = 100 * (qa[draws] - qb[draws]).mean(1)
+        rt = ta[draws].sum(1) / tb[draws].sum(1)
+        row = dict(a=a, b=b, n=len(ids), diff=round(100 * float((qa - qb).mean()), 1),
+                   diff_lo=round(float(np.percentile(dq, 2.5)), 1), diff_hi=round(float(np.percentile(dq, 97.5)), 1),
+                   ratio=round(float(ta.sum() / tb.sum()), 2), ratio_lo=round(float(np.percentile(rt, 2.5)), 2),
+                   ratio_hi=round(float(np.percentile(rt, 97.5)), 2))
+        out.append(row)
+        want = {("a4x1pm", "native1st"): (14.2, 9.0, 19.8), ("a4x1pm", "D1st"): (7.0, 1.8, 12.2),
+                ("native2st", "a4x1pm"): (15.5, 10.2, 20.8)}.get((a, b))   # Section 5
+        if want and (row["diff"], row["diff_lo"], row["diff_hi"]) != want:
+            print(f"Budget pair  {a} vs {b}: {row}  !! paper: {want}")
+        if (a, b) == ("native2st", "a4x1pm") and row["ratio"] != 1.40:
+            print(f"Budget pair  time ratio {row['ratio']}  !! paper: 1.40")
+        if a == "a4x2pm" and b in ("D2st", "D2r80st", "f4x2pm") and not (row["diff_lo"] < 0 < row["diff_hi"]
+                                                                          and -1.5 <= row["diff"] <= 0.5):
+            print(f"Budget pair  {a} vs {b}: {row}  !! paper: within [-1.5, +0.5], interval contains 0")
+        print(f"Budget pair  {a:10s} vs {b:10s} n={row['n']}  acc {row['diff']:+5.1f} [{row['diff_lo']:+5.1f}, {row['diff_hi']:+5.1f}]"
+              f"  time x{row['ratio']:.2f} [{row['ratio_lo']:.2f}, {row['ratio_hi']:.2f}]")
+    return out
+
+
 def time_breakdown():
     """Section 3 / Figures 1-3: per-request prefill (to the first token), decode and total time with input / output
     tokens (batch 1, one idle B300) for every timed condition and task, and the quality of the same replayed answers
@@ -1320,12 +1376,14 @@ def think_sweep():
         row = dict(bench=bench, items=len(ids), quality={m: round(agg(v, ids), 2) for m, v in sets.items()})
         out.append(row)
         bad = {m: q for m, q in THINK_PRINTED.get(bench, {}).items() if abs(row["quality"].get(m, -99) - q) > 0.051}
+        if bench in THINK_PRINTED and row["quality"].get(6, 0) > row["quality"].get(4, 0):
+            bad["m6 above m4"] = row["quality"].get(6)
         print(f"Think sweep  n=2 {bench:9s} items={len(ids):5d} " + " ".join(f"m{m}={q:5.1f}" for m, q in row["quality"].items())
               + (f"  !! paper: {bad}" if bad else ""))
     return out
 
 
-THINK_PRINTED = {"GSM8K": {1: 90.7, 4: 94.1, 6: 93.9}, "MMLU-Pro": {1: 36.4, 4: 51.0, 6: 48.1}}   # Section 4
+THINK_PRINTED = {"GSM8K": {1: 90.7, 4: 94.1}, "MMLU-Pro": {1: 36.4, 4: 51.0}}   # Section 4 (m=6 not above m=4: checked below)
 
 
 def timing_repeat():
@@ -1809,7 +1867,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_sweep_14=depth_sweep_14(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 

@@ -8,9 +8,24 @@ The paper's numbers come from these places, all in this commit:
    on a laptop and needs only numpy.
 2. **Timing records** (`ouro/results/e2e/`, `ouro/results/throughput-sb4/`): the end-to-end timing table, time ratios
    and decode throughput, also recomputed by `paper_numbers.py compute`.
-3. **Decision-model records** (`ouro/results/lev/`): per-depth LevBench development outputs for Section 4.5 and the Lev appendix.
+3. **Decision-model records** (`ouro/results/lev/`): per-depth LevBench development outputs for the Lev appendix.
 
 `ouro/scripts/paper_figs.py` draws every figure and generated table from `paper_numbers.json`.
+
+## Main-text results and where they come from
+
+| Paper item | `paper_numbers.py` function | Runs (launcher in `ouro/runs_scripts/`) |
+|---|---|---|
+| Figure 1, Section 3 (time split) | `time_breakdown` | `time_controls.sh`, `time_sweep.sh` (passes `clean`, `clean3`) |
+| Figure 2, Section 4 (prefill depth, m = 1..16) | `depth_sweep`, `same_weights`, `same_weights_seeds`, `plateau` | `sweep_depth.sh`, `launch_variant.sh wide`, `seed_main.sh ARM=a CELLS="11 12"` |
+| Ouro-2.6B-Thinking and Ouro-1.4B sweeps | `think_sweep`, `depth_sweep_14` | `sweep_think.sh`, `sweep_depth.sh MP=model-1.4b` |
+| Figure 3, Section 5 (equal measured time) | `time_breakdown`, `budget_pairs`, `batch_time` | `time_controls.sh` (folded maps `a<m>x<n>pm`), `tput_batch.sh` |
+| Table 1 and its seeds | `main_table` | `launch_aligned.sh`, `seed_main.sh`, `launch_x26_distill.sh` (`RANK`, `SEED`), `launch_variant.sh fixed4 / lora` |
+| Baseline learning rate (Appendix) | `lr_check` | `LRS=0.3/3 launch_x26_distill.sh`, `LRS=... launch_variant.sh lr` |
+| Maps by context length (Section 6) | `CMP` rows "Maps by length" | `launch_variant.sh lora`, RULER via `bench3.sh` |
+| MATH-500 exemplar check | `CMP` rows "Aligned MATH" | `math0_q.sh ARM=a` |
+
+Every number quoted in the text has a check in `paper_numbers.py`; `compute` prints `!!` next to any that disagrees.
 
 To regenerate the per-item scores themselves you need GPUs: train the loop adapters, run the evaluations, then
 `python ouro/scripts/paper_numbers.py export RUNS_DIR` collects exactly the items the paper uses.

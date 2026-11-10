@@ -379,3 +379,10 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Rank-80 Distilled 2/2 (closest baseline) seeds 2 and 3: X26-D48fr80-p2d2-s{2,3}, a2 GPUs 1,3 and 4,5 (62.9M trainable params checked).
 - Rank-80 Distilled 1/1 seed 2: X26-E48fr80-p1d1-s2 (a2 GPUs 6,7).
 - LR check complete: Ours x0.3 / x1 / x3 = 55.5 / 56.8 / 57.4 (4/1), 66.8 / 67.2 / 67.8 (4/2); Ours's weakest LR beats the best Distilled (50.2, 65.6). Appendix 'Baseline learning rate' says so; both reported at the default LR.
+
+### 2026-11-10 wrap-up step 1
+- budget_pairs (same 400 timed requests, paired bootstrap): Ours 4/1 - Original 1/1 +14.2 [9.0, 19.8] at x1.01 time;
+  - Distilled 1/1 +7.0 [1.8, 12.2] at x1.10; Original 2/2 - Ours 4/1 +15.5 [10.2, 20.8] at x1.40; Ours 4/2 vs
+  Distilled 2/2 / rank 80 / prefill-4 LoRA: +0.5 / -1.5 / -0.5, all intervals contain 0. Section 5 states these.
+- Appendix guide paragraph (which appendices support the body; native = Original, LoRA-distilled = Distilled, loop
+  adapter = Ours); REPRODUCE.md maps each main-text result to its function and launcher.
