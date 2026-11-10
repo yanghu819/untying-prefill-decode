@@ -1,0 +1,52 @@
+{
+ "run": "o26x-E48fr80lr3-hellaswag",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48fr80-p1d1-lr3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "hellaswag": 10
+ },
+ "n_samples": {
+  "hellaswag": {
+   "original": 10042,
+   "effective": 10042
+  }
+ },
+ "task_versions": {
+  "hellaswag": 1.0
+ },
+ "task_hashes": {
+  "hellaswag": "d4bcb44ec68db2b8a65f050c3c64c48454179b48fd8aee3e73b55e2ec51e6d82"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-09T15:57:26.547671+00:00",
+ "seconds": "1351.20463982597",
+ "results": {
+  "hellaswag": {
+   "alias": "hellaswag",
+   "acc,none": 0.5112527384983071,
+   "acc_stderr,none": 0.004988517597998843,
+   "acc_norm,none": 0.6975702051384186,
+   "acc_norm_stderr,none": 0.004583716671458552
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_hellaswag_2026-11-10T00-19-55.848584.jsonl",
+   "sha256": "5261ec52704e11864d801c10012cac72c898b46ecc9cb5e88b4e819b89947829",
+   "items": 10042
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 21:29:35 gpu7: OURO_LORA_RANK=80 ./lm1.sh $GPU o26x-E48fr80lr3-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48fr80-p1d1-lr3/checkpoint-48m.pt,max_length=16384\" \"--tasks hellaswag --num_fewshot 10\"",
+  "distill_q.txt.log: 23:57:20 gpu0: OURO_NO_CUDNN_SDP=1 OURO_LORA_RANK=80 ./lm1.sh $GPU o26x-E48fr80lr3-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48fr80-p1d1-lr3/checkpoint-48m.pt,max_length=16384\" \"--tasks hellaswag --num_fewshot 10\""
+ ],
+ "checkpoint": {
+  "run": "X26-E48fr80-p1d1-lr3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "91fab5b956c0b9465de1fdbeab86644f2239da6feec122b59ad3494915372668",
+  "bytes": 755451405
+ }
+}

@@ -1,0 +1,21 @@
+{
+ "run": "X26s2-a12f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "X26s2-a12f/s0/ruler16k.jsonl",
+   "sha256": "a8db1d22fcd14e4bd30f6f0591e0c602beb264e9157b758ce218ba148efc55b0",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "seed2maina_q.txt.log: 04:32:57 gpu2: OURO_NO_CUDNN_SDP=1 cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-2.6b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler16k' ./ouro/runs_scripts/bench3.sh X26s2-a12f a12 /dev/shm/big-small-ouro/runs/X26-a-seed2/checkpoint-48m.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "X26-a-seed2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "ece0eb7edd829113099eb44374f2895f5e47d7576ebd19427180b5c4a2d83f2d",
+  "bytes": 760170173
+ }
+}

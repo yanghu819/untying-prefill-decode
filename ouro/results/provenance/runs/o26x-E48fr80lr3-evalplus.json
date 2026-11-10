@@ -1,0 +1,76 @@
+{
+ "run": "o26x-E48fr80lr3-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48fr80-p1d1-lr3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-09T13:27:17.717560+00:00",
+ "seconds": "552.7255501607433",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-09T21-36-28.572650.jsonl",
+   "sha256": "c62bb7dc8beb9918e9244fa9ea68e47a90941c6499ba4761667b7f7d1bfaa998",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-09T21-36-28.572650.jsonl",
+   "sha256": "8a560afc17b0196c8397faf741d0fd74f22ba88366ec11a711737b2eeb8fb966",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "a27a580b5822366957f6b4ed35a13fb54958b1242124ae434fb8794caae89bfa"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "6b6f25c6237eb5e52a944e0663011532d32791823eb36effaf58192b6d32e096"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 21:27:11 gpu1: OURO_LORA_RANK=80 ./lm1.sh $GPU o26x-E48fr80lr3-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48fr80-p1d1-lr3/checkpoint-48m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ],
+ "checkpoint": {
+  "run": "X26-E48fr80-p1d1-lr3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "91fab5b956c0b9465de1fdbeab86644f2239da6feec122b59ad3494915372668",
+  "bytes": 755451405
+ }
+}

@@ -1,0 +1,51 @@
+{
+ "run": "X26alr0.3-a42-gsmfull",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-lr0.3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 1319
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "adaf2c05fa61ed165c933cb08acb93cd77e43714d152d7ec5c63ebb4a63c6878"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-10T02:12:35.213223+00:00",
+ "seconds": "574.6411396386102",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.6535253980288097,
+   "exact_match_stderr,strict-match": 0.013107179054313398,
+   "exact_match,flexible-extract": 0.7907505686125853,
+   "exact_match_stderr,flexible-extract": 0.0112045442104838
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-10T10-22-07.933005.jsonl",
+   "sha256": "3c5b6c77db6506d4202392817122bef13a0c3ccafa5ee146eb38b4622a5b6518",
+   "items": 2638
+  }
+ ],
+ "log": true,
+ "commands": [
+  "sweep_q.txt.log: 10:12:28 gpu2: ./lm1.sh $GPU X26alr0.3-a42-gsmfull - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-lr0.3/checkpoint-48m.pt,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3\""
+ ],
+ "checkpoint": {
+  "run": "X26-a-lr0.3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "9d1608ca0a617c99e5945fbe9fd6e9ec9656bf6dee90b6afdf1a121450ebfe74",
+  "bytes": 760170173
+ }
+}

@@ -1,0 +1,51 @@
+{
+ "run": "X26f4s2-a42-gsmfull",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-fixed4-lora-s2/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "gsm8k_cot": 3
+ },
+ "n_samples": {
+  "gsm8k_cot": {
+   "original": 1319,
+   "effective": 1319
+  }
+ },
+ "task_versions": {
+  "gsm8k_cot": 3.0
+ },
+ "task_hashes": {
+  "gsm8k_cot": "adaf2c05fa61ed165c933cb08acb93cd77e43714d152d7ec5c63ebb4a63c6878"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-10T02:14:57.292747+00:00",
+ "seconds": "641.9556413693354",
+ "results": {
+  "gsm8k_cot": {
+   "alias": "gsm8k_cot",
+   "exact_match,strict-match": 0.66565579984837,
+   "exact_match_stderr,strict-match": 0.012994634003332759,
+   "exact_match,flexible-extract": 0.8021228203184231,
+   "exact_match_stderr,flexible-extract": 0.01097388960175632
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_gsm8k_cot_2026-11-10T10-25-37.293029.jsonl",
+   "sha256": "ca513c98f2341540722f93b5057a8f05b94c89d312bd4efffcbb2d880fb18e4e",
+   "items": 2638
+  }
+ ],
+ "log": true,
+ "commands": [
+  "sweep_q.txt.log: 10:14:49 gpu7: ./lm1.sh $GPU X26f4s2-a42-gsmfull - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a42,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-fixed4-lora-s2/checkpoint-48m.pt,max_length=16384\" \"--tasks gsm8k_cot --num_fewshot 3\""
+ ],
+ "checkpoint": {
+  "run": "X26-a-fixed4-lora-s2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "f3a5336c9adf3fe5f4ecde5b69b9e2204c5be9609e040f36693f0ed498dc514f",
+  "bytes": 354369433
+ }
+}

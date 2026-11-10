@@ -1,0 +1,51 @@
+{
+ "run": "X26alr0.3-a41-math",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-lr0.3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "minerva_math500": 4
+ },
+ "n_samples": {
+  "minerva_math500": {
+   "original": 500,
+   "effective": 500
+  }
+ },
+ "task_versions": {
+  "minerva_math500": 1.0
+ },
+ "task_hashes": {
+  "minerva_math500": "87b6b95cab1641f732e7f55783c140c2cda2bbcc77eb53eeafaa8be16051c14e"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-10T03:13:17.851618+00:00",
+ "seconds": "1335.6364849414676",
+ "results": {
+  "minerva_math500": {
+   "alias": "minerva_math500",
+   "exact_match,none": 0.176,
+   "exact_match_stderr,none": 0.01704785202062225,
+   "math_verify,none": 0.214,
+   "math_verify_stderr,none": 0.01835979750238704
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_minerva_math500_2026-11-10T11-35-31.559343.jsonl",
+   "sha256": "01eba0bb7fd62c0d468539b98c8a73646e408603de724898119e2d7f84d5d20a",
+   "items": 500
+  }
+ ],
+ "log": true,
+ "commands": [
+  "sweep_q.txt.log: 11:13:10 gpu6: ./lm1.sh $GPU X26alr0.3-a41-math - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-lr0.3/checkpoint-48m.pt,max_length=16384\" \"--tasks minerva_math500 --num_fewshot 4\""
+ ],
+ "checkpoint": {
+  "run": "X26-a-lr0.3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "9d1608ca0a617c99e5945fbe9fd6e9ec9656bf6dee90b6afdf1a121450ebfe74",
+  "bytes": 760170173
+ }
+}

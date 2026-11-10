@@ -1,0 +1,49 @@
+{
+ "run": "o26x-D48fs2-winogrande",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48f-p2d2-s2/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "winogrande": 5
+ },
+ "n_samples": {
+  "winogrande": {
+   "original": 1267,
+   "effective": 1267
+  }
+ },
+ "task_versions": {
+  "winogrande": 1.0
+ },
+ "task_hashes": {
+  "winogrande": "cb7d189b18f880587e055d13153370ab6e05d9f9b3f25aa9888f4d50338d374d"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-08T18:35:14.623249+00:00",
+ "seconds": "69.56021966412663",
+ "results": {
+  "winogrande": {
+   "alias": "winogrande",
+   "acc,none": 0.739542225730071,
+   "acc_stderr,none": 0.012334833671998334
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_winogrande_2026-11-09T02-36-22.266262.jsonl",
+   "sha256": "8c0607204270b95b0c2975aab01778bac8dbe7c044bda44a6bebefde83c2afd6",
+   "items": 1267
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 02:35:07 gpu6: ./lm1.sh $GPU o26x-D48fs2-winogrande - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48f-p2d2-s2/checkpoint-48m.pt,max_length=16384\" \"--tasks winogrande --num_fewshot 5\""
+ ],
+ "checkpoint": {
+  "run": "X26-D48f-p2d2-s2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "f091f6d78ca27cb43e17a018e8415d34b21cf05b351aa787feae762e8a596888",
+  "bytes": 151469325
+ }
+}

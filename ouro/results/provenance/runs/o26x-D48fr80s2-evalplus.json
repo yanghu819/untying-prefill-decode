@@ -1,0 +1,66 @@
+{
+ "run": "o26x-D48fr80s2-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48fr80-p2d2-s2/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-10T16:59:20.544125+00:00",
+ "seconds": "834.7115375446156",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-11T01-13-13.392729.jsonl",
+   "sha256": "11fd3fcec8457242461bbbaa362952b5c08d5cab6e679b92f4e810ec8ae8d2c3",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-11T01-13-13.392729.jsonl",
+   "sha256": "d4466862e3641245dedc3aac67ba47a8531a66cb1cfa0bccc2b45cf47403692c",
+   "items": 378
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 00:59:13 gpu3: OURO_LORA_RANK=80 ./lm1.sh $GPU o26x-D48fr80s2-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=D,checkpoint=/dev/shm/big-small-ouro/runs/X26-D48fr80-p2d2-s2/checkpoint-48m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ],
+ "checkpoint": {
+  "run": "X26-D48fr80-p2d2-s2",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "b44690c653cfa7e9f7731e32d03be3384b349f8f332907cebc4a82d02479dd49",
+  "bytes": 755451405
+ }
+}

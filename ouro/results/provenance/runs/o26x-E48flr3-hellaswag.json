@@ -1,0 +1,51 @@
+{
+ "run": "o26x-E48flr3-hellaswag",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48f-p1d1-lr3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "hellaswag": 10
+ },
+ "n_samples": {
+  "hellaswag": {
+   "original": 10042,
+   "effective": 10042
+  }
+ },
+ "task_versions": {
+  "hellaswag": 1.0
+ },
+ "task_hashes": {
+  "hellaswag": "d4bcb44ec68db2b8a65f050c3c64c48454179b48fd8aee3e73b55e2ec51e6d82"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-09T09:03:17.858276+00:00",
+ "seconds": "2931.119690642692",
+ "results": {
+  "hellaswag": {
+   "alias": "hellaswag",
+   "acc,none": 0.5120493925512846,
+   "acc_stderr,none": 0.004988332289641878,
+   "acc_norm,none": 0.7007568213503286,
+   "acc_norm_stderr,none": 0.004569906485090596
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_hellaswag_2026-11-09T17-52-06.960494.jsonl",
+   "sha256": "bbb7e0b297f8c0a172b717ac03075f8fe7367c0ebb47601faa315f0f6a9a1b60",
+   "items": 10042
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 17:03:10 gpu4: ./lm1.sh $GPU o26x-E48flr3-hellaswag - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=E,checkpoint=/dev/shm/big-small-ouro/runs/X26-E48f-p1d1-lr3/checkpoint-48m.pt,max_length=16384\" \"--tasks hellaswag --num_fewshot 10\""
+ ],
+ "checkpoint": {
+  "run": "X26-E48f-p1d1-lr3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "d9f19d40ba78a262add6dbe2881be7905673868cee7430cec069a60bc65cc3a3",
+  "bytes": 151469325
+ }
+}

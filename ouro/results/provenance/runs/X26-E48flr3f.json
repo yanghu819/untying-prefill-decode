@@ -1,0 +1,31 @@
+{
+ "run": "X26-E48flr3f",
+ "kind": "evaluate_bench (RULER / HELMET / BBH / MMLU-Pro scripts)",
+ "outputs": [
+  {
+   "file": "X26-E48flr3f/s0/ruler16k.jsonl",
+   "sha256": "d5eceb174b868b280ce9b1ac6e8098cc130928f10044300a1eaf43596f7bf16d",
+   "items": 520
+  },
+  {
+   "file": "X26-E48flr3f/s0/ruler4k.jsonl",
+   "sha256": "021632a2ab8a9f073a2b25f64b2254d0284108633a3d897cb8968f54ee5f4338",
+   "items": 520
+  },
+  {
+   "file": "X26-E48flr3f/s0/ruler8k.jsonl",
+   "sha256": "64843f9313ef0f8c1a1f9899c86c1876ecfc0716ebb1f861114ffb67dc33aa1c",
+   "items": 520
+  }
+ ],
+ "log": true,
+ "commands": [
+  "distill_q.txt.log: 17:43:12 gpu7: cd /root/big-small && MODEL=/dev/shm/big-small-ouro/model-2.6b DATA=/dev/shm/big-small-ouro/bench BENCHES='ruler4k ruler8k ruler16k' ./ouro/runs_scripts/bench3.sh X26-E48flr3f E /dev/shm/big-small-ouro/runs/X26-E48f-p1d1-lr3/checkpoint-48m.pt $GPU 1"
+ ],
+ "checkpoint": {
+  "run": "X26-E48f-p1d1-lr3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "d9f19d40ba78a262add6dbe2881be7905673868cee7430cec069a60bc65cc3a3",
+  "bytes": 151469325
+ }
+}

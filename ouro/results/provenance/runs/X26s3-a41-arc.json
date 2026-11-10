@@ -1,0 +1,51 @@
+{
+ "run": "X26s3-a41-arc",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-seed3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "arc_challenge": 25
+ },
+ "n_samples": {
+  "arc_challenge": {
+   "original": 1172,
+   "effective": 1172
+  }
+ },
+ "task_versions": {
+  "arc_challenge": 1.0
+ },
+ "task_hashes": {
+  "arc_challenge": "55e883475b5650b20d8d9dc1e9cdf59ef645a257fcd74bf43a9dbb5c632c529c"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-08T08:48:50.400186+00:00",
+ "seconds": "429.65800725575536",
+ "results": {
+  "arc_challenge": {
+   "alias": "arc_challenge",
+   "acc,none": 0.5793515358361775,
+   "acc_stderr,none": 0.014426211252508337,
+   "acc_norm,none": 0.6322525597269625,
+   "acc_norm_stderr,none": 0.01409099561816849
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_arc_challenge_2026-11-08T16-55-58.114590.jsonl",
+   "sha256": "2e3d16a6d2cbbbacfe09dcc4c31dced43489ae9fef18ca191ebfffcac0f7a969",
+   "items": 1172
+  }
+ ],
+ "log": true,
+ "commands": [
+  "seed3maina_q.txt.log: 16:48:43 gpu3: ./lm1.sh $GPU X26s3-a41-arc - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-seed3/checkpoint-48m.pt,max_length=16384\" \"--tasks arc_challenge --num_fewshot 25\""
+ ],
+ "checkpoint": {
+  "run": "X26-a-seed3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "64d41d7cb6d5db9cd5cabe778eae7d4e7631ebda79fe993e4c521186b1fcdc62",
+  "bytes": 760170173
+ }
+}
