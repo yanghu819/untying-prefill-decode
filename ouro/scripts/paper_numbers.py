@@ -1530,6 +1530,10 @@ def lr_check():
                 q[v].append(agg(x, ids) if x and len(x) >= 0.95 * full else None)
         out[f"ours {cell}"] = {v: (None if None in a else round(float(np.mean(a)), 2)) for v, a in q.items()}
         print(f"LR check     Ours {cell[1]}/{cell[2]}: " + "  ".join(f"{v} {'--' if a is None else f'{a:.1f}'}" for v, a in out[f"ours {cell}"].items()))
+        want = {"a41": {"lr0.3": 55.5, "lr3": 57.4}, "a42": {"lr0.3": 66.8, "lr3": 67.8}}[cell]   # Appendix (baseline LR)
+        bad = {v: a for v, a in want.items() if out[f"ours {cell}"][v] is None or abs(out[f"ours {cell}"][v] - a) > 0.051}
+        if bad:
+            print(f"LR check     Ours {cell}: {out[f'ours {cell}']}  !! paper: {want}")
     return out
 
 

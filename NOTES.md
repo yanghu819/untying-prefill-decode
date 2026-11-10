@@ -378,3 +378,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Ours at x3 LR: 4/1 57.4, 4/2 67.8 (+0.6 each over x1 56.8 / 67.2): Ours moves as much as Distilled; both are reported at the default LR, so the comparison does not favour Ours. x0.3 pending.
 - Rank-80 Distilled 2/2 (closest baseline) seeds 2 and 3: X26-D48fr80-p2d2-s{2,3}, a2 GPUs 1,3 and 4,5 (62.9M trainable params checked).
 - Rank-80 Distilled 1/1 seed 2: X26-E48fr80-p1d1-s2 (a2 GPUs 6,7).
+- LR check complete: Ours x0.3 / x1 / x3 = 55.5 / 56.8 / 57.4 (4/1), 66.8 / 67.2 / 67.8 (4/2); Ours's weakest LR beats the best Distilled (50.2, 65.6). Appendix 'Baseline learning rate' says so; both reported at the default LR.
