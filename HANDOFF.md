@@ -20,12 +20,16 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 - **Seeds in Table 1 caption**: Ours 56.7+-0.1 / 67.1+-0.2, Distilled 2/2 65.1+-0.2 (3 seeds each).
 - **Guards**: every number quoted in the text is checked in `ouro/scripts/paper_numbers.py` (`!!` lines); the pipeline
   must print "0 printed values differ" and no `!!`.
-- **In flight (2026-11-09)**:
-  - Baseline tuning (user: "没有压低baseline"): Distilled 1/1 and 2/2 at 0.3x and 3x learning rate, rank 80 at 3x
-    (`LRS=... RANK=... launch_x26_distill.sh`, runs `X26-{E,D}48f[r80]-*-lr{0.3,3}`, a1 and a2). `lr_check()` prints
-    their averages; if any variant beats the 1x control, use it as the Distilled baseline (Table 1, Section 5).
-  - Distilled 1/1 seed 3 (`X26-E48f-p1d1-s3`, evals nearly done) -> Distilled 1/1 mean+-s.d. in the Table 1 caption.
-  - Maps-frozen aligned control seed 2 (`SEED=2 launch_variant.sh lora`, `X26-a-lora-s2`, a1 GPUs 1,4).
+- **Done since 11-09**: baseline LR check (Distilled at x0.3 / x3 and rank 80 x3: averages move <= 0.6, never reach
+  Ours; Setup sentence + Appendix "Baseline learning rate"); Distilled 1/1 and 2/2 three seeds; depth gain over three
+  seeds (9.0 +- 0.6, 9.1 +- 0.2, Section 4); maps frozen in the aligned layout (RULER-16K -14.9, seed 2 -22.3; 4K/8K
+  within 1.4); Ouro-1.4B depth sweep (Appendix D).
+- **In flight (2026-11-10)**:
+  - Ours at x0.3 / x3 LR (`launch_variant.sh lr`, X26-a-lr*, a2): x3 gives 56.8 -> 57.4 at 4/1; 4/2 and x0.3 pending.
+    If Ours also moves <= ~0.6, say both sides are LR-robust; otherwise report each side at its best LR.
+  - Seeds 2/3 of the maps-frozen control (X26-a-lora-s{2,3}) and of the prefill-4 LoRA (X26-a-fixed4-lora-s{2,3});
+    `main_table()` prints their seed lines once complete -> Table 1 caption.
+  - Wide adapter (m<=16) seeds 2/3 (X26-a-wide-s{2,3}); their depth sweeps run after training -> plateau over seeds.
   - Code benchmarks need `runs/score_evalplus_all.sh` on each box after their lm-eval runs.
   - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (every 2 h, log /root/pn/backup-BOX.log) to the private
     ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
