@@ -225,7 +225,7 @@ answer tokens over 48M tokens of reasoning, instruction, long-context and web da
 (Appendix~\ref{app:training}).
 
 \paragraph{Ablations and limits.} Training the same adapter with the maps frozen at the identity changes ten of the 11
-benchmarks by at most 2.8 points at 4/1 but costs 14.9 on RULER-16K (Table~\ref{tab:main}), while at 4K and 8K tokens
+benchmarks by at most 2.8 points at 4/1 but costs 14.9 to 22.8 on RULER-16K over three seeds (Table~\ref{tab:main}), while at 4K and 8K tokens
 the two differ by at most 1.4 points: the maps matter for the longest prompts. Deeper prefill does not help everywhere. On 4-shot MATH-500 one prefill loop is best:
 34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. Without the exemplars four prefill loops
 are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two (Appendix~\ref{app:eval}). Exact recall in HELMET does not improve either (Appendix~\ref{app:hurt}).
@@ -371,7 +371,8 @@ the released model. Training-free: the frozen model decodes from a four-loop pre
 LoRA on the $n$-loop model distilled from native 4/4 with the adapter's data, teacher and tokens. Ours: one cache (all
 decode loops read prefill loop $m$) or aligned (decode loop $k$ reads prefill loop $\max(m-n+k,1)$). Each column on the
 items all rows share. Over three training seeds (mean $\pm$ s.d.), Ours (aligned) averages $56.7\pm0.1$ at 4/1 and
-$67.1\pm0.2$ at 4/2, Distilled $49.7\pm0.3$ at 1/1 and $65.1\pm0.2$ at 2/2; the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
+$67.1\pm0.2$ at 4/2, Distilled $49.7\pm0.3$ at 1/1 and $65.1\pm0.2$ at 2/2, the prefill-4 LoRA $56.8\pm0.3$ and
+$67.3\pm0.4$, and Ours with frozen maps $54.3\pm0.6$ and $66.6\pm0.4$; the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
 \label{tab:main}
 \end{table*}
 

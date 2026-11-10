@@ -123,7 +123,8 @@ CMP += [
     *[("Maps by length", f"{c} RULER-{k}K Ours vs {name}", ruler(f"X26-{c}", k), ruler(f"{pre}-{c}", k),
        (14.9, 11.8, 18.1) if (c, k, pre) == ("a41", 16, "X26lo") else None)
       for c in ("a41", "a42") for k in (4, 8, 16) for name, pre in (("maps frozen", "X26lo"), ("prefill-4 LoRA", "X26f4"))],
-    *[("Maps by length", f"{c} RULER-16K Ours vs maps frozen, seed {sd}", ruler(f"X26-{c}", 16), ruler(f"X26los{sd}-{c}", 16), None)
+    *[("Maps by length", f"{c} RULER-16K Ours vs maps frozen, seed {sd}", ruler(f"X26-{c}", 16), ruler(f"X26los{sd}-{c}", 16),
+       {("a41", 2): (22.3, 18.5, 26.0), ("a41", 3): (22.8, 19.1, 26.5)}.get((c, sd)))   # Section 6: "14.9 to 22.8"
       for c in ("a41", "a42") for sd in (2, 3)],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
@@ -1504,7 +1505,9 @@ def main_table():
         if None not in avgs:
             got = (round(float(np.mean(avgs)), 1), round(float(np.std(avgs, ddof=1)), 1))
             want = {"loop adapter 4/1": (56.4, 0.0), "loop adapter 4/2": (66.6, 0.2), "aligned adapter 4/1": (56.7, 0.1),
-                    "aligned adapter 4/2": (67.1, 0.2), "LoRA-distilled 2/2": (65.1, 0.2), "LoRA-distilled 1/1": (49.7, 0.3)}.get(label)   # Table 1 caption
+                    "aligned adapter 4/2": (67.1, 0.2), "LoRA-distilled 2/2": (65.1, 0.2), "LoRA-distilled 1/1": (49.7, 0.3),
+                    "fixed-4 LoRA 4/1": (56.8, 0.3), "fixed-4 LoRA 4/2": (67.3, 0.4), "aligned LoRA-only 4/1": (54.3, 0.6),
+                    "aligned LoRA-only 4/2": (66.6, 0.4)}.get(label)   # Table 1 caption
             print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
                   + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}
