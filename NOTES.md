@@ -375,3 +375,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Same-weights depth gain over three seeds: 4/1 - 1/1 = 9.6 / 8.5 / 8.8 (9.0 +- 0.6), 4/2 - 1/2 = 9.3 / 9.0 / 9.0
   (9.1 +- 0.2). Section 4 (replaces the MMLU / HumanEval+ examples).
 - Maps-frozen seed 2: RULER-16K Ours vs frozen +22.3 [+18.5,+26.0] at 4/1, +6.9 at 4/2 (seed 0: +14.9, +2.0).
+- Ours at x3 LR: 4/1 57.4, 4/2 67.8 (+0.6 each over x1 56.8 / 67.2): Ours moves as much as Distilled; both are reported at the default LR, so the comparison does not favour Ours. x0.3 pending.
