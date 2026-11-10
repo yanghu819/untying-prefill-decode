@@ -737,12 +737,13 @@ data was deliberately included; we did not decontaminate the training corpora. A
 101 of 500 MATH-500 questions, 106 of 14,042 MMLU, 75 of 6,511 BBH, 24 of 1,400 MMLU-Pro and at most 3 items of each
 other audited benchmark (GSM8K, ARC-Challenge, HellaSwag, Winogrande, GPQA, IFEval). Items whose extracted question text is unavailable or
 shorter than 13 tokens cannot be assessed (2,696 MMLU, 296 HellaSwag, 254 BBH, 247 ARC-Challenge, 194 MMLU-Pro, at
-most 4 elsewhere) and are kept; RULER and HELMET are synthetic or long-document and not audited. Without the overlapping items the chosen $m$ of
-Table~\ref{tab:select} still wins significantly on 13 of 15 and 9 of 15 settings at one and two decode loops; at one decode loop MBPP+, which
-loses 93 of its 378 problems, becomes inconclusive ($+2.5$ [$-1.1$, $10.2$]). Against the same-data controls of Table~\ref{tab:main}, without the overlapping items the aligned adapter at prefill 4 /
-decode 1 stays significantly above LoRA-distilled 1/1 on MMLU ($+14.3$), MMLU-Pro ($+18.2$), BBH ($+12.4$), GSM8K ($+4.6$),
-HumanEval+ ($+10.0$ on the 70 remaining problems) and MBPP+ ($+5.3$), and at decode 2 above distilled 2/2 on MMLU
-($+6.3$), MMLU-Pro ($+7.7$) and BBH ($+2.6$); 4-shot MATH-500 keeps the opposite sign (Appendix~\ref{app:eval}).
+most 4 elsewhere) and are kept; RULER and HELMET are synthetic or long-document and not audited. Without the overlapping items, Ours at prefill 4 /
+decode 1 stays significantly above Distilled 1/1 (Table~\ref{tab:main}) on MMLU ($+14.3$), MMLU-Pro ($+18.2$), BBH
+($+12.4$), GSM8K ($+4.6$), HumanEval+ ($+10.0$ on the 70 remaining problems) and MBPP+ ($+5.3$), and at decode 2 above
+Distilled 2/2 on MMLU ($+6.3$), MMLU-Pro ($+7.7$) and BBH ($+2.6$); 4-shot MATH-500 keeps the opposite sign
+(Appendix~\ref{app:eval}). For the per-benchmark choice of $m$ (Table~\ref{tab:select}), the chosen $m$ still wins
+significantly on 13 of 15 and 9 of 15 settings at one and two decode loops; at one decode loop MBPP+, which loses 93
+of its 378 problems, becomes inconclusive ($+2.5$ [$-1.1$, $10.2$]).
 
 \paragraph{Optimisation.} AdamW ($\beta=(0.9,0.95)$, no weight decay), peak learning rate $10^{-4}$ with 2\% linear
 warm-up and cosine decay to $10^{-5}$, gradient clipping at 1.0, global batch 24 sequences on 4 B300 GPUs (6.75 hours for
