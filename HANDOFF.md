@@ -25,8 +25,9 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   seeds (9.0 +- 0.6, 9.1 +- 0.2, Section 4); maps frozen in the aligned layout (RULER-16K -14.9, seed 2 -22.3; 4K/8K
   within 1.4); Ouro-1.4B depth sweep (Appendix D).
 - **In flight (2026-11-10)**:
-  - Ours at x0.3 / x3 LR (`launch_variant.sh lr`, X26-a-lr*, a2): x3 gives 56.8 -> 57.4 at 4/1; 4/2 and x0.3 pending.
-    If Ours also moves <= ~0.6, say both sides are LR-robust; otherwise report each side at its best LR.
+  - (done 11-10) Ours at x0.3 / x1 / x3: 55.5 / 56.8 / 57.4 (4/1), 66.8 / 67.2 / 67.8 (4/2); its weakest LR beats
+    the best Distilled (50.2, 65.6). Appendix "Baseline learning rate"; both methods reported at the default LR.
+  - Rank-80 Distilled seeds (1/1 s2, 2/2 s2 and s3; X26-{E,D}48fr80-*-s*, a2) -> `R80_SEEDS` in paper_numbers.
   - Seeds 2/3 of the maps-frozen control (X26-a-lora-s{2,3}) and of the prefill-4 LoRA (X26-a-fixed4-lora-s{2,3});
     `main_table()` prints their seed lines once complete -> Table 1 caption.
   - Wide adapter (m<=16) seeds 2/3 (X26-a-wide-s{2,3}); their depth sweeps run after training -> plateau over seeds.
