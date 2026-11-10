@@ -386,3 +386,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   Distilled 2/2 / rank 80 / prefill-4 LoRA: +0.5 / -1.5 / -0.5, all intervals contain 0. Section 5 states these.
 - Appendix guide paragraph (which appendices support the body; native = Original, LoRA-distilled = Distilled, loop
   adapter = Ours); REPRODUCE.md maps each main-text result to its function and launcher.
+- Red team round 5 (Codex): 3/5, no number mismatch. Fixed: prefill-4 LoRA 4/1 timed point in Section 5 (42.0 in 10.9 s), 'do not differ' -> 'no detectable difference on these 400 requests', Conclusion scoped to the frozen Ouro checkpoints, Figure 2 'evaluation sets of Appendix H'. Body re-trimmed to 4 pages (Method, HELMET, Conclusion; dropped a repeated answer-length sentence).
