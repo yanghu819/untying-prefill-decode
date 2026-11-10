@@ -24,17 +24,16 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   Ours; Setup sentence + Appendix "Baseline learning rate"); Distilled 1/1 and 2/2 three seeds; depth gain over three
   seeds (9.0 +- 0.6, 9.1 +- 0.2, Section 4); maps frozen in the aligned layout (RULER-16K -14.9, seed 2 -22.3; 4K/8K
   within 1.4); Ouro-1.4B depth sweep (Appendix D).
-- **In flight (2026-11-10)**:
-  - (done 11-10) Ours at x0.3 / x1 / x3: 55.5 / 56.8 / 57.4 (4/1), 66.8 / 67.2 / 67.8 (4/2); its weakest LR beats
-    the best Distilled (50.2, 65.6). Appendix "Baseline learning rate"; both methods reported at the default LR.
-  - Rank-80 Distilled seeds (1/1 s2, 2/2 s2 and s3; X26-{E,D}48fr80-*-s*, a2) -> `R80_SEEDS` in paper_numbers.
-  - Seeds 2/3 of the maps-frozen control (X26-a-lora-s{2,3}) and of the prefill-4 LoRA (X26-a-fixed4-lora-s{2,3});
-    `main_table()` prints their seed lines once complete -> Table 1 caption.
-  - Wide adapter (m<=16) seeds 2/3 (X26-a-wide-s{2,3}); their depth sweeps run after training -> plateau over seeds.
-  - Code benchmarks need `runs/score_evalplus_all.sh` on each box after their lm-eval runs.
-  - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (every 2 h, log /root/pn/backup-BOX.log) to the private
-    ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
-  - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]`.
+- **Status 2026-11-11: ready for arXiv.** Data frozen; red team round 5 (3/5, no number mismatch) addressed; body 4
+  pages; every quoted number guarded; provenance regenerated and scanned; arXiv bundle `paper/arxiv/arxiv.tar.gz`
+  checked (all files present, main.bbl 93 entries). The user submits it personally.
+- **Still running, not in the paper** (add to the appendix later if wanted, the paper does not depend on them):
+  rank-80 Distilled seeds (1/1 s2, 2/2 s2 and s3; `R80_SEEDS`), wide adapter seeds 2/3 and their depth sweeps
+  (X26-a-wide-s{2,3}, X26ws{2,3}-*; `plateau()` needs a seed prefix to use them).
+- Code benchmarks need `runs/score_evalplus_all.sh` on each box after their lm-eval runs.
+- Backups: `ouro/scripts/backup_ms.py BOX [--data]` (every 2 h, log /root/pn/backup-BOX.log) to the private
+  ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
+- Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]`.
 - **Operational lessons (2026-11-09)**: queues are per box; before moving queue lines between boxes check that every
   checkpoint they use exists on the target. `grid_worker.sh GPU Q MAX` only starts a job when the GPU has fewer than
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
