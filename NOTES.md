@@ -377,3 +377,4 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Maps-frozen seed 2: RULER-16K Ours vs frozen +22.3 [+18.5,+26.0] at 4/1, +6.9 at 4/2 (seed 0: +14.9, +2.0).
 - Ours at x3 LR: 4/1 57.4, 4/2 67.8 (+0.6 each over x1 56.8 / 67.2): Ours moves as much as Distilled; both are reported at the default LR, so the comparison does not favour Ours. x0.3 pending.
 - Rank-80 Distilled 2/2 (closest baseline) seeds 2 and 3: X26-D48fr80-p2d2-s{2,3}, a2 GPUs 1,3 and 4,5 (62.9M trainable params checked).
+- Rank-80 Distilled 1/1 seed 2: X26-E48fr80-p1d1-s2 (a2 GPUs 6,7).

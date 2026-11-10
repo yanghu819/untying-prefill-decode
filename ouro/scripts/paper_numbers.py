@@ -407,7 +407,7 @@ def keys():
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
-    ks |= {dist_seed_key(b, 2, f"r80{sd}") for b in MAIN_BENCH for sd in ("s2", "s3")}
+    ks |= {dist_seed_key(b, c, f"r80{sd}") for b in MAIN_BENCH for c, sds in R80_SEEDS.items() for sd in sds}
     ks |= {main_key(b, "aligned", c).replace("X26-", f"X26a{v}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for v in ("lr0.3", "lr3")}
     ks |= {k for _, k, _ in REPRO}
     ks |= {k.replace("S42", c) for _, _, ka, _ in equal_specs() for k in (ka,) for c in ("a42", "a22")}
@@ -1422,8 +1422,8 @@ def main_table():
                       for label, kind, c in MAIN_ROWS if kind == "loraonly"})   # maps-frozen control, seeds 2 and 3
         seeds.update({label: [load(main_key(bench, kind, c).replace("X26f4-", f"X26f4s{sd}-", 1)) for sd in (2, 3)]
                       for label, kind, c in MAIN_ROWS if kind == "fixed4"})   # prefill-4 LoRA, seeds 2 and 3
-        seeds.update({label: [load(dist_seed_key(bench, c, f"r80{sd}")) for sd in ("s2", "s3")]
-                      for label, kind, c in MAIN_ROWS if kind == "dist80" and c == 2})   # rank-80 Distilled 2/2, seeds 2, 3
+        seeds.update({label: [load(dist_seed_key(bench, c, f"r80{sd}")) for sd in R80_SEEDS[c]]
+                      for label, kind, c in MAIN_ROWS if kind == "dist80"})   # rank-80 Distilled, further seeds
         full = float(np.median([len(v) for v in sets.values() if v])) if any(sets.values()) else 0   # typical item count
         sets = {label: (v if v and len(v) >= 0.95 * full else None) for label, v in sets.items()}   # unfinished runs wait
         seeds = {label: [v if v and len(v) >= 0.95 * full else None for v in vs] for label, vs in seeds.items()}
@@ -1440,8 +1440,7 @@ def main_table():
         flag = "  !! paper: " + str(want) if want is not None and (avg is None or abs(avg - want) > 0.051) else ""
         print(f"Main table   {label:20s} " + " ".join("  -- " if v is None else f"{v:5.1f}" for v in vals)
               + ("" if avg is None else f"  avg {avg:5.1f}") + flag)
-    for label in [l for l, kind, c in MAIN_ROWS if kind in ("cell", "aligned", "dist", "loraonly", "fixed4")
-                  or (kind == "dist80" and c == 2)]:
+    for label in [l for l, kind, c in MAIN_ROWS if kind in ("cell", "aligned", "dist", "loraonly", "fixed4", "dist80")]:
         per_seed = list(zip(*[r[f"{label} seeds"] for r in out]))
         avgs = [None if None in v else float(np.mean(v)) for v in per_seed]
         if None not in avgs:
@@ -1477,7 +1476,8 @@ ABL_PRINTED = {("6M tokens", "S41"): 53.7, ("6M tokens", "S42"): 65.2, ("48M tok
                ("48M tokens", "S42"): 66.4}   # quoted in Section 4.2
 
 
-DIST_SEEDS = {1: ("s2", "s3"), 2: ("s2", "s3")}   # further training seeds of Distilled n/n (SEED=<k> launch_x26_distill.sh)
+DIST_SEEDS = {1: ("s2", "s3"), 2: ("s2", "s3")}
+R80_SEEDS = {1: ("s2",), 2: ("s2", "s3")}   # rank-80 Distilled: further seeds (RANK=80 SEED=k launch_x26_distill.sh)   # further training seeds of Distilled n/n (SEED=<k> launch_x26_distill.sh)
 
 
 def dist_seed_key(bench, c, sd):
