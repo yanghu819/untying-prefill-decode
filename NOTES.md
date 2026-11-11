@@ -390,3 +390,15 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Red team round 5 (Codex): 3/5, no number mismatch. Fixed: prefill-4 LoRA 4/1 timed point in Section 5 (42.0 in 10.9 s), 'do not differ' -> 'no detectable difference on these 400 requests', Conclusion scoped to the frozen Ouro checkpoints, Figure 2 'evaluation sets of Appendix H'. Body re-trimmed to 4 pages (Method, HELMET, Conclusion; dropped a repeated answer-length sentence).
 - Seeds landed: prefill-4 LoRA 56.8+-0.3 / 67.3+-0.4 (Ours 56.7+-0.1 / 67.1+-0.2); maps frozen 54.3+-0.6 / 66.6+-0.4; RULER-16K Ours - frozen at 4/1 over three seeds +14.9 / +22.3 / +22.8 (4/2: +2.0 / +6.9 / +2.8). Table 1 caption + Method. Rank-80 Distilled seeds not landed: left at one seed (plan: do not wait).
 - Rank-80 Distilled seeds: 1/1 50.2 / 50.2 (two seeds), 2/2 65.4 / 65.3 / 65.1 (65.3 +- 0.1). Table 1 caption.
+
+### 2026-11-11 project audit (paper / code / docs)
+- compute's "N printed values differ" now counts every "!!" printed (it counted only the paired comparisons before);
+  budget_pairs seeds its bootstrap per pair (Ours 4/1 - Distilled 1/1 interval is [1.8, 12.5], text updated).
+- build_arxiv.py crashed on "\%" in the abstract after writing the tarball, so the published PDF and
+  ARXIV_SUBMISSION.md had stayed at 11-07; fixed, PDF renamed paper/deep-prompt-shallow-decoder.pdf, old PDF removed.
+- Paper: Method Details now has aligned = Ours and one cache = variant; 0-shot MATH points to Appendix Prompt Format;
+  HELMET ~11K-token prompts; prefill share "of the total time"; MATH-500 reported 90.85 -> 90.9 in table and text;
+  Winogrande +1.9 in the reproduction sentence; Table 5 caption carries the frozen-maps RULER-16K seeds; appendix
+  guide corrected; plateau over three wide-adapter seeds (16 settings: 8 equal, 11 within one depth, 9 all at 2-4).
+- Code: --prefill-lora only for loopmap arms; merge_reader_lora skips PrefillLoRA; time_breakdown runs once;
+  tab_depth14 has the m=5 column; unused CELLS removed; docs run paper_numbers with math-verify.

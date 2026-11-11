@@ -67,7 +67,7 @@ def merge_reader_lora(model):
     d-loop model, so its cost equals native d loops; the KV delta only acts once, at prefill."""
     for parent in list(model.modules()):
         for name, child in list(parent.named_children()):
-            if isinstance(child, ReaderLoRA):
+            if type(child) is ReaderLoRA:   # never a PrefillLoRA: the writer is also the native teacher
                 child.base.weight += (child.lora_b.float() @ child.lora_a.float()).to(child.base.weight.dtype)
                 setattr(parent, name, child.base)
     return model

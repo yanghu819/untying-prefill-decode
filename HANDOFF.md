@@ -76,7 +76,7 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 
 ```bash
 # (if new runs) export per-item scores from both boxes and merge: ~/.b300-handoff/pn_sync.sh
-cd ouro && uv run --with numpy python scripts/paper_numbers.py compute       # must end "0 printed values differ"
+cd ouro && uv run --with numpy --with math-verify python scripts/paper_numbers.py compute       # must end "0 printed values differ"
 uv run --with numpy --with matplotlib python scripts/paper_figs.py           # all figures + generated tables
 cd ../paper/latex && tectonic -X compile main.tex                            # check: no Overfull, no undefined refs
 cd .. && python3 build_arxiv.py                                              # arXiv tarball + paper/*.pdf refresh

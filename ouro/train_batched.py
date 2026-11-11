@@ -98,6 +98,8 @@ def main():
     parser.add_argument("--freeze-maps", action="store_true",
                         help="ablation: keep the per-loop KV maps at their identity initialisation (LoRA only, direct sharing)")
     args = parser.parse_args()
+    if args.prefill_lora and not (args.arm[0] in "XNQ" or args.arm in ("V", "S", "W", "T", "M", "a")):
+        raise ValueError("--prefill-lora is trained only by loopmap_forward (arms X/N/Q/V/S/W/T/M/a)")
     if args.stop_tokens > args.planned_tokens:
         raise ValueError("Requested stop exceeds the planned token budget.")
     rank = int(os.environ.get("RANK", "0"))

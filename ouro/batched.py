@@ -1,4 +1,3 @@
-import os
 """Batched (padded) forwards for the adapter arms and the refresh-aware arm.
 
 Prefixes are left-padded, suffixes right-padded. RoPE scores depend only on
@@ -6,6 +5,7 @@ relative position, so a shared position offset per row leaves every valid
 score unchanged; pad keys are masked, pad targets excluded from the loss.
 Returns the same (kl_sum, stats) contract as the per-sample forwards.
 """
+import os
 
 import torch
 import torch.nn.functional as F

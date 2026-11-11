@@ -92,7 +92,7 @@ prompt states of prefill depth $m$. The main adapter is trained on $m,n\le4$; a 
 
 \paragraph{Benchmarks and timing.} Base model: 11 benchmarks with the Ouro evaluation protocol (Appendix~\ref{app:eval}),
 of which we time the four that write chain-of-thought answers: GSM8K, MATH-500, BBH and MMLU-Pro. Thinking model:
-eight benchmarks including HELMET~\citep{helmet} (8K-token prompts). Time is measured per request at batch 1 on one
+eight benchmarks including HELMET~\citep{helmet} (about 11K-token prompts). Time is measured per request at batch 1 on one
 B300 GPU in bfloat16 with greedy decoding, split into prefill (to the first token) and decode; the replayed answers are
 scored with the evaluation's rule, so quality and time come from the same requests. On the base model we time 100
 requests per task, the same for every configuration, and average two passes in opposite orders on an otherwise idle
@@ -116,7 +116,7 @@ Figure~\ref{fig:time} splits the time of each request into prefill and decode. C
 inputs and long outputs. On 192 GSM8K problems, Ouro-2.6B-Thinking reads about 100 tokens and writes about 900, and
 prefill is 0.2--0.3\% of the time; on MATH-500, with 3,000--3,500 output tokens, it is 0.1\%. On the base model, whose
 few-shot prompts are longer (300--1,400 tokens) and answers shorter (100--700 tokens), prefill is 0.3--2.8\% of the
-time per request for Original 1/1, 2/2 and 4/4 and Ours 1/1 and 1/2, lowest on MATH-500 and highest on GSM8K and
+total time for Original 1/1, 2/2 and 4/4 and Ours 1/1 and 1/2, lowest on MATH-500 and highest on GSM8K and
 MMLU-Pro. Long prompts with short answers are the opposite case: on
 HELMET (about 10,900 input and 15 output tokens with the chat template) prefill is 27--30\% of the time at Original
 2/2 and 4/4. Prefill cost grows about linearly
@@ -181,7 +181,7 @@ against 58.3, and 49.8 when the same all-pairs LoRA is trained without maps).
 Equal decode loops do not mean equal time. Figure~\ref{fig:budget} plots accuracy against measured time on the same
 requests. With the maps folded into the prompt cache, Ours decodes within 10\% of the original model's time per token.  On the four chain-of-thought tasks, Ours 4/1 scores 41.2 in 11.2\,s per request, against 27.0 in
 11.1\,s for Original 1/1 and 34.2 in 10.2\,s for Distilled 1/1 (prefill-4 LoRA: 42.0 in 10.9\,s; paired over the 400 requests: $+14.2$\ci{9.0}{19.8} and
-$+7.0$\ci{1.8}{12.2} points), but Original 2/2 scores 56.8, $+15.5$\ci{10.2}{20.8} over Ours 4/1 in 1.40 times its time.
+$+7.0$\ci{1.8}{12.5} points), but Original 2/2 scores 56.8, $+15.5$\ci{10.2}{20.8} over Ours 4/1 in 1.40 times its time.
 At two decode loops, Ours 4/2 (59.0 in 17.2\,s; 3/2: 59.5 in 16.1\,s), Distilled 2/2 (58.5 in 16.1\,s; rank 80: 60.5 in
 15.5\,s) and the prefill-4 LoRA (59.5 in 15.5\,s) show no detectable difference on these 400 requests (paired
 differences $-1.5$ to $+0.5$, every interval containing zero). At batch 32 (estimated, per-step
@@ -228,7 +228,7 @@ answer tokens over 48M tokens of reasoning, instruction, long-context and web da
 benchmarks by at most 2.8 points at 4/1 but costs 14.9 to 22.8 on RULER-16K over three seeds (Table~\ref{tab:main}), while at 4K and 8K tokens
 the two differ by at most 1.4 points: the maps matter for the longest prompts. Deeper prefill does not help everywhere. On 4-shot MATH-500 one prefill loop is best:
 34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. Without the exemplars four prefill loops
-are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two (Appendix~\ref{app:eval}). Exact recall in HELMET does not improve either (Appendix~\ref{app:hurt}).
+are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two (Appendix~\ref{app:hurt}). Exact recall in HELMET does not improve either (Appendix~\ref{app:hurt}).
 
 \section{Related Work}
 \label{sec:related}
@@ -252,7 +252,7 @@ Time is measured at batch 1 on one GPU type; at large batch sizes decode is chea
 grows. Applied at every decode step, the adapter's maps and a second attention call cost 19--40\% more decode time per
 generated token than the original model at batch 1; folding the maps into the prompt cache removes this cost but
 stores one prompt cache per decode loop, as the original model does at $n$ loops. The depth sweep and the batch-32
-estimate use the per-step form. The prefill depth is chosen per benchmark, not routed per prompt. The prefill loops stay frozen, so the gain might
+estimate use the per-step form. The prefill depth is fixed per setting, not routed per prompt. The prefill loops stay frozen, so the gain might
 stop later if they were trained for deeper use as well. Deeper prefill does not help few-shot MATH-500 or
 exact recall in HELMET (34 items). Models are 2.6B with four loops (1.4B, a 9B hybrid and decision models in the appendix);
 benchmarks are English.
@@ -262,7 +262,9 @@ benchmarks are English.
 
 \appendix
 
-\paragraph{Guide to the appendix.} Appendices~\ref{app:time}--\ref{app:eval} and~\ref{app:hurt} support the main text.
+\paragraph{Guide to the appendix.} Appendices~\ref{app:time}--\ref{app:depth14}, \ref{app:method}--\ref{app:eval}
+and~\ref{app:hurt} support the main text; Appendix~\ref{app:extended} gives the per-benchmark results behind Table~1
+together with earlier per-benchmark studies.
 Appendices~\ref{app:seed}--\ref{app:hybrid} report earlier studies, mostly with the one-cache variant of the loop
 adapter (decode loops read only the last prefill loop's cache, Section~\ref{sec:method}), and the other checkpoints;
 Appendix~\ref{app:repro} lists what is released. In the appendix, ``native $n/n$'' is Original $n/n$,
@@ -274,7 +276,7 @@ Appendix~\ref{app:repro} lists what is released. In the appendix, ``native $n/n$
 Table~\ref{tab:time} gives the per-request distributions behind Figure~\ref{fig:time}: medians and 90th percentiles of
 the output length, the time per request and the prefill share, over the same 100 requests per task for every
 configuration (batch 1, one B300, greedy). At the 90th percentile the prefill share stays below 5\% on GSM8K, MATH-500
-and BBH; on MMLU-Pro, where many answers are short, it reaches 6--17\%. The time per request follows the output
+and BBH; on MMLU-Pro, where many answers are short, it reaches 5--17\%. The time per request follows the output
 length, whose 90th percentile is up to about four times its median within a task.
 
 Every time is the mean of two passes over the same requests in opposite orders on a machine running nothing else; the
@@ -315,7 +317,9 @@ id); the accuracy at $m^\ast$ and at the deepest evaluated depth is reported on 
 (Table~\ref{tab:plateau}). The rule has no interval or equivalence test. Settings where no evaluated depth meets it,
 because accuracy still rises or too few deeper depths were evaluated, are left out: for the main adapter MMLU,
 MMLU-Pro, BBH and ARC-C at $n=1$, MMLU-Pro and ARC-C at $n=2$, and HellaSwag and Winogrande at both; for the adapter trained up to 16, MMLU-Pro and ARC-C at
-$n=2$.
+$n=2$. Over three training seeds of that adapter, 16 settings have a stop in every seed; the three stops are equal in 8
+of them, within one sampled depth in 11 and all at two to four loops in 9, and MATH-500 stops at one prefill loop in
+every seed.
 
 \begin{table}[h]
 \centering\small
@@ -340,9 +344,9 @@ $m,n\le4$), on the same benchmarks and protocol.
 
 \begin{table*}[h]
 \centering\small
-\begin{tabular}{@{}lrrrrrrrrr@{}}
+\begin{tabular}{@{}lrrrrrrrrrr@{}}
 \toprule
-benchmark & $n$ & $m{=}1$ & 2 & 3 & 4 & 6 & 8 & 12 & 16 \\
+benchmark & $n$ & $m{=}1$ & 2 & 3 & 4 & 5 & 6 & 8 & 12 & 16 \\
 \midrule
 \csname @@input\endcsname ../figs/tab_depth14.tex
 \bottomrule
@@ -373,7 +377,7 @@ decode loops read prefill loop $m$) or aligned (decode loop $k$ reads prefill lo
 items all rows share. Over three training seeds (mean $\pm$ s.d.), Ours (aligned) averages $56.7\pm0.1$ at 4/1 and
 $67.1\pm0.2$ at 4/2, Distilled $49.7\pm0.3$ at 1/1 and $65.1\pm0.2$ at 2/2 (rank 80: 50.2 over two seeds and
 $65.3\pm0.1$), the prefill-4 LoRA $56.8\pm0.3$ and
-$67.3\pm0.4$, and Ours with frozen maps $54.3\pm0.6$ and $66.6\pm0.4$; the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
+$67.3\pm0.4$, and Ours with frozen maps $54.3\pm0.6$ and $66.6\pm0.4$ (its RULER-16K at 4/1: 49.8, 42.4 and 41.8 against 64.7); the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
 \label{tab:main}
 \end{table*}
 
@@ -555,7 +559,7 @@ many loops and the decision can then stop early.
 \includegraphics[width=0.8\textwidth]{../figs/fig0_method.pdf}
 \caption{\textbf{The loop adapter.} The frozen model prefills the prompt with $m$ loops. Each of the $n$ decode loops
 reads the prompt KV of a prefill loop through its own map: a scale on each rotary pair of the keys (moved onto the
-query, so the cache is never rewritten) and a value map applied after attention; prompt and answer attention share one
+query, so in this per-step form the cache is never rewritten) and a value map applied after attention; prompt and answer attention share one
 softmax. Aligned: decode loop $k$ reads prefill loop $\max(m-n+k,1)$; one cache: every decode loop reads loop $m$.}
 \label{fig:method}
 \end{figure*}
@@ -619,8 +623,9 @@ the query) and value map
 \end{figure*}
 
 \paragraph{Prefill and decode.} ``\rw{m}{n}'' prefills the prompt with $m$ loops and decodes every answer token with
-$n$ loops; \nat{n} is the unmodified model. The frozen model prefills the prompt with $m$ loops and keeps only the last
-loop's prompt keys and values. The decoder is the same frozen model with rank-16 LoRA~\citep{lora} on its attention
+$n$ loops; \nat{n} is the unmodified model. The frozen model prefills the prompt with $m$ loops and keeps the prompt
+keys and values its decode loops read: with aligned caches (Ours), decode loop $k$ reads prefill loop $\max(m-n+k,1)$;
+in the one-cache variant every decode loop reads the last prefill loop. The decoder is the same frozen model with rank-16 LoRA~\citep{lora} on its attention
 projections, running $n$ loops per token.
 
 \paragraph{RoPE-commuting maps.} Decode loop $k$ reads the prompt KV cache through a map per (loop, layer, KV head). The
@@ -628,19 +633,19 @@ key map is one complex scale $c_j$ per rotary frequency pair $j$~\citep{rope}: v
 $(k_{2j},k_{2j+1})$ as a 2-D vector, $c_j=r\,e^{i\phi}$ stretches it by $r$ and turns it by $\phi$. Writing a key pair rotated for position $s$ as a complex
 number $\tilde k_j = e^{is\theta_j}k_j$, scaling commutes with the rotation, $c_j\tilde k_j = e^{is\theta_j}(c_jk_j)$,
 and $\mathrm{Re}\langle q_j, c_j\tilde k_j\rangle = \mathrm{Re}\langle \bar c_jq_j, \tilde k_j\rangle$: the map is applied
-to the query and the stored cache is never rewritten. The value map is a full linear map $W_k$ per head; because
+to the query and, in this per-step form, the stored cache is never rewritten (the timed form of
+Section~\ref{sec:method} instead folds both maps into the cache once at prefill). The value map is a full linear map $W_k$ per head; because
 attention is linear in the values, $\sum_i a_iW_kv_i = W_k\sum_i a_iv_i$ is applied once to the attention output over the
 prompt. Prompt and generated tokens share one softmax: the two parts are computed by two attention calls with outputs
 $o_P, o_A$ and log-sum-exps $\lambda_P, \lambda_A$ of their attention logits, and merged as $g\,o_P+(1-g)\,o_A$ with
-$g=\sigma(\lambda_P-\lambda_A)$, which equals one softmax over both (the blockwise softmax of FlashAttention~\citep{flashattn2}). The prompt KV is therefore stored once for every $n$, and total KV is $b(\ell+n\,t)$
+$g=\sigma(\lambda_P-\lambda_A)$, which equals one softmax over both (the blockwise softmax of FlashAttention~\citep{flashattn2}). In the one-cache variant the prompt KV is therefore stored once for every $n$, and total KV is $b(\ell+n\,t)$
 instead of $b\,n(\ell+t)$. Serving from one cache equals materialising a mapped prompt cache per loop; in bfloat16 all 512
 checked greedy tokens agree.
 
-\paragraph{Aligned caches.} With one cache, every decode loop reads the last prefill loop. The aligned variant keeps one
-prompt cache per decode loop and lets decode loop $k$ read prefill loop $\max(m-n+k,1)$ through its own map, so at $m=n$ every
-decode loop reads exactly the KV the native model would. It stores the prompt $n$ times, as \nat{n} does, and is
-trained identically. It is the more accurate layout, most of all on long-context retrieval; the single cache is the
-smaller one.
+\paragraph{Aligned caches (Ours).} The main method keeps one prompt cache per decode loop and lets decode loop $k$ read
+prefill loop $\max(m-n+k,1)$ through its own map, so at $m=n$ every decode loop reads exactly the KV the original model
+would. It stores the prompt $n$ times, as \nat{n} does. The one-cache variant, trained identically, stores it once and
+is slightly less accurate, most of all on long-context retrieval.
 
 \paragraph{What the maps do.} For the aligned adapter, the same training with the maps frozen at the identity moves ten
 of the 11 benchmarks by at most 2.8 points at 4/1 but lowers RULER-16K from 64.7 to 49.8 (Table~\ref{tab:main}). The
@@ -702,7 +707,7 @@ and measure what each buys.
 a cross-decoder reads; YOCO-U~\citep{yocou} loops the self-decoder, keeping KV storage independent of the loop count
 while every token still runs the loops; KITE~\citep{kite} expands a checkpoint into two towers so that bulk prefill runs
 only the KV-producing tower. These architectures are built for the split; we adapt an existing looped model after
-pretraining and choose the prefill loops $m$ and decode loops $n$ per request.
+pretraining and choose the prefill loops $m$ and decode loops $n$ at inference.
 
 \paragraph{Sharing and transferring state.} KV is shared across heads~\citep{mqa,gqa} and
 layers~\citep{cla,mlkv}, and evicted or compressed per token~\citep{streamingllm,h2o,snapkv,pyramidkv}, which is
@@ -781,7 +786,7 @@ ARC-Challenge (25-shot, 1,172), HellaSwag (10-shot, 10,042), Winogrande (5-shot,
 match, 1,319); MATH-500 with the 4-shot Minerva prompt, scored on the final answer (the last \verb|\boxed{}|, else the Minerva
 closing sentence) with math-verify (the Ouro models' own 5-shot prompt and scorer are not released); HumanEval+ and MBPP+ with evalplus as it runs for a tokenizer with a chat template (the problem
 in evalplus's chat prompt, greedy, 768 new tokens, sanitized code, plus tests). With this protocol native Ouro-2.6B 4/4
-scores within one point of the published numbers on MMLU, MMLU-Pro, BBH, ARC-Challenge and HellaSwag and within 1.2 to 3.1 points on
+scores within one point of the published numbers on MMLU, MMLU-Pro, BBH, ARC-Challenge and HellaSwag, 1.9 above on Winogrande and within 1.2 to 3.1 points on
 HumanEval(+) and MBPP(+) (Table~\ref{tab:repro}). Two scores differ for a documented reason: GSM8K strict matching
 requires the exemplars' ``The answer is'' sentence and gives 69.4, while flexible extraction of the last number gives
 86.7, bracketing the published 81.6; and MATH-500 with the public 4-shot Minerva prompt gives 53.6 against 90.9 with
@@ -915,7 +920,7 @@ RULER at $k$K tokens.}
 \end{tabular}
 \caption{\textbf{Every cell of the task map, aligned caches.} Ouro-2.6B, accuracy (\%) of native $n/n$ and of the
 aligned loop adapter at prefill $m$ / decode $n$ on the benchmarks of Table~\ref{tab:main}, each column on the items all
-available configurations share (Figure~\ref{fig:grid}); bold: the best $m$ at each $n$; --: not evaluated yet.}
+available configurations share (Figure~\ref{fig:grid}); bold: the best $m$ at each $n$.}
 \label{tab:alignedcells}
 \end{table*}
 

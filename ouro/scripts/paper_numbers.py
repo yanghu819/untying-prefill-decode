@@ -1059,8 +1059,8 @@ def budget_pairs(reps=5000):
     """Section 5: paired comparisons on the same 400 timed requests: accuracy difference (points) and the ratio of mean
     time per request, each with a 95% bootstrap interval over requests."""
     out = []
-    rng = np.random.default_rng(0)
     for a, b in BUDGET_PAIRS:
+        rng = np.random.default_rng(0)   # seeded per pair: an interval does not depend on the other pairs
         A, B = timed_requests(a), timed_requests(b)
         ids = sorted(set(A) & set(B))
         if len(ids) < 400:
@@ -1075,7 +1075,7 @@ def budget_pairs(reps=5000):
                    ratio=round(float(ta.sum() / tb.sum()), 2), ratio_lo=round(float(np.percentile(rt, 2.5)), 2),
                    ratio_hi=round(float(np.percentile(rt, 97.5)), 2))
         out.append(row)
-        want = {("a4x1pm", "native1st"): (14.2, 9.0, 19.8), ("a4x1pm", "D1st"): (7.0, 1.8, 12.2),
+        want = {("a4x1pm", "native1st"): (14.2, 9.0, 19.8), ("a4x1pm", "D1st"): (7.0, 1.8, 12.5),
                 ("native2st", "a4x1pm"): (15.5, 10.2, 20.8)}.get((a, b))   # Section 5
         if want and (row["diff"], row["diff_lo"], row["diff_hi"]) != want:
             print(f"Budget pair  {a} vs {b}: {row}  !! paper: {want}")
@@ -1374,6 +1374,10 @@ def plateau_seeds():
         print(f"Plateau seed {len(out)} settings with a stop in every seed: equal {sum(r['equal'] for r in out)}, "
               f"within one sampled depth {sum(r['within_one'] for r in out)}, "
               f"all in 2-4 {sum(all(2 <= m <= 4 for m in r['m_star']) for r in out)}")
+        got = (len(out), sum(r["equal"] for r in out), sum(r["within_one"] for r in out),
+               sum(all(2 <= m <= 4 for m in r["m_star"]) for r in out))
+        if got != (16, 8, 11, 9):   # Appendix (Where the Gain Stops)
+            print(f"Plateau seed counts {got}  !! paper: (16, 8, 11, 9)")
     return out
 
 
@@ -1876,7 +1880,31 @@ def throughput():
     return best
 
 
+class _FlagCounter:
+    """Wraps stdout during compute and counts printed lines that flag a mismatch ("!!"), whichever check prints them."""
+
+    def __init__(self, stream):
+        self.stream, self.flags = stream, 0
+
+    def write(self, text):
+        self.flags += text.count("!!")
+        return self.stream.write(text)
+
+    def flush(self):
+        self.stream.flush()
+
+
 def compute():
+    counter = _FlagCounter(sys.stdout)
+    sys.stdout = counter
+    try:
+        _compute(counter)
+    finally:
+        sys.stdout = counter.stream
+
+
+def _compute(counter):
+    global _TB
     res, bad = [], 0
     for sec, label, ka, kb, printed in CMP:
         a, b = load(ka), load(kb)
@@ -1902,8 +1930,9 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
-    print(f"wrote {OUT}; {bad} printed values differ")
+    _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 
 if __name__ == "__main__":

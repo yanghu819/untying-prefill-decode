@@ -23,11 +23,8 @@ plt.rcParams.update({
     "xtick.major.width": 0.6, "ytick.major.width": 0.6, "xtick.major.size": 2.5, "ytick.major.size": 2.5,
     "legend.frameon": False, "savefig.dpi": 300, "pdf.fonttype": 42})
 
-# Fig. 1 grid: one loop adapter on Ouro-2.6B; rows = decode loops 1..4, columns = prefill loops 1..4
 PN = json.loads((ROOT / "results" / "paper_numbers.json").read_text())
 _M = {m["label"]: m["mean"] for m in PN["means"]}
-CELLS = {name: [[_M[f"S{p}{d} {name} ({sub})"] for p in range(1, 5)] for d in range(1, 5)]
-         for name, sub in (("MMLU", "20/subject"), ("RULER-16K", "260"), ("GSM8K", "400"))}
 
 
 def save(fig, name):
@@ -452,7 +449,8 @@ def tab_e2e():
 
 def tab_repro():
     """Appendix B: native Ouro-2.6B 4/4 under our evaluation and as reported by Ouro (paper_numbers.json, repro)."""
-    f = lambda x: "--" if x is None else f"{x:.1f}"
+    from decimal import Decimal, ROUND_HALF_UP   # 90.85 -> 90.9 (published values have two decimals)
+    f = lambda x: "--" if x is None else str(Decimal(repr(x)).quantize(Decimal("0.1"), ROUND_HALF_UP))
     rows = [f"{r['bench']} & {f(r['ours'])} & {f(r['reported'])} & {r['items']:,} \\\\" for r in PN.get("repro", [])]
     (OUT / "tab_repro.tex").write_text("\n".join(rows) + "\n")
 
@@ -666,7 +664,7 @@ def tab_depth14():
     rows = PN.get("depth_sweep_14", [])
     if not rows:
         return (OUT / "tab_depth14.tex").unlink(missing_ok=True)
-    ms = [1, 2, 3, 4, 6, 8, 12, 16]
+    ms = [1, 2, 3, 4, 5, 6, 8, 12, 16]
     lines = []
     for r in rows:
         q = {int(k): v for k, v in r["quality"].items()}

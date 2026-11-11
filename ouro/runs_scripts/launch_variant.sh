@@ -7,8 +7,9 @@
 #   fixed4: X26-a-fixed4-lora, prefill fixed at 4 (cells 4/1..4/4) and identity maps (--freeze-maps): the simple
 #           "deep prefill + LoRA" control; evaluated on the main-table benchmarks at 4/1 and 4/2 (X26f4-a4<n>-<task>).
 #   prefill: X26-a-wide-pf, the wide adapter plus a LoRA on the prefill (writer) attention, trained on the same cells
-#           (--prefill-lora; prompts cut to their last OURO_MAX_PREFIX=2048 tokens to bound the prefill's backward
-#           memory at 16 loops); depth sweep as for wide (run names X26wpf-a<m>x<n>-<task>). Tests whether the stop at
+#           (--prefill-lora; training prompts cut to their last OURO_MAX_PREFIX=2048 tokens to bound the prefill's backward
+#           memory at 16 loops; evaluation is not cut, so long-context scores test lengths it did not train on); depth
+#           sweep as for wide (run names X26wpf-a<m>x<n>-<task>). Tests whether the stop at
 #           2-4 prefill loops comes from the frozen prefill (red team rounds 3-5).
 #   lr:     X26-a-lr<LRS>, the main adapter with the learning-rate schedule x LRS (env LRS), so Ours gets the same LR
 #           check as the Distilled baseline; main-table benchmarks at 4/1 and 4/2 (X26alr<LRS>-a4<n>-<task>).

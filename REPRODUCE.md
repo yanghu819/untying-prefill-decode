@@ -4,8 +4,8 @@ The paper's numbers come from these places, all in this commit:
 
 1. **Per-item scores** (`ouro/results/items/`): one file per evaluation run used by the paper (item id → score).
    `python ouro/scripts/paper_numbers.py compute` recomputes every paired comparison, interval and mean in the tables
-   and text (paired bootstrap, 5,000 resamples, seed 0) and writes `ouro/results/paper_numbers.json`. This takes seconds
-   on a laptop and needs only numpy.
+   and text (paired bootstrap, 5,000 resamples, seed 0) and writes `ouro/results/paper_numbers.json`. It needs numpy and math-verify (Python 3.10+;
+   MATH-500 answers are scored with math-verify).
 2. **Timing records** (`ouro/results/e2e/`, `ouro/results/throughput-sb4/`): the end-to-end timing table, time ratios
    and decode throughput, also recomputed by `paper_numbers.py compute`.
 3. **Decision-model records** (`ouro/results/lev/`): per-depth LevBench development outputs for the Lev appendix.
