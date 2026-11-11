@@ -1,58 +1,46 @@
-# Untying Prefill and Decode Loops in Looped Language Models
+# Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models
 
-**Paper:** [`paper/untying-prefill-decode-loops.pdf`](paper/untying-prefill-decode-loops.pdf) (arXiv link coming) ·
-**Author:** Yang Hu · **Code license:** MIT · **Keywords:** looped language model, recurrent depth, universal
-transformer, Ouro, SenseNova-Loop, Lev, test-time compute, prefill vs decode, loop adapter, KV cache, RoPE
+**Paper:** [`paper/deep-prompt-shallow-decoder.pdf`](paper/deep-prompt-shallow-decoder.pdf) (arXiv link coming) ·
+**Author:** Yang Hu · **Code license:** MIT · **Keywords:** looped language model, recurrent depth, Ouro, test-time
+compute, prefill vs decode, loop adapter, KV cache
 
-Looped (recurrent-depth) language models run one block of layers several times per token and, at inference, run the
-same number of loops when they prefill the prompt and when they decode each answer token. This repository unties the
-two. A small **loop adapter** (LoRA plus per-loop key–value maps on a frozen model) lets a looped model prefill with *m*
-loops and decode with *n*; one set of its parameters serves all 16 pairs up to four loops. Decode loop *k* reads the
-prompt KV of prefill loop *m−n+k* (**aligned caches**, the default), or every decode loop reads one stored prompt cache
-(**one cache**, the memory-saving variant).
+Looped (recurrent-depth) language models run one block of layers several times per token, with the same number of
+loops for reading the prompt (prefill) and for every answer token (decode). Generation is almost all decoding, so we
+ask whether the loops are better spent on the prompt. A small **loop adapter** (LoRA plus per-loop key-value maps on a
+frozen model) lets a decoder with *n* loops read the prompt states of any prefill depth *m*; we measure where inference
+time goes, how accuracy changes as *m* grows from 1 to 16 at a fixed *n*, and how deeper prefill compares at equal
+measured time with the original model, distilled models and more decode loops.
 
-**The paper's statistics are recomputed from released per-item scores by one script** and checked against the printed
-values: `python ouro/scripts/paper_numbers.py compute` (numpy only). See [`REPRODUCE.md`](REPRODUCE.md) for what it covers.
+**Every number in the paper is recomputed from released per-item scores and timing records by one script** and checked
+against the printed value: `python ouro/scripts/paper_numbers.py compute`. See [`REPRODUCE.md`](REPRODUCE.md).
 
-## Key findings
+## Key findings (Ouro-2.6B unless stated)
 
-Ouro base-model evaluation settings where available (strict-match GSM8K, final-answer MATH-500, evalplus code; native
-Ouro-2.6B 4/4 reproduces the published scores within one point on MMLU, MMLU-Pro, BBH, ARC-C and HellaSwag). 95%
-paired bootstrap intervals in the paper; every number is recomputed and checked by one script.
+1. **Generation is almost all decoding.** Prefill is 0.1-3% of the time of a chain-of-thought answer.
+2. **Deeper prefill helps at a fixed decode depth, then stops.** With the same weights, four prefill loops instead of
+   one raise the 11-benchmark average from 47.2 to 56.8 at one decode loop (gain 9.0 +- 0.6 over three seeds). On
+   most benchmarks the gain stops at two to four loops, also for an adapter trained up to 16 loops, on
+   Ouro-2.6B-Thinking and on Ouro-1.4B.
+3. **At equal measured time** (maps folded into the prompt cache, two clean timing passes), Ours 4/1 beats the original
+   model at one loop by 14.2 points and a distilled one-loop model by 7.0 at about the same time per request; a second
+   decode loop buys 15.5 more points for 1.4x the time; at two decode loops deeper prefill and distillation tie.
+4. **The baselines are not under-tuned:** the distilled controls move by at most 0.6 points over a 0.3x-3x learning-rate
+   range and at rank 80, and the adapter's weakest learning rate still beats the best distilled control.
+5. **Exceptions:** 4-shot MATH-500 (one prefill loop is best; without exemplars four are better) and exact recall in
+   HELMET.
 
-1. **Decode cheaply, prefill deeply.** On Ouro-2.6B with one decode loop, prefilling with four loops raises the average
-   over 11 benchmarks from 44.2 (native 1/1) to **56.8**, above native 1/1 distilled with LoRA on the same data (49.8);
-   with two decode loops the adapter averages **67.2**, within 3 points of native 4/4 (70.2). Two to four prefill loops
-   are best on 14 of 15 settings at one decode loop (4-shot MATH-500 is the exception).
-2. **Aligned caches match the native model at equal depth** (e.g. RULER-16K at 4/3: 79.8 vs 78.7) and decode at about
-   the cost of native *n*/*n*; one cache gives up under one point of average accuracy for the smallest KV cache.
-3. **The adapter is what makes untying work.** Without it the same untied configurations average 26.6 and 30.9.
-   Training is cheap: 6M answer tokens already reach most of the 48M result. Three training seeds: ±0.2.
-4. **Speed.** On Ouro-2.6B-Thinking, prefill 4 / decode 2 matches native 4/4's average accuracy over eight benchmarks
-   at **3.2×** its decode throughput (one cache) and answers 192 timed GSM8K problems in **0.59×** the time at batch 1.
-5. **Looped decision models (Lev), both directions.** More prefill than decision loops is significantly above a
-   matched-training control on 12 of 13 (*m*, *n*) pairs; fewer is below it on all 13 (significantly on 11).
-6. **Everything is traceable.** `ouro/results/provenance/` records every run's command, configuration, checkpoint
-   hash, log and outputs; from-scratch re-runs reproduce the main-table cells item for item
-   (`ouro/results/verify_rerun.txt`).
+![Where the time goes](paper/figs/fig_time.png)
 
-![Task map on Ouro-2.6B](paper/figs/fig_taskmap.png)
+![Prefill depth at fixed decode depth](paper/figs/fig_depth.png)
 
-![The loop adapter](paper/figs/fig0_method.png)
-
-![Prefill 4 / decode 2 on eight benchmarks](paper/figs/fig_equal.png)
-
-![End-to-end time per answer](paper/figs/fig2_frontier.png)
-
-![Looped decision models](paper/figs/fig_lev.png)
+![Accuracy against measured time](paper/figs/fig_budget.png)
 
 ## When to use it, and when not
 
-- Use it at low decode depth (one or two decode loops), with prefill 4 as the default; tune the prefill count per task
-  family on a small labeled set if needed. It is not a per-prompt router.
-- The best count depends on the prompt format: on few-shot MATH-500 one prefill loop is best.
-- Comparisons with native models include training the adapter; within-adapter comparisons isolate the prefill loops.
-- More prefill loops raise time to first token; equal decode loops do not mean equal latency.
+- Use deeper prefill when decoding must stay shallow (one decode loop); with more time, a second decode loop buys more
+  on long chain-of-thought answers.
+- Two to four prefill loops are enough on most tasks; more can hurt. The best count depends on the prompt format (on
+  few-shot MATH-500 one prefill loop is best). It is not a per-prompt router.
 
 ## Repository map
 
@@ -67,13 +55,13 @@ paired bootstrap intervals in the paper; every number is recomputed and checked 
 | `ouro/scripts/` | paper numbers, figures, end-to-end latency |
 | `ouro/runs_scripts/` | the launchers used for every run |
 | `third_party/ouro/` | Ouro modeling code (Apache-2.0, see its LICENSE) |
-| `paper/` | PDF, LaTeX source, figures, arXiv build script |
+| `paper/` | PDF, LaTeX source, figures, arXiv build script; `HANDOFF.md` / `NOTES.md` are the working log |
 
 ## Citation
 
 ```bibtex
-@misc{hu2026untying,
-  title  = {Untying Prefill and Decode Loops in Looped Language Models},
+@misc{hu2026deepprompt,
+  title  = {Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models},
   author = {Hu, Yang},
   year   = {2026},
   note   = {https://github.com/yanghu819/untying-prefill-decode}

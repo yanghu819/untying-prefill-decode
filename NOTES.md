@@ -1,10 +1,11 @@
 # Lab notes
 
-Running log of experiments behind *Untying Prefill and Decode Loops in Looped Language Models*. Every number quoted in
+Running log of experiments behind *Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models*
+(earlier title: *Untying Prefill and Decode Loops in Looped Language Models*). Every number quoted in
 the paper is recomputed by `ouro/scripts/paper_numbers.py` from `ouro/results/items/`; these notes record what was run,
 why, and what changed in the paper. Launchers for every run are in `ouro/runs_scripts/`.
 
-## State on 2026-11-03
+## State on 2026-11-03 (historical: the pre-restructure 8-page story; the current state is in HANDOFF.md section 1)
 
 - **Method.** A loop adapter (rank-16 LoRA plus per-loop RoPE-commuting key scales and value maps on a frozen looped
   model) lets the model prefill with *m* loops and decode with *n*; one set of parameters is trained for all 16 pairs
@@ -17,7 +18,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   Ouro-1.4B replication (5 benchmarks): 5/5 and 3/5.
 - **Ouro-2.6B-Thinking at decode 2.** Prefill 4 beats prefill 1 on all 8 benchmarks (7 significant); against a LoRA
   distillation baseline at native 2/2 the adapter adds MMLU-Pro +5.2 and ARC-C +2.9.
-- **Timing, hybrid model, decision models**: see the paper (Sections 4.4-4.5, appendices).
+- **Timing, hybrid model, decision models**: see the appendices of the current paper.
 - **Nothing running.** Paper package builds (`paper/build_arxiv.py`); remaining work is submission formalities.
 
 ## Log

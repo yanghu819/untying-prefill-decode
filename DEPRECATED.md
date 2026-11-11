@@ -15,8 +15,9 @@ Paper arms, for contrast: `a` (aligned caches, the main method), `S` (one stored
 variant and the task-map / design-variant appendices), `O`/`P` (shared answer KV variant, appendix), `M` (gated first-loop
 branch, appendix), `S` with `--freeze-maps` (maps fixed at identity), `D`/`E`/`H` (LoRA distillation of native n/n).
 
-Moved to `ouro/runs_scripts/deprecated/` (2026-11-07): `math0_q.sh` (zero-shot MATH-500 grid, stopped),
-`a1_fill.sh` (one-off GPU filler), `make_bib.py` (first references.bib generator; the bib now has hand-verified entries).
+Moved to `ouro/runs_scripts/deprecated/` (2026-11-07): `a1_fill.sh` (one-off GPU filler), `make_bib.py` (first references.bib generator; the bib now has hand-verified entries).
+`math0_q.sh` (zero-shot MATH-500) is back in `ouro/runs_scripts/` (2026-11-10, `ARM=a` for the aligned adapter's
+0-shot check in Section 6); its old copy in `deprecated/` was removed.
 Deleted: `ouro/scripts/rescore_mbpp_plus.py` (a check of the earlier MBPP+ prompt, superseded by evalplus scoring).
 
 Removed outright (in git history if ever needed): probe and "answers without a final answer" analyses, the

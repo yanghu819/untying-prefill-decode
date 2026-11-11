@@ -1,4 +1,4 @@
-# Handoff (2026-11-09)
+# Handoff (2026-11-11)
 
 For the next agent taking over *Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models*.
 Read this file, then `NOTES.md` (lab log), `REPRODUCE.md` (result -> script map) and `DEPRECATED.md`. Cluster addresses
@@ -39,9 +39,10 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
   of it is still running: bash reads scripts as it goes, and the running copy then fails after training (11-10:
   fixed4-s3 and lora-s3 lost their eval step; re-run the launcher, which skips the finished training).
-- **Next, in order of value**: (1) fold the LR check, Distilled 1/1 seeds and the frozen-maps seed into Table 1 /
-  Section 5 / Section 6; (2) final red-team round and repeated de-AI readability passes on the 4-page body;
-  (3) regenerate provenance, verify the bib once more, build the arXiv package; (4) ARR checklist TODOs with the user.
+- **Next, in order of value**: (1) the trainable-prefill experiment for a v2 (`launch_variant.sh prefill`,
+  X26-a-wide-pf on a2, prompts cut to 2,048 tokens; then its depth sweep X26wpf-*: does the stop at two to four
+  loops move when the prefill is trained?); (2) the wide-adapter seed sweeps into Appendix "Where the Gain Stops"
+  (`plateau_seeds`); (3) ARR checklist TODOs with the user if the paper also goes to ARR.
 
 ## 2. The user's rules (all still in force)
 
@@ -79,7 +80,8 @@ cd ouro && uv run --with numpy python scripts/paper_numbers.py compute       # m
 uv run --with numpy --with matplotlib python scripts/paper_figs.py           # all figures + generated tables
 cd ../paper/latex && tectonic -X compile main.tex                            # check: no Overfull, no undefined refs
 cd .. && python3 build_arxiv.py                                              # arXiv tarball + paper/*.pdf refresh
-# before git commit: grep the diff for 150\.242|3002[0-9]|3004[0-9]|\.pw\b|token  (must be clean)
+# before git commit: grep the diff for the cluster address, its ports and token prefixes listed in
+# ~/.b300-handoff/CLUSTER.md (never write them in this repo); the grep must come back clean
 ```
 
 No system numpy on the Mac: always `uv run --with ...`. LaTeX is `tectonic`.
