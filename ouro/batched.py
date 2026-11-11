@@ -1,3 +1,4 @@
+import os
 """Batched (padded) forwards for the adapter arms and the refresh-aware arm.
 
 Prefixes are left-padded, suffixes right-padded. RoPE scores depend only on
@@ -32,7 +33,7 @@ def pad_batch(samples, device, pad_id=0):
 
 def _teacher(system, prefix, pmask, suffix_input, full_mask, capture):
     depth = system.writer.config.num_hidden_layers
-    first, prefix_state, cache = system.writer_prefix(prefix, 4, pmask.long())
+    first, prefix_state, cache = system.writer_prefix(prefix, 4, pmask.long(), student=False)
     with torch.no_grad():
         system.capture_enabled = capture
         hidden, cache = backbone(system.writer, suffix_input, cache, 4, full_mask.long())
@@ -78,13 +79,18 @@ def adapter_forward(system, samples, device):
 
 def loopmap_forward(system, samples, device):
     """Arms X<p><d>: decode model (d loops, LoRA) reads only mapped prefill KV (p loops) for prompt positions < n-1,
-    runs the last prompt token and the continuation itself; KL to the p4d4 teacher on every target incl. the first."""
+    runs the last prompt token and the continuation itself; KL to the p4d4 teacher on every target incl. the first.
+    With a trainable prefill (system.prefill_lora) the student always recomputes its prefill with gradient; env
+    OURO_MAX_PREFIX keeps only the last that many prompt tokens (teacher and student alike) to bound its memory."""
     prefix, pmask, suffix, smask = pad_batch(samples, device)
+    cap = int(os.environ.get("OURO_MAX_PREFIX", "0"))
+    if cap and prefix.shape[1] > cap:   # left-padded: the tail keeps the real tokens
+        prefix, pmask = prefix[:, -cap:], pmask[:, -cap:]
     suffix_input = suffix[:, :-1]
     full = torch.cat((pmask, smask[:, :-1]), dim=1)
     first, prefix_state, teacher_logp, _ = _teacher(system, prefix, pmask, suffix_input, full, False)
-    if system.prefill_steps != 4:
-        with torch.no_grad():
+    if system.prefill_steps != 4 or system.prefill_lora:
+        with torch.set_grad_enabled(system.prefill_lora):
             _, prefix_state, _ = system.writer_prefix(prefix, system.prefill_steps, pmask.long())
     n = prefix.shape[1] - 1
     cache = system.loop_adapter.build(prefix_state, n, system.decode_steps)
@@ -282,7 +288,7 @@ def kvshare_forward(system, samples, device):
     depth = system.writer.config.num_hidden_layers
     full = torch.cat((pmask, smask[:, :-1]), dim=1)
     with torch.no_grad():
-        _, _, cache = system.writer_prefix(prefix, 4, pmask.long())
+        _, _, cache = system.writer_prefix(prefix, 4, pmask.long(), student=False)
         hidden, cache = backbone(system.writer, suffix_input, cache, 4, full.long())
         teacher_logp = system.writer.lm_head(hidden).float().log_softmax(-1)
         history = HistoryCache([cache.key_cache[3 * depth + l] for l in range(depth)],
@@ -316,7 +322,7 @@ def kvshare_self_forward(system, samples, device):
     depth, d = system.writer.config.num_hidden_layers, system.decode_steps
     full = torch.cat((pmask, smask[:, :-1]), dim=1)
     with torch.no_grad():
-        first, _, cache = system.writer_prefix(prefix, 4, pmask.long())
+        first, _, cache = system.writer_prefix(prefix, 4, pmask.long(), student=False)
         hidden, cache = backbone(system.writer, suffix_input, cache, 4, full.long())
         teacher_all = torch.cat((first.float().log_softmax(-1)[:, None],
                                  system.writer.lm_head(hidden).float().log_softmax(-1)), dim=1)

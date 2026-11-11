@@ -49,6 +49,18 @@ class ReaderLoRA(nn.Module):
         return native + residual.to(native.dtype)
 
 
+class PrefillLoRA(ReaderLoRA):
+    """ReaderLoRA on a writer (prefill) projection that is active only while state["on"] (the student's prefill);
+    the teacher pass (native 4/4) runs the same writer with it off."""
+
+    def __init__(self, base, state):
+        super().__init__(base)
+        self.state = state
+
+    def forward(self, x):
+        return super().forward(x) if self.state["on"] else self.base(x)
+
+
 @torch.no_grad()
 def merge_reader_lora(model):
     """Fold every ReaderLoRA into its base projection (W <- W + B A) for deployment: decode then runs the plain
@@ -310,9 +322,10 @@ class AdapterSystem(nn.Module):
     adapter outputs or reader LoRA. Teacher answer-history KV stays private.
     """
 
-    def __init__(self, writer, reader, arm, full_ft=False):
+    def __init__(self, writer, reader, arm, full_ft=False, prefill_lora=False):
         super().__init__()
         self.full_ft = full_ft
+        self.prefill_lora = prefill_lora
         self.writer = writer.eval().requires_grad_(False)
         self.reader = reader.eval().requires_grad_(False)
         self.arm = arm
@@ -341,9 +354,14 @@ class AdapterSystem(nn.Module):
             for layer in self.reader.model.layers:
                 for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
                     setattr(layer.self_attn, name, ReaderLoRA(getattr(layer.self_attn, name)))
+        self.prefill_state = {"on": False}
+        if prefill_lora:  # trainable prefill: LoRA on the writer's attention, on for the student's prefill only
+            for layer in self.writer.model.layers:
+                for name in ("q_proj", "k_proj", "v_proj", "o_proj"):
+                    setattr(layer.self_attn, name, PrefillLoRA(getattr(layer.self_attn, name), self.prefill_state))
         self.capture_enabled = False
         self.raw_keys = [None] * writer.config.num_hidden_layers
-        for index, layer in enumerate(writer.model.layers):
+        for index, layer in enumerate(writer.model.layers):  # after any wrapping, so the captured keys include the LoRA
             layer.self_attn.k_proj.register_forward_hook(self._capture_key(index))
 
     def _capture_key(self, index):
@@ -353,12 +371,22 @@ class AdapterSystem(nn.Module):
                 self.raw_keys[index] = output.view(*output.shape[:-1], -1, head_dim).transpose(1, 2)
         return capture
 
-    @torch.no_grad()
-    def writer_prefix(self, ids, steps, attention_mask=None):
+    def writer_prefix(self, ids, steps, attention_mask=None, student=True):
+        """Prefill with `steps` loops. student=False is the native teacher (prefill LoRA off, never any gradient); a
+        student prefill uses the prefill LoRA when the system has one and then carries gradient if grad is enabled."""
         depth = self.writer.config.num_hidden_layers
-        self.capture_enabled = True
-        hidden, cache = backbone(self.writer, ids, CaptureCache(steps * depth), steps, attention_mask)
-        self.capture_enabled = False
+        on = student and self.prefill_lora
+        with torch.set_grad_enabled(on and torch.is_grad_enabled()):
+            self.prefill_state["on"] = on
+            self.capture_enabled = True
+            try:
+                hidden, cache = backbone(self.writer, ids, CaptureCache(steps * depth), steps, attention_mask)
+            finally:
+                self.capture_enabled = False
+                self.prefill_state["on"] = False
+        return self._prefix_out(hidden, cache, steps, depth)
+
+    def _prefix_out(self, hidden, cache, steps, depth):
         offset = (steps - 1) * depth
         prefix = PrefixState(
             list(self.raw_keys),
@@ -387,7 +415,7 @@ class AdapterSystem(nn.Module):
     def forward(self, prefix_ids, suffix_ids):
         if self.arm in ("D", "E", "H"):
             return self.native_lora_forward(prefix_ids, suffix_ids)
-        teacher_first, teacher_prefix, teacher_cache = self.writer_prefix(prefix_ids, 4)
+        teacher_first, teacher_prefix, teacher_cache = self.writer_prefix(prefix_ids, 4, student=False)
         if self.arm == "C":
             student_first, student_prefix, _ = self.writer_prefix(prefix_ids, 1)
         else:
@@ -533,7 +561,8 @@ def load_adapter_runner(model_path, checkpoint, device="cuda", dtype=torch.bfloa
     saved = torch.load(Path(checkpoint), map_location="cpu", weights_only=False)
     writer = load_model(model_path, device=device, dtype=dtype, attention=attention)
     reader = load_model(model_path, device=device, dtype=dtype, attention=attention)
-    system = AdapterSystem(writer, reader, saved["arm"], full_ft=saved.get("full_ft", False))
+    system = AdapterSystem(writer, reader, saved["arm"], full_ft=saved.get("full_ft", False),
+                           prefill_lora=saved.get("prefill_lora", False))
     system.load_trainable_state(saved["trainable_state"])
     runner = AdapterRunner(system)
     runner.checkpoint_metadata = {

@@ -93,6 +93,8 @@ def main():
     parser.add_argument("--start-sample", type=int, default=0, help="fresh run: begin the schedule here")
     parser.add_argument("--first-target", action="store_true",
                         help="arms D/E/H: also supervise the first answer token, as the loop adapter does")
+    parser.add_argument("--prefill-lora", action="store_true",
+                        help="also train a LoRA on the prefill (writer) attention, on only for the student's prefill")
     parser.add_argument("--freeze-maps", action="store_true",
                         help="ablation: keep the per-loop KV maps at their identity initialisation (LoRA only, direct sharing)")
     args = parser.parse_args()
@@ -115,7 +117,8 @@ def main():
         raise ValueError("Prepared data must end on a complete global batch.")
     writer = load_model(args.model_path, device=device)
     reader = load_model(args.model_path, device=device, dtype=torch.float32 if args.full_ft else torch.bfloat16)
-    system = RefreshSystem(writer, reader) if args.arm == "R" else AdapterSystem(writer, reader, args.arm, full_ft=args.full_ft)
+    system = RefreshSystem(writer, reader) if args.arm == "R" else AdapterSystem(writer, reader, args.arm, full_ft=args.full_ft,
+                                                                                          prefill_lora=args.prefill_lora)
     system.first_target = args.first_target
     trainable = [p for p in system.parameters() if p.requires_grad]
     if args.freeze_maps:  # maps stay in the checkpoint (as identity) so evaluation is unchanged, but are never updated
@@ -152,7 +155,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     if rank == 0:
         setup = {
-            "event": "start", "arm": args.arm, "cells": V_CELLS, "first_target": args.first_target, "freeze_maps": args.freeze_maps, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
+            "event": "start", "arm": args.arm, "cells": V_CELLS, "first_target": args.first_target, "freeze_maps": args.freeze_maps, "prefill_lora": args.prefill_lora, "refresh_blocks": args.blocks if args.arm == "R" else None, "micro": args.micro, "world_size": world,
             "global_batch": args.global_batch, "microbatch": 1,
             "gradient_accumulation": args.global_batch // world,
             "trainable_parameters": sum(p.numel() for p in trainable),
@@ -224,7 +227,7 @@ def main():
             state = {k: v.to(torch.bfloat16) if k.startswith("reader.") else v for k, v in state.items()}
         checkpoint = {
             "arm": "B" if args.arm == "R" else args.arm, "trained_as": args.arm, "model_path": str(args.model_path),
-            "full_ft": args.full_ft,
+            "full_ft": args.full_ft, "prefill_lora": args.prefill_lora,
             "trainable_state": state, "optimizer": None if args.full_ft else optimizer.state_dict(),
             "optimizer_steps": update, "kl_tokens": consumed, "next_sample": next_sample,
             "cumulative": cumulative, "args": {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items()},

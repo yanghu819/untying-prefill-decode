@@ -6,6 +6,10 @@
 #           inside the training range; evaluated by sweep_depth.sh at every m (run names X26w-a<m>x<n>-<task>).
 #   fixed4: X26-a-fixed4-lora, prefill fixed at 4 (cells 4/1..4/4) and identity maps (--freeze-maps): the simple
 #           "deep prefill + LoRA" control; evaluated on the main-table benchmarks at 4/1 and 4/2 (X26f4-a4<n>-<task>).
+#   prefill: X26-a-wide-pf, the wide adapter plus a LoRA on the prefill (writer) attention, trained on the same cells
+#           (--prefill-lora; prompts cut to their last OURO_MAX_PREFIX=2048 tokens to bound the prefill's backward
+#           memory at 16 loops); depth sweep as for wide (run names X26wpf-a<m>x<n>-<task>). Tests whether the stop at
+#           2-4 prefill loops comes from the frozen prefill (red team rounds 3-5).
 #   lr:     X26-a-lr<LRS>, the main adapter with the learning-rate schedule x LRS (env LRS), so Ours gets the same LR
 #           check as the Distilled baseline; main-table benchmarks at 4/1 and 4/2 (X26alr<LRS>-a4<n>-<task>).
 #   lora:   X26-a-lora, all 16 cells as the main adapter but identity maps (--freeze-maps): isolates the maps in the
@@ -17,14 +21,16 @@ case $W in
   fixed4) N=X26-a-fixed4-lora; P=X26f4; FLAGS="--freeze-maps"; export OURO_CELLS=4x1,4x2,4x3,4x4 ;;
   lora) N=X26-a-lora; P=X26lo; FLAGS="--freeze-maps" ;;
   lr) N=X26-a-lr${LRS:?set LRS}; P=X26alr${LRS}; FLAGS=""; export OURO_LR_SCALE=$LRS ;;   # Ours at LR x LRS (tuning check)
-  *) echo "WHICH must be wide, fixed4, lora or lr"; exit 2 ;;
+  prefill) N=X26-a-wide-pf; P=X26wpf; FLAGS="--prefill-lora"; export OURO_MAX_PREFIX=${OURO_MAX_PREFIX:-2048}
+        export OURO_CELLS=$(for m in 1 2 3 4 6 8 12 16; do for n in 1 2 3 4; do printf "%sx%s," $m $n; done; done | sed 's/,$//') ;;
+  *) echo "WHICH must be wide, fixed4, lora, lr or prefill"; exit 2 ;;
 esac
 [ -n "$SEED" ] && { N=$N-s$SEED; P=${P}s$SEED; FLAGS="$FLAGS --seed $SEED"; }   # env SEED: another training seed (X26-a-lora-s2, X26los2-...)
 [ -f $R/$N/TRAIN_DONE ] || [ -f $R/$N/checkpoint-48m.pt ] || \
   DATA=$M/mix-data-48m ./run_mix2.sh $N a $GPUS $PORT 48000000 --micro 1 $FLAGS || exit 1
 unset OURO_CELLS
 CK=$R/$N/checkpoint-48m.pt
-if [ $W = wide ]; then exec env CK=$CK P=$P MS="1 2 3 4 5 6 8 12 16" ./sweep_depth.sh ${GPUS//,/ }; fi
+if [ $W = wide ] || [ $W = prefill ]; then exec env CK=$CK P=$P MS="1 2 3 4 5 6 8 12 16" ./sweep_depth.sh ${GPUS//,/ }; fi
 Q=$R/sweep_q.txt
 for c in a41 a42; do
   MA="path=$M/model-2.6b,condition=$c,checkpoint=$CK,max_length=16384"
