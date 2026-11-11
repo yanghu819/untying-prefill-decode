@@ -1,8 +1,8 @@
-# Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models
+# Untying Prefill and Decode Loops in Looped Language Models
 
 > Looped (recurrent-depth) language models use the same number of loops to read the prompt (prefill) and to generate
-> each answer token (decode), although generation is almost all decoding. With a small loop adapter (LoRA + per-loop
-> key-value maps on a frozen model) a decoder with n loops reads the prompt states of any prefill depth m. The paper
+> each answer token (decode), although generation is almost all decoding. With LoopBridge, a small adapter (LoRA + per-loop
+> key-value maps on a frozen model), a decoder with n loops reads the prompt states of any prefill depth m. The paper
 > measures where inference time goes, how accuracy changes with m = 1..16 at fixed n, and how deeper prefill compares
 > at equal measured time with the original model, distilled models and more decode loops (Ouro-2.6B, Ouro-2.6B-Thinking,
 > Ouro-1.4B). Every number is recomputed from released per-item scores by ouro/scripts/paper_numbers.py.

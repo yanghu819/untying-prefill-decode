@@ -1,7 +1,8 @@
 # Lab notes
 
-Running log of experiments behind *Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models*
-(earlier title: *Untying Prefill and Decode Loops in Looped Language Models*). Every number quoted in
+Running log of experiments behind *Untying Prefill and Decode Loops in Looped Language Models* (method: LoopBridge;
+between 11-07 and 11-11 the paper was titled *Deep Prompt, Shallow Decoder*, reverted because the user's terminology
+rules forbid deep/shallow). Every number quoted in
 the paper is recomputed by `ouro/scripts/paper_numbers.py` from `ouro/results/items/`; these notes record what was run,
 why, and what changed in the paper. Launchers for every run are in `ouro/runs_scripts/`.
 

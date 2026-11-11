@@ -76,7 +76,7 @@ Upload: paper/arxiv/arxiv.tar.gz (main.tex + main.bbl + acl.sty + acl_natbib.bst
 tectonic; arXiv compiles it with pdflatex from the included main.bbl (check its preview PDF after upload).
 
 Title:
-Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models
+Untying Prefill and Decode Loops in Looped Language Models
 
 Authors:
 Yang Hu
@@ -96,6 +96,6 @@ Abstract (plain text):
 
 if __name__ == "__main__":
     main()
-    # the published copies: paper/deep-prompt-shallow-decoder.pdf and paper/ARXIV_SUBMISSION.md
-    shutil.copy(OUT / "main.pdf", P / "deep-prompt-shallow-decoder.pdf")
+    # the published copies: paper/untying-prefill-decode-loops.pdf and paper/ARXIV_SUBMISSION.md
+    shutil.copy(OUT / "main.pdf", P / "untying-prefill-decode-loops.pdf")
     shutil.copy(OUT / "ARXIV_SUBMISSION.md", P / "ARXIV_SUBMISSION.md")

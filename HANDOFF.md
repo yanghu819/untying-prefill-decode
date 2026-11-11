@@ -1,6 +1,6 @@
 # Handoff (2026-11-11)
 
-For the next agent taking over *Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models*.
+For the next agent taking over *Untying Prefill and Decode Loops in Looped Language Models*.
 Read this file, then `NOTES.md` (lab log), `REPRODUCE.md` (result -> script map) and `DEPRECATED.md`. Cluster addresses
 and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.md` on the user's Mac.
 
@@ -49,7 +49,10 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 - Reply in **Chinese**, concise. Lead with the finding, not the process.
 - **One core story** in the main text; odd/side findings go to the appendix with a one-line pointer. No new side
   experiments; only runs that test a core claim. Never silently drop a contradicting result: appendix + Limitations.
-- Terminology: **"prefill m / decode n"**, **"loop adapter"**. Never deep/shallow, read/write, connector, 深读浅写.
+- Terminology: **"prefill m / decode n"**; the method is **LoopBridge** (user 2026-11-11; "Ours" in tables, "loop
+  adapter" in older appendix text). Never deep/shallow (also not "deeper prefill": say "more prefill loops"),
+  read/write, connector, 深读浅写. Title: *Untying Prefill and Decode Loops in Looped Language Models* (user 11-11;
+  a "Deep Prompt, Shallow Decoder" title used 11-07..11-11 broke this rule and was reverted).
   No claim that more prefill loops are better; the best (m, n) depends on the task. **Run both directions (m < n and
   m > n) everywhere.**
 - Lead with strengths ("what we can do"), don't dwell on weaknesses, never claim omnipotence; no invented metrics, no

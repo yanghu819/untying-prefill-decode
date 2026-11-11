@@ -1,13 +1,13 @@
-# Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models
+# Untying Prefill and Decode Loops in Looped Language Models
 
-**Paper:** [`paper/deep-prompt-shallow-decoder.pdf`](paper/deep-prompt-shallow-decoder.pdf) (arXiv link coming) ·
+**Paper:** [`paper/untying-prefill-decode-loops.pdf`](paper/untying-prefill-decode-loops.pdf) (arXiv link coming) ·
 **Author:** Yang Hu · **Code license:** MIT · **Keywords:** looped language model, recurrent depth, Ouro, test-time
 compute, prefill vs decode, loop adapter, KV cache
 
 Looped (recurrent-depth) language models run one block of layers several times per token, with the same number of
 loops for reading the prompt (prefill) and for every answer token (decode). Generation is almost all decoding, so we
-ask whether the loops are better spent on the prompt. A small **loop adapter** (LoRA plus per-loop key-value maps on a
-frozen model) lets a decoder with *n* loops read the prompt states of any prefill depth *m*; we measure where inference
+ask whether the loops are better spent on the prompt. **LoopBridge**, a small adapter (LoRA plus per-loop key-value maps
+on a frozen model), lets a decoder with *n* loops read the prompt states of any prefill depth *m*; we measure where inference
 time goes, how accuracy changes as *m* grows from 1 to 16 at a fixed *n*, and how deeper prefill compares at equal
 measured time with the original model, distilled models and more decode loops.
 
@@ -60,8 +60,8 @@ against the printed value: `python ouro/scripts/paper_numbers.py compute`. See [
 ## Citation
 
 ```bibtex
-@misc{hu2026deepprompt,
-  title  = {Deep Prompt, Shallow Decoder: Spending Loops on Prefill in Looped Language Models},
+@misc{hu2026untying,
+  title  = {Untying Prefill and Decode Loops in Looped Language Models},
   author = {Hu, Yang},
   year   = {2026},
   note   = {https://github.com/yanghu819/untying-prefill-decode}
