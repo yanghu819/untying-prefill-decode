@@ -1412,8 +1412,14 @@ def prefill_trainable():
         print(f"Prefill trn  m* n={k[0]} {k[1]:16s} frozen {stops['frozen prefill'][k]}  trained {stops['trained prefill'][k]}")
     if both:
         later = sum(stops["trained prefill"][k] > stops["frozen prefill"][k] for k in both)
-        print(f"Prefill trn  {len(both)} settings with a stop in both: later with trained prefill {later}, "
-              f"same {sum(stops['trained prefill'][k] == stops['frozen prefill'][k] for k in both)}")
+        same = sum(stops["trained prefill"][k] == stops["frozen prefill"][k] for k in both)
+        print(f"Prefill trn  {len(both)} settings with a stop in both: later with trained prefill {later}, same {same}")
+        if (len(both), later, same) != (16, 2, 8):   # Appendix (Where the Gain Stops), v2 paragraph
+            print(f"Prefill trn counts {(len(both), later, same)}  !! paper: (16, 2, 8)")
+    peaks = {(r["n"], arm): max(r["quality"][arm].values()) for r in out if r["bench"] == "RULER-16K" for arm in r["quality"]}
+    want = {(1, "frozen prefill"): 63.7, (1, "trained prefill"): 66.0, (2, "frozen prefill"): 75.2, (2, "trained prefill"): 81.0}
+    if peaks and any(abs(peaks.get(k, -1) - v) > 0.05 for k, v in want.items()):   # same paragraph: RULER-16K peaks
+        print(f"Prefill trn RULER-16K peaks {peaks}  !! paper: {want}")
     return dict(curves=out, stops={f"{k[0]}/{k[1]}": {a: stops[a].get(k) for a in stops} for k in both})
 
 

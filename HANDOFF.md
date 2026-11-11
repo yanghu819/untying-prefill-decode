@@ -39,14 +39,13 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
   of it is still running: bash reads scripts as it goes, and the running copy then fails after training (11-10:
   fixed4-s3 and lora-s3 lost their eval step; re-run the launcher, which skips the finished training).
-- **In flight (11-11 22:00)**: the trainable-prefill check for a v2. `launch_variant.sh prefill` trained X26-a-pf8
-  (a2, prefill LoRA on, m in {1,2,3,4,6,8}, prompts cut to 2,048 tokens, done 21:01); its depth sweep X26pf8-* runs on
-  a2 and, for the last 50 queue lines, on a1 (checkpoint copied, md5 checked). Control `launch_variant.sh w8`
-  (X26-a-w8, same cells and cut, frozen prefill), sweep X26w8-* on a1. When both queues are empty: score evalplus on
-  both boxes, `pn_sync.sh all`, read `prefill_trainable()` (does the stop at two to four loops move when the prefill
-  is trained?), then write it into the appendix. Seed 2 of both arms (X26-a-w8-s2 on a1, X26-a-pf8-s2 on a2, sweeps
-  X26w8s2-* / X26pf8s2-*) starts by itself when each box's sweep queue drains (/root/pn/after_sweep_*.sh, 11-12 02:50);
-  `prefill_trainable()` then needs a seed loop like `plateau_seeds`. After that: ARR checklist TODOs with the user if the paper also goes
+- **v2 trainable-prefill check (11-12)**: seed 1 done and in Appendix "Where the Gain Stops" (paragraph "Training the
+  prefill as well", Table `tab:prefilltrn` from `paper_figs.tab_prefilltrn`): X26-a-pf8 (prefill LoRA) vs X26-a-w8
+  (frozen), both m in {1,2,3,4,6,8}, prompts cut to 2,048 tokens; the stop does not move (16 settings: later 2, same 8,
+  earlier 6), RULER-16K peaks rise (63.7 -> 66.0 at n=1, 75.2 -> 81.0 at n=2). **In flight**: seed 2 of both arms
+  (X26-a-w8-s2 on a1 from 05:20, X26-a-pf8-s2 on a2 from 05:02, then sweeps X26w8s2-* / X26pf8s2-*; launcher log
+  runs/{w8s2,pf8s2}.log). When they land: score evalplus on both boxes, add a seed loop to `prefill_trainable()` like
+  `plateau_seeds`, report the stop over two seeds. After that: ARR checklist TODOs with the user if the paper also goes
   to ARR.
 
 ## 2. The user's rules (all still in force)

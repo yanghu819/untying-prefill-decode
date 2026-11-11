@@ -252,8 +252,8 @@ Time is measured at batch 1 on one GPU type; at large batch sizes decode is chea
 grows. Applied at every decode step, the adapter's maps and a second attention call cost 19--40\% more decode time per
 generated token than the original model at batch 1; folding the maps into the prompt cache removes this cost but
 stores one prompt cache per decode loop, as the original model does at $n$ loops. The depth sweep and the batch-32
-estimate use the per-step form. The prefill depth is fixed per setting, not routed per prompt. The prefill loops stay frozen, so the gain might
-stop later if they were trained for more loops as well. More prefill loops do not help few-shot MATH-500 or
+estimate use the per-step form. The prefill depth is fixed per setting, not routed per prompt. The prefill loops stay frozen; training them as well (one seed, prompts
+cut to 2,048 tokens) does not move the stop (Appendix~\ref{app:plateau}). More prefill loops do not help few-shot MATH-500 or
 exact recall in HELMET (34 items). Models are 2.6B with four loops (1.4B, a 9B hybrid and decision models in the appendix);
 benchmarks are English.
 
@@ -320,6 +320,34 @@ MMLU-Pro, BBH and ARC-C at $n=1$, MMLU-Pro and ARC-C at $n=2$, and HellaSwag and
 $n=2$. Over three training seeds of that adapter, 16 settings have a stop in every seed; the three stops are equal in 8
 of them, within one sampled depth in 11 and all at two to four loops in 9, and MATH-500 stops at one prefill loop in
 every seed.
+
+\paragraph{Training the prefill as well.} In the adapters above the prefill loops stay frozen, so the stop could come
+from prefill states that were never trained for more loops. We therefore train two adapters that differ only in this:
+both on $m\in\{1,2,3,4,6,8\}$ and $n\le4$ with training prompts cut to their last 2,048 tokens (to bound the memory
+of back-propagating through eight prefill loops; evaluation is not cut), one with the prefill frozen and one with an
+additional rank-16 LoRA on the attention of the prefill loops (one seed each; Table~\ref{tab:prefilltrn}). Training
+the prefill does not move the stop: of the 16 settings with a stop under both, it comes later with the trained prefill
+in 2, at the same depth in 8 and earlier in 6, and both curves peak at three or four loops on most benchmarks. The
+trained prefill mainly helps long prompts: on RULER-16K the best accuracy rises from 63.7 to 66.0 at one decode loop
+and from 75.2 to 81.0 at two, and beyond eight loops, outside both adapters' training range, it falls more slowly;
+4-shot MATH-500 instead collapses at twelve loops with the trained prefill.
+
+\begin{table*}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrrrrrrrrrr@{}}
+\toprule
+benchmark & $n$ & prefill & $m{=}1$ & 2 & 3 & 4 & 5 & 6 & 8 & 12 & 16 & $m^\ast$ \\
+\midrule
+\csname @@input\endcsname ../figs/tab_prefilltrn.tex
+\bottomrule
+\end{tabular}
+\caption{\textbf{Training the prefill loops as well.} Accuracy (\%) against prefill loops $m$ for two adapters
+trained identically on $m\le8$ with prompts cut to 2,048 tokens, one with the prefill frozen and one with a LoRA on
+the prefill attention; items both share; best $m$ of each row in bold; $m^\ast$: stopping depth (--: none);
+``--'' in an $m$ column: not evaluated.}
+\label{tab:prefilltrn}
+\end{table*}
 
 \begin{table*}[t]
 \centering\small
