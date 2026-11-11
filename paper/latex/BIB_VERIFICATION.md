@@ -105,3 +105,4 @@ arXiv one. PLatour has no arXiv version yet; its authors are taken from the pape
 | `tandem` | arXiv 2024 | arXiv 2402.08644 |
 | `deepshallow` | ICLR 2021 | arXiv 2006.10369 |
 | `loopduet` | arXiv 2026 (concurrent, submitted 2026-11-04) | arXiv 2611.07211 |
+| `bridgekv` | arXiv 2026 (concurrent, submitted 2026-11-09; title and nine authors checked on the abs page 2026-11-11) | arXiv 2611.11761 |

@@ -221,27 +221,27 @@ to the attention output. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$, so 
 reads the cache the original model would read. Both maps can also be folded into the prompt cache once at prefill,
 one mapped copy per decode loop; decoding then runs the original model's attention, and we time this form. A one-cache variant (decode loops read only the last prefill loop) saves memory at slightly lower accuracy
 (Table~\ref{tab:avg}). The adapter (63M parameters, 2.4\% of the model) is distilled once from Original 4/4: KL on
-answer tokens over 48M tokens of reasoning, instruction, long-context and web data, one $(m,n)$ pair per micro-batch
+answer tokens over 48M tokens of reasoning, instruction, long-context and web data
 (Appendix~\ref{app:training}).
 
 \paragraph{Ablations and limits.} Training the same adapter with the maps frozen at the identity changes ten of the 11
 benchmarks by at most 2.8 points at 4/1 but costs 14.9 to 22.8 on RULER-16K over three seeds (Table~\ref{tab:main}), while at 4K and 8K tokens
 the two differ by at most 1.4 points: the maps matter for the longest prompts. More prefill loops do not help everywhere. On 4-shot MATH-500 one prefill loop is best:
 34.8 against 25.4 for four at one decode loop, and 63.8 against 45.8 at two. Without the exemplars four prefill loops
-are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two (Appendix~\ref{app:hurt}). Exact recall in HELMET does not improve either (Appendix~\ref{app:hurt}).
+are better, by 8.0\ci{4.0}{11.8} points at one decode loop and 10.4\ci{6.6}{14.2} at two. Nor does exact recall in HELMET (Appendix~\ref{app:hurt}).
 
 \section{Related Work}
 \label{sec:related}
 
 Looped models~\citep{ut,huginn,ouro,relaxedrecursive,mor} reuse layers; Ouro, ELR and Dory reuse one loop's
 KV~\citep{ouro,elr,dory}. Early exit~\citep{calm,layerskip} and Continuous Depth Batching~\citep{cdb} vary depth per
-token, and LoopDuet~\citep{loopduet} (concurrent) sets the two loop budgets of Huginn without training. Deep encoders
-with shallow decoders~\citep{deepshallow,llm2slm,tandem} put more depth on the prompt across separate networks;
-SwiftKV~\citep{swiftkv} puts less. More in Appendix~\ref{app:related}.
+token, and LoopDuet~\citep[concurrent;][]{loopduet} sets the two loop budgets of Huginn without training. Deep encoders
+with shallow decoders~\citep{deepshallow,llm2slm,tandem} and BridgeKV~\citep[concurrent;][]{bridgekv} put more depth on
+the prompt across separate networks; SwiftKV~\citep{swiftkv} puts less. More in Appendix~\ref{app:related}.
 
 \section{Conclusion}
 
-On the frozen Ouro checkpoints we study, generation is almost all decoding, and with LoopBridge more prefill loops
+On the frozen Ouro checkpoints, generation is almost all decoding, and with LoopBridge more prefill loops
 raise accuracy at a fixed decode depth up to two to four loops, beat distillation and lead at equal time with one
 decode loop; on long chain-of-thought a second decode loop buys more.
 
@@ -321,7 +321,7 @@ $n=2$. Over three training seeds of that adapter, 16 settings have a stop in eve
 of them, within one sampled depth in 11 and all at two to four loops in 9, and MATH-500 stops at one prefill loop in
 every seed.
 
-\begin{table}[h]
+\begin{table*}[t]
 \centering\small
 \begin{tabular}{@{}llrrrrr@{}}
 \toprule
@@ -334,7 +334,7 @@ adapter & benchmark & $n$ & $m^\ast$ & test $m{=}1$ & test $m^\ast$ & test large
 extrapolates); ``trained $\le16$'': the adapter trained on $m\in\{1,2,3,4,6,8,12,16\}$. Largest: the largest
 evaluated depth, in parentheses.}
 \label{tab:plateau}
-\end{table}
+\end{table*}
 
 \section{Prefill Depth on Ouro-1.4B}
 \label{app:depth14}
@@ -690,7 +690,9 @@ exit~\citep{deebert,depthadaptive,calm,layerskip,skipdecode} and token routing~\
 fill the skipped layers' KV for later tokens, the problem our maps solve per loop. Speculative
 decoding~\citep{specdecoding,specsampling} pairs a cheap drafter with a deep verifier, and pause tokens add compute at
 prompt positions~\citep{pausetokens}. Deep-encoder/shallow-decoder models~\citep{deepshallow,llm2slm,tandem} spend more
-depth on the prompt across separate networks; SwiftKV~\citep{swiftkv} instead skips later layers for prompt tokens. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
+depth on the prompt across separate networks. BridgeKV~\citep{bridgekv}, concurrent with us, prefills with a large
+model, decodes with a small one of the same family and translates the prompt KV cache between them with a learned
+module while both models stay frozen; LoopBridge maps the cache between loops of one model instead. SwiftKV~\citep{swiftkv} instead skips later layers for prompt tokens. Continuous Depth Batching~\citep{cdb} prefills at full depth, exits early during
 decode and studies caches shared across depths. LoopDuet~\citep{loopduet}, concurrent with us, sets the two loop
 budgets of Huginn without training; Huginn was trained with random loop counts, whereas fixed-depth Ouro fails without
 training (Table~\ref{tab:main}). Position-Aware
