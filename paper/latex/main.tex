@@ -447,8 +447,8 @@ prefilling with four loops raises the average from 44.2 (native 1/1) to 56.8, ab
 data (49.8); with two, the aligned adapter averages 67.2, against 63.0 for native 2/2 and 65.3 for its distilled
 version, within 3.0 points of native 4/4 with half the decode loops. The one-cache variant, at a fraction of the prompt
 memory, gives up under one point (56.4 and 66.4). The adapter is what makes untying work: without it, decoding from the last prefill loop's
-KV with Ouro's own reuse of the last loop's KV, the untied configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, deeper
-prefill alone adds up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
+KV with Ouro's own reuse of the last loop's KV, the untied configurations average 26.6 and 30.9, below even native 1/1 (on GSM8K at 4/2, 11.7 against 66.7 with the adapter). Within the same adapter, more
+prefill loops alone add up to 15 points (Table~\ref{tab:taskmapcells}), so the gain is not only extra training. Choosing the
 prefill count per benchmark on held-out items instead of fixing it at four beats native 1/1 significantly on 14 of 15
 settings (Appendix~\ref{app:select}), and Ouro-1.4B shows the same pattern (Appendix~\ref{app:models}). Equal decode
 loops do not mean equal latency (Section~\ref{sec:fast}).
