@@ -405,6 +405,8 @@ def keys():
     ks |= {seed_key(b, pre, c) for b in MAIN_BENCH for pre in MAIN_SEEDS for c in ("a41", "a42", "a11", "a12")}
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
+    ks |= {sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)
+           for pre in ("X26ws2", "X26ws3")}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
@@ -1300,7 +1302,7 @@ def batch_time(batches=(8, 32, 64)):
     return out
 
 
-def plateau(adapter="wide", min_gain=0.5, window=3):
+def plateau(adapter="wide", min_gain=0.5, window=3, prefix=None):
     """Section 4's plateau rule: on a development half of each benchmark (items by a hash of their id), the plateau
     depth m* is the first prefill depth of the sweep that none of the next `window` depths beats by more than
     `min_gain` points; m* and the accuracy at m* and at the deepest depth are reported on the other (test) half."""
@@ -1309,7 +1311,8 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
     out, omitted = [], set()
     for n in (1, 2):
         for b in MAIN_BENCH:
-            sets = {m: load(sweep_key(b, m, n, adapter == "wide")) for m in SWEEP_M}
+            sets = {m: load(sweep_key(b, m, n, adapter == "wide") if prefix is None
+                            else sweep_key(b, m, n, True).replace("X26w-", prefix + "-", 1)) for m in SWEEP_M}
             sets = {m: v for m, v in sets.items() if v}
             if len(sets) < window + 2:
                 omitted |= {(n, b)} if sets else set(); continue
@@ -1336,6 +1339,8 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
                 print(f"Plateau      n={n} {b}: m*={star} {row['test_at_star']} {row['test_deepest']}  !! paper: {want}")
             print(f"Plateau      {adapter:5s} n={n} {b:16s} m*={star:2d} (dev)  test: m1 {row['test_m1']:5.1f}  m* {row['test_at_star']:5.1f}  "
                   f"m{ms[-1]} {row['test_deepest']:5.1f}")
+    if prefix is not None:   # another training seed of the wide adapter: no printed-value checks
+        return out
     if omitted != PLATEAU_OMITTED[adapter]:
         print(f"Plateau      {adapter} left out {sorted(omitted)}  !! paper: {sorted(PLATEAU_OMITTED[adapter])}")
     stops = [r["m_star"] for r in out]
@@ -1343,6 +1348,32 @@ def plateau(adapter="wide", min_gain=0.5, window=3):
     deep = sum(m in (4, 5) for m in stops)
     if adapter == "wide" and (*counts, deep) != (18, 11, 3):   # Section 4: "11 of the 18 settings", "four or five on three"
         print(f"Plateau      wide settings, stops at 2-3, at 4-5: {(*counts, deep)}  !! paper: (18, 11, 3)")
+    return out
+
+
+WIDE_SEEDS = ("X26ws2", "X26ws3")   # further seeds of the wide adapter (SEED=k launch_variant.sh wide)
+
+
+def plateau_seeds():
+    """Appendix: the stopping depth m* of the wide adapter (trained on m <= 16) for seed 0 and WIDE_SEEDS, per benchmark
+    and decode depth, and how often the seeds agree (all equal, or within one sampled depth)."""
+    import contextlib, io
+    per = {}
+    for pre in (None,) + WIDE_SEEDS:
+        with contextlib.redirect_stdout(io.StringIO()):
+            rows = plateau("wide", prefix=pre)
+        per[pre or "X26w"] = {(r["n"], r["bench"]): r["m_star"] for r in rows}
+    keys = sorted(set.intersection(*(set(v) for v in per.values())))
+    out = []
+    for k in keys:
+        ms = [per[p][k] for p in per]
+        idx = [SWEEP_M.index(m) for m in ms]
+        out.append(dict(n=k[0], bench=k[1], m_star=ms, equal=len(set(ms)) == 1, within_one=max(idx) - min(idx) <= 1))
+        print(f"Plateau seed n={k[0]} {k[1]:16s} m* = {ms}")
+    if out:
+        print(f"Plateau seed {len(out)} settings with a stop in every seed: equal {sum(r['equal'] for r in out)}, "
+              f"within one sampled depth {sum(r['within_one'] for r in out)}, "
+              f"all in 2-4 {sum(all(2 <= m <= 4 for m in r['m_star']) for r in out)}")
     return out
 
 
@@ -1871,7 +1902,7 @@ def compute():
         means.append(dict(section=sec, label=label, key=k, n=len(s), mean=round(100 * float(np.mean(list(s.values()))), 1)))
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=time_breakdown(), batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {bad} printed values differ")
 
 
