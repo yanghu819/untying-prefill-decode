@@ -674,6 +674,26 @@ def tab_depth14():
     (OUT / "tab_depth14.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_prefilltrn():
+    """Appendix (v2): prefill depth sweep with the prefill frozen or trained (paper_numbers.prefill_trainable), accuracy
+    per benchmark, decode depth and arm against prefill loops m, items both arms share; the best m of each row in bold;
+    last column the stopping depth m* of the plateau rule ('--' where the rule finds none)."""
+    P = PN.get("prefill_trainable", {})
+    if not P.get("curves"):
+        return (OUT / "tab_prefilltrn.tex").unlink(missing_ok=True)
+    ms = [1, 2, 3, 4, 5, 6, 8, 12, 16]
+    lines = []
+    for r in P["curves"]:
+        for arm, q in r["quality"].items():
+            q = {int(k): v for k, v in q.items()}
+            best = max(q.values())
+            cell = lambda m: "--" if m not in q else (f"\\textbf{{{q[m]:.1f}}}" if q[m] == best else f"{q[m]:.1f}")
+            star = P.get("stops", {}).get(f"{r['n']}/{r['bench']}", {}).get(arm)
+            lines.append(f"{r['bench']} & {r['n']} & {arm.split()[0]} & " + " & ".join(cell(m) for m in ms)
+                         + f" & {star if star is not None else '--'} \\\\")
+    (OUT / "tab_prefilltrn.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_avg():
     """Main text: Table 1's averages over the 11 benchmarks, one row per method and a column per decode depth."""
     T = PN["main_table"]
@@ -690,5 +710,5 @@ def tab_avg():
 
 
 if __name__ == "__main__":
-    fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_avg(); fig_depth(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_avg(); fig_depth(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))
