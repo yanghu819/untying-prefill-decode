@@ -27,7 +27,8 @@ case $W in
         export OURO_CELLS=$(for m in 1 2 3 4 6 8; do for n in 1 2 3 4; do printf "%sx%s," $m $n; done; done | sed 's/,$//') ;;   # and cut, frozen prefill
   lr) N=X26-a-lr${LRS:?set LRS}; P=X26alr${LRS}; FLAGS=""; export OURO_LR_SCALE=$LRS ;;   # Ours at LR x LRS (tuning check)
   prefill) N=X26-a-pf8; P=X26pf8; FLAGS="--prefill-lora"; export OURO_MAX_PREFIX=${OURO_MAX_PREFIX:-2048}
-        export OURO_DIST_TIMEOUT_MIN=${OURO_DIST_TIMEOUT_MIN:-120}
+        export OURO_DIST_TIMEOUT_MIN=${OURO_DIST_TIMEOUT_MIN:-30} OURO_DDP_FIND_UNUSED=1   # without it DDP hangs (gradient
+        # readiness order differs across ranks when each samples a different m; found 11-11 by 1- and 2-GPU smoke tests)
         export OURO_CELLS=$(for m in 1 2 3 4 6 8; do for n in 1 2 3 4; do printf "%sx%s," $m $n; done; done | sed 's/,$//') ;;
   *) echo "WHICH must be wide, fixed4, lora, lr, prefill or w8"; exit 2 ;;
 esac

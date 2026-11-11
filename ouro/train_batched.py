@@ -154,7 +154,10 @@ def main():
         random.setstate(saved["rng"]["python"])
         np.random.set_state(saved["rng"]["numpy"])
     wrapper = Batched(system, args.arm == "R")
-    model = DistributedDataParallel(wrapper, device_ids=[local_rank], broadcast_buffers=False) if world > 1 else wrapper
+    # env OURO_DDP_FIND_UNUSED=1: ranks whose micro-batch leaves some trainable parameter without a gradient (diagnosis of
+    # the trainable-prefill hang) let DDP skip it instead of waiting for it
+    model = DistributedDataParallel(wrapper, device_ids=[local_rank], broadcast_buffers=False,
+                                    find_unused_parameters=os.environ.get("OURO_DDP_FIND_UNUSED") == "1") if world > 1 else wrapper
     args.output.mkdir(parents=True, exist_ok=True)
     if rank == 0:
         setup = {
