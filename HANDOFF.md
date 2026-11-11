@@ -44,7 +44,9 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   a2 and, for the last 50 queue lines, on a1 (checkpoint copied, md5 checked). Control `launch_variant.sh w8`
   (X26-a-w8, same cells and cut, frozen prefill), sweep X26w8-* on a1. When both queues are empty: score evalplus on
   both boxes, `pn_sync.sh all`, read `prefill_trainable()` (does the stop at two to four loops move when the prefill
-  is trained?), then write it into the appendix. After that: ARR checklist TODOs with the user if the paper also goes
+  is trained?), then write it into the appendix. Seed 2 of both arms (X26-a-w8-s2 on a1, X26-a-pf8-s2 on a2, sweeps
+  X26w8s2-* / X26pf8s2-*) starts by itself when each box's sweep queue drains (/root/pn/after_sweep_*.sh, 11-12 02:50);
+  `prefill_trainable()` then needs a seed loop like `plateau_seeds`. After that: ARR checklist TODOs with the user if the paper also goes
   to ARR.
 
 ## 2. The user's rules (all still in force)
