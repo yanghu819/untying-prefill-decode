@@ -39,10 +39,13 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
   of it is still running: bash reads scripts as it goes, and the running copy then fails after training (11-10:
   fixed4-s3 and lora-s3 lost their eval step; re-run the launcher, which skips the finished training).
-- **Next, in order of value**: (1) the trainable-prefill experiment for a v2 (`launch_variant.sh prefill`,
-  X26-a-wide-pf on a2, prompts cut to 2,048 tokens; then its depth sweep X26wpf-*: does the stop at two to four
-  loops move when the prefill is trained?); (2) the wide-adapter seed sweeps into Appendix "Where the Gain Stops"
-  (`plateau_seeds`); (3) ARR checklist TODOs with the user if the paper also goes to ARR.
+- **In flight (11-11 22:00)**: the trainable-prefill check for a v2. `launch_variant.sh prefill` trained X26-a-pf8
+  (a2, prefill LoRA on, m in {1,2,3,4,6,8}, prompts cut to 2,048 tokens, done 21:01); its depth sweep X26pf8-* runs on
+  a2 and, for the last 50 queue lines, on a1 (checkpoint copied, md5 checked). Control `launch_variant.sh w8`
+  (X26-a-w8, same cells and cut, frozen prefill), sweep X26w8-* on a1. When both queues are empty: score evalplus on
+  both boxes, `pn_sync.sh all`, read `prefill_trainable()` (does the stop at two to four loops move when the prefill
+  is trained?), then write it into the appendix. After that: ARR checklist TODOs with the user if the paper also goes
+  to ARR.
 
 ## 2. The user's rules (all still in force)
 
