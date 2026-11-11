@@ -371,7 +371,8 @@ the released model. Training-free: the frozen model decodes from a four-loop pre
 LoRA on the $n$-loop model distilled from native 4/4 with the adapter's data, teacher and tokens. Ours: one cache (all
 decode loops read prefill loop $m$) or aligned (decode loop $k$ reads prefill loop $\max(m-n+k,1)$). Each column on the
 items all rows share. Over three training seeds (mean $\pm$ s.d.), Ours (aligned) averages $56.7\pm0.1$ at 4/1 and
-$67.1\pm0.2$ at 4/2, Distilled $49.7\pm0.3$ at 1/1 and $65.1\pm0.2$ at 2/2, the prefill-4 LoRA $56.8\pm0.3$ and
+$67.1\pm0.2$ at 4/2, Distilled $49.7\pm0.3$ at 1/1 and $65.1\pm0.2$ at 2/2 (rank 80: 50.2 over two seeds and
+$65.3\pm0.1$), the prefill-4 LoRA $56.8\pm0.3$ and
 $67.3\pm0.4$, and Ours with frozen maps $54.3\pm0.6$ and $66.6\pm0.4$; the one-cache adapter's seeds: Appendix~\ref{app:seed}.}
 \label{tab:main}
 \end{table*}

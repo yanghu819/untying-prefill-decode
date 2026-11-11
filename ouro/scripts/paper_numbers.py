@@ -1507,7 +1507,8 @@ def main_table():
             want = {"loop adapter 4/1": (56.4, 0.0), "loop adapter 4/2": (66.6, 0.2), "aligned adapter 4/1": (56.7, 0.1),
                     "aligned adapter 4/2": (67.1, 0.2), "LoRA-distilled 2/2": (65.1, 0.2), "LoRA-distilled 1/1": (49.7, 0.3),
                     "fixed-4 LoRA 4/1": (56.8, 0.3), "fixed-4 LoRA 4/2": (67.3, 0.4), "aligned LoRA-only 4/1": (54.3, 0.6),
-                    "aligned LoRA-only 4/2": (66.6, 0.4)}.get(label)   # Table 1 caption
+                    "aligned LoRA-only 4/2": (66.6, 0.4), "distilled r80 1/1": (50.2, 0.0),
+                    "distilled r80 2/2": (65.3, 0.1)}.get(label)   # Table 1 caption
             print(f"Main table   {label:20s} seeds: " + " ".join(f"{a:5.1f}" for a in avgs)
                   + f"  mean {got[0]:5.1f} sd {got[1]:.1f}" + (f"  !! paper: {want}" if want and got != want else ""))
     T = {r["bench"]: r for r in out}
