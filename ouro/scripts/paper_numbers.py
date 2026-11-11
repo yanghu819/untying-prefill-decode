@@ -406,7 +406,7 @@ def keys():
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
     ks |= {sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)
-           for pre in ("X26ws2", "X26ws3")}
+           for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8")}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
@@ -1381,6 +1381,42 @@ def plateau_seeds():
     return out
 
 
+PREFILL_ARMS = (("frozen prefill", "X26w8"), ("trained prefill", "X26pf8"))   # launch_variant.sh w8 / prefill (m <= 8)
+
+
+def prefill_trainable():
+    """v2 check (red team rounds 3-5): does the stop at two to four prefill loops move when the prefill itself is trained?
+    Two adapters trained identically on m in {1,2,3,4,6,8} with prompts cut to 2,048 tokens, one with a LoRA on the
+    prefill (X26pf8) and its control with the prefill frozen (X26w8); per benchmark and decode depth, accuracy at each m
+    (items both arms share) and the stopping depth m* of the plateau rule."""
+    import contextlib, io
+    out = []
+    for n in (1, 2):
+        for b in MAIN_BENCH:
+            sets = {(arm, m): load(sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1))
+                    for arm, pre in PREFILL_ARMS for m in SWEEP_M}
+            ms = [m for m in SWEEP_M if all(sets[(arm, m)] for arm, _ in PREFILL_ARMS)]
+            if len(ms) < 2:
+                continue
+            ids = set.intersection(*(set(sets[(arm, m)]) for arm, _ in PREFILL_ARMS for m in ms))
+            q = {arm: {m: round(agg(sets[(arm, m)], ids), 2) for m in ms} for arm, _ in PREFILL_ARMS}
+            out.append(dict(n=n, bench=b, items=len(ids), quality=q))
+            print(f"Prefill trn  n={n} {b:16s} " + "  ".join(f"{arm[:7]}: " + " ".join(f"m{m}={v:5.1f}" for m, v in q[arm].items())
+                                                      for arm, _ in PREFILL_ARMS))
+    stops = {}
+    for arm, pre in PREFILL_ARMS:
+        with contextlib.redirect_stdout(io.StringIO()):
+            stops[arm] = {(r["n"], r["bench"]): r["m_star"] for r in plateau("wide", prefix=pre)}
+    both = sorted(set(stops["frozen prefill"]) & set(stops["trained prefill"]))
+    for k in both:
+        print(f"Prefill trn  m* n={k[0]} {k[1]:16s} frozen {stops['frozen prefill'][k]}  trained {stops['trained prefill'][k]}")
+    if both:
+        later = sum(stops["trained prefill"][k] > stops["frozen prefill"][k] for k in both)
+        print(f"Prefill trn  {len(both)} settings with a stop in both: later with trained prefill {later}, "
+              f"same {sum(stops['trained prefill'][k] == stops['frozen prefill'][k] for k in both)}")
+    return dict(curves=out, stops={f"{k[0]}/{k[1]}": {a: stops[a].get(k) for a in stops} for k in both})
+
+
 # Appendix C: settings without a stopping depth (accuracy still rising or too few deeper depths), (n, benchmark)
 PLATEAU_OMITTED = {"m<=4": {(1, "MMLU"), (1, "MMLU-Pro"), (1, "BBH 3-shot"), (1, "ARC-C"), (2, "MMLU-Pro"), (2, "ARC-C"),
                             (1, "HellaSwag"), (2, "HellaSwag"), (1, "Winogrande"), (2, "Winogrande")},
@@ -1931,7 +1967,7 @@ def _compute(counter):
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
     _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 
