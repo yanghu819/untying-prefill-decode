@@ -108,7 +108,8 @@ def main():
     torch.cuda.set_device(local_rank)
     device = torch.device("cuda", local_rank)
     if world > 1:
-        dist.init_process_group("nccl", device_id=device)
+        from datetime import timedelta   # env OURO_DIST_TIMEOUT_MIN: slow steps (trainable prefill at deep m) need more than 10 min
+        dist.init_process_group("nccl", device_id=device, timeout=timedelta(minutes=int(os.environ.get("OURO_DIST_TIMEOUT_MIN", "10"))))
     if args.global_batch % world:
         raise ValueError("Global batch must divide evenly across this arm's ranks.")
     torch.manual_seed(args.seed)
