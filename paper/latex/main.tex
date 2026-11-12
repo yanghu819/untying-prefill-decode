@@ -78,6 +78,15 @@ phases cost very different amounts of time: prefill reads all prompt tokens in o
 repeats for every generated token. On chain-of-thought tasks, decoding takes over 97\% of the time
 (Figure~\ref{fig:time}).
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../figs/fig_time.pdf}
+\caption{\textbf{Prefill is a sliver of the time.} Share of the time per request spent reading the prompt (prefill,
+black) and writing the answer (decode, grey): the released Ouro-2.6B at one loop (Original 1/1), batch 1, one B300, 100
+requests per task. Every configuration: Appendix~\ref{app:time}.}
+\label{fig:time}
+\end{figure}
+
 This asymmetry suggests untying the two loop counts (Figure~\ref{fig:concept}b): read the prompt with $m$ loops, which
 is nearly free, and decode each answer token with fewer loops, $n<m$, which saves time on every token. Deep encoders
 with shallow decoders make a similar trade across two networks in machine translation~\citep{deepshallow}; here both
@@ -211,7 +220,7 @@ def decode(token, K, V, m, n): # last prompt token, then answer
 # teacher = the Original 4/4 model
 m, n = torch.randint(1, 5, (2,)).tolist()
 with torch.no_grad():
-    t = native(x, loops=4)                # frozen, no adapter
+    t = original(x, loops=4)              # frozen, no adapter
 s = model(x, prefill=m, decode=n)         # LoRA + maps
 kl = kl_div(s.log_softmax(-1),
             t.log_softmax(-1), log_target=True,
@@ -252,14 +261,6 @@ intervals.
 \subsection{Where the time goes}
 \label{sec:time}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{../figs/fig_time.pdf}
-\caption{\textbf{Prefill is a sliver of the time.} Share of the time per request spent reading the prompt (prefill,
-black) and writing the answer (decode, grey): the released Ouro-2.6B at one loop (Original 1/1), batch 1, one B300, 100
-requests per task. Every configuration: Appendix~\ref{app:time}.}
-\label{fig:time}
-\end{figure}
 
 Figure~\ref{fig:time} splits the time of each request into prefill and decode. Chain-of-thought tasks read a short
 prompt and write a long answer, so prefill takes 0.4\% (MATH-500) to 2.8\% (MMLU-Pro) of the time of the original model
@@ -371,39 +372,6 @@ prefill loops add 3.1 points over 2/2 at the same decode cost.}
 \label{fig:frontier}
 \end{figure}
 
-
-Equal decode loops do not mean equal time, so we measure it on the same requests (Figure~\ref{fig:budget}). With the
-maps folded into the prompt cache, LoopBridge decodes within 10\% of the original model's time per token. At one decode
-loop and about 11 seconds per request, the fixed-depth adapter scores 42.0 and LoopBridge 41.2 on the four
-chain-of-thought tasks, against 27.0 for Original 1/1 and 34.2 for Distilled 1/1; paired over the 400 requests,
-LoopBridge is $+14.2$\ci{9.0}{19.8} points above Original 1/1 and $+7.0$\ci{1.8}{12.5} above Distilled 1/1, and the
-fixed-depth adapter is $+15.0$\ci{9.8}{20.5} and $+7.8$\ci{2.5}{13.2}.
-
-Measured as decode throughput instead of time per request (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
-at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
-batches; prefill 4
-/ decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}. The gain grows with the prompt: against \nat{4} it is $2.4\times$ at a 2K-token prompt and $3.3\times$ at
-15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$). Aligned caches decode at about the cost of \nat{n} (314 against 342 tokens/s at $n=2$, $2.5\times$
-\nat{4}).
-
-The reasoning model shows the same trade at scale. On Ouro-2.6B-Thinking, prefill 4 / decode 2 comes within 1.4 points
-of Original 4/4 at 3.2 times its decode throughput (Figure~\ref{fig:frontier}), and it answers 192 timed GSM8K problems
-in $0.59\times$\ci{0.52}{0.66} the time of Original 4/4 at batch 1, scoring 93.3 against 94.2 on all 1,319 problems
-(Appendix~\ref{app:serve}).
-
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
-\caption{\textbf{Decision models gain when the context gets more loops than the decision.} Lev decision
-models~\citep{lev}, LevBench development set (3,270 questions), accuracy against decision loops $n$. Grey: Original
-$n/n$ continued with the same data and updates. Orange: the best of the models trained to prefill with $m$ loops
-(labels). All pairs: Table~\ref{tab:lev}.}
-\label{fig:lev}
-\end{figure*}
-
-\subsection{Ablations}
-\label{sec:ablate}
-
 \begin{table*}[t]
 \centering\footnotesize
 \begin{minipage}[t]{0.61\textwidth}\centering
@@ -440,6 +408,41 @@ all-pairs LoRA loses. (b) LoopBridge with one shared cache trained on fewer answ
 learning-rate schedule scaled for the distilled control and for LoopBridge.}
 \label{tab:ablate}
 \end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
+\caption{\textbf{Decision models gain when the context gets more loops than the decision.} Lev decision
+models~\citep{lev}, LevBench development set (3,270 questions), accuracy against decision loops $n$. Grey: Original
+$n/n$ continued with the same data and updates. Orange: the best of the models trained to prefill with $m$ loops
+(labels). All pairs: Table~\ref{tab:lev}.}
+\label{fig:lev}
+\end{figure*}
+
+
+Equal decode loops do not mean equal time, so we measure it on the same requests (Figure~\ref{fig:budget}). With the
+maps folded into the prompt cache, LoopBridge decodes within 10\% of the original model's time per token. At one decode
+loop and about 11 seconds per request, the fixed-depth adapter scores 42.0 and LoopBridge 41.2 on the four
+chain-of-thought tasks, against 27.0 for Original 1/1 and 34.2 for Distilled 1/1; paired over the 400 requests,
+LoopBridge is $+14.2$\ci{9.0}{19.8} points above Original 1/1 and $+7.0$\ci{1.8}{12.5} above Distilled 1/1, and the
+fixed-depth adapter is $+15.0$\ci{9.8}{20.5} and $+7.8$\ci{2.5}{13.2}.
+
+Measured as decode throughput instead of time per request (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
+at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
+batches; prefill 4
+/ decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}. The gain grows with the prompt: against \nat{4} it is $2.4\times$ at a 2K-token prompt and $3.3\times$ at
+15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$). Aligned caches decode at about the cost of \nat{n} (314 against 342 tokens/s at $n=2$, $2.5\times$
+\nat{4}).
+
+The reasoning model shows the same trade at scale. On Ouro-2.6B-Thinking, prefill 4 / decode 2 comes within 1.4 points
+of Original 4/4 at 3.2 times its decode throughput (Figure~\ref{fig:frontier}), and it answers 192 timed GSM8K problems
+in $0.59\times$\ci{0.52}{0.66} the time of Original 4/4 at batch 1, scoring 93.3 against 94.2 on all 1,319 problems
+(Appendix~\ref{app:serve}).
+
+
+\subsection{Ablations}
+\label{sec:ablate}
+
 
 \paragraph{What LoopBridge adds.} A plain LoRA serves one prefill depth. Trained on all $(m,n)$ pairs with the maps
 fixed at the identity, it loses 1.8 points on average and 14.9 on RULER-16K at 4/1 (Table~\ref{tab:ablate}a; 14.9 to
