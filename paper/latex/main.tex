@@ -46,17 +46,17 @@
 \maketitle
 
 \begin{abstract}
-Looped language models run a block of layers several times for every token and use the same number of loops to read
-the prompt (prefill) and to generate each answer token (decode). Yet generation is almost all decoding: on Ouro-2.6B,
-prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops are nearly free. We untie the
-two loop counts: the prompt is read with $m$ loops and each answer token is decoded with $n<m$. The released model
-cannot use the states of a longer prefill, so we distill a small adapter (2.4\% of the parameters): LoRA on the decoder
-when the prefill depth is fixed, or LoopBridge, which adds per-loop key and value maps so that one adapter serves every
-prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill loops raise the average over 11 benchmarks
-from 44.2 for the original model to 57.1 (56.8 with LoopBridge), above the original model distilled to one loop on the
-same data (49.8), and in the same measured time per request they are 14--15 points more accurate than the original
-model. The gain levels off at two to four prefill loops, and it holds on Ouro-1.4B, on the Thinking models and on
-looped decision models.
+Looped language models run a block of layers several times for every token, and they use the same number of loops to
+read the prompt (prefill) and to generate each answer token (decode). Generation, however, is almost all decoding. On
+Ouro-2.6B, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost almost
+nothing. We therefore untie the two loop counts and read the prompt with more loops than we use to decode each answer
+token. The released model cannot use the states of a longer prefill, so we distill a small adapter with 2.4\% of the
+model's parameters. When the prefill depth is fixed, LoRA on the decoder is enough; LoopBridge adds per-loop key and
+value maps so that one adapter serves every prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill
+loops raise the average over 11 benchmarks from 44.2 for the original model to 57.1 (56.8 with LoopBridge). This is
+above the original model distilled to one loop on the same data (49.8), and in the same measured time per request it
+is 14--15 points above the original model. The gain levels off at two to four prefill loops and holds on Ouro-1.4B, on
+the Thinking models and on looped decision models.
 \end{abstract}
 
 \section{Introduction}
@@ -74,8 +74,8 @@ the short decoder read the long prefill's key-value cache.}
 
 Looped language models such as Ouro~\citep{ut,ouro} reuse a block of layers several times for each token. Ouro-2.6B
 runs its block four times, for every prompt token and for every answer token (Figure~\ref{fig:concept}a). The two
-phases cost very different amounts of time: prefill reads all prompt tokens in one parallel pass, while decoding
-repeats for every generated token. On chain-of-thought tasks, decoding takes over 97\% of the time
+phases cost very different amounts of time. Prefill reads all prompt tokens in one parallel pass, while decoding
+repeats for every generated token, so on chain-of-thought tasks decoding takes over 97\% of the time
 (Figure~\ref{fig:time}).
 
 \begin{figure}[t]
@@ -92,7 +92,7 @@ is nearly free, and decode each answer token with fewer loops, $n<m$, which save
 with shallow decoders make a similar trade across two networks in machine translation~\citep{deepshallow}; here both
 phases share one looped model. The released model cannot make this trade by itself. Prefilled with four loops and
 decoded with one, Ouro-2.6B averages 26.6 points over 11 benchmarks, far below the 44.2 it reaches with one loop for
-both (Table~\ref{tab:main}): its decoder has never read the states of a longer prefill.
+both (Table~\ref{tab:main}), because its decoder has never read the states of a longer prefill.
 
 We close this gap with a small adapter distilled from the original four-loop model (Section~\ref{sec:method}). When
 the prefill depth is fixed, LoRA on the decoder is enough. LoopBridge adds a key map and a value map on the prompt
@@ -146,8 +146,8 @@ when $p$ is a few percent, extra prefill loops cost little (Section~\ref{sec:tim
 
 \subsection{Untying the loops}
 
-With $m>n$, decode loop $k$ reads the prompt cache of prefill loop $\max(m-n+k,1)$: the last decode loop reads the last
-prefill loop, and at $m=n$ every decode loop reads exactly the cache the original model would read. The frozen model
+With $m>n$, decode loop $k$ reads the prompt cache of prefill loop $\max(m-n+k,1)$. The last decode loop thus reads the
+last prefill loop, and at $m=n$ every decode loop reads exactly the cache the original model would read. The frozen model
 fails at this (the training-free rows of Table~\ref{tab:main}), because its decoder has only read prompt states
 written by the same loops. A small adapter fixes it.
 
@@ -160,13 +160,13 @@ fixed $m$}.
 that loop reads. The key map is one complex scale per rotary frequency pair; it commutes with RoPE~\citep{rope}, so it
 can be applied to the query instead of the cache. The value map is linear and is applied to the attention output,
 since attention is linear in the values. Prompt and answer attention share one softmax, merged exactly through their
-log-sum-exps. Both maps can also be folded into the prompt cache once at prefill, one mapped copy per decode loop, as
-many copies as the original model stores at $n$ loops; decoding then runs the original model's attention at its cost
-per token, and we time this form. A lighter variant keeps a single prompt cache that every decode loop reads and saves
+log-sum-exps. Both maps can also be folded into the prompt cache once at prefill, one mapped copy per decode loop (as
+many copies as the original model stores at $n$ loops). Decoding then runs the original model's attention at its cost
+per token; we time this form. A lighter variant keeps a single prompt cache that every decode loop reads and saves
 memory (Table~\ref{tab:ablate}a).
 
-\paragraph{Training.} We distil~\citep{kd} the adapter from Original 4/4: KL divergence on the answer tokens of 48M
-tokens of reasoning traces, instruction data, long-context data and web text, with one $(m,n)$ pair sampled per
+\paragraph{Training.} We distil~\citep{kd} the adapter from Original 4/4 with a KL loss on the answer tokens of 48M
+tokens of reasoning traces, instruction data, long-context data and web text, sampling one $(m,n)$ pair per
 micro-batch. The adapter has 63M parameters, 2.4\% of Ouro-2.6B. The main LoopBridge is trained on $m,n\le4$, a second
 one on $m\in\{1,2,3,4,6,8,12,16\}$ and $n\le4$ for the depth sweep (Appendix~\ref{app:training}).
 
