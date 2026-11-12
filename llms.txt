@@ -3,7 +3,7 @@
 > Looped (recurrent-depth) language models use the same number of loops to read the prompt (prefill) and to generate
 > each answer token (decode), although generation is almost all decoding. With LoopBridge, a small adapter (LoRA + per-loop
 > key-value maps on a frozen model), a decoder with n loops reads the prompt states of any prefill depth m. The paper
-> measures where inference time goes, how accuracy changes with m = 1..16 at fixed n, and how deeper prefill compares
+> measures where inference time goes, how accuracy changes with m = 1..16 at fixed n, and how more prefill loops compare
 > at equal measured time with the original model, distilled models and more decode loops (Ouro-2.6B, Ouro-2.6B-Thinking,
 > Ouro-1.4B). Every number is recomputed from released per-item scores by ouro/scripts/paper_numbers.py.
 
@@ -12,7 +12,7 @@ Main findings (Ouro-2.6B; 95% paired bootstrap intervals in the paper):
 - Same weights, one decode loop: four prefill loops instead of one raise the 11-benchmark average from 47.2 to 56.8
   (gain 9.0 +- 0.6 over three seeds); on most benchmarks the gain stops at two to four prefill loops.
 - Equal measured time: Ours 4/1 is 14.2 points above Original 1/1 and 7.0 above Distilled 1/1 at about the same time;
-  a second decode loop buys 15.5 points for 1.4x the time; at two decode loops deeper prefill and distillation tie.
+  a second decode loop buys 15.5 points for 1.4x the time; at two decode loops more prefill loops and distillation tie.
 - Baselines: the distilled controls move by at most 0.6 points over 0.3x-3x learning rates and at rank 80.
 - Exceptions: 4-shot MATH-500 (prefill 1 best; 0-shot reverses it) and HELMET exact recall.
 

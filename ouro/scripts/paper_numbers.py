@@ -1385,6 +1385,24 @@ PREFILL_ARMS = (("frozen prefill", "X26w8"), ("trained prefill", "X26pf8"))   # 
 PREFILL_SEEDS = (2, 3)   # SEED=k runs: X26w8s<k>-*, X26pf8s<k>-*
 
 
+def depth_gains_main():
+    """Section 4 / Figure 2: gain from m = 1 to the best m <= 8 at one decode loop, adapter trained on m in {1..16}."""
+    import contextlib, io
+    with contextlib.redirect_stdout(io.StringIO()):   # depth_sweep() prints its own lines once, in the main export
+        rows = [r for r in depth_sweep() if r["adapter"] == "wide" and r["n"] == 1]
+    out = {}
+    for b in ("GSM8K", "MMLU-Pro", "HumanEval+", "RULER-16K"):
+        r = next((r for r in rows if r["bench"] == b), None)
+        if r:
+            q = {int(m): v for m, v in r["quality"].items() if int(m) <= 8}
+            out[b] = round(max(q.values()) - q[1], 1)
+    print("Depth gains (Figure 2) " + "  ".join(f"{b} +{g}" for b, g in out.items()))
+    want = {"GSM8K": 10.2, "MMLU-Pro": 24.1, "HumanEval+": 17.7, "RULER-16K": 10.1}
+    if out and out != want:
+        print(f"Depth gains {out}  !! paper: {want}")
+    return out
+
+
 def prefill_trainable():
     """v2 check (red team rounds 3-5): does the stop at two to four prefill loops move when the prefill itself is trained?
     Two adapters trained identically on m in {1,2,3,4,6,8} with prompts cut to 2,048 tokens, one with a LoRA on the
@@ -1995,7 +2013,7 @@ def _compute(counter):
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
     _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 

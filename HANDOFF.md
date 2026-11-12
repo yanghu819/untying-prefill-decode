@@ -64,9 +64,14 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   jargon (a CS336-level reader must follow), Kaiming-He-style simplicity, torch-style pseudocode.
 - **Figures** (user was explicit, several times): every figure must tell one story that a reader gets at a glance.
   Use only chart types common in big-lab LLM tech reports. The user can really only read **Pareto-front-style line
-  charts**: so every result figure uses one style — grey line = native n/n, red line = loop adapter, small labels at the
-  points (`frontier()` in `paper_figs.py`). No heatmaps, difference bars, dumbbells, 3-D, or anything unusual. Captions
-  start with the finding in bold. In the group report, each section title is the figure's story in one sentence.
+  charts** and simple bars. **2026-11-12 rule (user): every main-text figure and table tells one favorable claim at a
+  glance, Kaiming-He style** — caption title = the claim, numbers written on the plot, the representative subset in the
+  main text and the full data in an appendix figure (Figure 2 = `fig_depth_main`, full = `fig_depth`; Figure 3 =
+  `fig_sametime`, full = `fig_budget`). One color per meaning: Ours/LoopBridge orange, Original grey, Distilled blue,
+  prefill-4 LoRA aqua; within one method n=1 violet, n=2 green; filled = one decode loop, hollow = two (constants at the
+  top of `paper_figs.py`, checked with the dataviz palette validator). Tables: Ours row shaded, gain in small orange,
+  ablations as a build-up with the default shaded. No heatmaps, difference bars, dumbbells, 3-D, or anything unusual.
+  Render and look at every changed figure before committing. Captions start with the finding in bold. In the group report, each section title is the figure's story in one sentence.
 - **Reproducibility**: every number in the paper is recomputed by `ouro/scripts/paper_numbers.py` from
   `ouro/results/items/` and checked against hard-coded expectations ("0 printed values differ"). New numbers go into
   its CMP/MEANS/guards first, never hand-copied into LaTeX. Generated tables are `\input` via

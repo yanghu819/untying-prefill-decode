@@ -40,7 +40,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   ms/token at 1/1, 106 vs 69 at 1/2 (BBH 47 vs 30, 97 vs 62). At batch 1 the extra per-loop work (key/value maps, two
   attention calls merged by log-sum-exp, an aligned bank per decode loop) is launch-bound; at large batch (Table 10)
   it is hidden. Section 5's comparison on measured time has to include it.
-- Deeper prefill changes the answer length, and that, not prefill, drives the time per request (same 100 requests,
+- More prefill loops change the answer length, and that, not prefill, drives the time per request (same 100 requests,
   decode 1): MMLU-Pro 118 -> 386 -> 461 output tokens at m = 1, 4, 8 (5.5 -> 18.1 -> 20.6 s; accuracy 22 -> 46 -> 44),
   GSM8K and BBH nearly unchanged in length, MATH-500 shorter (633 -> 490 tokens; accuracy 37 -> 22). Prefill stays
   1-6% of the time. The paper must report both: the direct prefill cost and the length effect.
@@ -78,7 +78,7 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 - Quality vs time per request on the four chain-of-thought tasks (same 100 requests; Figure 3): batch 1 measured and
   batch 32 estimated (measured step cost x measured output tokens) agree. At batch 32: Original 2/2 56.8 at 15.0 s,
   Distilled 2/2 58.5 at 16.5 s, Ours 4/1 43.0 at 13.5 s, Ours 6/2 60.8 at 20.5 s, Original 4/4 64.8 at 29.3 s. On these
-  tasks a second decode loop buys more accuracy per second than deeper prefill; short prompts keep decode launch-bound
+  tasks a second decode loop buys more accuracy per second than more prefill loops; short prompts keep decode launch-bound
   even at batch 32, so the adapter's per-step overhead is not amortised.
 - Table 1 briefly moved (RULER column) when an unfinished seed-2 RULER run shrank the shared item set; seed runs below
   95% of the items now wait, as in the depth sweep.

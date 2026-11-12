@@ -1,7 +1,8 @@
 """Paper figures (PDF for LaTeX, PNG for README) and generated LaTeX tables, all from results/paper_numbers.json.
 
 usage: python scripts/paper_figs.py  ->  paper/figs/fig*.{pdf,png}, paper/figs/tab_*.tex
-One palette everywhere: our loop adapter in red, native models in greys; no in-plot titles (captions carry the message).
+One palette everywhere (see OURS / DIST / ... below); each main-text figure makes one point, the full data are in
+appendix figures and tables.
 """
 
 import json
@@ -15,8 +16,13 @@ import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]                 # ouro/
 OUT = ROOT.parent / "paper" / "figs"                       # paper/figs at the repository root
-OURS, OURS_LIGHT = "#D1495B", "#EDA4AE"
-NAT, NAT_LIGHT, INK, GRID = "#4D4D4D", "#B3B3B3", "#1A1A1A", "#E6E6E6"
+# One meaning per color across the paper (palette checked for colour-blind separation with the dataviz validator):
+# methods: Ours (LoopBridge) orange, Distilled blue, prefill-4 LoRA aqua, Original grey; decode depth inside one method
+# (Figure 2): n = 1 violet, n = 2 green. Filled markers: one decode loop; hollow: two.
+OURS, DIST, LORA4 = "#EB6834", "#2A78D6", "#1BAF7A"
+N1, N2 = "#6250D6", "#008300"
+OURS_LIGHT = OURS   # kept for the appendix helpers; n is shown by marker fill, not by a lighter shade
+NAT, NAT_LIGHT, INK, GRID = "#4D4D4D", "#9A9A9A", "#1A1A1A", "#E6E6E6"
 plt.rcParams.update({
     "font.size": 8, "font.family": "DejaVu Sans", "axes.labelsize": 9, "xtick.labelsize": 8, "ytick.labelsize": 8, "axes.spines.top": False, "axes.spines.right": False,
     "axes.linewidth": 0.6, "axes.edgecolor": NAT, "xtick.color": NAT, "ytick.color": NAT, "axes.labelcolor": INK,
@@ -43,7 +49,7 @@ def ci(lo, hi):
 
 
 def frontier(ax, nat, ours, title, xlog=False, lines=True):
-    """The one figure style of the paper: native (grey) and loop adapter (red) as lines of (x, y, label) points."""
+    """The appendix figure style: Original (grey) and Ours (orange) as lines of (x, y, label) points."""
     for pts, col, dy, mk in ((nat, NAT_LIGHT, -10, "o"), (ours, OURS, 5, "s")):
         pts = [p for p in pts if np.isfinite(p[1])]
         if not pts:
@@ -66,10 +72,12 @@ def frontier(ax, nat, ours, title, xlog=False, lines=True):
     ax.tick_params(labelsize=8)
 
 
-def legend(fig, ours, labels, y=1.1, native="native n/n", ncol=3):
-    h = [plt.Line2D([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.4), plt.Line2D([], [], color=OURS, marker="s", ms=4, lw=1.4),
-         plt.Line2D([], [], ls="none")]
-    fig.legend(h, [native, ours, labels], loc="upper center", ncol=ncol, fontsize=8, bbox_to_anchor=(0.5, y),
+def legend(fig, ours, labels, y=1.1, native="Original n/n", ncol=3):
+    h = [plt.Line2D([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.4), plt.Line2D([], [], color=OURS, marker="s", ms=4, lw=1.4)]
+    names = [native, ours]
+    if labels:
+        h.append(plt.Line2D([], [], ls="none")); names.append(labels)
+    fig.legend(h, names, loc="upper center", ncol=ncol, fontsize=8, bbox_to_anchor=(0.5, y),
                handlelength=1.6, frameon=False)
 
 
@@ -79,7 +87,7 @@ def fig0():
     from matplotlib.patches import FancyBboxPatch
     fig, ax = plt.subplots(figsize=(6.9, 2.0))
     ax.set_xlim(0, 100); ax.set_ylim(0, 30); ax.axis("off")
-    LIGHT = "#FBE3E6"
+    LIGHT = "#FDEBE3"   # light tint of OURS
 
     def box(x, y, w, h, text, fc="white", ec=NAT_LIGHT, lw=0.7, size=8.5, color=INK, weight="normal", sub=None):
         ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.25,rounding_size=0.9", fc=fc, ec=ec, lw=lw))
@@ -133,7 +141,7 @@ def fig2():
     ax.set_xlim(80, 460)
     ax.set_xlabel("decode throughput (tokens/s, 8K prompt)", fontsize=8)
     ax.set_ylabel("average accuracy (%)", fontsize=8)
-    legend(fig, "loop adapter", "labels: prefill/decode loops", y=1.02, ncol=2)
+    legend(fig, "Ours", "", y=1.02, ncol=2)
     fig.subplots_adjust(left=0.15, right=0.97, bottom=0.18, top=0.8)
     save(fig, "fig2_frontier")
 
@@ -148,7 +156,7 @@ def fig_equal():
         frontier(ax, [(2, e["native2"], "2/2"), (4, e["native4"], "4/4")], [(2, e["ours"], "4/2")], b)
         ax.set_xlim(1.5, 4.5); ax.set_xticks([2, 3, 4])
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.01); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
-    legend(fig, "loop adapter, prefill 4 / decode 2", "labels: prefill/decode loops", y=1.02)
+    legend(fig, "Ours, prefill 4 / decode 2", "", y=1.02, ncol=2)
     fig.subplots_adjust(wspace=0.35, hspace=0.45, left=0.07, right=0.99, bottom=0.1, top=0.9)
     save(fig, "fig_equal")
 
@@ -173,7 +181,7 @@ def fig_pareto():
                 nat.append((_tput(f"native{d}st"), c["b"], d)); ours.append((_tput(f"S4{d}sb"), c["a"], d))
             elif key.startswith("GSM8K Thinking"):  # prefill 4 / decode 4 not evaluated on the Thinking model
                 nat.append((_tput(f"native{d}st"), _M[f"GSM8K full think-native{d}"], d))
-        for pts, col, lab, mk in ((nat, NAT_LIGHT, "native n/n", "o"), (ours, OURS, "prefill 4 / decode n", "s")):
+        for pts, col, lab, mk in ((nat, NAT_LIGHT, "Original n/n", "o"), (ours, OURS, "Ours, prefill 4 / decode n", "s")):
             x, y = [p[0] for p in pts], [p[1] for p in pts]
             ax.plot(x, y, "-", color=col, lw=1.4, zorder=2)
             ax.scatter(x, y, s=18, color=col, marker=mk, zorder=3, label=lab)
@@ -219,7 +227,7 @@ def fig_lev():
         ax.set_xticks(ns); ax.set_xlim(ns[0] - 0.4, ns[-1] + 0.4)
     axes[0][0].set_ylabel("accuracy (%)", fontsize=8.5)
     fig.supxlabel("decision loops n", fontsize=8.5, y=0.0)
-    legend(fig, "trained with prefill m (best m)", "labels: prefill loops m", y=1.0, native="native n/n, continued (control)")
+    legend(fig, "trained with prefill m (best m)", "", y=1.08, native="Original n/n, continued (control)", ncol=2)
     fig.subplots_adjust(wspace=0.28, bottom=0.2, top=0.8)
     save(fig, "fig_lev")
 
@@ -276,7 +284,7 @@ def fig_taskmap(only=None, name="fig_taskmap_full", ncols=4):
         frontier(ax, nat, ours, title.get(b, b))
         ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
-    legend(fig, "loop adapter (one cache), best prefill m", "labels: prefill loops m", y=1.0)
+    legend(fig, "Ours (one cache), best prefill m", "", y=1.0, ncol=2)
     fig.subplots_adjust(wspace=0.32, hspace=0.5, left=0.07, right=0.99, top=1 - 0.38 / H, bottom=0.32 / H)
     save(fig, name)
 
@@ -300,7 +308,7 @@ def fig_aligned(panels, name="fig_taskmap", ncols=4):
                  title.get(b, b))
         ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
-    legend(fig, "loop adapter, prefill 4 / decode n", "", y=1.0)
+    legend(fig, "Ours, prefill 4 / decode n", "", y=1.0, ncol=2)
     fig.subplots_adjust(wspace=0.32, hspace=0.5, left=0.07, right=0.99, top=1 - 0.38 / H, bottom=0.32 / H)
     save(fig, name)
 
@@ -404,7 +412,8 @@ def tab_main(key="main_table", name="tab_main"):
         for i, l in enumerate(labels):
             cells = [c[i] for c in cols]
             fmt = lambda x, b: "--" if x is None else (rf"\textbf{{{x:.1f}}}" if len(labels) > 1 and abs(x - b) < 1e-9 else f"{x:.1f}")
-            lines.append(f"{n} & {show[l]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
+            shade = r"\rowcolor{oursbg} " if l.startswith("aligned adapter") else ""   # Ours (LoopBridge), as in Table 1
+            lines.append(f"{shade}{n} & {show[l]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
         if n < 4:
             lines.append(r"\midrule")
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
@@ -508,38 +517,33 @@ def _time(task, cond, model="Ouro-2.6B"):
 
 
 def fig_time():
-    """Figure 1: time per request split into prefill and decode, at the sweep's starting point (Ours 1/1 and 1/2) and
-    Original 4/4, for every timed task; label: prefill share."""
-    confs = [("a1x1sb", "Ours 1/1"), ("a1x2sb", "Ours 1/2")]   # the sweep's starting point; Original 4/4 in the text
-    mdl = lambda t: "Ouro-2.6B-Thinking" if t == "HELMET" else "Ouro-2.6B"   # HELMET is timed on the Thinking model
-    tasks = [t for t in TIMED + ["HELMET"] if any(_time(t, c, mdl(t)) for c, _ in confs)
-             or (t == "HELMET" and _time(t, "native4st", mdl(t)))]
-    if not tasks:
+    """Figure 1, one point: on generation tasks the time of a request is almost all decoding. Share of the time per
+    request spent in prefill and decode for the released model at one loop (Original 1/1, the start of the depth
+    sweep), base model, 100 requests per task; label: prefill share and total seconds. The other configurations and
+    HELMET are in Section 3 and Table 2 (Appendix A)."""
+    rows = [(t, _time(t, "native1st")) for t in TIMED]
+    rows = [(t, r) for t, r in rows if r]
+    if not rows:
         return drop("fig_time")
-    fig, ax = plt.subplots(figsize=(3.3, 0.2 * len(tasks) * len(confs) + 0.5))
-    y, ticks, labs = 0, [], []
-    for t in tasks:
-        for c, lab in (confs if t != "HELMET" else [("native2st", "Original 2/2"), ("native4st", "Original 4/4")]):
-            r = _time(t, c, mdl(t))
-            if r is None:
-                continue
-            ax.barh(y, r["prefill_s"], color=OURS, height=0.7)
-            ax.barh(y, r["decode_s"], left=r["prefill_s"], color=NAT_LIGHT, height=0.7)
-            ax.annotate(f"{r['prefill_share']:.1f}%  ({r['in_tokens']:.0f} in / {r['out_tokens']:.0f} out)",
-                        (r["total_s"], y), xytext=(3, 0), textcoords="offset points", va="center", fontsize=6.5, color=NAT)
-            ticks.append(y); labs.append(f"{t}, {lab}"); y += 1
-        y += 0.6
-    ax.set_yticks(ticks); ax.set_yticklabels(labs, fontsize=7); ax.invert_yaxis()
-    ax.set_xlabel("seconds per request (batch 1)")
-    ax.legend([plt.Rectangle((0, 0), 1, 1, color=OURS), plt.Rectangle((0, 0), 1, 1, color=NAT_LIGHT)], ["prefill", "decode"],
-              loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=7)
-    ax.set_xlim(0, 1.75 * max(r["total_s"] for t in tasks for c, _ in confs + [("native2st", "")] if (r := _time(t, c, mdl(t)))))
-    ax.grid(axis="x", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+    rows.sort(key=lambda tr: tr[1]["prefill_share"])
+    fig, ax = plt.subplots(figsize=(3.3, 0.32 * len(rows) + 0.55))
+    for y, (t, r) in enumerate(rows):
+        p = r["prefill_share"]
+        ax.barh(y, p, color=INK, height=0.62, zorder=3)
+        ax.barh(y, 100 - p, left=p, color="#DADADA", height=0.62, zorder=2)
+        ax.text(p + 1.5, y, f"prefill {p:.1f}%", va="center", ha="left", fontsize=7.5, color=INK, zorder=4)
+        ax.text(98.5, y, f"{r['total_s']:.1f} s / request", va="center", ha="right", fontsize=7, color=NAT, zorder=4)
+    ax.set_yticks(range(len(rows))); ax.set_yticklabels([t for t, _ in rows], fontsize=8)
+    ax.set_xlim(0, 100); ax.set_xticks([0, 25, 50, 75, 100]); ax.set_xticklabels(["0", "25", "50", "75", "100%"])
+    ax.set_xlabel("share of time per request")
+    ax.spines["left"].set_visible(False); ax.tick_params(axis="y", length=0)
+    ax.legend([plt.Rectangle((0, 0), 1, 1, color=INK), plt.Rectangle((0, 0), 1, 1, color="#DADADA")], ["prefill", "decode"],
+              loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=7.5, handlelength=1.2)
     save(fig, "fig_time")
 
 
 def fig_depth():
-    """Figure 2: per timed task, quality (full evaluation set) and time per request (per-step maps; same replayed
+    """Appendix figure (full data behind Figure 2): per timed task, quality (full evaluation set) and time per request (per-step maps; same replayed
     requests) against prefill loops m at decode n = 1 (dark) and 2 (light). Quality against time is Figure 3."""
     rows = PN.get("depth_sweep", [])
     tasks = [t for t in TIMED if any(r["bench"] == SWEEP_NAME[t] for r in rows)]
@@ -549,7 +553,7 @@ def fig_depth():
     nrow = 2 if timed else 1   # the time row only once per-request timings exist
     fig, axes = plt.subplots(nrow, len(tasks), figsize=(1.75 * len(tasks), 1.3 + 1.25 * nrow), squeeze=False)
     for j, t in enumerate(tasks):
-        for n, col in ((1, OURS), (2, OURS_LIGHT)):
+        for n, col in ((1, N1), (2, N2)):
             for wide, ls in ((False, "-"), (True, "--")):
                 r = next((r for r in rows if r["bench"] == SWEEP_NAME[t] and r["n"] == n and r["adapter"] == ("wide" if wide else "m<=4")), None)
                 if r:
@@ -564,18 +568,83 @@ def fig_depth():
         axes[0, j].set_title(t, fontsize=8.5, color=INK, pad=4)
         for i in range(nrow):
             axes[i, j].set_xscale("log", base=2); axes[i, j].set_xticks([1, 2, 4, 8, 16]); axes[i, j].set_xticklabels(["1", "2", "4", "8", "16"])
-            axes[i, j].axvline(4, color=GRID, lw=0.8, zorder=0)
+            axes[i, j].axvline(4, color="#BDBDBD", lw=0.8, zorder=0)
             axes[i, j].grid(color="#EDEDED", lw=0.5); axes[i, j].set_axisbelow(True)
         axes[nrow - 1, j].set_xlabel("prefill loops m", fontsize=7.5)
     axes[0, 0].set_ylabel("accuracy (%)")
     if timed:
         axes[1, 0].set_ylabel("s / request")
-    h = [plt.Line2D([], [], color=OURS, lw=1.2), plt.Line2D([], [], color=OURS_LIGHT, lw=1.2),
+    h = [plt.Line2D([], [], color=N1, lw=1.2), plt.Line2D([], [], color=N2, lw=1.2),
          plt.Line2D([], [], color=NAT, ls="--", lw=1.2)]
     fig.legend(h, ["decode n = 1", "decode n = 2", "trained on m ≤ 16"], loc="upper center", ncol=3,
                fontsize=7.5, bbox_to_anchor=(0.5, 1.04))
     fig.tight_layout(h_pad=0.6, w_pad=0.4)
     save(fig, "fig_depth")
+
+
+DEPTH_MAIN = ["GSM8K", "MMLU-Pro", "HumanEval+", "RULER-16K"]   # math, knowledge, code, long context
+
+
+def fig_depth_main(mmax=8, n=1):
+    """Figure 2, one point: with one decode loop, a few more prefill loops buy a lot of accuracy, and the gain levels
+    off at two to four loops. Adapter trained on m in {1,...,16} (no extrapolation), four benchmarks from different
+    domains (math, knowledge, code, long context), m up to `mmax`; label: gain from m = 1 to the best m. Two decode
+    loops, every benchmark and m up to 16: appendix figure (fig_depth)."""
+    rows = [r for r in PN.get("depth_sweep", []) if r["adapter"] == "wide" and r["n"] == n]
+    benches = [b for b in DEPTH_MAIN if any(r["bench"] == b for r in rows)]
+    if not benches:
+        return drop("fig_depth_main")
+    fig, axes = plt.subplots(1, len(benches), figsize=(6.9, 1.55), squeeze=False)
+    for j, b in enumerate(benches):
+        ax = axes[0, j]
+        ax.axvspan(2, 4, color="#F3F3F3", zorder=0, lw=0)
+        r = next(r for r in rows if r["bench"] == b)
+        q = {int(m): v for m, v in r["quality"].items() if int(m) <= mmax}
+        ms = sorted(q)
+        ax.plot(ms, [q[m] for m in ms], "-o", color=OURS, lw=1.8, ms=4.2, mec="white", mew=0.8, zorder=3)
+        best = max(ms, key=lambda m: q[m])
+        ax.hlines(q[1], 1, best, color=NAT_LIGHT, lw=0.8, ls=(0, (2, 2)), zorder=2)
+        ax.annotate("", (best, q[best]), xytext=(best, q[1]), arrowprops=dict(arrowstyle="->", color=INK, lw=0.9,
+                    shrinkA=0, shrinkB=4), zorder=4)
+        ax.set_title(b, fontsize=8.5, color=INK, pad=3, loc="left")
+        ax.set_title(f"+{q[best] - q[1]:.1f}", fontsize=9, color=OURS, fontweight="bold", pad=3, loc="right")
+        ax.set_xscale("log", base=2); ticks = [m for m in (1, 2, 3, 4, 6, 8, 12, 16) if m <= mmax]
+        ax.set_xticks(ticks); ax.set_xticklabels([str(m) for m in ticks]); ax.minorticks_off()
+        ax.set_xlabel("prefill loops m", fontsize=7.5)
+        ax.grid(axis="y", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+        lo, hi = ax.get_ylim(); ax.set_ylim(lo - 0.04 * (hi - lo), hi + 0.10 * (hi - lo))
+    axes[0, 0].set_ylabel("accuracy (%)")
+    fig.tight_layout(w_pad=0.8)
+    save(fig, "fig_depth_main")
+
+
+def fig_sametime():
+    """Figure 3, one point: in the same measured time per request, one decode loop with four prefill loops (Ours 4/1)
+    is far more accurate than the original model and the distilled model at one loop. Mean accuracy and mean time per
+    request over the same 100 requests of each timed task (batch 1, one B300, two passes; Ours with folded maps).
+    Every configuration against time: appendix figure (fig_budget)."""
+    tasks = [t for t in TIMED if _time(t, "native1st")]
+    bars = [("Original 1/1", "native1st", NAT_LIGHT), ("Distilled 1/1", "D1st", DIST), ("Ours 4/1", "a4x1pm", OURS)]
+    pts = []
+    for lab, cond, col in bars:
+        rs = [_time(t, cond) for t in tasks]
+        if not tasks or None in rs:
+            return drop("fig_sametime")
+        pts.append((lab, float(np.mean([r["quality"] for r in rs])), float(np.mean([r["total_s"] for r in rs])), col))
+    fig, ax = plt.subplots(figsize=(3.3, 1.75))
+    x = np.arange(len(pts))
+    ax.bar(x, [p[1] for p in pts], width=0.62, color=[p[3] for p in pts], zorder=3)
+    for xi, (lab, q, t, col) in zip(x, pts):
+        ax.text(xi, q + 0.8, f"{q:.1f}", ha="center", va="bottom", fontsize=9, color=INK, fontweight="bold")
+    ax.text(x[-1], pts[-1][1] + 6.3, f"+{pts[-1][1] - pts[0][1]:.1f}", ha="center", va="bottom", fontsize=9,
+            color=OURS, fontweight="bold")
+    ax.hlines(pts[0][1], x[0] - 0.31, x[-1] + 0.31, color=NAT, lw=0.7, ls=(0, (2, 2)), zorder=4)
+    ax.set_xticks(x); ax.set_xticklabels([f"{lab}\n{t:.1f} s" for lab, q, t, col in pts], fontsize=7.5)
+    ax.set_ylabel("accuracy (%)"); ax.set_ylim(0, max(p[1] for p in pts) * 1.32)
+    ax.set_xlim(-0.55, len(pts) - 0.45)
+    ax.spines["bottom"].set_color(NAT); ax.tick_params(axis="x", length=0)
+    ax.grid(axis="y", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+    save(fig, "fig_sametime")
 
 
 def fig_budget(batch=None, name="fig_budget"):
@@ -597,21 +666,24 @@ def fig_budget(batch=None, name="fig_budget"):
         rs = [next((r for r in bt if r["batch"] == b and r["task"] == t and r["cond"] == cond), None) for t in tasks]
         return None if None in rs else (float(np.mean([r["est_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
 
-    fig, axes = plt.subplots(len(panels), 1, figsize=(3.3, 2.2 * len(panels)), squeeze=False)   # one column wide
+    fig, axes = plt.subplots(len(panels), 1, figsize=(3.3, 3.25 * len(panels)), squeeze=False)   # one column wide
     for ax, (title, b) in zip(axes[:, 0], panels):
-        for n, col in ((1, OURS), (2, OURS_LIGHT)):
+        for n, fill in ((1, OURS), (2, "white")):
+            col = OURS
             # batch 1: maps folded into the prompt banks at prefill (the decode path of the original model), m = 1, 3, 4;
             # batch estimates exist only for the per-step implementation (sb), m = 1..16
             kind, ms = ("pm", (1, 3, 4)) if b is None else ("sb", (1, 2, 3, 4, 6, 8, 12, 16))
             ours = [(*point(f"a{m}x{n}{kind}", b), str(m)) for m in ms if point(f"a{m}x{n}{kind}", b)]
             if ours:
-                ax.plot([p[0] for p in ours], [p[1] for p in ours], "-", color=col, marker="s", ms=3, lw=1.3, label=f"Ours m/{n}")
-                for x, y, lab in ours:   # m = 3 and 4 nearly coincide at batch 1: labels left and right
+                ax.plot([p[0] for p in ours], [p[1] for p in ours], "-" if n == 1 else "--", color=col, marker="s", ms=3.5,
+                        mfc=fill, mec=col, lw=1.3, label=f"Ours m/{n}")
+                for x, y, lab in [p for p in ours if b is None or p[2] in ("1", "4", "16")]:   # m = 3, 4 nearly coincide at batch 1
                     dx = {"3": -4, "4": 4}.get(lab, 0) if b is None else 0
-                    ax.annotate(lab, (x, y), xytext=(dx, 3), textcoords="offset points", fontsize=6.5, color=col, ha="center")
+                    ax.annotate(lab, (x, y), xytext=(dx, 3), textcoords="offset points", fontsize=6.5, color=INK, ha="center")
             p4 = point(f"f4x{n}pm", b)
             if p4:   # prefill-4 LoRA with identity maps
-                ax.scatter(*p4, color=col, marker="D", s=14, zorder=3, facecolors="none", label=f"Prefill-4 LoRA 4/{n}")
+                ax.scatter(*p4, marker="D", s=18, zorder=3, facecolors=LORA4 if n == 1 else "white", edgecolors=LORA4,
+                           label=f"Prefill-4 LoRA 4/{n}")
         nat = [(*point(f"native{d}st", b), f"{d}/{d}") for d in (1, 2, 3, 4) if point(f"native{d}st", b)]
         if nat:
             ax.plot([p[0] for p in nat], [p[1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, label="Original n/n")
@@ -620,16 +692,20 @@ def fig_budget(batch=None, name="fig_budget"):
         for d in (1, 2):
             p = point(f"D{d}st", b)
             if p:
-                ax.scatter(*p, color=NAT, marker="^", s=16, zorder=3, label="Distilled n/n" if d == 1 else None)
+                ax.scatter(*p, marker="^", s=20, zorder=3, facecolors=DIST if d == 1 else "white", edgecolors=DIST,
+                           label=f"Distilled {d}/{d}")
             p = point(f"D{d}r80st", b)
             if p:   # rank 80: as many trainable parameters as the adapter
-                ax.scatter(*p, color=NAT, marker="v", s=16, zorder=3, facecolors="none", label="Distilled, rank 80" if d == 1 else None)
-        ax.set_title(title, fontsize=8.5, color=INK, pad=4)
+                ax.scatter(*p, marker="v", s=20, zorder=3, facecolors=DIST if d == 1 else "white", edgecolors=DIST,
+                           label=f"Distilled {d}/{d}, rank 80")
+        if b is not None:
+            ax.set_title(title, fontsize=8.5, color=INK, pad=4)
         ax.set_xlabel("seconds per request"); ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     for ax in axes[:, 0]:
         ax.set_ylabel("mean accuracy (%)")
-    axes[0, 0].legend(fontsize=6.5, loc="lower right", frameon=False, handlelength=1.6)
-    fig.tight_layout(h_pad=0.8)
+    h, l = axes[0, 0].get_legend_handles_labels()
+    fig.legend(h, l, fontsize=6.5, loc="lower center", frameon=False, handlelength=1.6, ncol=2, columnspacing=1.0)
+    fig.subplots_adjust(left=0.15, right=0.97, top=0.92, bottom=0.36)
     save(fig, name)
 
 
@@ -695,20 +771,35 @@ def tab_prefilltrn():
 
 
 def tab_avg():
-    """Main text: Table 1's averages over the 11 benchmarks, one row per method and a column per decode depth."""
+    """Main text, Table 1 (two parts). (a) tab_avg: average accuracy over the 11 benchmarks at the same decode loops,
+    Original / training-free / Distilled (rank 16 and 80) / Ours 4/n, Ours shaded with its gain over Original.
+    (b) tab_build: how LoopBridge is built, at prefill 4 / decode 1: whether one set of weights serves every (m, n),
+    the 11-benchmark average and RULER-16K; the default (LoopBridge) shaded. Every row with every benchmark: Table 5."""
     T = PN["main_table"]
     avg = lambda l: (None if any(r.get(l) is None for r in T) else sum(r[l] for r in T) / len(T))
+    one = lambda l, b: next((r.get(l) for r in T if r["bench"] == b), None)
+    f = lambda x: "--" if x is None else f"{x:.1f}"
     rows = [("Original $n/n$", "native 1/1", "native 2/2"), ("Training-free $4/n$", "training-free 4/1", "training-free 4/2"),
             ("Distilled $n/n$", "LoRA-distilled 1/1", "LoRA-distilled 2/2"),
-            ("Distilled $n/n$, rank 80", "distilled r80 1/1", "distilled r80 2/2"),
-            ("Prefill-4 LoRA $4/n$", "fixed-4 LoRA 4/1", "fixed-4 LoRA 4/2"),
-            ("Ours $4/n$, maps frozen", "aligned LoRA-only 4/1", "aligned LoRA-only 4/2"),
-            ("Ours $4/n$, one cache", "loop adapter 4/1", "loop adapter 4/2"), ("Ours $4/n$, aligned", "aligned adapter 4/1", "aligned adapter 4/2")]
-    f = lambda x: "--" if x is None else f"{x:.1f}"
+            ("Distilled $n/n$, rank 80", "distilled r80 1/1", "distilled r80 2/2")]
     lines = [f"{name} & {f(avg(a))} & {f(avg(b))} \\\\" for name, a, b in rows]
+    o1, o2 = avg("aligned adapter 4/1"), avg("aligned adapter 4/2")
+    b1, b2 = avg("native 1/1"), avg("native 2/2")
+    lines.append("\\midrule")
+    lines.append(f"\\rowcolor{{oursbg}} \\textbf{{Ours $4/n$}} & \\textbf{{{f(o1)}}}\\gain{{{o1 - b1:.1f}}} & "
+                 f"\\textbf{{{f(o2)}}}\\gain{{{o2 - b2:.1f}}} \\\\")
     (OUT / "tab_avg.tex").write_text("\n".join(lines) + "\n")
-
+    build = [("LoRA, prefill 4 only", "fixed-4 LoRA 4/1", False, False),
+             ("LoRA, all $(m,n)$", "aligned LoRA-only 4/1", True, False),
+             ("\\quad + key/value maps", "aligned adapter 4/1", True, True),
+             ("\\quad one shared cache", "loop adapter 4/1", True, False)]
+    lines = []
+    for name, l, allmn, default in build:
+        mark = "\\cmark" if allmn else "\\xmark"
+        row = f"{name} & {mark} & {f(avg(l))} & {f(one(l, 'RULER-16K'))} \\\\"
+        lines.append(("\\rowcolor{oursbg} " + row) if default else row)
+    (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 
 if __name__ == "__main__":
-    fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_avg(); fig_depth(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_avg(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

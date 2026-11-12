@@ -17,10 +17,10 @@ The paper's numbers come from these places, all in this commit:
 | Paper item | `paper_numbers.py` function | Runs (launcher in `ouro/runs_scripts/`) |
 |---|---|---|
 | Figure 1, Section 3 (time split) | `time_breakdown` | `time_controls.sh`, `time_sweep.sh` (passes `clean`, `clean3`) |
-| Figure 2, Section 4 (prefill depth, m = 1..16) | `depth_sweep`, `same_weights`, `same_weights_seeds`, `plateau` | `sweep_depth.sh`, `launch_variant.sh wide`, `seed_main.sh ARM=a CELLS="11 12"` |
+| Figure 2 (`fig_depth_main`; full: `fig_depth`), Section 4 (prefill depth, m = 1..16) | `depth_sweep`, `depth_gains`, `same_weights`, `same_weights_seeds`, `plateau` | `sweep_depth.sh`, `launch_variant.sh wide`, `seed_main.sh ARM=a CELLS="11 12"` |
 | Ouro-2.6B-Thinking and Ouro-1.4B sweeps | `think_sweep`, `depth_sweep_14` | `sweep_think.sh`, `sweep_depth.sh MP=model-1.4b` |
-| Figure 3, Section 5 (equal measured time) | `time_breakdown`, `budget_pairs`, `batch_time` | `time_controls.sh` (folded maps `a<m>x<n>pm`), `tput_batch.sh` |
-| Table 1 and its seeds | `main_table` | `launch_aligned.sh`, `seed_main.sh`, `launch_x26_distill.sh` (`RANK`, `SEED`), `launch_variant.sh fixed4 / lora` |
+| Figure 3 (`fig_sametime`; full: `fig_budget`), Section 5 (equal measured time) | `time_breakdown`, `budget_pairs`, `batch_time` | `time_controls.sh` (folded maps `a<m>x<n>pm`), `tput_batch.sh` |
+| Table 1 (a: `tab_avg`, b: `tab_build`) and its seeds | `main_table` | `launch_aligned.sh`, `seed_main.sh`, `launch_x26_distill.sh` (`RANK`, `SEED`), `launch_variant.sh fixed4 / lora` |
 | Baseline learning rate (Appendix) | `lr_check` | `LRS=0.3/3 launch_x26_distill.sh`, `LRS=... launch_variant.sh lr` |
 | Maps by context length (Section 6) | `CMP` rows "Maps by length" | `launch_variant.sh lora`, RULER via `bench3.sh` |
 | MATH-500 exemplar check | `CMP` rows "Aligned MATH" | `math0_q.sh ARM=a` |
