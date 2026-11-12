@@ -40,6 +40,10 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (every 2 h, log /root/pn/backup-BOX.log) to the private
   ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
 - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]`.
+- **Operational lesson (2026-11-13)**: a launcher that exports an env var (`RANK=80 launch_variant.sh` exports
+  OURO_LORA_RANK) passes it to the grid workers it starts, and those workers later run other runs' queue lines: 24
+  seed-3 sweep jobs failed with a LoRA size mismatch. Workers are now started with `env -u OURO_LORA_RANK`; check
+  `/proc/<worker>/environ` when jobs fail at load time.
 - **Operational lessons (2026-11-09)**: queues are per box; before moving queue lines between boxes check that every
   checkpoint they use exists on the target. `grid_worker.sh GPU Q MAX` only starts a job when the GPU has fewer than
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance

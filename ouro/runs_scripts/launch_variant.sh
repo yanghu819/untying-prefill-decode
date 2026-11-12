@@ -52,4 +52,6 @@ for c in a41 a42; do
   lm evalplus "--tasks humanevalplus_chat_local,mbppplus_chat_local"
   ls bench/$P-${c}f/s*/ruler16k.jsonl > /dev/null 2>&1 || echo "cd /root/big-small && MODEL=$M/model-2.6b DATA=$M/bench BENCHES='ruler16k' $EPRE./ouro/runs_scripts/bench3.sh $P-${c}f $c $CK \$GPU 1"
 done | flock $Q.lock sh -c "cat >> $Q"
-for g in ${GPUS//,/ }; do setsid nohup ./grid_worker.sh $g $Q 2 > /dev/null 2>&1 < /dev/null & done
+# workers must not inherit OURO_LORA_RANK (exported above for training): they also run other runs' queue lines, which
+# carry their own prefix (11-13: rank-80 workers failed 24 seed-3 sweep jobs with a rank mismatch)
+for g in ${GPUS//,/ }; do env -u OURO_LORA_RANK setsid nohup ./grid_worker.sh $g $Q 2 > /dev/null 2>&1 < /dev/null & done
