@@ -1426,6 +1426,12 @@ def lora80():
                           ruler={a: per["RULER-16K"][a] for a, _ in arms})
             print(f"LoRA r80     {c}: avg " + "  ".join(f"{a} {v:.1f}" for a, v in out[c]["avg"].items())
                   + "  | RULER-16K " + "  ".join(f"{v:.1f}" for v in out[c]["ruler"].values()))
+            # same item population as Table 1 / Table 2a: the rank-16 and LoopBridge rows must reproduce their values
+            want = {"a41": {"LoRA r16, maps frozen": (55.0, 49.8), "LoopBridge": (56.8, 64.7)},
+                    "a42": {"LoRA r16, maps frozen": (66.8, 71.6), "LoopBridge": (67.2, 73.5)}}[c]
+            for arm, (wa, wr) in want.items():
+                if abs(out[c]["avg"][arm] - wa) > 0.051 or abs(out[c]["ruler"][arm] - wr) > 0.051:
+                    print(f"LoRA r80     {c} {arm}: {out[c]['avg'][arm]:.2f} / {out[c]['ruler'][arm]:.2f}  !! Table 1/2a: {wa} / {wr}")
     return out
 
 

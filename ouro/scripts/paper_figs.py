@@ -877,10 +877,14 @@ def tab_avg():
              ("\\quad + key/value maps (LoopBridge)", "aligned adapter 4/1", True, True),
              ("\\quad one shared cache", "loop adapter 4/1", True, False)]
     lines = []
+    R = PN.get("lora80", {}).get("a41")   # rank-80 all-(m,n) LoRA with frozen maps (review control), when it has landed
     for name, l, allmn, default in build:
         mark = "\\cmark" if allmn else "\\xmark"
         row = f"{name} & {mark} & {f(avg(l))} & {f(one(l, 'RULER-16K'))} \\\\"
         lines.append(("\\rowcolor{oursbg} " + row) if default else row)
+        if l == "aligned LoRA-only 4/1" and R:
+            lines.append(f"\\quad rank 80 (as many parameters as LoopBridge) & \\cmark & "
+                         f"{f(R['avg']['LoRA r80, maps frozen'])} & {f(R['ruler']['LoRA r80, maps frozen'])} \\\\")
     (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 
 if __name__ == "__main__":
