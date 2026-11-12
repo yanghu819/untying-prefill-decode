@@ -1429,7 +1429,8 @@ def prefill_trainable():
         for arm, pre in PREFILL_ARMS:
             with contextlib.redirect_stdout(io.StringIO()):
                 seeds[s][arm] = {(r["n"], r["bench"]): r["m_star"] for r in plateau("wide", prefix=f"{pre}s{s}")}
-    if all(seeds[s][a] for s in PREFILL_SEEDS for a in seeds[s]):
+    seeds = {s: st for s, st in seeds.items() if all(st.values())}   # seeds whose sweeps have landed
+    if len(seeds) > 1:
         common = sorted(set.intersection(*(set(seeds[s][a]) for s in seeds for a in seeds[s])))
         for s in seeds:
             st = seeds[s]
