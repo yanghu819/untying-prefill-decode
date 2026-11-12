@@ -406,7 +406,7 @@ def keys():
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
     ks |= {sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)
-           for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8", "X26w8s2", "X26pf8s2")}
+           for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8", "X26w8s2", "X26pf8s2", "X26w8s3", "X26pf8s3")}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
@@ -1382,7 +1382,7 @@ def plateau_seeds():
 
 
 PREFILL_ARMS = (("frozen prefill", "X26w8"), ("trained prefill", "X26pf8"))   # launch_variant.sh w8 / prefill (m <= 8)
-PREFILL_SEEDS = (2,)   # SEED=2 runs: X26w8s2-*, X26pf8s2-*
+PREFILL_SEEDS = (2, 3)   # SEED=k runs: X26w8s<k>-*, X26pf8s<k>-*
 
 
 def prefill_trainable():

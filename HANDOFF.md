@@ -45,7 +45,8 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   earlier 6), RULER-16K peaks rise (63.7 -> 66.0 at n=1, 75.2 -> 81.0 at n=2). **In flight**: seed 2 of both arms
   (X26-a-w8-s2 on a1 from 05:20, X26-a-pf8-s2 on a2 from 05:02, then sweeps X26w8s2-* / X26pf8s2-*; launcher log
   runs/{w8s2,pf8s2}.log). When they land: score evalplus on both boxes, add a seed loop to `prefill_trainable()` like
-  `plateau_seeds`, report the stop over two seeds. After that: ARR checklist TODOs with the user if the paper also goes
+  `plateau_seeds`, report the stop over the seeds. Seed 3 (X26-a-w8-s3 on a1, X26-a-pf8-s3 on a2) starts by itself when each box's
+  seed-2 sweep queue drains (/root/pn/after_sweep_*s3.sh, armed 11-12 17:45). After that: ARR checklist TODOs with the user if the paper also goes
   to ARR.
 
 ## 2. The user's rules (all still in force)
