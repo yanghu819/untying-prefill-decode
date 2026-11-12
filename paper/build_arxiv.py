@@ -64,6 +64,7 @@ def plain(t):
     t = re.sub(r"\\emph\{([^}]*)\}", r"\1", t)
     t = re.sub(r"\$([a-z])\$", r"\1", t)
     t = re.sub(r"\$(\([a-z],\s*[a-z]\))\$", r"\1", t)        # $(m,n)$
+    t = re.sub(r"\$([a-z])\s*([<>=])\s*([a-z0-9])\$", r"\1 \2 \3", t)   # $n<m$
     t = t.replace("\\%", "%")
     t = t.replace("--", "-").replace("~", " ")
     assert "\\" not in t and "$" not in t, t

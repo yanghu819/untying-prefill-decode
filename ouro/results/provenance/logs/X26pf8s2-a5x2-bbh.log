@@ -1,0 +1,369 @@
+2026-11-12:17:41:06 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-12:17:41:08 WARNING  [__main__:368]  --limit SHOULD ONLY BE USED FOR TESTING.REAL METRICS SHOULD NOT BE COMPUTED USING LIMIT.
+2026-11-12:17:41:08 INFO     [__main__:440] Selected Tasks: ['bbh_cot_fewshot']
+2026-11-12:17:41:08 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-12:17:41:08 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-2.6b', 'condition': 'a5x2', 'checkpoint': '/dev/shm/big-small-ouro/runs/X26-a-pf8-s2/checkpoint-48m.pt', 'max_length': 16384}
+2026-11-12:17:41:13 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/X26pf8s2-a5x2-bbh_rank0.db
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'word_sorting' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/word_sorting/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:02:50 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'word_sorting' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/word_sorting/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:02:50 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'web_of_lies' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/web_of_lies/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:04 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'web_of_lies' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/web_of_lies/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:04 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'tracking_shuffled_objects_three_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/tracking_shuffled_objects_three_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:13 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'tracking_shuffled_objects_three_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/tracking_shuffled_objects_three_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:13 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'tracking_shuffled_objects_seven_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/tracking_shuffled_objects_seven_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:22 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'tracking_shuffled_objects_seven_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/tracking_shuffled_objects_seven_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:22 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'tracking_shuffled_objects_five_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/tracking_shuffled_objects_five_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:28 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'tracking_shuffled_objects_five_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/tracking_shuffled_objects_five_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:28 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'temporal_sequences' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/temporal_sequences/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:35 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'temporal_sequences' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/temporal_sequences/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:35 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'sports_understanding' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/sports_understanding/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:47 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'sports_understanding' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/sports_understanding/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:47 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'snarks' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/snarks/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:56 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'snarks' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/snarks/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:03:56 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'salient_translation_error_detection' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/salient_translation_error_detection/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:06 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'salient_translation_error_detection' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/salient_translation_error_detection/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:06 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'ruin_names' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/ruin_names/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:18 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'ruin_names' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/ruin_names/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:18 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'reasoning_about_colored_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/reasoning_about_colored_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:30 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'reasoning_about_colored_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/reasoning_about_colored_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:30 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'penguins_in_a_table' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/penguins_in_a_table/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:49 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'penguins_in_a_table' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/penguins_in_a_table/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:04:49 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'object_counting' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/object_counting/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:00 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'object_counting' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/object_counting/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:00 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'navigate' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/navigate/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:14 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'navigate' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/navigate/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:14 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'multistep_arithmetic_two' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/multistep_arithmetic_two/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:25 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'multistep_arithmetic_two' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/multistep_arithmetic_two/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:25 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'movie_recommendation' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/movie_recommendation/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:42 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'movie_recommendation' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/movie_recommendation/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:42 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'logical_deduction_three_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/logical_deduction_three_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:51 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'logical_deduction_three_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/logical_deduction_three_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:05:51 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'logical_deduction_seven_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/logical_deduction_seven_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:06:06 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'logical_deduction_seven_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/logical_deduction_seven_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:06:06 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'logical_deduction_five_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/logical_deduction_five_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:06:16 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'logical_deduction_five_objects' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/logical_deduction_five_objects/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:06:16 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'hyperbaton' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/hyperbaton/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:06:27 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'hyperbaton' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/hyperbaton/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:06:27 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'geometric_shapes' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/geometric_shapes/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:07:29 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'geometric_shapes' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/geometric_shapes/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:07:29 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'formal_fallacies' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/formal_fallacies/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:07:53 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'formal_fallacies' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/formal_fallacies/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:07:53 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'dyck_languages' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/dyck_languages/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:03 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'dyck_languages' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/dyck_languages/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:03 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:13 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'disambiguation_qa' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/disambiguation_qa/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:15 2026).
+2026-11-12:17:41:13 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'disambiguation_qa' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/disambiguation_qa/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:15 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:14 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'date_understanding' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/date_understanding/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:27 2026).
+2026-11-12:17:41:14 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'date_understanding' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/date_understanding/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:27 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:14 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'causal_judgement' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/causal_judgement/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:45 2026).
+2026-11-12:17:41:14 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'causal_judgement' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/causal_judgement/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:45 2026).
+Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:17:41:14 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since SaylorTwift/bbh couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'boolean_expressions' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/boolean_expressions/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:52 2026).
+2026-11-12:17:41:14 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'boolean_expressions' at /dev/shm/big-small-ouro/hf-lmeval/datasets/SaylorTwift___bbh/boolean_expressions/0.0.0/b5306be6f827cfafbb545ff5a51f96916029b0fd (last modified on Sun Oct 25 20:08:52 2026).
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_boolean_expressions: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_causal_judgement: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_date_understanding: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_disambiguation_qa: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_dyck_languages: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_formal_fallacies: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_geometric_shapes: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_hyperbaton: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_logical_deduction_five_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_logical_deduction_seven_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_logical_deduction_three_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_movie_recommendation: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_multistep_arithmetic_two: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_navigate: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_object_counting: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_penguins_in_a_table: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_reasoning_about_colored_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_ruin_names: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_salient_translation_error_detection: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_snarks: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_sports_understanding: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_temporal_sequences: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_tracking_shuffled_objects_five_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_tracking_shuffled_objects_seven_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_tracking_shuffled_objects_three_objects: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_web_of_lies: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [evaluator:290] bbh_cot_fewshot_word_sorting: Using gen_kwargs: {'max_gen_toks': 1024, 'until': ['</s>', 'Q', '\n\n'], 'do_sample': False, 'temperature': 0.0}
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_boolean_expressions on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_causal_judgement on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_date_understanding on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_disambiguation_qa on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_dyck_languages on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_formal_fallacies on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_geometric_shapes on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_hyperbaton on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_logical_deduction_five_objects on rank 0...
+
+2026-11-12:17:41:14 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_logical_deduction_seven_objects on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_logical_deduction_three_objects on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_movie_recommendation on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_multistep_arithmetic_two on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_navigate on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_object_counting on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_penguins_in_a_table on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_reasoning_about_colored_objects on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_ruin_names on rank 0...
+
+2026-11-12:17:41:15 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_salient_translation_error_detection on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_snarks on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_sports_understanding on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_temporal_sequences on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_tracking_shuffled_objects_five_objects on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_tracking_shuffled_objects_seven_objects on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_tracking_shuffled_objects_three_objects on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_web_of_lies on rank 0...
+
+2026-11-12:17:41:16 INFO     [api.task:434] Building contexts for bbh_cot_fewshot_word_sorting on rank 0...
+
+2026-11-12:17:41:16 INFO     [evaluator:559] Running generate_until requests
+2026-11-12:17:41:16 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/X26pf8s2-a5x2-bbh_rank0.db' where possible...
+
+2026-11-12:17:41:17 INFO     [api.model:285] Cached requests: 0, Requests remaining: 1620
+
+[ouro] batch done 108.4s generated=[766, 692, 692, 672, 658, 733, 594, 696, 677, 476, 580, 464, 586, 464, 618, 597, 532, 500]
+
+[ouro] batch done 109.8s generated=[532, 512, 521, 509, 532, 461, 893, 911, 476, 452, 476, 451, 359, 469, 361, 355, 477, 335]
+
+[ouro] batch done 102.0s generated=[471, 351, 344, 819, 427, 424, 401, 405, 397, 387, 843, 830, 753, 319, 772, 776, 331, 331]
+
+[ouro] batch done 44.5s generated=[331, 328, 224, 238, 224, 220, 336, 326, 270, 248, 188, 214, 220, 191, 221, 235, 200, 173]
+
+[ouro] batch done 33.4s generated=[196, 171, 175, 177, 163, 203, 184, 172, 173, 164, 158, 202, 155, 159, 173, 218, 156, 162, 170, 178, 180, 206, 147]
+
+[ouro] batch done 133.1s generated=[158, 169, 163, 194, 150, 159, 144, 163, 1024, 157, 1024, 152, 121, 173, 168, 166, 117, 139, 159, 135, 150, 166, 146, 132]
+
+[ouro] batch done 132.9s generated=[126, 1024, 1024, 541, 506, 105, 1024, 97, 495, 93, 97, 435, 363, 555, 479, 495, 1024, 127, 404, 426, 431, 351, 530, 365]
+
+[ouro] batch done 134.6s generated=[385, 441, 514, 355, 320, 364, 265, 19, 308, 281, 246, 367, 261, 307, 354, 341, 432, 1024, 344, 288, 287, 277, 348, 291, 195, 332, 194]
+
+[ouro] batch done 61.1s generated=[362, 449, 289, 243, 270, 37, 232, 204, 198, 248, 252, 300, 286, 171, 67, 85, 79, 146, 144, 143, 142, 139, 141, 141, 139, 142, 142]
+
+[ouro] batch done 22.3s generated=[139, 143, 139, 138, 138, 136, 136, 136, 135, 136, 136, 130, 105, 130, 108, 108, 134, 132, 103, 131, 103, 131, 128, 129, 129, 128, 126, 128]
+
+[ouro] batch done 16.9s generated=[127, 127, 125, 126, 125, 125, 121, 121, 121, 115, 116, 118, 115, 115, 113, 114, 114, 116, 112, 110, 113, 109, 110, 109, 109, 111, 106, 103]
+
+[ouro] batch done 42.2s generated=[103, 97, 189, 50, 272, 111, 94, 120, 178, 70, 87, 293, 90, 217, 230, 246, 248, 248, 295, 216, 78, 261, 280, 243, 281, 219, 248, 208, 100, 223]
+
+[ouro] batch done 38.8s generated=[242, 228, 211, 244, 235, 103, 216, 273, 232, 137, 97, 102, 217, 208, 206, 220, 237, 236, 237, 228, 247, 105, 50, 74, 232, 251, 216, 242, 171, 212]
+
+[ouro] batch done 127.9s generated=[1024, 257, 249, 72, 1024, 221, 228, 216, 208, 105, 132, 70, 210, 215, 224, 218, 209, 235, 194, 215, 221, 248, 185, 217, 231, 225, 1024, 1024, 64, 196, 97]
+
+[ouro] batch done 115.7s generated=[89, 93, 169, 71, 216, 1024, 110, 72, 107, 86, 84, 427, 135, 101, 153, 420, 82, 454, 147, 155, 367, 131, 135, 78, 141, 135, 259, 280, 280, 276, 259]
+
+[ouro] batch done 62.9s generated=[313, 252, 274, 258, 247, 250, 269, 257, 271, 236, 272, 251, 270, 253, 260, 263, 279, 269, 272, 269, 263, 283, 272, 277, 269, 264, 113, 80, 520, 278, 261]
+
+[ouro] batch done 53.6s generated=[248, 289, 267, 286, 262, 254, 244, 261, 258, 272, 278, 255, 253, 284, 271, 264, 251, 263, 276, 252, 280, 256, 247, 247, 267, 270, 292, 72, 517, 161, 153]
+
+[ouro] batch done 48.3s generated=[308, 242, 110, 167, 127, 259, 113, 108, 121, 100, 75, 238, 241, 219, 253, 242, 223, 225, 120, 74, 111, 105, 101, 75, 399, 72, 107, 74, 156, 311, 335]
+
+[ouro] batch done 51.4s generated=[162, 210, 226, 226, 215, 230, 221, 139, 410, 217, 219, 227, 209, 212, 213, 321, 232, 216, 208, 232, 225, 271, 376, 347, 228, 202, 229, 227, 225, 205, 228, 205]
+
+[ouro] batch done 44.8s generated=[348, 89, 224, 214, 227, 203, 202, 295, 341, 103, 208, 218, 203, 203, 207, 203, 103, 88, 210, 203, 207, 204, 215, 206, 208, 341, 307, 343, 341, 375, 84, 104]
+
+[ouro] batch done 40.4s generated=[205, 211, 204, 215, 68, 82, 207, 215, 342, 370, 307, 337, 369, 308, 340, 209, 214, 216, 209, 195, 304, 337, 302, 304, 333, 367, 371, 371, 307, 309, 335, 304]
+
+[ouro] batch done 45.5s generated=[367, 284, 303, 305, 101, 204, 207, 175, 217, 198, 174, 188, 223, 334, 269, 305, 297, 331, 329, 299, 301, 272, 338, 270, 171, 152, 82, 74, 147, 134, 156, 269]
+
+[ouro] batch done 35.7s generated=[300, 301, 268, 300, 299, 301, 302, 141, 151, 159, 162, 140, 137, 150, 151, 138, 51, 264, 268, 263, 268, 264, 231, 118, 116, 134, 120, 137, 132, 116, 120, 91]
+
+[ouro] batch done 54.4s generated=[85, 119, 117, 117, 229, 229, 227, 97, 91, 93, 115, 101, 98, 99, 53, 72, 86, 103, 90, 80, 75, 90, 68, 49, 454, 452, 88, 70, 444, 444, 476, 86]
+
+[ouro] batch done 54.7s generated=[460, 438, 436, 438, 436, 467, 428, 458, 429, 431, 429, 421, 452, 339, 332, 339, 332, 339, 395, 339, 339, 339, 339, 102, 72, 93, 421, 374, 329, 372, 373, 373]
+
+[ouro] batch done 46.6s generated=[78, 365, 365, 365, 364, 365, 363, 396, 332, 356, 356, 332, 357, 332, 332, 332, 357, 332, 356, 332, 332, 357, 332, 332, 357, 332, 332, 201, 68, 137, 138, 138]
+
+[ouro] batch done 40.0s generated=[278, 137, 129, 129, 133, 128, 129, 185, 123, 300, 282, 124, 79, 275, 276, 276, 96, 118, 121, 115, 269, 269, 268, 60, 98, 171, 279, 263, 263, 263, 263, 279, 263]
+
+[ouro] batch done 36.0s generated=[281, 264, 262, 112, 276, 275, 275, 94, 213, 213, 208, 213, 213, 213, 213, 213, 213, 213, 213, 102, 92, 266, 266, 108, 107, 105, 105, 90, 262, 100, 122, 137, 95]
+
+[ouro] batch done 41.3s generated=[102, 258, 258, 254, 108, 31, 87, 238, 89, 252, 116, 232, 233, 127, 347, 248, 226, 226, 228, 226, 264, 208, 208, 208, 208, 208, 221, 221, 208, 208, 220, 208, 220]
+
+[ouro] batch done 96.3s generated=[221, 246, 389, 214, 81, 318, 266, 510, 389, 30, 245, 458, 260, 241, 244, 408, 267, 387, 277, 260, 228, 234, 255, 228, 232, 233, 237, 241, 238, 235, 235, 398, 1024]
+
+[ouro] batch done 59.9s generated=[534, 30, 226, 229, 218, 222, 233, 232, 218, 230, 230, 228, 226, 226, 227, 231, 425, 248, 224, 225, 220, 221, 227, 227, 221, 434, 261, 347, 251, 212, 216, 212, 224]
+
+[ouro] batch done 100.5s generated=[219, 212, 220, 213, 218, 221, 221, 216, 222, 214, 223, 220, 222, 414, 276, 251, 207, 214, 219, 210, 209, 211, 254, 262, 1024, 251, 201, 209, 207, 211, 212, 208, 273]
+
+[ouro] batch done 50.5s generated=[240, 403, 253, 165, 252, 273, 146, 146, 157, 144, 228, 141, 146, 140, 263, 144, 136, 137, 144, 436, 381, 116, 131, 116, 116, 119, 116, 131, 116, 131, 116, 116, 140]
+
+[ouro] batch done 22.4s generated=[132, 138, 147, 136, 134, 148, 134, 133, 128, 126, 126, 127, 129, 147, 125, 124, 125, 122, 122, 122, 122, 116, 116, 116, 116, 121, 116, 121, 116, 116, 116, 121, 116, 116]
+
+[ouro] batch done 118.3s generated=[116, 120, 116, 116, 114, 116, 143, 1024, 1024, 116, 374, 191, 190, 149, 256, 184, 194, 185, 199, 120, 202, 286, 182, 202, 146, 200, 209, 289, 1024, 206, 190, 1024, 188, 1024]
+
+[ouro] batch done 123.4s generated=[1024, 187, 198, 191, 1024, 186, 233, 192, 206, 779, 190, 1024, 1024, 187, 244, 188, 181, 152, 152, 961, 919, 164, 213, 1024, 220, 154, 1024, 1024, 240, 1024, 183, 153, 239, 245]
+
+[ouro] batch done 109.8s generated=[205, 187, 165, 183, 464, 1024, 1018, 178, 153, 253, 943, 200, 524, 400, 148, 462, 1024, 864, 631, 216, 217, 260, 216, 474, 136, 260, 240, 216, 216, 257, 361, 375, 28, 131]
+
+[ouro] batch done 62.3s generated=[543, 329, 383, 351, 419, 159, 232, 551, 203, 218, 221, 180, 214, 197, 239, 28, 317, 216, 39, 42, 387, 379, 320, 184, 232, 158, 255, 232, 197, 215, 187, 173, 172, 208, 40]
+
+[ouro] batch done 114.1s generated=[188, 467, 359, 205, 194, 261, 130, 118, 136, 169, 221, 169, 170, 170, 367, 95, 1024, 348, 1024, 203, 29, 173, 109, 87, 195, 88, 176, 182, 168, 63, 107, 168, 147, 151, 150]
+
+[ouro] batch done 22.9s generated=[170, 148, 82, 98, 146, 147, 165, 147, 146, 146, 65, 166, 60, 137, 161, 140, 160, 142, 150, 146, 140, 126, 123, 126, 125, 125, 125, 118, 138, 120, 131, 137, 182, 126, 126]
+
+[ouro] batch done 23.5s generated=[127, 123, 143, 122, 138, 126, 113, 129, 124, 133, 129, 129, 179, 171, 130, 122, 122, 121, 122, 127, 124, 178, 165, 139, 137, 136, 180, 160, 131, 126, 124, 149, 164, 157, 147]
+
+[ouro] batch done 26.9s generated=[158, 121, 162, 161, 131, 133, 117, 123, 115, 136, 147, 125, 118, 110, 154, 128, 117, 120, 136, 85, 132, 134, 127, 146, 127, 122, 110, 121, 60, 155, 188, 155, 218, 165, 114]
+
+[ouro] batch done 29.5s generated=[101, 118, 177, 92, 128, 47, 68, 124, 127, 124, 120, 147, 232, 200, 195, 54, 117, 80, 118, 128, 149, 153, 73, 98, 129, 96, 69, 78, 78, 67, 95, 79, 84, 117, 78]
+
+[ouro] batch done 28.0s generated=[81, 64, 122, 92, 78, 150, 189, 77, 51, 75, 94, 150, 140, 80, 64, 199, 137, 87, 92, 93, 180, 50, 105, 75, 87, 208, 94, 194, 87, 136, 140, 157, 56, 117, 117, 144]
+
+[ouro] batch done 103.9s generated=[147, 130, 143, 83, 160, 149, 68, 114, 114, 112, 113, 113, 113, 156, 164, 181, 152, 64, 112, 142, 66, 66, 48, 55, 100, 48, 1024, 64, 75, 64, 119, 63, 74, 74, 74, 59]
+
+[ouro] batch done 21.4s generated=[91, 45, 146, 49, 154, 145, 82, 151, 87, 154, 148, 149, 62, 142, 139, 141, 136, 162, 141, 136, 63, 139, 127, 145, 129, 144, 142, 132, 139, 129, 132, 132, 145, 150, 148, 148]
+
+[ouro] batch done 19.7s generated=[140, 139, 139, 128, 138, 136, 140, 145, 143, 143, 136, 134, 140, 132, 147, 136, 144, 144, 140, 128, 146, 142, 138, 157, 138, 135, 144, 127, 156, 141, 132, 129, 118, 109, 133, 143]
+
+[ouro] batch done 21.1s generated=[141, 138, 137, 139, 127, 121, 121, 126, 138, 131, 130, 118, 129, 129, 112, 122, 122, 121, 110, 103, 107, 96, 107, 112, 73, 112, 110, 110, 109, 88, 104, 95, 103, 101, 100, 100, 86, 83, 73, 91, 82]
+
+[ouro] batch done 107.0s generated=[82, 76, 82, 75, 74, 74, 74, 74, 73, 73, 67, 66, 65, 64, 148, 151, 152, 145, 147, 1024, 144, 149, 152, 141, 142, 152, 179, 161, 167, 135, 168, 119, 152, 145, 141, 149, 152, 149, 151, 134, 154]
+
+[ouro] batch done 23.2s generated=[167, 167, 158, 144, 141, 152, 152, 170, 157, 154, 141, 170, 163, 147, 135, 166, 165, 142, 139, 134, 143, 149, 145, 144, 170, 150, 145, 157, 152, 150, 144, 163, 171, 47, 36, 32, 33, 42, 34, 43, 33, 35]
+
+[ouro] batch done 6.9s generated=[32, 45, 35, 34, 32, 32, 35, 34, 34, 41, 29, 37, 35, 36, 35, 33, 35, 32, 36, 33, 37, 35, 32, 36, 35, 33, 33, 36, 36, 30, 34, 36, 37, 34, 35, 35, 36, 34, 32, 31, 35, 33, 34, 33, 32, 31, 33, 30, 34, 32]
+
+[ouro] batch done 4.1s generated=[34]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_boolean_expressions
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_causal_judgement
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_date_understanding
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_disambiguation_qa
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_dyck_languages
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_formal_fallacies
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_geometric_shapes
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_hyperbaton
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_logical_deduction_five_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_logical_deduction_seven_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_logical_deduction_three_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_movie_recommendation
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_multistep_arithmetic_two
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_navigate
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_object_counting
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_penguins_in_a_table
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_reasoning_about_colored_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_ruin_names
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_salient_translation_error_detection
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_snarks
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_sports_understanding
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_temporal_sequences
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_tracking_shuffled_objects_five_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_tracking_shuffled_objects_seven_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_tracking_shuffled_objects_three_objects
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_web_of_lies
+2026-11-12:18:34:17 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: bbh_cot_fewshot_word_sorting
+ouro (path=/dev/shm/big-small-ouro/model-2.6b,condition=a5x2,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-pf8-s2/checkpoint-48m.pt,max_length=16384), gen_kwargs: (None), limit: 60.0, num_fewshot: None, batch_size: 1
+|                          Tasks                           |Version|  Filter  |n-shot|  Metric   |   |Value |   |Stderr|
+|----------------------------------------------------------|------:|----------|-----:|-----------|---|-----:|---|-----:|
+|bbh_cot_fewshot                                           |      3|get-answer|      |exact_match|↑  |0.7401|±  |0.0098|
+| - bbh_cot_fewshot_boolean_expressions                    |      3|get-answer|     3|exact_match|↑  |0.8667|±  |0.0443|
+| - bbh_cot_fewshot_causal_judgement                       |      3|get-answer|     3|exact_match|↑  |0.6833|±  |0.0606|
+| - bbh_cot_fewshot_date_understanding                     |      3|get-answer|     3|exact_match|↑  |0.7833|±  |0.0536|
+| - bbh_cot_fewshot_disambiguation_qa                      |      3|get-answer|     3|exact_match|↑  |0.6333|±  |0.0627|
+| - bbh_cot_fewshot_dyck_languages                         |      3|get-answer|     3|exact_match|↑  |0.4000|±  |0.0638|
+| - bbh_cot_fewshot_formal_fallacies                       |      3|get-answer|     3|exact_match|↑  |0.4667|±  |0.0649|
+| - bbh_cot_fewshot_geometric_shapes                       |      3|get-answer|     3|exact_match|↑  |0.4333|±  |0.0645|
+| - bbh_cot_fewshot_hyperbaton                             |      3|get-answer|     3|exact_match|↑  |1.0000|±  |0.0000|
+| - bbh_cot_fewshot_logical_deduction_five_objects         |      3|get-answer|     3|exact_match|↑  |0.5000|±  |0.0651|
+| - bbh_cot_fewshot_logical_deduction_seven_objects        |      3|get-answer|     3|exact_match|↑  |0.3667|±  |0.0627|
+| - bbh_cot_fewshot_logical_deduction_three_objects        |      3|get-answer|     3|exact_match|↑  |0.8833|±  |0.0418|
+| - bbh_cot_fewshot_movie_recommendation                   |      3|get-answer|     3|exact_match|↑  |0.7167|±  |0.0587|
+| - bbh_cot_fewshot_multistep_arithmetic_two               |      3|get-answer|     3|exact_match|↑  |0.9333|±  |0.0325|
+| - bbh_cot_fewshot_navigate                               |      3|get-answer|     3|exact_match|↑  |0.8833|±  |0.0418|
+| - bbh_cot_fewshot_object_counting                        |      3|get-answer|     3|exact_match|↑  |0.7000|±  |0.0597|
+| - bbh_cot_fewshot_penguins_in_a_table                    |      3|get-answer|     3|exact_match|↑  |0.8667|±  |0.0443|
+| - bbh_cot_fewshot_reasoning_about_colored_objects        |      3|get-answer|     3|exact_match|↑  |0.9000|±  |0.0391|
+| - bbh_cot_fewshot_ruin_names                             |      3|get-answer|     3|exact_match|↑  |0.6000|±  |0.0638|
+| - bbh_cot_fewshot_salient_translation_error_detection    |      3|get-answer|     3|exact_match|↑  |0.6167|±  |0.0633|
+| - bbh_cot_fewshot_snarks                                 |      3|get-answer|     3|exact_match|↑  |0.7667|±  |0.0551|
+| - bbh_cot_fewshot_sports_understanding                   |      3|get-answer|     3|exact_match|↑  |0.9500|±  |0.0284|
+| - bbh_cot_fewshot_temporal_sequences                     |      3|get-answer|     3|exact_match|↑  |1.0000|±  |0.0000|
+| - bbh_cot_fewshot_tracking_shuffled_objects_five_objects |      3|get-answer|     3|exact_match|↑  |0.8667|±  |0.0443|
+| - bbh_cot_fewshot_tracking_shuffled_objects_seven_objects|      3|get-answer|     3|exact_match|↑  |0.7667|±  |0.0551|
+| - bbh_cot_fewshot_tracking_shuffled_objects_three_objects|      3|get-answer|     3|exact_match|↑  |0.9667|±  |0.0234|
+| - bbh_cot_fewshot_web_of_lies                            |      3|get-answer|     3|exact_match|↑  |1.0000|±  |0.0000|
+| - bbh_cot_fewshot_word_sorting                           |      3|get-answer|     3|exact_match|↑  |0.4333|±  |0.0645|
+
+|    Groups     |Version|  Filter  |n-shot|  Metric   |   |Value |   |Stderr|
+|---------------|------:|----------|------|-----------|---|-----:|---|-----:|
+|bbh_cot_fewshot|      3|get-answer|      |exact_match|↑  |0.7401|±  |0.0098|
+

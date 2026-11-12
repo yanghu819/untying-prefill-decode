@@ -403,3 +403,17 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   guide corrected; plateau over three wide-adapter seeds (16 settings: 8 equal, 11 within one depth, 9 all at 2-4).
 - Code: --prefill-lora only for loopmap arms; merge_reader_lora skips PrefillLoRA; time_breakdown runs once;
   tab_depth14 has the m=5 column; unused CELLS removed; docs run paper_numbers with math-verify.
+
+### 2026-11-12/13 full-paper restructure (user: 8-9 pages, one story, cherry-pick, Kaiming-style figures)
+- User decisions: method = untying + light adapter; both "Ours, fixed m=4" (LoRA at the target depth, formerly the
+  prefill-4 LoRA control) and "Ours, any m (LoopBridge)"; baselines Original / training-free / Distilled. Main text
+  8-9 pages. Keep Ouro-1.4B, Thinking, Lev; remove SenseNova-9B, one-cache task map, per-task depth selection.
+- New main text: concept figure (page 1), method diagram + pseudocode, per-benchmark Table 1 with both adapters shaded,
+  task map (4/n vs n/n), depth sweep (one decode loop, wide adapter), same-time bars (four bars), Thinking frontier,
+  MAE-style ablation table (build-up, tokens, learning rate), Lev. Full figures (two decode loops, every timed config,
+  base-model throughput, Thinking per benchmark) in the appendix.
+- New guards: main_gains (ten of 11, 15-24), depth_gains_main, fixed-depth budget pairs (+15.0 [9.8, 20.5], +7.8
+  [2.5, 13.2]), prefill_trainable two-seed counts (15, 0, (2,7), (4,7)).
+- v2 seed 2: the trained prefill never stops later in both seeds (0 of 15). Seed 3 training on both boxes.
+- build_arxiv.plain() now handles $n<m$.
+

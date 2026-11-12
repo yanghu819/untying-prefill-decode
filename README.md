@@ -6,28 +6,30 @@ compute, prefill vs decode, loop adapter, KV cache
 
 Looped (recurrent-depth) language models run one block of layers several times per token, with the same number of
 loops for reading the prompt (prefill) and for every answer token (decode). Generation is almost all decoding, so we
-ask whether the loops are better spent on the prompt. **LoopBridge**, a small adapter (LoRA plus per-loop key-value maps
-on a frozen model), lets a decoder with *n* loops read the prompt states of any prefill depth *m*; we measure where inference
-time goes, how accuracy changes as *m* grows from 1 to 16 at a fixed *n*, and how more prefill loops compare at equal
-measured time with the original model, distilled models and more decode loops.
+**untie the two loop counts**: read the prompt with *m* loops and decode each answer token with fewer, *n < m*. The
+released model cannot do this by itself, so we distill a small adapter (2.4% of the parameters): **LoRA on the
+decoder** when the prefill depth is fixed ("Ours, fixed m"), or **LoopBridge** (LoRA plus per-loop key/value maps on
+the prompt cache), which serves every (m, n) with one set of weights ("Ours, any m").
 
 **Every number in the paper is recomputed from released per-item scores and timing records by one script** and checked
 against the printed value: `python ouro/scripts/paper_numbers.py compute`. See [`REPRODUCE.md`](REPRODUCE.md).
 
 ## Key findings (Ouro-2.6B unless stated)
 
-1. **Generation is almost all decoding.** Prefill is 0.1-3% of the time of a chain-of-thought answer.
-2. **More prefill loops help at a fixed decode depth, then level off.** With the same weights, four prefill loops instead of
-   one raise the 11-benchmark average from 47.2 to 56.8 at one decode loop (gain 9.0 +- 0.6 over three seeds). On
-   most benchmarks the gain stops at two to four loops, also for an adapter trained up to 16 loops, on
-   Ouro-2.6B-Thinking and on Ouro-1.4B.
-3. **At equal measured time** (maps folded into the prompt cache, two clean timing passes), Ours 4/1 beats the original
-   model at one loop by 14.2 points and a distilled one-loop model by 7.0 at about the same time per request; a second
-   decode loop buys 15.5 more points for 1.4x the time; at two decode loops more prefill loops and distillation tie.
-4. **The baselines are not under-tuned:** the distilled controls move by at most 0.6 points over a 0.3x-3x learning-rate
-   range and at rank 80, and the adapter's weakest learning rate still beats the best distilled control.
-5. **Exceptions:** 4-shot MATH-500 (one prefill loop is best; without exemplars four are better) and exact recall in
-   HELMET.
+1. **Generation is almost all decoding.** Prefill is 0.4-2.8% of the time of a chain-of-thought answer.
+2. **Same decode loops, more accuracy.** With one decode loop, four prefill loops raise the 11-benchmark average from
+   44.2 (original model) to 57.1 (fixed-depth adapter) and 56.8 (LoopBridge), above the original model distilled to
+   one loop on the same data (49.8; 50.2 at rank 80); with two decode loops, 63.0 -> 67.3 / 67.2.
+3. **Same measured time, more accuracy.** At one decode loop and about 11 s per request, +15.0 and +14.2 points over
+   the original model and +7.8 and +7.0 over the distilled one (paired over 400 requests).
+4. **A few prefill loops suffice.** The gain levels off at two to four prefill loops (also for an adapter trained up to
+   16 loops, over seeds, and when the prefill loops are trained too).
+5. **It transfers** to Ouro-1.4B, Ouro-2.6B-Thinking (prefill 4 / decode 2 within 1.4 points of the original 4/4 at
+   3.2x its decode throughput) and looped decision models (Lev, +4.4 to +7.5 at one decision loop).
+6. **The baselines are not under-tuned:** the distilled controls move by at most 0.6 points over a 0.3x-3x
+   learning-rate range and at rank 80; LoopBridge's weakest learning rate still beats the best distilled control.
+
+![Untying prefill and decode loops](paper/figs/fig_concept.png)
 
 ![Prefill is a sliver of the time](paper/figs/fig_time.png)
 

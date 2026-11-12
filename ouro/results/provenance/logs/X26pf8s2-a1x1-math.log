@@ -1,0 +1,57 @@
+2026-11-12:11:25:12 INFO     [__main__:347] Including path: ouro/lmeval_tasks
+2026-11-12:11:25:14 INFO     [__main__:440] Selected Tasks: ['minerva_math500']
+2026-11-12:11:25:14 INFO     [evaluator:189] Setting random seed to 0 | Setting numpy seed to 1234 | Setting torch manual seed to 1234 | Setting fewshot manual seed to 1234
+2026-11-12:11:25:14 INFO     [evaluator:227] Initializing ouro model, with arguments: {'path': '/dev/shm/big-small-ouro/model-2.6b', 'condition': 'a1x1', 'checkpoint': '/dev/shm/big-small-ouro/runs/X26-a-pf8-s2/checkpoint-48m.pt', 'max_length': 16384}
+2026-11-12:11:25:26 INFO     [evaluator:247] Using cache at /dev/shm/big-small-ouro/runs/lmeval/cache/X26pf8s2-a1x1-math_rank0.db
+Using the latest cached version of the dataset since HuggingFaceH4/MATH-500 couldn't be found on the Hugging Face Hub (offline mode is enabled).
+2026-11-12:11:25:26 WARNING  [datasets.load:1377] Using the latest cached version of the dataset since HuggingFaceH4/MATH-500 couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'default' at /dev/shm/big-small-ouro/hf-lmeval/datasets/HuggingFaceH4___math-500/default/0.0.0/6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be (last modified on Sun Oct 25 19:57:09 2026).
+2026-11-12:11:25:26 WARNING  [datasets.packaged_modules.cache.cache:94] Found the latest cached dataset configuration 'default' at /dev/shm/big-small-ouro/hf-lmeval/datasets/HuggingFaceH4___math-500/default/0.0.0/6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be (last modified on Sun Oct 25 19:57:09 2026).
+2026-11-12:11:25:26 INFO     [evaluator:290] minerva_math500: Using gen_kwargs: {'until': ['Problem:'], 'max_gen_toks': 1024, 'do_sample': False, 'temperature': 0.0}
+2026-11-12:11:25:26 WARNING  [evaluator:309] Overwriting default num_fewshot of minerva_math500 from 4 to 4
+2026-11-12:11:25:26 INFO     [api.task:434] Building contexts for minerva_math500 on rank 0...
+
+2026-11-12:11:25:27 INFO     [evaluator:559] Running generate_until requests
+2026-11-12:11:25:27 INFO     [api.model:261] Loading 'generate_until' responses from cache '/dev/shm/big-small-ouro/runs/lmeval/cache/X26pf8s2-a1x1-math_rank0.db' where possible...
+
+2026-11-12:11:25:27 INFO     [api.model:285] Cached requests: 0, Requests remaining: 500
+
+[ouro] batch done 101.0s generated=[397, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 1024, 682, 434, 372, 497, 1024, 619, 1024, 88, 440, 392, 1024, 1024, 483, 1024, 1024]
+
+[ouro] batch done 97.9s generated=[337, 1024, 1024, 1024, 1024, 1024, 837, 936, 376, 242, 1024, 633, 816, 1024, 1024, 183, 365, 1024, 538, 1024, 1024, 657, 583, 337, 494, 1024, 1024, 372, 1024, 1024, 592, 1024, 1024]
+
+[ouro] batch done 95.1s generated=[1024, 945, 1024, 674, 1024, 698, 1024, 1024, 426, 284, 734, 1024, 529, 1024, 1024, 1024, 636, 910, 791, 399, 1024, 769, 765, 753, 866, 1024, 1024, 466, 1024, 738, 737, 426, 621, 1024, 1024]
+
+[ouro] batch done 91.9s generated=[949, 909, 583, 1024, 958, 560, 530, 1024, 1024, 960, 1024, 1024, 1024, 1024, 726, 794, 1005, 1024, 650, 360, 450, 597, 1024, 436, 682, 1024, 1024, 248, 383, 402, 664, 573, 632, 261, 1024, 421]
+
+[ouro] batch done 74.5s generated=[615, 576, 612, 394, 974, 657, 285, 1024, 1024, 1024, 1024, 802, 518, 1024, 509, 1024, 1024, 1024, 287, 780, 422, 1024, 398, 852, 270, 463, 829, 775, 1024, 1024, 1024, 507, 405, 1024, 723, 1024]
+
+[ouro] batch done 85.6s generated=[1024, 487, 1024, 398, 245, 554, 612, 271, 664, 698, 284, 526, 253, 335, 561, 630, 478, 621, 653, 370, 948, 405, 291, 818, 1024, 968, 315, 905, 804, 304, 459, 1024, 789, 821, 1024, 205]
+
+[ouro] batch done 76.5s generated=[710, 588, 908, 459, 440, 1024, 1024, 427, 1024, 559, 903, 1024, 354, 787, 1024, 917, 658, 618, 369, 668, 1024, 439, 1024, 1024, 365, 1024, 1024, 1024, 402, 849, 1024, 315, 364, 586, 209, 1024]
+
+[ouro] batch done 83.8s generated=[309, 422, 479, 571, 442, 519, 907, 975, 342, 440, 280, 782, 714, 1024, 366, 407, 357, 369, 1019, 382, 436, 417, 293, 1024, 221, 382, 226, 797, 777, 464, 318, 1024, 1024, 1024, 413, 851, 508]
+
+[ouro] batch done 80.5s generated=[758, 280, 895, 493, 457, 386, 706, 441, 685, 378, 847, 319, 435, 1007, 1024, 1024, 387, 1024, 1024, 999, 832, 332, 209, 683, 731, 260, 291, 419, 1024, 423, 1024, 320, 874, 273, 584, 369, 1024]
+
+[ouro] batch done 82.9s generated=[346, 961, 1024, 248, 272, 844, 568, 695, 184, 642, 241, 485, 329, 571, 553, 488, 525, 377, 421, 273, 470, 836, 596, 812, 184, 249, 1024, 603, 984, 707, 943, 488, 424, 622, 449, 387, 337]
+
+[ouro] batch done 72.5s generated=[398, 346, 301, 725, 1024, 484, 583, 1024, 289, 722, 1024, 434, 607, 646, 439, 478, 298, 704, 158, 863, 557, 794, 274, 539, 1024, 495, 355, 910, 1024, 327, 547, 224, 471, 537, 595, 268, 302]
+
+[ouro] batch done 74.3s generated=[177, 996, 452, 576, 470, 270, 441, 763, 1024, 367, 291, 1024, 1024, 488, 1024, 320, 540, 335, 475, 725, 174, 1024, 808, 437, 254, 907, 420, 340, 314, 220, 759, 475, 572, 278, 487, 1024, 227]
+
+[ouro] batch done 76.3s generated=[431, 241, 170, 164, 341, 1012, 340, 485, 100, 460, 376, 1024, 1024, 1024, 243, 280, 440, 685, 305, 459, 527, 545, 344, 458, 365, 1024, 230, 383, 371, 1022, 474, 483, 1024, 1024, 391, 454, 315]
+
+[ouro] batch done 87.6s generated=[296, 368, 80, 401, 642, 369, 1024, 230, 328, 303, 287, 188, 343, 510, 263, 129, 248, 214, 227, 357, 335, 286, 554, 1024, 1024, 443, 444, 341, 358, 494, 312, 372, 394, 1024, 160, 348, 250]
+
+[ouro] batch done 87.3s generated=[1011, 466, 224, 194, 97]
+
+fatal: not a git repository (or any of the parent directories): .git
+2026-11-12:11:46:49 INFO     [loggers.evaluation_tracker:209] Saving results aggregated
+2026-11-12:11:46:49 INFO     [loggers.evaluation_tracker:298] Saving per-sample results for: minerva_math500
+ouro (path=/dev/shm/big-small-ouro/model-2.6b,condition=a1x1,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-pf8-s2/checkpoint-48m.pt,max_length=16384), gen_kwargs: (None), limit: None, num_fewshot: 4, batch_size: 1
+|     Tasks     |Version|Filter|n-shot|  Metric   |   |Value|   |Stderr|
+|---------------|------:|------|-----:|-----------|---|----:|---|-----:|
+|minerva_math500|      1|none  |     4|exact_match|↑  |0.110|±  |0.0140|
+|               |       |none  |     4|math_verify|↑  |0.314|±  |0.0208|
+

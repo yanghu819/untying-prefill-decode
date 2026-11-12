@@ -1052,7 +1052,7 @@ def timed_requests(cond, model="Ouro-2.6B"):
 
 BUDGET_PAIRS = [("a4x1pm", "native1st"), ("a4x1pm", "D1st"), ("a4x1pm", "D1r80st"), ("a4x2pm", "D2st"),
                 ("a4x2pm", "D2r80st"), ("a4x2pm", "f4x2pm"), ("a4x2pm", "native2st"), ("a3x2pm", "D2st"),
-                ("native2st", "a4x1pm")]
+                ("native2st", "a4x1pm"), ("f4x1pm", "native1st"), ("f4x1pm", "D1st")]   # Ours fixed m=4 (Figure 3)
 
 
 def budget_pairs(reps=5000):
@@ -1076,7 +1076,8 @@ def budget_pairs(reps=5000):
                    ratio_hi=round(float(np.percentile(rt, 97.5)), 2))
         out.append(row)
         want = {("a4x1pm", "native1st"): (14.2, 9.0, 19.8), ("a4x1pm", "D1st"): (7.0, 1.8, 12.5),
-                ("native2st", "a4x1pm"): (15.5, 10.2, 20.8)}.get((a, b))   # Section 5
+                ("native2st", "a4x1pm"): (15.5, 10.2, 20.8), ("f4x1pm", "native1st"): (15.0, 9.8, 20.5),
+                ("f4x1pm", "D1st"): (7.8, 2.5, 13.2)}.get((a, b))   # Section 5
         if want and (row["diff"], row["diff_lo"], row["diff_hi"]) != want:
             print(f"Budget pair  {a} vs {b}: {row}  !! paper: {want}")
         if (a, b) == ("native2st", "a4x1pm") and row["ratio"] != 1.40:
@@ -1385,6 +1386,23 @@ PREFILL_ARMS = (("frozen prefill", "X26w8"), ("trained prefill", "X26pf8"))   # 
 PREFILL_SEEDS = (2, 3)   # SEED=k runs: X26w8s<k>-*, X26pf8s<k>-*
 
 
+def main_gains():
+    """Section 5.2: at one decode loop, on how many of the 11 benchmarks both adapters (fixed m=4, LoopBridge) beat
+    Original 1/1, and the range of their gains on MMLU, MMLU-Pro, BBH, ARC-C, HumanEval+ and RULER-16K."""
+    import contextlib, io
+    with contextlib.redirect_stdout(io.StringIO()):   # main_table() prints its own lines once, in the export
+        T = main_table()
+    arms = ("fixed-4 LoRA 4/1", "aligned adapter 4/1")
+    above = sum(all(r[a] > r["native 1/1"] for a in arms) for r in T)
+    six = ("MMLU", "MMLU-Pro", "BBH 3-shot", "ARC-C", "HumanEval+", "RULER-16K")
+    g = [r[a] - r["native 1/1"] for r in T if r["bench"] in six for a in arms]
+    out = dict(above=above, lo=round(min(g), 1), hi=round(max(g), 1))
+    print(f"Main gains   both adapters above Original 1/1 on {above}/{len(T)}; six-benchmark gains {out['lo']} to {out['hi']}")
+    if (above, int(out["lo"]), round(out["hi"])) != (10, 15, 24):   # Section 5.2: ten of 11, 15 to 24 points
+        print(f"Main gains {out}  !! paper: ten of 11, 15 to 24")
+    return out
+
+
 def depth_gains_main():
     """Section 4 / Figure 2: gain from m = 1 to the best m <= 8 at one decode loop, adapter trained on m in {1..16}."""
     import contextlib, io
@@ -1455,9 +1473,12 @@ def prefill_trainable():
             print(f"Prefill trn  seed {s}: {len(common)} settings with a stop everywhere, trained later "
                   f"{sum(st['trained prefill'][k] > st['frozen prefill'][k] for k in common)}, same "
                   f"{sum(st['trained prefill'][k] == st['frozen prefill'][k] for k in common)}")
-        print(f"Prefill trn  later with trained prefill in every seed: "
-              f"{sum(all(seeds[s]['trained prefill'][k] > seeds[s]['frozen prefill'][k] for s in seeds) for k in common)}"
-              f" of {len(common)}")
+        every = sum(all(seeds[s]['trained prefill'][k] > seeds[s]['frozen prefill'][k] for s in seeds) for k in common)
+        print(f"Prefill trn  later with trained prefill in every seed: {every} of {len(common)}")
+        per = tuple((sum(seeds[s]['trained prefill'][k] > seeds[s]['frozen prefill'][k] for k in common),
+                     sum(seeds[s]['trained prefill'][k] == seeds[s]['frozen prefill'][k] for k in common)) for s in sorted(seeds))
+        if sorted(seeds) == [1, 2] and (len(common), every, per) != (15, 0, ((2, 7), (4, 7))):   # Appendix B, v2 paragraph
+            print(f"Prefill trn seeds {(len(common), every, per)}  !! paper: (15, 0, ((2, 7), (4, 7)))")
     return dict(curves=out, stops={f"{k[0]}/{k[1]}": {a: stops[a].get(k) for a in stops} for k in both},
                 seed_stops={str(s): {f"{k[0]}/{k[1]}": {a: seeds[s][a].get(k) for a in seeds[s]}
                                      for k in sorted(set().union(*map(set, seeds[s].values())))} for s in seeds})
@@ -2013,7 +2034,7 @@ def _compute(counter):
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
     _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 

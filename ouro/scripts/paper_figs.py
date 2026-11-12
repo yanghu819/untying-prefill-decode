@@ -17,7 +17,7 @@ import numpy as np  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]                 # ouro/
 OUT = ROOT.parent / "paper" / "figs"                       # paper/figs at the repository root
 # One meaning per color across the paper (palette checked for colour-blind separation with the dataviz validator):
-# methods: Ours (LoopBridge) orange, Distilled blue, prefill-4 LoRA aqua, Original grey; decode depth inside one method
+# methods: Ours orange (LoopBridge squares, fixed-depth adapter diamonds), Distilled blue, Original grey; decode depth inside one method
 # (Figure 2): n = 1 violet, n = 2 green. Filled markers: one decode loop; hollow: two.
 OURS, DIST, LORA4 = "#EB6834", "#2A78D6", "#1BAF7A"
 N1, N2 = "#6250D6", "#008300"
@@ -79,6 +79,49 @@ def legend(fig, ours, labels, y=1.1, native="Original n/n", ncol=3):
         h.append(plt.Line2D([], [], ls="none")); names.append(labels)
     fig.legend(h, names, loc="upper center", ncol=ncol, fontsize=8, bbox_to_anchor=(0.5, y),
                handlelength=1.6, frameon=False)
+
+
+def fig_concept():
+    """Figure 1 (concept): (a) the original looped model runs every token, prompt and answer, through the same n loops;
+    (b) untied, the prompt is read with m loops once and in parallel, and each answer token is decoded with n < m
+    loops; a small adapter (orange) lets the short decoder read the long prefill's KV cache."""
+    from matplotlib.patches import FancyBboxPatch
+    fig, axes = plt.subplots(2, 1, figsize=(3.3, 3.25))
+    W, H, G = 0.6, 0.38, 0.10
+    y0 = 0.40
+    def stack(ax, x, k, fc, ec, lw=0.6):
+        for j in range(k):
+            ax.add_patch(FancyBboxPatch((x, y0 + j * (H + G)), W, H, boxstyle="round,pad=0.0,rounding_size=0.08",
+                                        fc=fc, ec=ec, lw=lw))
+    panels = [("(a) Tied: 4 loops for every token", 4, False), ("(b) Untied (ours): 4 prefill loops, 1 decode loop", 1, True)]
+    for ax, (title, n, ours) in zip(axes, panels):
+        px, dx = [0.55, 1.28, 2.01], [3.25, 3.98, 4.71, 5.44]
+        ax.annotate("", xy=(0.25, y0 + 4 * (H + G) - G), xytext=(0.25, y0), arrowprops=dict(arrowstyle="-|>", color=NAT,
+                    lw=0.7, mutation_scale=7))
+        ax.text(0.12, y0 + 2 * (H + G) - G / 2, "loops", rotation=90, ha="center", va="center", fontsize=6.5, color=NAT)
+        for x in px:
+            stack(ax, x, 4, "#ECECEC", NAT_LIGHT)
+        for x in dx:
+            stack(ax, x, n, "#FDEBE3" if ours else "#ECECEC", OURS if ours else NAT_LIGHT, lw=0.9 if ours else 0.6)
+        for x, t in zip(px + dx, ["p$_1$", "p$_2$", "p$_3$", "y$_1$", "y$_2$", "y$_3$", "y$_4$"]):
+            ax.text(x + W / 2, 0.17, t, ha="center", va="center", fontsize=7.5, color=NAT)
+        ax.plot([2.88, 2.88], [0.05, 2.35], color="#D0D0D0", lw=0.6, ls=(0, (2, 2)))
+        if ours:
+            ax.text(1.58, -0.27, "prompt: once, in parallel", ha="center", va="center", fontsize=7, color=INK)
+            ax.text(4.35, -0.27, "each answer token: 1 loop", ha="center", va="center", fontsize=7, color=INK,
+                    fontweight="bold")
+            top = y0 + 3 * (H + G) + H / 2
+            ax.annotate("", xy=(3.22, y0 + H / 2), xytext=(2.66, top), arrowprops=dict(arrowstyle="-|>", color=OURS,
+                        lw=1.0, mutation_scale=8, connectionstyle="arc3,rad=-0.25"))
+            ax.text(3.3, 1.45, "adapter: the 1-loop decoder\nreads the 4-loop prompt KV", ha="left", va="center",
+                    fontsize=7, color=OURS)
+        else:
+            ax.text(1.58, -0.27, "prefill: < 3% of the time", ha="center", va="center", fontsize=7, color=INK)
+            ax.text(4.35, -0.27, "decode: > 97% of the time", ha="center", va="center", fontsize=7, color=INK)
+        ax.set_title(title, fontsize=8.5, color=INK, pad=2, loc="left")
+        ax.set_xlim(0, 6.3); ax.set_ylim(-0.45, 2.45); ax.axis("off")
+    fig.subplots_adjust(left=0.005, right=0.995, top=0.94, bottom=0.02, hspace=0.28)
+    save(fig, "fig_concept")
 
 
 def fig0():
@@ -308,7 +351,7 @@ def fig_aligned(panels, name="fig_taskmap", ncols=4):
                  title.get(b, b))
         ax.set_xticks([1, 2, 3, 4]); ax.set_xlim(0.6, 4.4)
     fig.supxlabel("decode loops n", fontsize=8.5, y=0.005); fig.supylabel("score (%)", fontsize=8.5, x=0.005)
-    legend(fig, "Ours, prefill 4 / decode n", "", y=1.0, ncol=2)
+    legend(fig, "Ours (LoopBridge), prefill 4 / decode n", "", y=1.0, ncol=2)
     fig.subplots_adjust(wspace=0.32, hspace=0.5, left=0.07, right=0.99, top=1 - 0.38 / H, bottom=0.32 / H)
     save(fig, name)
 
@@ -392,16 +435,17 @@ def tab_main(key="main_table", name="tab_main"):
     best of each group; LaTeX rows from paper_numbers.json, main_table)."""
     T = {r["bench"]: r for r in PN.get(key, [])}
     benches = list(T)
-    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "distilled r80 1/1", "fixed-4 LoRA 4/1", "aligned LoRA-only 4/1", "loop adapter 4/1", "aligned adapter 4/1"]),
-              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "distilled r80 2/2", "fixed-4 LoRA 4/2", "aligned LoRA-only 4/2", "loop adapter 4/2", "aligned adapter 4/2"]),
-              (4, ["native 4/4"])]
+    groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "distilled r80 1/1", "fixed-4 LoRA 4/1", "aligned adapter 4/1"]),
+              (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "distilled r80 2/2", "fixed-4 LoRA 4/2", "aligned adapter 4/2"]),
+              (4, ["native 4/4"])]   # maps-frozen and one-cache rows: ablation table (tab_build)
     show = {"native 1/1": "Original 1/1", "native 2/2": "Original 2/2", "native 4/4": "Original 4/4",
             "training-free 4/1": "Training-free 4/1", "training-free 4/2": "Training-free 4/2",
             "LoRA-distilled 1/1": "Distilled 1/1", "LoRA-distilled 2/2": "Distilled 2/2",
             "distilled r80 1/1": "Distilled 1/1, rank 80", "distilled r80 2/2": "Distilled 2/2, rank 80",
-            "fixed-4 LoRA 4/1": "Prefill-4 LoRA 4/1", "fixed-4 LoRA 4/2": "Prefill-4 LoRA 4/2", "aligned LoRA-only 4/1": "Ours 4/1, maps frozen", "aligned LoRA-only 4/2": "Ours 4/2, maps frozen",
-            "loop adapter 4/1": "Ours, one cache 4/1", "loop adapter 4/2": "Ours, one cache 4/2",
-            "aligned adapter 4/1": r"\textbf{Ours, aligned 4/1}", "aligned adapter 4/2": r"\textbf{Ours, aligned 4/2}"}
+            "fixed-4 LoRA 4/1": r"Ours, fixed $m{=}4$, 4/1", "fixed-4 LoRA 4/2": r"Ours, fixed $m{=}4$, 4/2",
+            "aligned LoRA-only 4/1": "LoRA all pairs, maps frozen 4/1", "aligned LoRA-only 4/2": "LoRA all pairs, maps frozen 4/2",
+            "loop adapter 4/1": "LoopBridge, one cache 4/1", "loop adapter 4/2": "LoopBridge, one cache 4/2",
+            "aligned adapter 4/1": "Ours, any $m$ (LoopBridge), 4/1", "aligned adapter 4/2": "Ours, any $m$ (LoopBridge), 4/2"}
     lines = []
     for n, labels in groups:
         labels = [l for l in labels if any(T[b].get(l) is not None for b in benches)]   # rows not run for this model
@@ -412,11 +456,38 @@ def tab_main(key="main_table", name="tab_main"):
         for i, l in enumerate(labels):
             cells = [c[i] for c in cols]
             fmt = lambda x, b: "--" if x is None else (rf"\textbf{{{x:.1f}}}" if len(labels) > 1 and abs(x - b) < 1e-9 else f"{x:.1f}")
-            shade = r"\rowcolor{oursbg} " if l.startswith("aligned adapter") else ""   # Ours (LoopBridge), as in Table 1
+            shade = r"\rowcolor{oursbg} " if l.startswith(("aligned adapter", "fixed-4 LoRA")) else ""   # both adapters are Ours
             lines.append(f"{shade}{n} & {show[l]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
         if n < 4:
             lines.append(r"\midrule")
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")
+
+
+def tab_lr():
+    """Main-text ablation (c): the whole learning-rate schedule scaled by 0.3, 1 and 3 for the distilled control
+    (Distilled 1/1) and for LoopBridge (4/1), 11-benchmark average (paper_numbers.lr_check)."""
+    L = PN.get("lr_check", {})
+    if not L:
+        return (OUT / "tab_lr.tex").unlink(missing_ok=True)
+    f = lambda d, k: "--" if d.get(k) is None else f"{d[k]:.1f}"
+    lines = [f"Distilled 1/1 & {f(L['1'], 'lr0.3')} & {f(L['1'], 'lr1')} & {f(L['1'], 'lr3')} \\\\",
+             f"\\rowcolor{{oursbg}} LoopBridge 4/1 & {f(L['ours a41'], 'lr0.3')} & {f(L['ours a41'], 'lr1')} & "
+             f"{f(L['ours a41'], 'lr3')} \\\\"]
+    (OUT / "tab_lr.tex").write_text("\n".join(lines) + "\n")
+
+
+def tab_tokens():
+    """Main-text ablation (b), transposed: 11-benchmark average of the one-cache LoopBridge at 4/1 and 4/2 against the
+    number of answer tokens it is trained on (rank 16; paper_numbers.ablations)."""
+    A = {(r["label"], r["cell"]): r["avg"] for r in PN.get("ablations", [])}
+    toks = [("6M tokens", "6M"), ("12M tokens", "12M"), ("24M tokens", "24M"), ("48M tokens", "48M")]
+    f = lambda x: "--" if x is None else f"{x:.1f}"
+    lines = ["tokens & " + " & ".join(t for _, t in toks) + r" \\", r"\midrule"]
+    for cell, name in (("S41", "4/1"), ("S42", "4/2")):
+        vals = [f(A.get((lab, cell))) for lab, _ in toks]
+        vals[-1] = r"\cellcolor{oursbg}" + vals[-1]
+        lines.append(f"{name} & " + " & ".join(vals) + r" \\")
+    (OUT / "tab_tokens.tex").write_text("\n".join(lines) + "\n")
 
 
 def tab_ablation():
@@ -441,9 +512,7 @@ def tab_e2e():
                [("native2st", r"\nat{2}"), ("native4st", r"\nat{4}"), ("Df2st", "distilled 2/2"), ("S22sb", r"\rw{2}{2}"),
                 ("S42sb", r"\rw{4}{2}")]),
               (r"\shortstack[l]{MATH-500\\Ouro-2.6B-T}", "think", "math",
-               [("native2st", r"\nat{2}"), ("native4st", r"\nat{4}"), ("S42sb", r"\rw{4}{2}")]),
-              (r"\shortstack[l]{GSM8K\\SenseNova}", "sn", "gsm",
-               [("native2", r"\nat{2}"), ("C11", r"\rw{1}{1}"), ("C21", r"\rw{2}{1}")])]
+               [("native2st", r"\nat{2}"), ("native4st", r"\nat{4}"), ("S42sb", r"\rw{4}{2}")])]   # SenseNova: repo only
     lines = []
     for i, (name, model, task, conds) in enumerate(blocks):
         if i:
@@ -624,22 +693,24 @@ def fig_sametime():
     request over the same 100 requests of each timed task (batch 1, one B300, two passes; Ours with folded maps).
     Every configuration against time: appendix figure (fig_budget)."""
     tasks = [t for t in TIMED if _time(t, "native1st")]
-    bars = [("Original 1/1", "native1st", NAT_LIGHT), ("Distilled 1/1", "D1st", DIST), ("Ours 4/1", "a4x1pm", OURS)]
+    bars = [("Original\n1/1", "native1st", NAT_LIGHT), ("Distilled\n1/1", "D1st", DIST),
+            ("Ours, fixed\nm=4, 4/1", "f4x1pm", OURS), ("Ours, Loop-\nBridge, 4/1", "a4x1pm", OURS)]
     pts = []
     for lab, cond, col in bars:
         rs = [_time(t, cond) for t in tasks]
         if not tasks or None in rs:
             return drop("fig_sametime")
         pts.append((lab, float(np.mean([r["quality"] for r in rs])), float(np.mean([r["total_s"] for r in rs])), col))
-    fig, ax = plt.subplots(figsize=(3.3, 1.75))
+    fig, ax = plt.subplots(figsize=(3.3, 1.95))
     x = np.arange(len(pts))
     ax.bar(x, [p[1] for p in pts], width=0.62, color=[p[3] for p in pts], zorder=3)
     for xi, (lab, q, t, col) in zip(x, pts):
-        ax.text(xi, q + 0.8, f"{q:.1f}", ha="center", va="bottom", fontsize=9, color=INK, fontweight="bold")
-    ax.text(x[-1], pts[-1][1] + 6.3, f"+{pts[-1][1] - pts[0][1]:.1f}", ha="center", va="bottom", fontsize=9,
-            color=OURS, fontweight="bold")
+        ax.text(xi, q + 0.8, f"{q:.1f}", ha="center", va="bottom", fontsize=8.5, color=INK, fontweight="bold")
+        if col == OURS:
+            ax.text(xi, q + 6.0, f"+{q - pts[0][1]:.1f}", ha="center", va="bottom", fontsize=8.5, color=OURS,
+                    fontweight="bold")
     ax.hlines(pts[0][1], x[0] - 0.31, x[-1] + 0.31, color=NAT, lw=0.7, ls=(0, (2, 2)), zorder=4)
-    ax.set_xticks(x); ax.set_xticklabels([f"{lab}\n{t:.1f} s" for lab, q, t, col in pts], fontsize=7.5)
+    ax.set_xticks(x); ax.set_xticklabels([f"{lab}\n{t:.1f} s" for lab, q, t, col in pts], fontsize=6.8)
     ax.set_ylabel("accuracy (%)"); ax.set_ylim(0, max(p[1] for p in pts) * 1.32)
     ax.set_xlim(-0.55, len(pts) - 0.45)
     ax.spines["bottom"].set_color(NAT); ax.tick_params(axis="x", length=0)
@@ -676,14 +747,14 @@ def fig_budget(batch=None, name="fig_budget"):
             ours = [(*point(f"a{m}x{n}{kind}", b), str(m)) for m in ms if point(f"a{m}x{n}{kind}", b)]
             if ours:
                 ax.plot([p[0] for p in ours], [p[1] for p in ours], "-" if n == 1 else "--", color=col, marker="s", ms=3.5,
-                        mfc=fill, mec=col, lw=1.3, label=f"Ours m/{n}")
+                        mfc=fill, mec=col, lw=1.3, label=f"Ours, LoopBridge, m/{n}")
                 for x, y, lab in [p for p in ours if b is None or p[2] in ("1", "4", "16")]:   # m = 3, 4 nearly coincide at batch 1
                     dx = {"3": -4, "4": 4}.get(lab, 0) if b is None else 0
                     ax.annotate(lab, (x, y), xytext=(dx, 3), textcoords="offset points", fontsize=6.5, color=INK, ha="center")
             p4 = point(f"f4x{n}pm", b)
             if p4:   # prefill-4 LoRA with identity maps
-                ax.scatter(*p4, marker="D", s=18, zorder=3, facecolors=LORA4 if n == 1 else "white", edgecolors=LORA4,
-                           label=f"Prefill-4 LoRA 4/{n}")
+                ax.scatter(*p4, marker="D", s=20, zorder=3, facecolors=OURS if n == 1 else "white", edgecolors=OURS,
+                           label=f"Ours, fixed m=4, 4/{n}")
         nat = [(*point(f"native{d}st", b), f"{d}/{d}") for d in (1, 2, 3, 4) if point(f"native{d}st", b)]
         if nat:
             ax.plot([p[0] for p in nat], [p[1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, label="Original n/n")
@@ -789,9 +860,9 @@ def tab_avg():
     lines.append(f"\\rowcolor{{oursbg}} \\textbf{{Ours $4/n$}} & \\textbf{{{f(o1)}}}\\gain{{{o1 - b1:.1f}}} & "
                  f"\\textbf{{{f(o2)}}}\\gain{{{o2 - b2:.1f}}} \\\\")
     (OUT / "tab_avg.tex").write_text("\n".join(lines) + "\n")
-    build = [("LoRA, prefill 4 only", "fixed-4 LoRA 4/1", False, False),
-             ("LoRA, all $(m,n)$", "aligned LoRA-only 4/1", True, False),
-             ("\\quad + key/value maps", "aligned adapter 4/1", True, True),
+    build = [("Ours, fixed $m{=}4$ (LoRA)", "fixed-4 LoRA 4/1", False, False),
+             ("LoRA trained on all $(m,n)$", "aligned LoRA-only 4/1", True, False),
+             ("\\quad + key/value maps (LoopBridge)", "aligned adapter 4/1", True, True),
              ("\\quad one shared cache", "loop adapter 4/1", True, False)]
     lines = []
     for name, l, allmn, default in build:
@@ -801,5 +872,5 @@ def tab_avg():
     (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 
 if __name__ == "__main__":
-    fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_avg(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_taskmap(ncols=5); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_equal("1.4B-T"); tab_hybrid(); tab_sn(); tab_select(); tab_select("Ouro-1.4B", "tab_select_14"); tab_distill(); tab_lev(); tab_taskmap(); tab_select_distilled(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

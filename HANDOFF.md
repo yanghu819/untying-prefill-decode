@@ -1,4 +1,4 @@
-# Handoff (2026-11-11)
+# Handoff (2026-11-12)
 
 For the next agent taking over *Untying Prefill and Decode Loops in Looped Language Models*.
 Read this file, then `NOTES.md` (lab log), `REPRODUCE.md` (result -> script map) and `DEPRECATED.md`. Cluster addresses
@@ -6,17 +6,23 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 
 ## 1. Where things stand
 
-- **Paper**: `paper/latex/main.tex`, restructured on the advisor's review (2026-11-07) into a **4-page arXiv paper**
-  (body = Introduction..Conclusion must end on page 4; Limitations, references and appendix follow). The user submits
-  to arXiv personally (never submit or post in their name).
-- **Story (advisor order)**: (1) where the time goes: prefill 0.1-3% of time on chain-of-thought tasks (Figure 1);
-  (2) prefill depth at fixed decode depth, same weights, m = 1..16: 11-bench average 47.2 -> 56.8 at n=1, gain stops
-  at 2-4 loops on most benchmarks, also for an adapter trained to m=16, on Ouro-2.6B-Thinking and on Ouro-1.4B
-  (Figure 2, Appendix C/D); (3) same measured budget (two clean timing passes, maps folded into the prompt cache):
-  at n=1 Ours 4/1 beats Original 1/1 and Distilled 1/1 at equal time, a second decode loop buys more on long CoT, at
-  n=2 Ours / Distilled / prefill-4 LoRA are within noise (Figure 3, Table 1); (4) method: aligned loop adapter
-  (Ours); maps matter for long prompts (frozen maps: RULER-16K 64.7 -> 49.8); exceptions: 4-shot MATH-500 (0-shot
-  reverses it), HELMET exact recall. Naming: Original / Distilled / Ours, "m/n".
+- **Paper**: `paper/latex/main.tex`, a full paper since 2026-11-12: **main text 8-9 pages** (user decision; supersedes
+  the 4-page limit of 11-07). Order: Introduction (Figure 1 concept, findings list) - Related Work - Method (fixed-depth
+  LoRA; LoopBridge; Figures 2-3 diagram and pseudocode) - Setup - Results (5.1 time, 5.2 main table, 5.3 fewer decode
+  / more prefill loops, 5.4 depth sweep, 5.5 same measured time, 5.6 ablations, 5.7 Ouro-1.4B, Thinking, Lev) -
+  Conclusion - Limitations. The user submits to arXiv personally (never submit or post in their name).
+- **Method definition (user, 11-12)**: our method = untying prefill and decode loops plus a light adapter distilled from
+  Original 4/4. Two adapters, both "Ours": **Ours, fixed m=4** (plain LoRA trained at the target prefill depth; runs
+  X26-a-fixed4-lora / X26f4, formerly called the "prefill-4 LoRA control") and **Ours, any m (LoopBridge)** (LoRA +
+  per-loop key/value maps, one adapter for every (m,n); X26-a-universal). Baselines: Original n/n, training-free 4/n,
+  Distilled n/n (rank 16/80). Never present the fixed-depth LoRA as a competitor.
+- **Removed from the paper (results stay in the repo)**: SenseNova-9B hybrid, one-cache task map and per-benchmark
+  depth selection (cross-fitted), Nanbeige, the Ouro-1.4B-Thinking comparisons against Original. Kept: Ouro-2.6B core,
+  Ouro-1.4B, the Thinking models, Lev decision models.
+- **Story**: (1) prefill is 0.4-2.8% of a chain-of-thought request (Figure 4); (2) same decode loops: 44.2 -> 57.1 /
+  56.8 at n=1 vs Distilled 49.8 (Table 1); (3) the gain levels off at 2-4 prefill loops (Figure 6); (4) same measured
+  time: +15.0 / +14.2 over Original 1/1, +7.8 / +7.0 over Distilled 1/1 (Figure 7); (5) transfers to Ouro-1.4B,
+  Thinking (4/2 within 1.4 of 4/4 at 3.2x throughput) and Lev. Caveats live in Limitations and the appendix.
 - **Seeds in Table 1 caption**: Ours 56.7+-0.1 / 67.1+-0.2, Distilled 2/2 65.1+-0.2 (3 seeds each).
 - **Guards**: every number quoted in the text is checked in `ouro/scripts/paper_numbers.py` (`!!` lines); the pipeline
   must print "0 printed values differ" and no `!!`.
@@ -39,15 +45,13 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
   of it is still running: bash reads scripts as it goes, and the running copy then fails after training (11-10:
   fixed4-s3 and lora-s3 lost their eval step; re-run the launcher, which skips the finished training).
-- **v2 trainable-prefill check (11-12)**: seed 1 done and in Appendix "Where the Gain Stops" (paragraph "Training the
-  prefill as well", Table `tab:prefilltrn` from `paper_figs.tab_prefilltrn`): X26-a-pf8 (prefill LoRA) vs X26-a-w8
-  (frozen), both m in {1,2,3,4,6,8}, prompts cut to 2,048 tokens; the stop does not move (16 settings: later 2, same 8,
-  earlier 6), RULER-16K peaks rise (63.7 -> 66.0 at n=1, 75.2 -> 81.0 at n=2). **In flight**: seed 2 of both arms
-  (X26-a-w8-s2 on a1 from 05:20, X26-a-pf8-s2 on a2 from 05:02, then sweeps X26w8s2-* / X26pf8s2-*; launcher log
-  runs/{w8s2,pf8s2}.log). When they land: score evalplus on both boxes, add a seed loop to `prefill_trainable()` like
-  `plateau_seeds`, report the stop over the seeds. Seed 3 (X26-a-w8-s3 on a1, X26-a-pf8-s3 on a2) starts by itself when each box's
-  seed-2 sweep queue drains (/root/pn/after_sweep_*s3.sh, armed 11-12 17:45). After that: ARR checklist TODOs with the user if the paper also goes
-  to ARR.
+- **v2 trainable-prefill check**: seeds 1 and 2 done, in Appendix "Where the Gain Stops" (paragraph "Training the
+  prefill as well", Table `tab:prefilltrn` = seed 1): X26-a-pf8(-s2) (prefill LoRA) vs X26-a-w8(-s2) (frozen), m <= 8,
+  prompts cut to 2,048 tokens. The stop does not move: of 15 settings with a stop in all four runs, the trained prefill
+  stops later in 2 and 4 (same in 7 and 7) and later in both seeds in none. **In flight**: seed 3 of both arms
+  (X26-a-w8-s3 on a1 from 11-12 20:10, X26-a-pf8-s3 on a2 from ~21:15; then sweeps X26w8s3-* / X26pf8s3-*). When they
+  land: score evalplus on both boxes, `pn_sync.sh all`; `prefill_trainable()` then compares three seeds (its seed guard
+  only checks the two-seed case) and the appendix sentence needs the three-seed counts.
 
 ## 2. The user's rules (all still in force)
 
