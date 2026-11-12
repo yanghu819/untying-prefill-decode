@@ -281,7 +281,7 @@ def tab_equal(model="1.4B-T"):
     """Appendix table: the headline comparison on another Thinking checkpoint (LaTeX rows from paper_numbers.json)."""
     pm = lambda v: (r"\up{%.1f}" if v[0] >= 0 else r"\dn{%.1f}") % abs(v[0]) + ci(v[1], v[2])
     rows = [e for e in PN["equal"] if e.get("model") == model]
-    lines = [rf"{e['bench']} & {e['native2']:.1f} & {e.get('same22', float('nan')):.1f} & {e['ours']:.1f} & {e['native4']:.1f} & "
+    lines = [rf"{e['bench']} & {e['n']:,} & {e['native2']:.1f} & {e.get('same22', float('nan')):.1f} & {e['ours']:.1f} & {e['native4']:.1f} & "
              rf"{pm(e['vs2'])} & {pm(e['vs22']) if 'vs22' in e else '--'} & {pm(e['vs4'])} \\" for e in rows]
     (OUT / f"tab_equal_{model.replace('.', '')}.tex").write_text("\n".join(lines) + "\n")
 
@@ -388,7 +388,7 @@ def tab_distill():
         dist = C.get(f"2.6B-T LoRA-distilled native 2/2 vs native 2/2 {b}")
         if not ours or not dist:
             continue
-        lines.append(rf"{b} & {dist['b']:.1f} & {dist['a']:.1f} & {ours['a']:.1f} & {pm(dist)} & {pm(ours)} \\")
+        lines.append(rf"{b} & {ours['n']:,} & {dist['b']:.1f} & {dist['a']:.1f} & {ours['a']:.1f} & {pm(dist)} & {pm(ours)} \\")
     (OUT / "tab_distill.tex").write_text("\n".join(lines) + "\n")
 
 
@@ -606,7 +606,7 @@ def fig_time():
         ax.text(98.5, y, f"{r['total_s']:.1f} s / request", va="center", ha="right", fontsize=7, color=NAT, zorder=4)
     ax.set_yticks(range(len(rows))); ax.set_yticklabels([t for t, _ in rows], fontsize=8)
     ax.set_xlim(0, 100); ax.set_xticks([0, 25, 50, 75, 100]); ax.set_xticklabels(["0", "25", "50", "75", "100%"])
-    ax.set_xlabel("share of time per request")
+    ax.set_xlabel("share of time per request (batch 1)")
     ax.spines["left"].set_visible(False); ax.tick_params(axis="y", length=0)
     ax.legend([plt.Rectangle((0, 0), 1, 1, color=INK), plt.Rectangle((0, 0), 1, 1, color="#DADADA")], ["prefill", "decode"],
               loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=7.5, handlelength=1.2)
@@ -708,12 +708,15 @@ def fig_sametime():
     ax.bar(x, [p[1] for p in pts], width=0.62, color=[p[3] for p in pts], zorder=3)
     for xi, (lab, q, t, col) in zip(x, pts):
         ax.text(xi, q + 0.8, f"{q:.1f}", ha="center", va="bottom", fontsize=8.5, color=INK, fontweight="bold")
-        if col == OURS:
-            ax.text(xi, q + 6.0, f"+{q - pts[0][1]:.1f}", ha="center", va="bottom", fontsize=8.5, color=OURS,
+        if col == OURS:   # gain over Original (grey) and over Distilled (blue)
+            ax.text(xi, q + 10.2, f"+{q - pts[0][1]:.1f}", ha="center", va="bottom", fontsize=7.8, color=NAT,
+                    fontweight="bold")
+            ax.text(xi, q + 5.6, f"+{q - pts[1][1]:.1f}", ha="center", va="bottom", fontsize=7.8, color=DIST,
                     fontweight="bold")
     ax.hlines(pts[0][1], x[0] - 0.31, x[-1] + 0.31, color=NAT, lw=0.7, ls=(0, (2, 2)), zorder=4)
+    ax.hlines(pts[1][1], x[1] - 0.31, x[-1] + 0.31, color=DIST, lw=0.7, ls=(0, (2, 2)), zorder=4)
     ax.set_xticks(x); ax.set_xticklabels([f"{lab}\n{t:.1f} s" for lab, q, t, col in pts], fontsize=6.8)
-    ax.set_ylabel("accuracy (%)"); ax.set_ylim(0, max(p[1] for p in pts) * 1.32)
+    ax.set_ylabel("accuracy (%)"); ax.set_ylim(0, max(p[1] for p in pts) * 1.42)
     ax.set_xlim(-0.55, len(pts) - 0.45)
     ax.spines["bottom"].set_color(NAT); ax.tick_params(axis="x", length=0)
     ax.grid(axis="y", color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
@@ -739,7 +742,7 @@ def fig_budget(batch=None, name="fig_budget"):
         rs = [next((r for r in bt if r["batch"] == b and r["task"] == t and r["cond"] == cond), None) for t in tasks]
         return None if None in rs else (float(np.mean([r["est_s"] for r in rs])), float(np.mean([r["quality"] for r in rs])))
 
-    fig, axes = plt.subplots(len(panels), 1, figsize=(3.3, 3.25 * len(panels)), squeeze=False)   # one column wide
+    fig, axes = plt.subplots(len(panels), 1, figsize=(3.3, 2.85 * len(panels)), squeeze=False)   # one column wide
     for ax, (title, b) in zip(axes[:, 0], panels):
         for n, fill in ((1, OURS), (2, "white")):
             col = OURS
@@ -773,12 +776,19 @@ def fig_budget(batch=None, name="fig_budget"):
                            label=f"Distilled {d}/{d}, rank 80")
         if b is not None:
             ax.set_title(title, fontsize=8.5, color=INK, pad=4)
+        else:   # the low-latency end, where one decode loop runs (about 11 s per request)
+            ax.axvspan(9.2, 12.4, color="#F3F3F3", zorder=0, lw=0)
+            ax.text(10.8, ax.get_ylim()[1] if False else 66.5, "one decode\nloop", ha="center", va="top", fontsize=6.5, color=NAT)
         ax.set_xlabel("seconds per request"); ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     for ax in axes[:, 0]:
         ax.set_ylabel("mean accuracy (%)")
-    h, l = axes[0, 0].get_legend_handles_labels()
+    L = plt.Line2D   # one entry per method and marker; filled = one decode loop, hollow = two (caption)
+    h = [L([], [], color=OURS, marker="s", ms=4, lw=1.3), L([], [], color=OURS, marker="D", ms=4, ls="none"),
+         L([], [], color=DIST, marker="^", ms=4.5, ls="none"), L([], [], color=DIST, marker="v", ms=4.5, ls="none"),
+         L([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.3)]
+    l = ["Ours, LoopBridge (m/n)", "Ours, fixed m=4", "Distilled n/n", "Distilled n/n, rank 80", "Original n/n"]
     fig.legend(h, l, fontsize=6.5, loc="lower center", frameon=False, handlelength=1.6, ncol=2, columnspacing=1.0)
-    fig.subplots_adjust(left=0.15, right=0.97, top=0.92, bottom=0.36)
+    fig.subplots_adjust(left=0.15, right=0.97, top=0.95, bottom=0.34)
     save(fig, name)
 
 

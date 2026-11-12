@@ -48,8 +48,8 @@
 \begin{abstract}
 Looped language models run a block of layers several times for every token, and they use the same number of loops to
 read the prompt (prefill) and to generate each answer token (decode). Generation, however, is almost all decoding. On
-Ouro-2.6B, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost almost
-nothing. We therefore untie the two loop counts and read the prompt with more loops than we use to decode each answer
+Ouro-2.6B at batch 1, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost
+almost nothing. We therefore untie the two loop counts and read the prompt with more loops than we use to decode each answer
 token. The released model cannot use the states of a longer prefill, so we distill a small adapter with 2.4\% of the
 model's parameters. When the prefill depth is fixed, LoRA on the decoder is enough; LoopBridge adds per-loop key and
 value maps so that one adapter serves every prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill
@@ -155,8 +155,9 @@ written by the same loops. A small adapter fixes it.
 value and output projections, active only while decoding, on the pairs $m/1,\dots,m/4$. We call this \emph{Ours,
 fixed $m$}.
 
-\paragraph{Any prefill depth: LoopBridge.} To serve every $(m,n)$ with one set of weights, LoopBridge
-(Figures~\ref{fig:method} and~\ref{alg:adapter}) adds, for each decode loop, layer and KV head, a key map and a value map on the prompt cache
+\paragraph{Any prefill depth: LoopBridge.} To serve every $(m,n)$ with one set of weights without losing long-context
+accuracy, LoopBridge
+(Figure~\ref{fig:method}; pseudocode in Appendix~\ref{app:method}) adds, for each decode loop, layer and KV head, a key map and a value map on the prompt cache
 that loop reads. The key map is one complex scale per rotary frequency pair; it commutes with RoPE~\citep{rope}, so it
 can be applied to the query instead of the cache. The value map is linear and is applied to the attention output,
 since attention is linear in the values. Prompt and answer attention share one softmax, merged exactly through their
@@ -177,64 +178,11 @@ one on $m\in\{1,2,3,4,6,8,12,16\}$ and $n\le4$ for the depth sweep (Appendix~\re
 LoopBridge maps the keys and values of prefill loop $\max(m-n+k,1)$ into a cache for decode loop $k$: a scale $c_k$ on
 each rotary pair of the keys and a linear map $W_k$ of the values. Every answer token then runs $n$ loops of the frozen
 model with LoRA, and loop $k$ attends to cache $k$ and to the answer's own keys and values with the original attention.
-Applying the maps at every step instead (to the query and the attention output) gives the same result:
-Figure~\ref{alg:adapter}.}
+Applying the maps at every step instead (to the query and the attention output) gives the same result;
+pseudocode: Figure~\ref{alg:adapter} in Appendix~\ref{app:method}.}
 \label{fig:method}
 \end{figure*}
 
-\begin{figure*}[t]
-\centering
-\begin{minipage}[t]{0.555\textwidth}
-\begin{lstlisting}
-# blocks: frozen looped block, L layers; m/n: prefill/decode loops
-# c[k][l] = 1+a+1j*b per RoPE pair; W[k][l] = I+delta (init: I)
-# LoRA on q, k, v, o is active only while decoding.
-
-def prefill(prompt, m):                   # prompt minus its last token
-    h = embed(prompt)
-    for j in range(m):
-        for l in range(L):
-            h, K[j][l], V[j][l] = blocks[l](h)  # every loop's K, V
-    return K, V
-
-def attend(q, K, V, kv_answer, c, W):     # layer l, decode loop k
-    qc = complex_mul(q, c.conj())         # key scale moved to the query
-    o_p, lse_p = flash_attn(qc, K, V)     # prompt part
-    o_p = o_p @ W.T                       # attention is linear in V
-    o_a, lse_a = flash_attn(q, *kv_answer, causal=True)
-    g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
-    return g * o_p + (1 - g) * o_a
-
-def decode(token, K, V, m, n): # last prompt token, then answer
-    h = embed(token)
-    for k in range(n):
-        j = max(m - n + k, 0)     # aligned; one cache: j = m - 1
-        for l in range(L):
-            h = blocks[l](h, attn=lambda q, kv: attend(
-                    q, K[j][l], V[j][l], kv, c[k][l], W[k][l]))
-    return lm_head(h)
-\end{lstlisting}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.425\textwidth}
-\begin{lstlisting}
-# training: one (m, n) per micro-batch,
-# teacher = the Original 4/4 model
-m, n = torch.randint(1, 5, (2,)).tolist()
-with torch.no_grad():
-    t = original(x, loops=4)              # frozen, no adapter
-s = model(x, prefill=m, decode=n)         # LoRA + maps
-kl = kl_div(s.log_softmax(-1),
-            t.log_softmax(-1), log_target=True,
-            reduction="none").sum(-1)
-loss = kl[answer].sum() / (answer.sum() - len(x))
-\end{lstlisting}
-\end{minipage}
-\caption{\textbf{LoopBridge in PyTorch-style pseudocode.} The fixed-depth adapter is the same code with $c=1$, $W=I$ and $m$ fixed. Decode loop $k$ reads prefill loop $m-n+k$ (loops
-counted from zero here; the one-cache variant keeps only the last prefill loop) through its own key scale (applied to
-the query) and value map
-(applied to the attention output), and the prompt and answer attention are combined exactly through their log-sum-exp.}
-\label{alg:adapter}
-\end{figure*}
 
 \section{Experimental Setup}
 \label{sec:setup}
@@ -337,9 +285,9 @@ request: Figure~\ref{fig:depthfull}; stopping depths for every benchmark: Table~
 
 We now fix the decode loops and vary only the prefill loops, with one set of weights. At one decode loop, a few more
 prefill loops raise GSM8K by 10.2 points, MMLU-Pro by 24.1, HumanEval+ by 17.7 and RULER-16K by 10.1
-(Figure~\ref{fig:depth}). With the main LoopBridge, four prefill loops instead of one raise the 11-benchmark average
-from 47.2 to 56.8 at one decode loop and from 57.9 to 67.2 at two (gains of $9.0\pm0.6$ and $9.1\pm0.2$ over three
-training seeds): the gain comes from the prefill loops, not only from training. Ouro-2.6B-Thinking behaves the same
+(Figure~\ref{fig:depth}). With the main LoopBridge and one decode loop, four prefill loops instead of one raise the
+11-benchmark average from 47.2 to 56.8 on the same weights (a gain of $9.0\pm0.6$ over three training seeds): the gain
+comes from the prefill loops, not only from training. Ouro-2.6B-Thinking behaves the same
 way (GSM8K 90.7 to 94.1 and MMLU-Pro 36.4 to 51.0 from $m=1$ to $m=4$ at two decode loops).
 
 The gain peaks after a few loops. To place its end, we pick, on one half of each benchmark, the first depth
@@ -358,9 +306,20 @@ from $m=1$ to $m=4$ at one decode loop, almost all because answers get longer (2
 \includegraphics[width=\columnwidth]{../figs/fig_sametime.pdf}
 \caption{\textbf{Same time, much higher accuracy.} One decode loop, Ouro-2.6B: mean accuracy and mean time per request
 over the same 100 requests of each of GSM8K, MATH-500, BBH and MMLU-Pro (batch 1, one B300, mean of two passes). With
-four prefill loops, both adapters take the time Original 1/1 needs. Every configuration against time:
-Figure~\ref{fig:budgetfull}.}
+four prefill loops, both adapters take the time Original 1/1 needs; grey and blue numbers: gain over Original 1/1 and
+over Distilled 1/1. Every configuration: Figure~\ref{fig:budgetfull}.}
 \label{fig:budget}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../figs/fig_budget.pdf}
+\caption{\textbf{Untying raises the accuracy--time frontier at low latency.} Ouro-2.6B, mean accuracy and mean time per
+request over the same 100 requests of each of GSM8K, MATH-500, BBH and MMLU-Pro (batch 1, one B300, mean of two passes);
+filled: one decode loop, hollow: two; labels: prefill loops $m$ or $n/n$. At one decode loop (shaded) both adapters
+sit well above the original and distilled models; with two decode loops the methods reach similar accuracy in similar
+time.}
+\label{fig:budgetfull}
 \end{figure}
 
 \begin{figure}[t]
@@ -392,7 +351,7 @@ prefill 4 / decode 1 & all $(m,n)$ & average & RULER-16K \\
 \csname @@input\endcsname ../figs/tab_tokens.tex
 \bottomrule
 \end{tabular}
-\par\smallskip(b) Answer tokens of training data.
+\par\smallskip(b) Training tokens (one-cache LoopBridge).
 
 \bigskip
 \begin{tabular}{@{}lccc@{}}
@@ -422,7 +381,8 @@ Lev-3B: $m=2$), decided with $n<m$ loops; one fixed $m$, no selection. All pairs
 \end{figure*}
 
 
-Equal decode loops do not mean equal time, so we measure it on the same requests (Figure~\ref{fig:budget}). With the
+Equal decode loops do not mean equal time, so we measure it on the same requests (Figures~\ref{fig:budget}
+and~\ref{fig:budgetfull}). With the
 maps folded into the prompt cache, LoopBridge decodes within 10\% of the original model's time per token. At one decode
 loop and about 11 seconds per request, the fixed-depth adapter scores 42.0 and LoopBridge 41.2 on the four
 chain-of-thought tasks, against 27.0 for Original 1/1 and 34.2 for Distilled 1/1; paired over the 400 requests,
@@ -557,15 +517,6 @@ estimate, not a serving measurement.}
 \label{fig:budget32}
 \end{figure}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=\columnwidth]{../figs/fig_budget.pdf}
-\caption{\textbf{Every configuration against measured time} (Figure~\ref{fig:budget} in full). Ouro-2.6B, mean accuracy
-and mean time per request over the same 100 requests of each of GSM8K, MATH-500, BBH and MMLU-Pro (batch 1, one B300,
-mean of two passes); Ours with the maps folded into the prompt cache. Filled: one decode loop; hollow: two. Labels:
-prefill loops $m$ or $n/n$.}
-\label{fig:budgetfull}
-\end{figure}
 
 \section{Where the Gain Stops}
 \label{app:plateau}
@@ -751,6 +702,60 @@ many loops and the decision can then stop early.
 
 \section{Method Details}
 \label{app:method}
+
+\begin{figure*}[t]
+\centering
+\begin{minipage}[t]{0.555\textwidth}
+\begin{lstlisting}
+# blocks: frozen looped block, L layers; m/n: prefill/decode loops
+# c[k][l] = 1+a+1j*b per RoPE pair; W[k][l] = I+delta (init: I)
+# LoRA on q, k, v, o is active only while decoding.
+
+def prefill(prompt, m):                   # prompt minus its last token
+    h = embed(prompt)
+    for j in range(m):
+        for l in range(L):
+            h, K[j][l], V[j][l] = blocks[l](h)  # every loop's K, V
+    return K, V
+
+def attend(q, K, V, kv_answer, c, W):     # layer l, decode loop k
+    qc = complex_mul(q, c.conj())         # key scale moved to the query
+    o_p, lse_p = flash_attn(qc, K, V)     # prompt part
+    o_p = o_p @ W.T                       # attention is linear in V
+    o_a, lse_a = flash_attn(q, *kv_answer, causal=True)
+    g = torch.sigmoid(lse_p - lse_a)      # exact softmax over both
+    return g * o_p + (1 - g) * o_a
+
+def decode(token, K, V, m, n): # last prompt token, then answer
+    h = embed(token)
+    for k in range(n):
+        j = max(m - n + k, 0)     # aligned; one cache: j = m - 1
+        for l in range(L):
+            h = blocks[l](h, attn=lambda q, kv: attend(
+                    q, K[j][l], V[j][l], kv, c[k][l], W[k][l]))
+    return lm_head(h)
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.425\textwidth}
+\begin{lstlisting}
+# training: one (m, n) per micro-batch,
+# teacher = the Original 4/4 model
+m, n = torch.randint(1, 5, (2,)).tolist()
+with torch.no_grad():
+    t = original(x, loops=4)              # frozen, no adapter
+s = model(x, prefill=m, decode=n)         # LoRA + maps
+kl = kl_div(s.log_softmax(-1),
+            t.log_softmax(-1), log_target=True,
+            reduction="none").sum(-1)
+loss = kl[answer].sum() / (answer.sum() - len(x))
+\end{lstlisting}
+\end{minipage}
+\caption{\textbf{LoopBridge in PyTorch-style pseudocode.} The fixed-depth adapter is the same code with $c=1$, $W=I$ and $m$ fixed. Decode loop $k$ reads prefill loop $m-n+k$ (loops
+counted from zero here; the one-cache variant keeps only the last prefill loop) through its own key scale (applied to
+the query) and value map
+(applied to the attention output), and the prompt and answer attention are combined exactly through their log-sum-exp.}
+\label{alg:adapter}
+\end{figure*}
 
 
 
@@ -1012,17 +1017,18 @@ a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \begin{table*}[t]
 \centering\footnotesize
 \setlength\tabcolsep{3pt}
-\begin{tabular}{@{}lcccccccc@{}}
+\begin{tabular}{@{}lrcccccccc@{}}
 \toprule
- & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{adapter 4/2 minus} \\
-\cmidrule(lr){2-5}\cmidrule(l){6-8}
-benchmark & \shortstack{Original\\2/2} & \shortstack{adapter\\2/2} & \shortstack{adapter\\4/2} & \shortstack{Original\\4/4} & \shortstack{Original\\2/2} & \shortstack{adapter\\2/2} & \shortstack{Original\\4/4} \\
+ & & \multicolumn{4}{c}{score} & \multicolumn{3}{c}{adapter 4/2 minus} \\
+\cmidrule(lr){3-6}\cmidrule(l){7-9}
+benchmark & $N$ & \shortstack{Original\\2/2} & \shortstack{adapter\\2/2} & \shortstack{adapter\\4/2} & \shortstack{Original\\4/4} & \shortstack{Original\\2/2} & \shortstack{adapter\\2/2} & \shortstack{Original\\4/4} \\
 \midrule
 \csname @@input\endcsname ../figs/tab_equal_26B-T.tex
 \bottomrule
 \end{tabular}
 \caption{\textbf{Figure~\ref{fig:equal} in numbers.} Ouro-2.6B-Thinking; one LoopBridge (one cache) serves prefill 2 /
-decode 2 and prefill 4 / decode 2. Differences are score points on a 0--100 scale;
+decode 2 and prefill 4 / decode 2; $N$: items all four configurations share. Differences are score points on a
+0--100 scale;
 brackets are paired 95\% bootstrap intervals.}
 \label{tab:t14}
 \end{table*}
@@ -1030,16 +1036,17 @@ brackets are paired 95\% bootstrap intervals.}
 \begin{table*}[t]
 \centering\small
 \setlength\tabcolsep{4pt}
-\begin{tabular}{@{}lccccc@{}}
+\begin{tabular}{@{}lrccccc@{}}
 \toprule
- & \multicolumn{3}{c}{score} & distilled 2/2 & prefill 4 / decode 2 \\
-benchmark & Original 2/2 & distilled 2/2 & prefill 4 / decode 2 & minus Original 2/2 & minus distilled 2/2 \\
+ & & \multicolumn{3}{c}{score} & distilled 2/2 & prefill 4 / decode 2 \\
+benchmark & $N$ & Original 2/2 & distilled 2/2 & prefill 4 / decode 2 & minus Original 2/2 & minus distilled 2/2 \\
 \midrule
 \csname @@input\endcsname ../figs/tab_distill.tex
 \bottomrule
 \end{tabular}
 \caption{\textbf{Untying versus distillation} (Ouro-2.6B-Thinking). ``Distilled 2/2'': rank-16 LoRA on the original
-two-loop model, trained with the same data, teacher (Original 4/4) and number of tokens as the loop adapter. Differences
+two-loop model, trained with the same data, teacher (Original 4/4) and number of tokens as the loop adapter; $N$: items
+the three share. Differences
 are score points on a 0--100 scale; brackets are paired 95\% bootstrap intervals.}
 \label{tab:distill}
 \end{table*}
