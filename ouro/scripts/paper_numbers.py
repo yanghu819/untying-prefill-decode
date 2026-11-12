@@ -406,7 +406,7 @@ def keys():
     ks |= {dist_seed_key(b, c, sd) for b in MAIN_BENCH for c, sds in DIST_SEEDS.items() for sd in sds}
     ks |= {sweep14_key(b, m, n) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)}
     ks |= {sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)
-           for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8")}
+           for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8", "X26w8s2", "X26pf8s2")}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
@@ -1382,6 +1382,7 @@ def plateau_seeds():
 
 
 PREFILL_ARMS = (("frozen prefill", "X26w8"), ("trained prefill", "X26pf8"))   # launch_variant.sh w8 / prefill (m <= 8)
+PREFILL_SEEDS = (2,)   # SEED=2 runs: X26w8s2-*, X26pf8s2-*
 
 
 def prefill_trainable():
@@ -1420,7 +1421,27 @@ def prefill_trainable():
     want = {(1, "frozen prefill"): 63.7, (1, "trained prefill"): 66.0, (2, "frozen prefill"): 75.2, (2, "trained prefill"): 81.0}
     if peaks and any(abs(peaks.get(k, -1) - v) > 0.05 for k, v in want.items()):   # same paragraph: RULER-16K peaks
         print(f"Prefill trn RULER-16K peaks {peaks}  !! paper: {want}")
-    return dict(curves=out, stops={f"{k[0]}/{k[1]}": {a: stops[a].get(k) for a in stops} for k in both})
+    # second training seed of both arms (launch_variant.sh with SEED=2): stops per seed, and settings where the trained
+    # prefill stops later in every seed
+    seeds = {1: stops}
+    for s in PREFILL_SEEDS:
+        seeds[s] = {}
+        for arm, pre in PREFILL_ARMS:
+            with contextlib.redirect_stdout(io.StringIO()):
+                seeds[s][arm] = {(r["n"], r["bench"]): r["m_star"] for r in plateau("wide", prefix=f"{pre}s{s}")}
+    if all(seeds[s][a] for s in PREFILL_SEEDS for a in seeds[s]):
+        common = sorted(set.intersection(*(set(seeds[s][a]) for s in seeds for a in seeds[s])))
+        for s in seeds:
+            st = seeds[s]
+            print(f"Prefill trn  seed {s}: {len(common)} settings with a stop everywhere, trained later "
+                  f"{sum(st['trained prefill'][k] > st['frozen prefill'][k] for k in common)}, same "
+                  f"{sum(st['trained prefill'][k] == st['frozen prefill'][k] for k in common)}")
+        print(f"Prefill trn  later with trained prefill in every seed: "
+              f"{sum(all(seeds[s]['trained prefill'][k] > seeds[s]['frozen prefill'][k] for s in seeds) for k in common)}"
+              f" of {len(common)}")
+    return dict(curves=out, stops={f"{k[0]}/{k[1]}": {a: stops[a].get(k) for a in stops} for k in both},
+                seed_stops={str(s): {f"{k[0]}/{k[1]}": {a: seeds[s][a].get(k) for a in seeds[s]}
+                                     for k in sorted(set().union(*map(set, seeds[s].values())))} for s in seeds})
 
 
 # Appendix C: settings without a stopping depth (accuracy still rising or too few deeper depths), (n, benchmark)
