@@ -408,6 +408,7 @@ def keys():
     ks |= {sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)
            for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8", "X26w8s2", "X26pf8s2", "X26w8s3", "X26pf8s3")}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
+    ks |= {main_key(b, "loraonly", c).replace("X26lo-", "X26lor80-", 1) for b in MAIN_BENCH for c in ("a41", "a42")}   # rank-80 control
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {dist_seed_key(b, c, f"r80{sd}") for b in MAIN_BENCH for c, sds in R80_SEEDS.items() for sd in sds}
@@ -1403,6 +1404,31 @@ def main_gains():
     return out
 
 
+def lora80():
+    """Review 11-13: is LoopBridge's gain over an all-(m,n) LoRA with frozen maps only extra capacity? Rank-80 LoRA trained
+    on all (m,n) with the maps frozen (launch_variant.sh lora with RANK=80, X26lor80; 62.9M trainable parameters, as many
+    as LoopBridge) against the rank-16 maps-frozen LoRA and LoopBridge, at 4/1 and 4/2, each benchmark on the items the
+    three share; average over the 11 benchmarks and RULER-16K. Empty until the runs land."""
+    arms = (("LoRA r16, maps frozen", lambda b, c: main_key(b, "loraonly", c)),
+            ("LoRA r80, maps frozen", lambda b, c: main_key(b, "loraonly", c).replace("X26lo-", "X26lor80-", 1)),
+            ("LoopBridge", lambda b, c: main_key(b, "aligned", c)))
+    out = {}
+    for c in ("a41", "a42"):
+        per = {}
+        for b in MAIN_BENCH:
+            sets = {a: load(f(b, c)) for a, f in arms}
+            if not all(sets.values()):
+                break
+            ids = set.intersection(*(set(v) for v in sets.values()))
+            per[b] = {a: round(100 * float(np.mean([v[i] for i in ids])), 2) for a, v in sets.items()}
+        else:
+            out[c] = dict(per_bench=per, avg={a: round(float(np.mean([per[b][a] for b in MAIN_BENCH])), 2) for a, _ in arms},
+                          ruler={a: per["RULER-16K"][a] for a, _ in arms})
+            print(f"LoRA r80     {c}: avg " + "  ".join(f"{a} {v:.1f}" for a, v in out[c]["avg"].items())
+                  + "  | RULER-16K " + "  ".join(f"{v:.1f}" for v in out[c]["ruler"].values()))
+    return out
+
+
 def depth_gains_main():
     """Section 4 / Figure 2: gain from m = 1 to the best m <= 8 at one decode loop, adapter trained on m in {1..16}."""
     import contextlib, io
@@ -2034,7 +2060,7 @@ def _compute(counter):
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
     _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), lora80=lora80(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 

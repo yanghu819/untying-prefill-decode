@@ -16,7 +16,8 @@
 #   lr:     X26-a-lr<LRS>, the main adapter with the learning-rate schedule x LRS (env LRS), so Ours gets the same LR
 #           check as the Distilled baseline; main-table benchmarks at 4/1 and 4/2 (X26alr<LRS>-a4<n>-<task>).
 #   lora:   X26-a-lora, all 16 cells as the main adapter but identity maps (--freeze-maps): isolates the maps in the
-#           aligned layout (red-team round 2); main-table benchmarks at 4/1 and 4/2 (X26lo-a4<n>-<task>).
+#           aligned layout (red-team round 2); main-table benchmarks at 4/1 and 4/2 (X26lo-a4<n>-<task>). With RANK=80
+#           (X26-a-lora-r80, X26lor80-...) it has as many trainable parameters as LoopBridge (review 11-13).
 W=$1; GPUS=$2; PORT=$3; M=/dev/shm/big-small-ouro; R=$M/runs; cd $R
 case $W in
   wide) N=X26-a-wide; P=X26w; FLAGS=""
@@ -33,6 +34,8 @@ case $W in
   *) echo "WHICH must be wide, fixed4, lora, lr, prefill or w8"; exit 2 ;;
 esac
 [ -n "$SEED" ] && { N=$N-s$SEED; P=${P}s$SEED; FLAGS="$FLAGS --seed $SEED"; }   # env SEED: another training seed (X26-a-lora-s2, X26los2-...)
+EPRE=""; [ -n "$RANK" ] && { N=$N-r$RANK; P=${P}r$RANK; export OURO_LORA_RANK=$RANK; EPRE="OURO_LORA_RANK=$RANK "; }   # env RANK:
+# LoRA rank (lora variant at RANK=80: an all-(m,n) LoRA with as many parameters as LoopBridge, X26-a-lora-r80, X26lor80-...)
 [ -f $R/$N/TRAIN_DONE ] || [ -f $R/$N/checkpoint-48m.pt ] || \
   DATA=$M/mix-data-48m ./run_mix2.sh $N a $GPUS $PORT 48000000 --micro 1 $FLAGS || exit 1
 unset OURO_CELLS
@@ -41,12 +44,12 @@ if [ $W = wide ] || [ $W = prefill ] || [ $W = w8 ]; then exec env CK=$CK P=$P M
 Q=$R/sweep_q.txt
 for c in a41 a42; do
   MA="path=$M/model-2.6b,condition=$c,checkpoint=$CK,max_length=16384"
-  lm() { ls lmeval/out/$P-$c-$1/*/samples_* > /dev/null 2>&1 || echo "./lm1.sh \$GPU $P-$c-$1 - \"$MA\" \"$2\""; }
+  lm() { ls lmeval/out/$P-$c-$1/*/samples_* > /dev/null 2>&1 || echo "$EPRE./lm1.sh \$GPU $P-$c-$1 - \"$MA\" \"$2\""; }
   lm gsmfull "--tasks gsm8k_cot --num_fewshot 3"; lm mmlufull "--tasks mmlu --num_fewshot 5"
   lm math "--tasks minerva_math500 --num_fewshot 4"; lm bbh "--tasks bbh_cot_fewshot --limit 60"
   lm arc "--tasks arc_challenge --num_fewshot 25"; lm mmlupro "--tasks mmlu_pro --limit 30"
   lm hellaswag "--tasks hellaswag --num_fewshot 10"; lm winogrande "--tasks winogrande --num_fewshot 5"
   lm evalplus "--tasks humanevalplus_chat_local,mbppplus_chat_local"
-  ls bench/$P-${c}f/s*/ruler16k.jsonl > /dev/null 2>&1 || echo "cd /root/big-small && MODEL=$M/model-2.6b DATA=$M/bench BENCHES='ruler16k' ./ouro/runs_scripts/bench3.sh $P-${c}f $c $CK \$GPU 1"
+  ls bench/$P-${c}f/s*/ruler16k.jsonl > /dev/null 2>&1 || echo "cd /root/big-small && MODEL=$M/model-2.6b DATA=$M/bench BENCHES='ruler16k' $EPRE./ouro/runs_scripts/bench3.sh $P-${c}f $c $CK \$GPU 1"
 done | flock $Q.lock sh -c "cat >> $Q"
 for g in ${GPUS//,/ }; do setsid nohup ./grid_worker.sh $g $Q 2 > /dev/null 2>&1 < /dev/null & done

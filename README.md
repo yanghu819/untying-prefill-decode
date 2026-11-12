@@ -22,7 +22,7 @@ against the printed value: `python ouro/scripts/paper_numbers.py compute`. See [
    one loop on the same data (49.8; 50.2 at rank 80); with two decode loops, 63.0 -> 67.3 / 67.2.
 3. **Same measured time, more accuracy.** At one decode loop and about 11 s per request, +15.0 and +14.2 points over
    the original model and +7.8 and +7.0 over the distilled one (paired over 400 requests).
-4. **A few prefill loops suffice.** The gain levels off at two to four prefill loops (also for an adapter trained up to
+4. **A few prefill loops suffice.** The gain peaks after two to five prefill loops (also for an adapter trained up to
    16 loops, over seeds, and when the prefill loops are trained too).
 5. **It transfers** to Ouro-1.4B, Ouro-2.6B-Thinking (prefill 4 / decode 2 within 1.4 points of the original 4/4 at
    3.2x its decode throughput) and looped decision models (Lev, +4.4 to +7.5 at one decision loop).

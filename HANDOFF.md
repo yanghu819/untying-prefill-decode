@@ -45,6 +45,14 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   MAX compute processes (use MAX=2 next to a training job). The a2 box is the timing box: time only when it is idle. Never overwrite a launcher script (`runs/*.sh`) while an instance
   of it is still running: bash reads scripts as it goes, and the running copy then fails after training (11-10:
   fixed4-s3 and lora-s3 lost their eval step; re-run the launcher, which skips the finished training).
+- **Review 11-13 (Codex astra-ultra, ARR-style, Overall 3/5)**: fixed in the text (depth stop "two to five", Figure 5
+  title, Thinking claim scoped to Figure 13's items, Figure 8 names the one-cache variant, Section 5.5 states that the
+  advantage over distillation is largest at one decode loop, Table 2 panels in reading order). **In flight on a1**:
+  the parameter-matched control it asked for, an all-(m,n) LoRA at rank 80 with frozen maps (`RANK=80
+  launch_variant.sh lora`, X26-a-lora-r80, evals X26lor80-a4{1,2}-*); /root/pn/lora80.sh trains it once the running
+  evaluations finish, evaluates it, then puts the held w8 seed-3 sweep (/root/pn/hold_w8s3.txt, 117 lines) back on
+  the queue. `paper_numbers.lora80()` compares it with the rank-16 maps-frozen LoRA and LoopBridge on shared items;
+  when it lands, add a row to Table 2a (tab_build) and one sentence to Section 5.6.
 - **v2 trainable-prefill check**: seeds 1 and 2 done, in Appendix "Where the Gain Stops" (paragraph "Training the
   prefill as well", Table `tab:prefilltrn` = seed 1): X26-a-pf8(-s2) (prefill LoRA) vs X26-a-w8(-s2) (frozen), m <= 8,
   prompts cut to 2,048 tokens. The stop does not move: of 15 settings with a stop in all four runs, the trained prefill

@@ -184,7 +184,7 @@ def fig2():
     ax.set_xlim(80, 460)
     ax.set_xlabel("decode throughput (tokens/s, 8K prompt)", fontsize=8)
     ax.set_ylabel("average accuracy (%)", fontsize=8)
-    legend(fig, "Ours", "", y=1.02, ncol=2)
+    legend(fig, "Ours (LoopBridge, one cache)", "", y=1.02, ncol=2)
     fig.subplots_adjust(left=0.15, right=0.97, bottom=0.18, top=0.8)
     save(fig, "fig2_frontier")
 
@@ -666,7 +666,7 @@ def fig_depth_main(mmax=8, n=1):
     fig, axes = plt.subplots(1, len(benches), figsize=(6.9, 1.55), squeeze=False)
     for j, b in enumerate(benches):
         ax = axes[0, j]
-        ax.axvspan(2, 4, color="#F3F3F3", zorder=0, lw=0)
+        ax.axvspan(2, 5, color="#F3F3F3", zorder=0, lw=0)   # where the gain peaks (two to five loops, Section 5.4)
         r = next(r for r in rows if r["bench"] == b)
         q = {int(m): v for m, v in r["quality"].items() if int(m) <= mmax}
         ms = sorted(q)

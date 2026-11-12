@@ -55,7 +55,7 @@ model's parameters. When the prefill depth is fixed, LoRA on the decoder is enou
 value maps so that one adapter serves every prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill
 loops raise the average over 11 benchmarks from 44.2 for the original model to 57.1 (56.8 with LoopBridge). This is
 above the original model distilled to one loop on the same data (49.8), and in the same measured time per request it
-is 14--15 points above the original model. The gain levels off at two to four prefill loops and holds on Ouro-1.4B, on
+is 14--15 points above the original model. The gain peaks after two to five prefill loops and holds on Ouro-1.4B, on
 the Thinking models and on looped decision models.
 \end{abstract}
 
@@ -104,7 +104,7 @@ from 44.2 to 57.1 (56.8 with LoopBridge), above the original model distilled to 
 with as many parameters as the adapter); with two decode loops, from 63.0 to 67.3 and 67.2 (Table~\ref{tab:main}).
 \item \textbf{Same time, more accuracy.} At one decode loop and about 11 seconds per request, untying is 14--15 points
 more accurate than the original model (Figure~\ref{fig:budget}).
-\item \textbf{A few prefill loops suffice.} The gain levels off at two to four prefill loops (Figure~\ref{fig:depth}).
+\item \textbf{A few prefill loops suffice.} The gain peaks after two to five prefill loops (Figure~\ref{fig:depth}).
 \item \textbf{It transfers.} The pattern holds on Ouro-1.4B, on Ouro-2.6B-Thinking, where four prefill loops and two
 decode loops come within 1.4 points of the original four-loop model at 3.2 times its decode throughput, and on looped
 decision models (Section~\ref{sec:others}).
@@ -176,8 +176,8 @@ one on $m\in\{1,2,3,4,6,8,12,16\}$ and $n\le4$ for the depth sweep (Appendix~\re
 \caption{\textbf{LoopBridge.} The frozen model prefills the prompt with $m$ loops. Each of the $n$ decode loops
 reads the prompt KV of a prefill loop through its own maps: a scale on each rotary pair of the keys (moved onto the
 query, so the cache is never rewritten in this per-step form) and a value map applied after attention; prompt and
-answer attention share one softmax. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$. Pseudocode:
-Figure~\ref{alg:adapter}.}
+answer attention share one softmax. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$. In the timed form both maps are folded into the prompt cache once
+at prefill. Pseudocode: Figure~\ref{alg:adapter}.}
 \label{fig:method}
 \end{figure*}
 
@@ -309,7 +309,7 @@ methods (Table~\ref{tab:ablate}c), and without the benchmark items that overlap 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
-\caption{\textbf{Four prefill loops let a short decoder keep the accuracy of a long one.} Ouro-2.6B, accuracy (\%)
+\caption{\textbf{Four prefill loops recover much of the accuracy lost by decoding with fewer loops.} Ouro-2.6B, accuracy (\%)
 against the number of decode loops $n$. Grey: the original model ($n/n$). Orange: LoopBridge with four prefill loops
 ($4/n$). Each panel uses the items all points share; every $(m,n)$ cell: Table~\ref{tab:alignedcells}.}
 \label{fig:grid}
@@ -329,7 +329,7 @@ original model, also on long-context retrieval (RULER-16K at 4/3: 79.8 against 7
 \includegraphics[width=\textwidth]{../figs/fig_depth_main.pdf}
 \caption{\textbf{A few more prefill loops buy a lot of accuracy.} One decode loop, Ouro-2.6B with a LoopBridge trained
 on prefill depths 1 to 16 (one set of weights for every $m$, no depth extrapolated). Orange: gain from one prefill loop
-to the best depth; the gain levels off at two to four loops (shaded). Two decode loops, the main adapter and time per
+to the best depth, which lies at two to five loops (shaded). Two decode loops, the main adapter and time per
 request: Figure~\ref{fig:depthfull}; stopping depths for every benchmark: Table~\ref{tab:plateau}.}
 \label{fig:depth}
 \end{figure*}
@@ -341,7 +341,7 @@ from 47.2 to 56.8 at one decode loop and from 57.9 to 67.2 at two (gains of $9.0
 training seeds): the gain comes from the prefill loops, not only from training. Ouro-2.6B-Thinking behaves the same
 way (GSM8K 90.7 to 94.1 and MMLU-Pro 36.4 to 51.0 from $m=1$ to $m=4$ at two decode loops).
 
-The gain levels off after two to four loops. To place its end, we pick, on one half of each benchmark, the first depth
+The gain peaks after a few loops. To place its end, we pick, on one half of each benchmark, the first depth
 that none of the next three tested depths beats by more than 0.5 points, and report accuracy on the other half
 (Appendix~\ref{app:plateau}). For the adapter trained up to 16, this stop is at two to five prefill loops in 14 of the
 18 benchmark and decode-depth settings (two or three in 11). It stays there over three training seeds and when the
@@ -365,7 +365,8 @@ Figure~\ref{fig:budgetfull}.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Two decode loops come within 1.4 points of four at $3.2\times$ the throughput.} Ouro-2.6B-Thinking:
+\caption{\textbf{Two decode loops come within 1.4 points of four at $3.2\times$ the throughput.} Ouro-2.6B-Thinking with
+LoopBridge (one cache):
 average accuracy over eight benchmarks (each on the items all configurations share) against decode throughput (best
 tokens/s over batch sizes at an 8K-token prompt, Table~\ref{tab:serve}). Labels: prefill/decode loops; the four
 prefill loops add 3.1 points over 2/2 at the same decode cost.}
@@ -385,6 +386,14 @@ prefill 4 / decode 1 & all $(m,n)$ & average & RULER-16K \\
 \par\smallskip(a) What LoopBridge adds.
 \end{minipage}\hfill
 \begin{minipage}[t]{0.37\textwidth}\centering
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\csname @@input\endcsname ../figs/tab_tokens.tex
+\bottomrule
+\end{tabular}
+\par\smallskip(b) Answer tokens of training data.
+
+\bigskip
 \begin{tabular}{@{}lccc@{}}
 \toprule
 learning rate & $\times0.3$ & $\times1$ & $\times3$ \\
@@ -393,14 +402,6 @@ learning rate & $\times0.3$ & $\times1$ & $\times3$ \\
 \bottomrule
 \end{tabular}
 \par\smallskip(c) Learning-rate schedule scaled.
-
-\bigskip
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-\csname @@input\endcsname ../figs/tab_tokens.tex
-\bottomrule
-\end{tabular}
-\par\smallskip(b) Answer tokens of training data.
 \end{minipage}
 \caption{\textbf{Ablations}, Ouro-2.6B, 11-benchmark average (\%) unless noted; default shaded. (a) ``all $(m,n)$'': one
 set of weights serves every prefill and decode depth; the key/value maps restore the long-context retrieval that an
@@ -425,7 +426,9 @@ maps folded into the prompt cache, LoopBridge decodes within 10\% of the origina
 loop and about 11 seconds per request, the fixed-depth adapter scores 42.0 and LoopBridge 41.2 on the four
 chain-of-thought tasks, against 27.0 for Original 1/1 and 34.2 for Distilled 1/1; paired over the 400 requests,
 LoopBridge is $+14.2$\ci{9.0}{19.8} points above Original 1/1 and $+7.0$\ci{1.8}{12.5} above Distilled 1/1, and the
-fixed-depth adapter is $+15.0$\ci{9.8}{20.5} and $+7.8$\ci{2.5}{13.2}.
+fixed-depth adapter is $+15.0$\ci{9.8}{20.5} and $+7.8$\ci{2.5}{13.2}. The advantage is largest when decoding must stay
+at one loop: with two decode loops, untying and distillation reach about the same accuracy in about the same time
+(Figure~\ref{fig:budgetfull}).
 
 Measured as decode throughput instead of time per request (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
 at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
@@ -468,7 +471,8 @@ benchmarks, against 34.5 for Original 1/1 and 40.0 for Original 1/1 distilled on
 (Table~\ref{tab:main14}).
 
 \paragraph{Thinking models.} On Ouro-2.6B-Thinking, prefill 4 / decode 2 scores higher than Original 2/2 on all eight
-benchmarks, by up to 13 points on HELMET and 7 on MMLU-Pro and BBH; it is above Original 2/2 distilled on the same data
+benchmarks of Figure~\ref{fig:equal} (each on the items both share), by up to 13 points on HELMET and 7 on MMLU-Pro
+and BBH; it is above Original 2/2 distilled on the same data
 on all eight and within two points of Original 4/4 on six of them (Figure~\ref{fig:equal}, Table~\ref{tab:t14}).
 Within one adapter, four prefill loops instead of one raise MMLU-Pro by 18.6 points on Ouro-2.6B-Thinking and by 17.1
 on Ouro-1.4B-Thinking (Table~\ref{tab:models}).

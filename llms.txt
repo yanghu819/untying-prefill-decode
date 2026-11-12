@@ -12,7 +12,7 @@ Main findings (Ouro-2.6B; 95% paired bootstrap intervals in the paper):
 - One decode loop: four prefill loops raise the 11-benchmark average from 44.2 (original) to 57.1 (fixed m=4) and
   56.8 (LoopBridge), above the original model distilled to one loop on the same data (49.8; rank 80: 50.2).
 - Same measured time (about 11 s per request): +15.0 / +14.2 points over Original 1/1, +7.8 / +7.0 over Distilled 1/1.
-- The gain levels off at two to four prefill loops (also for an adapter trained to 16 loops, over seeds, and with the
+- The gain peaks after two to five prefill loops (also for an adapter trained to 16 loops, over seeds, and with the
   prefill loops trained too).
 - Transfers to Ouro-1.4B, Ouro-2.6B-Thinking (4/2 within 1.4 points of 4/4 at 3.2x decode throughput) and Lev.
 - Baselines: the distilled controls move by at most 0.6 points over 0.3x-3x learning rates and at rank 80.
