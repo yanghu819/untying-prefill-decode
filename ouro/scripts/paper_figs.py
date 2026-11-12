@@ -248,8 +248,8 @@ def fig_pareto():
 
 
 def fig_lev():
-    """Decision models (Lev): accuracy against the number of decision loops n. Grey: native n/n continued with the same
-    data and updates as ours; red: the best prefill count m at each n (labels), one continued training per m."""
+    """Decision models (Lev): accuracy against the number of decision loops n. Grey: Original n/n continued with the same
+    data and updates as ours; orange: the context prefilled with all of the backbone's loops (fixed m, no selection)."""
     L = PN.get("lev", [])
     def series(label, which):
         return {r["depth"]: r[which] for r in L if r["label"] == label}
@@ -262,15 +262,13 @@ def fig_lev():
         by_m = {k: v for k, v in by_m.items() if v}
         nat = series(f"{m} untied vs same-training control", "b")
         ns = sorted(nat)
-        ours = []
-        for n in ns:
-            best = max((v[n], k) for k, v in by_m.items() if n in v)
-            ours.append((n, best[0], f"m={best[1]}"))
+        ours = [(n, by_m[top][n], "") for n in ns if n in by_m[top] and n < top]   # fixed m = all loops; untied (m > n) only
         frontier(ax, [(n, nat[n], "") for n in ns], ours, m)
         ax.set_xticks(ns); ax.set_xlim(ns[0] - 0.4, ns[-1] + 0.4)
     axes[0][0].set_ylabel("accuracy (%)", fontsize=8.5)
     fig.supxlabel("decision loops n", fontsize=8.5, y=0.0)
-    legend(fig, "trained with prefill m (best m)", "", y=1.08, native="Original n/n, continued (control)", ncol=2)
+    legend(fig, "Ours: context prefilled with all loops (m = 4; Lev-3B: 2)", "", y=1.08,
+           native="Original n/n, continued (control)", ncol=2)
     fig.subplots_adjust(wspace=0.28, bottom=0.2, top=0.8)
     save(fig, "fig_lev")
 
@@ -438,14 +436,14 @@ def tab_main(key="main_table", name="tab_main"):
     groups = [(1, ["native 1/1", "training-free 4/1", "LoRA-distilled 1/1", "distilled r80 1/1", "fixed-4 LoRA 4/1", "aligned adapter 4/1"]),
               (2, ["native 2/2", "training-free 4/2", "LoRA-distilled 2/2", "distilled r80 2/2", "fixed-4 LoRA 4/2", "aligned adapter 4/2"]),
               (4, ["native 4/4"])]   # maps-frozen and one-cache rows: ablation table (tab_build)
-    show = {"native 1/1": "Original 1/1", "native 2/2": "Original 2/2", "native 4/4": "Original 4/4",
-            "training-free 4/1": "Training-free 4/1", "training-free 4/2": "Training-free 4/2",
-            "LoRA-distilled 1/1": "Distilled 1/1", "LoRA-distilled 2/2": "Distilled 2/2",
-            "distilled r80 1/1": "Distilled 1/1, rank 80", "distilled r80 2/2": "Distilled 2/2, rank 80",
-            "fixed-4 LoRA 4/1": r"Ours, fixed $m{=}4$, 4/1", "fixed-4 LoRA 4/2": r"Ours, fixed $m{=}4$, 4/2",
-            "aligned LoRA-only 4/1": "LoRA all pairs, maps frozen 4/1", "aligned LoRA-only 4/2": "LoRA all pairs, maps frozen 4/2",
-            "loop adapter 4/1": "LoopBridge, one cache 4/1", "loop adapter 4/2": "LoopBridge, one cache 4/2",
-            "aligned adapter 4/1": "Ours, any $m$ (LoopBridge), 4/1", "aligned adapter 4/2": "Ours, any $m$ (LoopBridge), 4/2"}
+    show = {"native 1/1": ("Original", "1/1"), "native 2/2": ("Original", "2/2"), "native 4/4": ("Original", "4/4"),
+            "training-free 4/1": ("Training-free", "4/1"), "training-free 4/2": ("Training-free", "4/2"),
+            "LoRA-distilled 1/1": ("Distilled", "1/1"), "LoRA-distilled 2/2": ("Distilled", "2/2"),
+            "distilled r80 1/1": ("Distilled, rank 80", "1/1"), "distilled r80 2/2": ("Distilled, rank 80", "2/2"),
+            "fixed-4 LoRA 4/1": (r"Ours, fixed $m$", "4/1"), "fixed-4 LoRA 4/2": (r"Ours, fixed $m$", "4/2"),
+            "aligned LoRA-only 4/1": ("LoRA all pairs, maps frozen", "4/1"), "aligned LoRA-only 4/2": ("LoRA all pairs, maps frozen", "4/2"),
+            "loop adapter 4/1": ("LoopBridge, one cache", "4/1"), "loop adapter 4/2": ("LoopBridge, one cache", "4/2"),
+            "aligned adapter 4/1": ("Ours, LoopBridge", "4/1"), "aligned adapter 4/2": ("Ours, LoopBridge", "4/2")}
     lines = []
     for n, labels in groups:
         labels = [l for l in labels if any(T[b].get(l) is not None for b in benches)]   # rows not run for this model
@@ -457,7 +455,7 @@ def tab_main(key="main_table", name="tab_main"):
             cells = [c[i] for c in cols]
             fmt = lambda x, b: "--" if x is None else (rf"\textbf{{{x:.1f}}}" if len(labels) > 1 and abs(x - b) < 1e-9 else f"{x:.1f}")
             shade = r"\rowcolor{oursbg} " if l.startswith(("aligned adapter", "fixed-4 LoRA")) else ""   # both adapters are Ours
-            lines.append(f"{shade}{n} & {show[l]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
+            lines.append(f"{shade}{show[l][0]} & {show[l][1]} & " + " & ".join(fmt(x, b) for x, b in zip(cells, best)) + r" \\")
         if n < 4:
             lines.append(r"\midrule")
     (OUT / f"{name}.tex").write_text("\n".join(lines) + "\n")

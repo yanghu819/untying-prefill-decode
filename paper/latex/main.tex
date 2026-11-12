@@ -273,20 +273,20 @@ prefill takes 0.2--0.3\% of the time; on MATH-500, 0.1\%. Only long prompts with
 \label{sec:main}
 
 \begin{table*}[t]
-\centering\small
-\setlength\tabcolsep{2.6pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}cl*{12}{c}@{}}
+\centering\footnotesize
+\setlength\tabcolsep{1.6pt}
+\begin{tabular}{@{}lc*{12}{c}@{}}
 \toprule
-$n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER-16K & Avg. \\
+method & $m/n$ & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER & Avg. \\
 \midrule
 \csname @@input\endcsname ../figs/tab_main.tex
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \caption{\textbf{Untying beats the original and distilled models at the same decode loops.} Ouro-2.6B, accuracy (\%)
 grouped by decode loops $n$; ours shaded, bold: best in each group. Original: the released model. Training-free: four
 prefill loops without an adapter. Distilled: LoRA on the $n$-loop model distilled from Original 4/4 with the adapters'
-data, teacher and tokens. Each column on the items all rows share. Over three training seeds (mean $\pm$ s.d.), the
+data, teacher and tokens. MATH: MATH-500 (4-shot); HE+: HumanEval+; RULER: RULER at 16K tokens. Each column on
+the items all rows share. Over three training seeds (mean $\pm$ s.d.), the
 fixed-depth adapter averages $56.8\pm0.3$ at 4/1 and $67.3\pm0.4$ at 4/2, LoopBridge $56.7\pm0.1$ and $67.1\pm0.2$,
 Distilled $49.7\pm0.3$ at 1/1 and $65.1\pm0.2$ at 2/2 (rank 80: 50.2 over two seeds and $65.3\pm0.1$).}
 \label{tab:main}
@@ -415,8 +415,8 @@ learning-rate schedule scaled for the distilled control and for LoopBridge.}
 \includegraphics[width=0.94\textwidth]{../figs/fig_lev.pdf}
 \caption{\textbf{Decision models gain when the context gets more loops than the decision.} Lev decision
 models~\citep{lev}, LevBench development set (3,270 questions), accuracy against decision loops $n$. Grey: Original
-$n/n$ continued with the same data and updates. Orange: the best of the models trained to prefill with $m$ loops
-(labels). All pairs: Table~\ref{tab:lev}.}
+$n/n$ continued with the same data and updates. Orange: the context prefilled with all of the backbone's loops ($m=4$;
+Lev-3B: $m=2$), decided with $n<m$ loops; one fixed $m$, no selection. All pairs: Table~\ref{tab:lev}.}
 \label{fig:lev}
 \end{figure*}
 
@@ -966,16 +966,15 @@ one decode loop within the same adapter on four Ouro checkpoints.
 
 
 \begin{table*}[t]
-\centering\small
-\setlength\tabcolsep{2.6pt}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{@{}cl*{12}{c}@{}}
+\centering\footnotesize
+\setlength\tabcolsep{1.6pt}
+\begin{tabular}{@{}lc*{12}{c}@{}}
 \toprule
-$n$ & method & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER-16K & Avg. \\
+method & $m/n$ & MMLU & MMLU-Pro & BBH & ARC-C & HellaSw. & Winogr. & GSM8K & MATH & HE+ & MBPP+ & RULER & Avg. \\
 \midrule
 \csname @@input\endcsname ../figs/tab_main14.tex
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \caption{\textbf{Table~\ref{tab:main} on Ouro-1.4B}, with its own adapters and controls (MMLU 20 questions per subject
 and 400 GSM8K problems, as in its task map); each column on the items all rows share.}
 \label{tab:main14}
