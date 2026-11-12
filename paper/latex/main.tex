@@ -173,11 +173,12 @@ one on $m\in\{1,2,3,4,6,8,12,16\}$ and $n\le4$ for the depth sweep (Appendix~\re
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.8\textwidth]{../figs/fig0_method.pdf}
-\caption{\textbf{LoopBridge.} The frozen model prefills the prompt with $m$ loops. Each of the $n$ decode loops
-reads the prompt KV of a prefill loop through its own maps: a scale on each rotary pair of the keys (moved onto the
-query, so the cache is never rewritten in this per-step form) and a value map applied after attention; prompt and
-answer attention share one softmax. Decode loop $k$ reads prefill loop $\max(m-n+k,1)$. In the timed form both maps are folded into the prompt cache once
-at prefill. Pseudocode: Figure~\ref{alg:adapter}.}
+\caption{\textbf{LoopBridge, as timed.} The frozen model prefills the prompt once with $m$ loops. Once per prompt,
+LoopBridge maps the keys and values of prefill loop $\max(m-n+k,1)$ into a cache for decode loop $k$: a scale $c_k$ on
+each rotary pair of the keys and a linear map $W_k$ of the values. Every answer token then runs $n$ loops of the frozen
+model with LoRA, and loop $k$ attends to cache $k$ and to the answer's own keys and values with the original attention.
+Applying the maps at every step instead (to the query and the attention output) gives the same result:
+Figure~\ref{alg:adapter}.}
 \label{fig:method}
 \end{figure*}
 

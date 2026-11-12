@@ -125,46 +125,50 @@ def fig_concept():
 
 
 def fig0():
-    """Method: prefill m loops once and keep one prompt KV cache; every decode loop attends to it through its own key
-    scale (on the query) and value map, and to the answer's own KV, merged by log-sum-exp."""
+    """Method (timed form): the frozen model prefills the prompt once with m loops; LoopBridge maps the prompt KV of
+    prefill loop max(m-n+k, 1) once per prompt into a cache for decode loop k (key scale per rotary pair, value map);
+    every token then runs n decode loops (frozen model + LoRA), loop k attending to its own cache and the answer KV."""
     from matplotlib.patches import FancyBboxPatch
-    fig, ax = plt.subplots(figsize=(6.9, 2.0))
-    ax.set_xlim(0, 100); ax.set_ylim(0, 30); ax.axis("off")
-    LIGHT = "#FDEBE3"   # light tint of OURS
+    fig, ax = plt.subplots(figsize=(6.9, 2.05))
+    ax.set_xlim(0, 100); ax.set_ylim(0, 31); ax.axis("off")
+    LIGHT = "#FDEBE3"   # light tint of OURS: the adapter's parts
+    GREY = "#F2F2F2"
 
-    def box(x, y, w, h, text, fc="white", ec=NAT_LIGHT, lw=0.7, size=8.5, color=INK, weight="normal", sub=None):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.25,rounding_size=0.9", fc=fc, ec=ec, lw=lw))
-        ty = y + h / 2 + (1.1 if sub else 0)
-        ax.text(x + w / 2, ty, text, ha="center", va="center", fontsize=size, color=color, fontweight=weight)
-        if sub:
-            ax.text(x + w / 2, y + h / 2 - 1.5, sub, ha="center", va="center", fontsize=7.5, color=NAT)
+    def box(x, y, w, h, text, fc=GREY, ec=NAT_LIGHT, lw=0.7, size=7.2, color=INK, weight="normal"):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.2,rounding_size=0.8", fc=fc, ec=ec, lw=lw))
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=size, color=color, fontweight=weight)
 
-    def arrow(x0, y0, x1, y1, c=NAT):
+    def arrow(x0, y0, x1, y1, c=NAT, lw=0.8):
         ax.annotate("", xy=(x1, y1), xytext=(x0, y0),
-                    arrowprops=dict(arrowstyle="-|>", lw=0.8, color=c, mutation_scale=8, shrinkA=1, shrinkB=1))
+                    arrowprops=dict(arrowstyle="-|>", lw=lw, color=c, mutation_scale=8, shrinkA=1, shrinkB=1))
 
-    ax.text(11, 27.8, "Prefill: m loops, once", ha="center", fontsize=9, color=INK, fontweight="bold")
-    ax.text(72, 27.8, "Decode loop k, repeated n times per token", ha="center", fontsize=9, color=INK, fontweight="bold")
-    box(2, 2.5, 18, 4.6, "loop 1", fc="#F2F2F2")
-    ax.text(11, 11.6, "$\\vdots$", ha="center", va="center", fontsize=11, color=NAT)
-    box(2, 16.0, 18, 4.6, "loop m", fc=LIGHT, ec=OURS)
-    arrow(11, 7.4, 11, 9.6); arrow(11, 13.4, 11, 15.6)
-    box(24, 15.4, 21, 6.4, "prompt KV cache", fc=LIGHT, ec=OURS, lw=1.0, color=OURS, weight="bold", size=8,
-        sub="prefill loop m-n+k")
-    box(24, 2.5, 21, 6.2, "answer KV", size=8, sub="of decode loop k")
-    arrow(20.4, 18.3, 23.6, 18.3, OURS)
-    box(53, 15.6, 15, 4.4, r"query $\times\,\bar c_k$", fc=LIGHT, ec=OURS)
-    box(72, 15.6, 15, 4.4, r"attention $\to W_k$", fc=LIGHT, ec=OURS, size=7.5)
-    box(53, 3.4, 34, 4.4, "answer attention (causal)")
-    box(90.5, 9.6, 8.5, 4.8, "joint\nsoftmax", size=8)
-    ax.text(49, 11.8, "query", ha="center", va="center", fontsize=8, color=INK)
-    arrow(49, 13.0, 52.6, 17.6, OURS); arrow(49, 10.6, 52.6, 5.6)
-    arrow(68.4, 17.8, 71.6, 17.8, OURS)
-    ax.plot([45.4, 79.5], [23.6, 23.6], color=OURS, lw=0.8, solid_capstyle="butt")
-    ax.plot([45.4, 45.4], [21.9, 23.6], color=OURS, lw=0.8)
-    arrow(79.5, 23.6, 79.5, 20.4, OURS)
-    arrow(45.4, 5.6, 52.6, 5.6)
-    arrow(87.4, 17.6, 92.4, 14.8, OURS); arrow(87.4, 5.6, 92.4, 9.4)
+    dots = lambda x, y: ax.text(x, y, "$\\vdots$", ha="center", va="center", fontsize=10, color=NAT)
+    for x, t in ((12, "Prefill: once, m loops"), (46, "LoopBridge: once per prompt"), (82, "Decode: n loops per token")):
+        ax.text(x, 29.2, t, ha="center", va="center", fontsize=7.6, color=INK, fontweight="bold")
+    # prefill column (frozen model)
+    box(2, 21, 20, 4, "prefill loop m")
+    dots(12, 17.6)
+    box(2, 11, 20, 4, "prefill loop m-n+1")
+    dots(12, 7.6)
+    box(2, 1.5, 20, 4, "prefill loop 1")
+    # maps column (adapter)
+    box(33, 20.6, 26, 4.8, "cache n:  $c_n \\odot K$,  $W_n V$", fc=LIGHT, ec=OURS, lw=1.0)
+    dots(46, 16.6)
+    box(33, 10.6, 26, 4.8, "cache 1:  $c_1 \\odot K$,  $W_1 V$", fc=LIGHT, ec=OURS, lw=1.0)
+    ax.text(46, 5.6, "key scale per rotary pair, value map;\nfolded into the prompt cache once", ha="center",
+            va="center", fontsize=6.8, color=OURS)
+    arrow(22.4, 23, 32.6, 23, OURS); arrow(22.4, 13, 32.6, 13, OURS)
+    ax.text(27.5, 24.4, "K, V", ha="center", fontsize=6.8, color=NAT); ax.text(27.5, 14.4, "K, V", ha="center", fontsize=6.8, color=NAT)
+    # decode column (frozen model + LoRA)
+    box(69, 21, 26, 4, "decode loop n (+ LoRA)", ec=OURS, lw=0.9)
+    dots(82, 17.6)
+    box(69, 11, 26, 4, "decode loop 1 (+ LoRA)", ec=OURS, lw=0.9)
+    box(76, 1.5, 12, 3.6, "token", fc="white")
+    arrow(82, 5.4, 82, 10.6); arrow(82, 15.4, 82, 16.4); arrow(82, 18.8, 82, 20.6)
+    arrow(59.4, 23, 68.6, 23, OURS); arrow(59.4, 13, 68.6, 13, OURS)
+    arrow(95.8, 23, 99.6, 23); ax.text(100.4, 23, "next\ntoken", ha="left", va="center", fontsize=6.6, color=INK)
+    ax.text(89.5, 7.6, "loop k attends to cache k\nand to the answer's KV", ha="left", va="center", fontsize=6.3, color=NAT)
+    ax.set_xlim(0, 109)
     save(fig, "fig0_method")
 
 
