@@ -391,12 +391,10 @@ fixed-depth adapter is $+15.0$\ci{9.8}{20.5} and $+7.8$\ci{2.5}{13.2}. The advan
 at one loop: with two decode loops, untying and distillation reach about the same accuracy in about the same time
 (Figure~\ref{fig:budgetfull}).
 
-Measured as decode throughput instead of time per request (Figure~\ref{fig:pareto}), prefill 4 / decode $n$ is more accurate than \nat{n}
-at one or two decode loops and has higher throughput at three or four, because the one stored prompt cache admits larger
-batches; prefill 4
-/ decode 2 runs at $1.19\times$ the throughput of \nat{2} and $3.2\times$ that of \nat{4}. The gain grows with the prompt: against \nat{4} it is $2.4\times$ at a 2K-token prompt and $3.3\times$ at
-15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$). Aligned caches decode at about the cost of \nat{n} (314 against 342 tokens/s at $n=2$, $2.5\times$
-\nat{4}).
+Measured as decode throughput instead (Figure~\ref{fig:pareto}), the one-cache LoopBridge with four prefill loops is
+more accurate than Original $n/n$ at one or two decode loops and faster at three or four, because a single stored
+prompt cache admits larger batches; at prefill 4 / decode 2 it runs at $1.19\times$ the throughput of Original 2/2 and
+$3.2\times$ that of Original 4/4 (Appendix~\ref{app:serve}).
 
 The reasoning model shows the same trade at scale. On Ouro-2.6B-Thinking, prefill 4 / decode 2 comes within 1.4 points
 of Original 4/4 at 3.2 times its decode throughput (Figure~\ref{fig:frontier}), and it answers 192 timed GSM8K problems
@@ -1080,7 +1078,9 @@ benchmark (8K context, 32 repeated decode steps, largest batch that fits on one 
 $0.97\times$ as fast as the fastest implementation of the original model we measured at one decode loop and $1.19$--$1.62\times$ at
 two to four, because it admits larger batches as $n$ grows; this baseline uses the same flash attention and is
 faster than the standard dynamic cache (Appendix~\ref{app:eval}). With long answers (1K-token prompts, 2,048
-generated tokens) one prompt KV cache decodes $0.97\times$ Original at $n{=}2$ and $1.16\times$ at $n{=}4$.
+generated tokens) one prompt KV cache decodes $0.97\times$ Original at $n{=}2$ and $1.16\times$ at $n{=}4$. The gain over \nat{4} grows with the prompt, from $2.4\times$ at a 2K-token
+prompt to $3.3\times$ at 15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$). Aligned caches decode at about the
+cost of \nat{n} (314 against 342 tokens/s at $n=2$, $2.5\times$ \nat{4}).
 
 
 \begin{table}[h]
