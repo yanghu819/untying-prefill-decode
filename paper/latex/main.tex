@@ -46,17 +46,17 @@
 \maketitle
 
 \begin{abstract}
-Looped language models run a block of layers several times for every token, and they use the same number of loops to
-read the prompt (prefill) and to generate each answer token (decode). Generation, however, is almost all decoding. On
-Ouro-2.6B at batch 1, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost
-almost nothing. We therefore untie the two loop counts and read the prompt with more loops than we use to decode each answer
-token. The released model cannot use the states of a longer prefill, so we distill a small adapter with 2.4\% of the
-model's parameters. When the prefill depth is fixed, LoRA on the decoder is enough; LoopBridge adds per-loop key and
-value maps so that one adapter serves every prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill
-loops raise the average over 11 benchmarks from 44.2 for the original model to 57.1 (56.8 with LoopBridge). This is
-above the original model distilled to one loop on the same data (49.8), and in the same measured time per request it
-is 14--15 points above the original model. The gain peaks after two to five prefill loops and holds on Ouro-1.4B, on
-the Thinking models and on looped decision models.
+Looped language models run a block of layers several times per token and use the same number of loops to read the
+prompt (prefill) and to generate each answer token (decode). Generation, however, is almost all decoding. On Ouro-2.6B
+at batch 1, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost
+little. We untie the two loop counts and read the prompt with more loops than we use to decode each token.
+The released model cannot use the states of a longer prefill, so we distill a small adapter with 2.4\% of the model's
+parameters: LoRA on the decoder for a fixed prefill depth, or LoopBridge, whose per-loop key and value maps let one
+adapter serve every prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill loops raise the average
+over 11 benchmarks from 44.2 to 57.1 (56.8 with LoopBridge), above the original model distilled to one loop on the
+same data (49.8), and in the same measured time per request they are 14--15 points more accurate than the original
+model. The gain peaks after two to five prefill loops and holds on Ouro-1.4B, the Thinking models and looped decision
+models.
 \end{abstract}
 
 \section{Introduction}
