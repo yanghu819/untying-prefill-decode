@@ -753,7 +753,7 @@ def fig_budget(batch=None, name="fig_budget"):
             if ours:
                 ax.plot([p[0] for p in ours], [p[1] for p in ours], "-" if n == 1 else "--", color=col, marker="s", ms=3.5,
                         mfc=fill, mec=col, lw=1.3, label=f"Ours, LoopBridge, m/{n}")
-                for x, y, lab in [p for p in ours if b is None or p[2] in ("1", "4", "16")]:   # m = 3, 4 nearly coincide at batch 1
+                for x, y, lab in [p for p in ours if p[2] in ("1", "4", "16")]:   # m = 3 sits next to 4: only the ends are labelled
                     dx = {"3": -4, "4": 4}.get(lab, 0) if b is None else 0
                     ax.annotate(lab, (x, y), xytext=(dx, 3), textcoords="offset points", fontsize=6.5, color=INK, ha="center")
             p4 = point(f"f4x{n}pm", b)
