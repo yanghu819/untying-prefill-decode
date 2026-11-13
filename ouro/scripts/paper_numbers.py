@@ -408,7 +408,8 @@ def keys():
     ks |= {sweep_key(b, m, n, True).replace("X26w-", pre + "-", 1) for b in MAIN_BENCH for m in SWEEP_M for n in (1, 2)
            for pre in ("X26ws2", "X26ws3", "X26w8", "X26pf8", "X26w8s2", "X26pf8s2", "X26w8s3", "X26pf8s3")}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
-    ks |= {main_key(b, "loraonly", c).replace("X26lo-", "X26lor80-", 1) for b in MAIN_BENCH for c in ("a41", "a42")}   # rank-80 control
+    ks |= {main_key(b, "loraonly", c).replace("X26lo-", pre + "-", 1) for b in MAIN_BENCH for c in ("a41", "a42")
+           for pre in ("X26lor80", "X26los2r80", "X26los3r80")}   # rank-80 control, seeds 1-3
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {dist_seed_key(b, c, f"r80{sd}") for b in MAIN_BENCH for c, sds in R80_SEEDS.items() for sd in sds}
@@ -1445,6 +1446,20 @@ def lora80():
             for arm, (wa, wr) in want.items():
                 if abs(out[c]["avg"][arm] - wa) > 0.051 or abs(out[c]["ruler"][arm] - wr) > 0.051:
                     print(f"LoRA r80     {c} {arm}: {out[c]['avg'][arm]:.2f} / {out[c]['ruler'][arm]:.2f}  !! Table 1/2a: {wa} / {wr}")
+    # training seeds 2 and 3 of the rank-80 control (RANK=80 SEED=k launch_variant.sh lora): per-seed 11-benchmark
+    # average and RULER-16K at 4/1 on the items all seeds share, against LoopBridge's three seeds
+    seeds = {"X26lor80": 1, "X26los2r80": 2, "X26los3r80": 3}
+    sets = {(pre, b): load(main_key(b, "loraonly", "a41").replace("X26lo-", pre + "-", 1)) for pre in seeds for b in MAIN_BENCH}
+    if all(sets.values()):
+        rows = {}
+        ids = {b: set.intersection(*(set(sets[(pre, b)]) for pre in seeds)) for b in MAIN_BENCH}   # items all seeds share
+        for pre in seeds:
+            per = {b: 100 * float(np.mean([sets[(pre, b)][i] for i in ids[b]])) for b in MAIN_BENCH}
+            rows[seeds[pre]] = (float(np.mean(list(per.values()))), per["RULER-16K"])
+        avg = [v[0] for v in rows.values()]; rul = [v[1] for v in rows.values()]
+        out["a41_seeds"] = dict(avg=(round(float(np.mean(avg)), 1), round(float(np.std(avg, ddof=1)), 1)),
+                                ruler=(round(float(np.mean(rul)), 1), round(float(np.std(rul, ddof=1)), 1)), per_seed=rows)
+        print(f"LoRA r80     a41 over seeds: avg {out['a41_seeds']['avg']}  RULER-16K {out['a41_seeds']['ruler']}  per seed {rows}")
     return out
 
 
