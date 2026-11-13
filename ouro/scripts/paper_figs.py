@@ -861,10 +861,10 @@ def tab_build():
     avg = lambda l: (None if any(r.get(l) is None for r in T) else sum(r[l] for r in T) / len(T))
     one = lambda l, b: next((r.get(l) for r in T if r["bench"] == b), None)
     f = lambda x: "--" if x is None else f"{x:.1f}"
-    build = [("Ours, fixed $m{=}4$ (LoRA)", "fixed-4 LoRA 4/1", False, False),
-             ("LoRA trained on all $(m,n)$", "aligned LoRA-only 4/1", True, False),
-             ("\\quad + key/value maps (LoopBridge)", "aligned adapter 4/1", True, True),
-             ("\\quad one shared cache", "loop adapter 4/1", True, False)]
+    build = [("Ours, fixed $m{=}4$: LoRA r16", "fixed-4 LoRA 4/1", False, False),
+             ("LoRA r16, all $(m,n)$", "aligned LoRA-only 4/1", True, False),
+             ("LoRA r16 + KV maps (LoopBridge)", "aligned adapter 4/1", True, True),
+             ("LoopBridge, one shared cache", "loop adapter 4/1", True, False)]
     lines = []
     R = PN.get("lora80", {}).get("a41")   # rank-80 all-(m,n) LoRA with frozen maps (review control), when it has landed
     for name, l, allmn, default in build:
@@ -872,7 +872,7 @@ def tab_build():
         row = f"{name} & {mark} & {f(avg(l))} & {f(one(l, 'RULER-16K'))} \\\\"
         lines.append(("\\rowcolor{oursbg} " + row) if default else row)
         if l == "aligned LoRA-only 4/1" and R:
-            lines.append(f"\\quad rank 80 instead (63M parameters) & \\cmark & "
+            lines.append(f"LoRA r80, all $(m,n)$ & \\cmark & "
                          f"{f(R['avg']['LoRA r80, maps frozen'])} & {f(R['ruler']['LoRA r80, maps frozen'])} \\\\")
     (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 

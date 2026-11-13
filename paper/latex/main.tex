@@ -47,12 +47,12 @@
 
 \begin{abstract}
 Looped language models run a block of layers several times per token and use the same number of loops to read the
-prompt (prefill) and to generate each answer token (decode). Generation, however, is almost all decoding. On Ouro-2.6B
+prompt (prefill) and to generate each token (decode). Generation, however, is almost all decoding. On Ouro-2.6B
 at batch 1, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost
 little. We untie the two loop counts and read the prompt with more loops than we use to decode each token.
-The released model cannot use the states of a longer prefill, so we distill a small adapter with 2.4\% of the model's
-parameters: LoRA on the decoder for a fixed prefill depth, or LoopBridge, whose per-loop key and value maps let one
-adapter serve every prefill and decode depth. On Ouro-2.6B with one decode loop, four prefill loops raise the average
+The released model cannot use the states of a longer prefill, so we distill a small adapter (2.4\% of the
+parameters): LoRA on the decoder for a fixed prefill depth, or LoopBridge, whose per-loop key and value maps keep
+long-context accuracy when one adapter serves every trained pair of depths. On Ouro-2.6B with one decode loop, four prefill loops raise the average
 over 11 benchmarks from 44.2 to 57.1 (56.8 with LoopBridge), above the original model distilled to one loop on the
 same data (49.8), and in the same measured time per request they are 14--15 points more accurate than the original
 model. The gain peaks after two to five prefill loops and holds on Ouro-1.4B, the Thinking models and looped decision
@@ -95,8 +95,9 @@ decoded with one, Ouro-2.6B averages 26.6 points over 11 benchmarks, far below t
 both (Table~\ref{tab:main}), because its decoder has never read the states of a longer prefill.
 
 We close this gap with a small adapter distilled from the original four-loop model (Section~\ref{sec:method}). When
-the prefill depth is fixed, LoRA on the decoder is enough. LoopBridge adds a key map and a value map on the prompt
-cache for every decode loop, so that one adapter serves every pair of prefill and decode depths. The maps fold into the
+the prefill depth is fixed, LoRA on the decoder is enough. One adapter can also serve every trained pair of prefill and
+decode depths; LoopBridge adds a key map and a value map on the prompt cache for every decode loop, which keep
+long-context retrieval when it does. The maps fold into the
 prompt cache, so decoding runs the original model's attention at its cost per token. Our main findings on Ouro-2.6B:
 \begin{itemize}\setlength\itemsep{1pt}
 \item \textbf{Same decode loops, more accuracy.} With one decode loop, four prefill loops raise the 11-benchmark average
@@ -178,7 +179,7 @@ one on $m\in\{1,2,3,4,6,8,12,16\}$ and $n\le4$ for the depth sweep (Appendix~\re
 LoopBridge maps the keys and values of prefill loop $\max(m-n+k,1)$ into a cache for decode loop $k$: a scale $c_k$ on
 each rotary pair of the keys and a linear map $W_k$ of the values. Every answer token then runs $n$ loops of the frozen
 model with LoRA, and loop $k$ attends to cache $k$ and to the answer's own keys and values with the original attention.
-Applying the maps at every step instead (to the query and the attention output) gives the same result;
+Applying the maps at every step instead (to the query and the attention output) is equivalent in exact arithmetic;
 pseudocode: Figure~\ref{alg:adapter} in Appendix~\ref{app:method}.}
 \label{fig:method}
 \end{figure*}
@@ -260,7 +261,8 @@ methods (Table~\ref{tab:ablate}c), and without the benchmark items that overlap 
 \includegraphics[width=\textwidth]{../figs/fig_taskmap.pdf}
 \caption{\textbf{Four prefill loops recover much of the accuracy lost by decoding with fewer loops.} Ouro-2.6B, accuracy (\%)
 against the number of decode loops $n$. Grey: the original model ($n/n$). Orange: LoopBridge with four prefill loops
-($4/n$). Each panel uses the items all points share; every $(m,n)$ cell: Table~\ref{tab:alignedcells}.}
+($4/n$). Eight of the 11 benchmarks; each panel uses the items all points share; every benchmark and $(m,n)$ cell,
+including MATH-500: Table~\ref{tab:alignedcells}.}
 \label{fig:grid}
 \end{figure*}
 
@@ -278,7 +280,7 @@ original model, also on long-context retrieval (RULER-16K at 4/3: 79.8 against 7
 \includegraphics[width=\textwidth]{../figs/fig_depth_main.pdf}
 \caption{\textbf{A few more prefill loops buy a lot of accuracy.} One decode loop, Ouro-2.6B with a LoopBridge trained
 on prefill depths 1 to 16 (one set of weights for every $m$, no depth extrapolated). Orange: gain from one prefill loop
-to the best depth, which lies at two to five loops (shaded). Two decode loops, the main adapter and time per
+to the best observed depth, which lies at two to five loops (shaded); $m$ up to 8 shown. Two decode loops, the main adapter and time per
 request: Figure~\ref{fig:depthfull}; stopping depths for every benchmark: Table~\ref{tab:plateau}.}
 \label{fig:depth}
 \end{figure*}
@@ -366,7 +368,7 @@ learning rate & $\times0.3$ & $\times1$ & $\times3$ \\
 \end{minipage}
 \caption{\textbf{Ablations}, Ouro-2.6B, 11-benchmark average (\%) unless noted; default shaded. (a) ``all $(m,n)$'': one
 set of weights serves every prefill and decode depth; the key/value maps restore the long-context retrieval that an
-all-pairs LoRA loses, also at rank 80 with as many parameters as LoopBridge. (b) LoopBridge with one shared cache trained on fewer answer tokens (rank 16). (c) The whole
+all-pairs LoRA loses, also at rank 80 (r80 and LoopBridge both train 63M parameters). (b) LoopBridge with one shared cache trained on fewer answer tokens (rank 16). (c) The whole
 learning-rate schedule scaled for the distilled control and for LoopBridge.}
 \label{tab:ablate}
 \end{table*}
@@ -413,8 +415,7 @@ RULER-16K at 4/1 (Table~\ref{tab:ablate}a; 14.9 to 22.8 over three seeds), while
 at most 1.4 points. More capacity does not close the long-context gap: at rank 80, with as many parameters as
 LoopBridge, the all-pairs LoRA reaches 56.3 on average but 55.8 on RULER-16K, and LoopBridge is
 $+8.8$\ci{6.1}{11.7} points above it there. The key/value maps thus keep long-context retrieval when one adapter serves
-every depth, and one LoopBridge matches the fixed-depth adapter on average. One shared prompt cache instead of aligned
-caches gives up 0.4 points for the memory of a single cache.
+every depth, and one LoopBridge matches the fixed-depth adapter on average. One shared prompt cache saves memory for 0.4 points.
 
 \paragraph{Data and learning rate.} LoopBridge needs little data: with 6M answer tokens, an eighth of the default
 budget, the one-cache LoopBridge already averages 53.7 at 4/1, above the distilled model trained on 48M (49.8)
