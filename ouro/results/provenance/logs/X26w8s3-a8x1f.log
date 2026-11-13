@@ -1,0 +1,20 @@
+== s0.log
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/big-small/ouro/evaluate_bench.py", line 363, in <module>
+    main()
+  File "/root/big-small/ouro/evaluate_bench.py", line 359, in main
+    prepare(args) if args.mode == "prepare" else evaluate(args)
+                                                 ^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_bench.py", line 291, in evaluate
+    runner = make_runner(SimpleNamespace(condition=args.condition, checkpoint=args.checkpoint,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/evaluate_adapter.py", line 97, in make_runner
+    runner = load_adapter_runner(args.model_path, args.checkpoint, device="cuda", dtype=torch.bfloat16, attention="sdpa")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/big-small/ouro/adapter_model.py", line 566, in load_adapter_runner
+    system.load_trainable_state(saved["trainable_state"])
+  File "/root/big-small/ouro/adapter_model.py", line 485, in load_trainable_state
+    parameters[name].copy_(value)
+RuntimeError: The size of tensor a (80) must match the size of tensor b (16) at non-singleton dimension 0

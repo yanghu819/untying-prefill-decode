@@ -1,0 +1,76 @@
+{
+ "run": "X26lor80-a41-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-lora-r80/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-12T22:02:42.154954+00:00",
+ "seconds": "580.0644986424595",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-13T06-12-20.249522.jsonl",
+   "sha256": "f8edba74aa4ded72ee7278ba7ca15f863ad7f29f69fc1207a0a332c6f8719c7c",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-13T06-12-20.249522.jsonl",
+   "sha256": "9fcc8b1e8d286ee355059b7b1ccfca8b051f51004f1b60283c8adf6e5dcd2015",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "b178e5d7fdc3076ccc2c7d4fe0f3f6526a9393df7b91e259b5de9955f0856e3a"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "5839c936e58bf78fac9d49c19ae0156727c2a2459f9a3f0bffda3fc980f85671"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "sweep_q.txt.log: 06:02:34 gpu5: OURO_LORA_RANK=80 ./lm1.sh $GPU X26lor80-a41-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a41,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-lora-r80/checkpoint-48m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ],
+ "checkpoint": {
+  "run": "X26-a-lora-r80",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "0d2fc58680b6c354c0f60133dd70dc0d3a76ff77eaec6616b5db2af87ab17fd4",
+  "bytes": 958351577
+ }
+}

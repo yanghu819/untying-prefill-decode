@@ -66,11 +66,9 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
   when it lands, add a row to Table 2a (tab_build) and one sentence to Section 5.6.
 - **v2 trainable-prefill check**: seeds 1 and 2 done, in Appendix "Where the Gain Stops" (paragraph "Training the
   prefill as well", Table `tab:prefilltrn` = seed 1): X26-a-pf8(-s2) (prefill LoRA) vs X26-a-w8(-s2) (frozen), m <= 8,
-  prompts cut to 2,048 tokens. The stop does not move: of 15 settings with a stop in all four runs, the trained prefill
-  stops later in 2 and 4 (same in 7 and 7) and later in both seeds in none. **In flight**: seed 3 of both arms
-  (X26-a-w8-s3 on a1 from 11-12 20:10, X26-a-pf8-s3 on a2 from ~21:15; then sweeps X26w8s3-* / X26pf8s3-*). When they
-  land: score evalplus on both boxes, `pn_sync.sh all`; `prefill_trainable()` then compares three seeds (its seed guard
-  only checks the two-seed case) and the appendix sentence needs the three-seed counts.
+  prompts cut to 2,048 tokens. Three seeds done (11-13): of 13 settings with a stop in all six runs, the trained prefill
+  stops later in 2, 4 and 4 (same in 6, 6, 5) and later in every seed in none (runs X26-a-{w8,pf8}-s{2,3},
+  sweeps X26{w8,pf8}s{2,3}-*; guard in `prefill_trainable()` for the three-seed case).
 
 ## 2. The user's rules (all still in force)
 

@@ -1522,8 +1522,8 @@ def prefill_trainable():
         print(f"Prefill trn  later with trained prefill in every seed: {every} of {len(common)}")
         per = tuple((sum(seeds[s]['trained prefill'][k] > seeds[s]['frozen prefill'][k] for k in common),
                      sum(seeds[s]['trained prefill'][k] == seeds[s]['frozen prefill'][k] for k in common)) for s in sorted(seeds))
-        if sorted(seeds) == [1, 2] and (len(common), every, per) != (15, 0, ((2, 7), (4, 7))):   # Appendix B, v2 paragraph
-            print(f"Prefill trn seeds {(len(common), every, per)}  !! paper: (15, 0, ((2, 7), (4, 7)))")
+        if sorted(seeds) == [1, 2, 3] and (len(common), every, per) != (13, 0, ((2, 6), (4, 6), (4, 5))):   # Appendix B, v2
+            print(f"Prefill trn seeds {(len(common), every, per)}  !! paper: (13, 0, ((2, 6), (4, 6), (4, 5)))")
     return dict(curves=out, stops={f"{k[0]}/{k[1]}": {a: stops[a].get(k) for a in stops} for k in both},
                 seed_stops={str(s): {f"{k[0]}/{k[1]}": {a: seeds[s][a].get(k) for a in seeds[s]}
                                      for k in sorted(set().union(*map(set, seeds[s].values())))} for s in seeds})

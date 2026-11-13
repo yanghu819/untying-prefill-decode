@@ -1,0 +1,76 @@
+{
+ "run": "X26pf8s3-a1x2-evalplus",
+ "kind": "lm-evaluation-harness",
+ "model_args": "path=/dev/shm/big-small-ouro/model-2.6b,condition=a1x2,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-pf8-s3/checkpoint-48m.pt,max_length=16384",
+ "limit": null,
+ "n_shot": {
+  "humanevalplus_chat_local": 0,
+  "mbppplus_chat_local": 0
+ },
+ "n_samples": {
+  "mbppplus_chat_local": {
+   "original": 378,
+   "effective": 378
+  },
+  "humanevalplus_chat_local": {
+   "original": 164,
+   "effective": 164
+  }
+ },
+ "task_versions": {
+  "humanevalplus_chat_local": 1.0,
+  "mbppplus_chat_local": 1.0
+ },
+ "task_hashes": {
+  "mbppplus_chat_local": "32e52bf90e65160ea074d1618a65c5a5153e7120fba2f372e62c650e1ce4d6ff",
+  "humanevalplus_chat_local": "3f1256b59216cc70fe40389fb884edb6366d3105052b7d9d3de1432794866136"
+ },
+ "lm_eval_version": "0.4.9",
+ "transformers_version": "4.54.1",
+ "start": "2026-11-12T23:51:07.153581+00:00",
+ "seconds": "895.4463054398075",
+ "results": {
+  "humanevalplus_chat_local": {
+   "alias": "humanevalplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  },
+  "mbppplus_chat_local": {
+   "alias": "mbppplus_chat_local",
+   "bypass,none": 999,
+   "bypass_stderr,none": "N/A"
+  }
+ },
+ "samples": [
+  {
+   "file": "samples_humanevalplus_chat_local_2026-11-13T08-06-00.623160.jsonl",
+   "sha256": "5596c8b738dca285ed38afc748dcca889e806e0addf05661d9f19741269c833d",
+   "items": 164
+  },
+  {
+   "file": "samples_mbppplus_chat_local_2026-11-13T08-06-00.623160.jsonl",
+   "sha256": "ca066f4c1df86a87c4cca2b2303ca0eb0ae11caf07626ee4fbc27db4af54b86d",
+   "items": 378
+  }
+ ],
+ "evalplus": [
+  {
+   "file": "evalplus_mbpp_chat.jsonl",
+   "sha256": "a7da70709ca86ce6645a0be6f51050d12f4b9d50109e85a4e731c01681a18a84"
+  },
+  {
+   "file": "evalplus_humaneval_chat.jsonl",
+   "sha256": "003519ea4cbcdc6181acc847d7daa6557f674f31a9cdc53c3054986501e08dd6"
+  }
+ ],
+ "log": true,
+ "commands": [
+  "sweep_q.txt.log: 07:50:59 gpu7: ./lm1.sh $GPU X26pf8s3-a1x2-evalplus - \"path=/dev/shm/big-small-ouro/model-2.6b,condition=a1x2,checkpoint=/dev/shm/big-small-ouro/runs/X26-a-pf8-s3/checkpoint-48m.pt,max_length=16384\" \"--tasks humanevalplus_chat_local,mbppplus_chat_local\""
+ ],
+ "checkpoint": {
+  "run": "X26-a-pf8-s3",
+  "checkpoint": "checkpoint-48m.pt",
+  "sha256": "5abda35a00c83dc5ed4aa340bfb0b83d82e016ad2cb44620e5fe781070820717",
+  "bytes": 911626813
+ }
+}

@@ -550,10 +550,10 @@ both on $m\in\{1,2,3,4,6,8\}$ and $n\le4$ with training prompts cut to their las
 of back-propagating through eight prefill loops; evaluation is not cut), one with the prefill frozen and one with an
 additional rank-16 LoRA on the attention of the prefill loops (Table~\ref{tab:prefilltrn}: seed 1). Training
 the prefill does not move the stop: of the 16 settings with a stop under both, it comes later with the trained prefill
-in 2, at the same depth in 8 and earlier in 6, and both curves peak at three or four loops on most benchmarks. A second
-training seed of both adapters agrees: of the 15 settings with a stop in all four runs, the trained prefill stops later
-than the frozen one in 2 and 4 settings in the two seeds, at the same depth in 7 in each, and later in both seeds in
-none. The
+in 2, at the same depth in 8 and earlier in 6, and both curves peak at three or four loops on most benchmarks. Two
+further training seeds of both adapters agree: of the 13 settings with a stop in all six runs, the trained prefill
+stops later than the frozen one in 2, 4 and 4 settings in the three seeds, at the same depth in 6, 6 and 5, and later in
+all three seeds in none. The
 trained prefill mainly helps long prompts: on RULER-16K the best accuracy rises from 63.7 to 66.0 at one decode loop
 and from 75.2 to 81.0 at two, and beyond eight loops, outside both adapters' training range, it falls more slowly;
 4-shot MATH-500 instead collapses at twelve loops with the trained prefill.
