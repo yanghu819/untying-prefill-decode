@@ -452,8 +452,8 @@ decision loop: $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on Lev-2.6B 
 
 Generation in looped models is almost all decoding, so the prompt can be read with more loops than each answer token.
 A small distilled adapter makes this untying work: with four prefill loops, one decode loop gains about 13 points on
-average over the original model and 14--15 points in the same measured time, and one LoopBridge serves every prefill
-and decode depth. Reading the prompt with many loops and decoding with few is a cheap way to spend test-time compute in
+average over the original model and 14--15 points in the same measured time, and LoopBridge keeps long-context
+accuracy when one adapter serves every trained pair of depths. Reading the prompt with many loops and decoding with few is a cheap way to spend test-time compute in
 looped models.
 
 \section*{Limitations}
