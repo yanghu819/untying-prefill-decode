@@ -1431,6 +1431,9 @@ def lora80():
                   + "  | RULER-16K " + "  ".join(f"{v:.1f}" for v in out[c]["ruler"].values()))
             r = out[c]["ruler_lb_minus_r80"]
             print(f"LoRA r80     {c}: RULER-16K LoopBridge minus rank-80 LoRA {r['diff']:+.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] n={r['n']}")
+            if c == "a42" and (round(out[c]["ruler"]["LoRA r16, maps frozen"], 1), round(out[c]["ruler"]["LoRA r80, maps frozen"], 1),
+                               round(out[c]["ruler"]["LoopBridge"], 1)) != (71.6, 73.7, 73.5):   # Section 5.6: 71.6 to 73.7
+                print(f"LoRA r80     a42 RULER-16K {out[c]['ruler']}  !! paper: 71.6 to 73.7")
             if c == "a41":   # Section 5.6 / Table 2a
                 got = (round(out[c]["avg"]["LoRA r80, maps frozen"], 1), round(out[c]["ruler"]["LoRA r80, maps frozen"], 1),
                        round(r["diff"], 1), round(r["lo"], 1), round(r["hi"], 1))

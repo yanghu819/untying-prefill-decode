@@ -414,7 +414,8 @@ with the maps fixed at the identity, the same LoRA serves every depth but loses 
 RULER-16K at 4/1 (Table~\ref{tab:ablate}a; 14.9 to 22.8 over three seeds), while at 4K and 8K tokens the two differ by
 at most 1.4 points. More capacity does not close the long-context gap: at rank 80, with as many parameters as
 LoopBridge, the all-pairs LoRA reaches 56.3 on average but 55.8 on RULER-16K, and LoopBridge is
-$+8.8$\ci{6.1}{11.7} points above it there. The key/value maps thus keep long-context retrieval when one adapter serves
+$+8.8$\ci{6.1}{11.7} points above it there. The maps matter most where the decoder is shortest: with two decode loops the three
+all-pairs adapters reach 71.6 to 73.7 on RULER-16K. The key/value maps thus keep long-context retrieval when one adapter serves
 every depth, and one LoopBridge matches the fixed-depth adapter on average. One shared prompt cache saves memory for 0.4 points.
 
 \paragraph{Data and learning rate.} LoopBridge needs little data: with 6M answer tokens, an eighth of the default

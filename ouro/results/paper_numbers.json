@@ -27507,6 +27507,83 @@
     "lo": 6.1313301282051285,
     "hi": 11.673076923076922
    }
+  },
+  "a42": {
+   "per_bench": {
+    "MMLU": {
+     "LoRA r16, maps frozen": 73.21,
+     "LoRA r80, maps frozen": 73.24,
+     "LoopBridge": 73.47
+    },
+    "MMLU-Pro": {
+     "LoRA r16, maps frozen": 52.62,
+     "LoRA r80, maps frozen": 55.95,
+     "LoopBridge": 54.05
+    },
+    "BBH 3-shot": {
+     "LoRA r16, maps frozen": 73.02,
+     "LoRA r80, maps frozen": 72.72,
+     "LoopBridge": 73.46
+    },
+    "ARC-C": {
+     "LoRA r16, maps frozen": 64.85,
+     "LoRA r80, maps frozen": 64.85,
+     "LoopBridge": 65.02
+    },
+    "HellaSwag": {
+     "LoRA r16, maps frozen": 78.27,
+     "LoRA r80, maps frozen": 78.41,
+     "LoopBridge": 78.25
+    },
+    "Winogrande": {
+     "LoRA r16, maps frozen": 74.19,
+     "LoRA r80, maps frozen": 74.19,
+     "LoopBridge": 75.14
+    },
+    "GSM8K": {
+     "LoRA r16, maps frozen": 67.25,
+     "LoRA r80, maps frozen": 67.93,
+     "LoopBridge": 66.26
+    },
+    "MATH-500 4-shot": {
+     "LoRA r16, maps frozen": 47.8,
+     "LoRA r80, maps frozen": 45.6,
+     "LoopBridge": 45.8
+    },
+    "HumanEval+": {
+     "LoRA r16, maps frozen": 69.51,
+     "LoRA r80, maps frozen": 70.73,
+     "LoopBridge": 70.12
+    },
+    "MBPP+": {
+     "LoRA r16, maps frozen": 62.43,
+     "LoRA r80, maps frozen": 62.96,
+     "LoopBridge": 64.29
+    },
+    "RULER-16K": {
+     "LoRA r16, maps frozen": 71.57,
+     "LoRA r80, maps frozen": 73.72,
+     "LoopBridge": 73.53
+    }
+   },
+   "avg": {
+    "LoRA r16, maps frozen": 66.79,
+    "LoRA r80, maps frozen": 67.3,
+    "LoopBridge": 67.22
+   },
+   "ruler": {
+    "LoRA r16, maps frozen": 71.57,
+    "LoRA r80, maps frozen": 73.72,
+    "LoopBridge": 73.53
+   },
+   "ruler_lb_minus_r80": {
+    "n": 520,
+    "a": 73.53205128205128,
+    "b": 73.72115384615385,
+    "diff": -0.18910256410256412,
+    "lo": -1.8237980769230766,
+    "hi": 1.4103365384615378
+   }
   }
  },
  "budget_pairs": [
@@ -28836,7 +28913,7 @@
      "trained prefill": 1
     },
     "1/MMLU": {
-     "frozen prefill": null,
+     "frozen prefill": 3,
      "trained prefill": 4
     },
     "1/MMLU-Pro": {
@@ -28844,6 +28921,26 @@
      "trained prefill": 6
     },
     "1/RULER-16K": {
+     "frozen prefill": 4,
+     "trained prefill": 3
+    },
+    "2/BBH 3-shot": {
+     "frozen prefill": null,
+     "trained prefill": 3
+    },
+    "2/GSM8K": {
+     "frozen prefill": null,
+     "trained prefill": 3
+    },
+    "2/MATH-500 4-shot": {
+     "frozen prefill": 1,
+     "trained prefill": 1
+    },
+    "2/MMLU": {
+     "frozen prefill": null,
+     "trained prefill": 3
+    },
+    "2/MMLU-Pro": {
      "frozen prefill": null,
      "trained prefill": 3
     }
