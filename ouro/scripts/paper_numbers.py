@@ -1421,11 +1421,21 @@ def lora80():
                 break
             ids = set.intersection(*(set(v) for v in sets.values()))
             per[b] = {a: round(100 * float(np.mean([v[i] for i in ids])), 2) for a, v in sets.items()}
+            if b == "RULER-16K":   # paired interval, LoopBridge minus the rank-80 LoRA, on the same items
+                sub = lambda v: {i: v[i] for i in ids}
+                rl = boot(sub(sets["LoopBridge"]), sub(sets["LoRA r80, maps frozen"]))
         else:
             out[c] = dict(per_bench=per, avg={a: round(float(np.mean([per[b][a] for b in MAIN_BENCH])), 2) for a, _ in arms},
-                          ruler={a: per["RULER-16K"][a] for a, _ in arms})
+                          ruler={a: per["RULER-16K"][a] for a, _ in arms}, ruler_lb_minus_r80=rl)
             print(f"LoRA r80     {c}: avg " + "  ".join(f"{a} {v:.1f}" for a, v in out[c]["avg"].items())
                   + "  | RULER-16K " + "  ".join(f"{v:.1f}" for v in out[c]["ruler"].values()))
+            r = out[c]["ruler_lb_minus_r80"]
+            print(f"LoRA r80     {c}: RULER-16K LoopBridge minus rank-80 LoRA {r['diff']:+.1f} [{r['lo']:+.1f}, {r['hi']:+.1f}] n={r['n']}")
+            if c == "a41":   # Section 5.6 / Table 2a
+                got = (round(out[c]["avg"]["LoRA r80, maps frozen"], 1), round(out[c]["ruler"]["LoRA r80, maps frozen"], 1),
+                       round(r["diff"], 1), round(r["lo"], 1), round(r["hi"], 1))
+                if got != (56.3, 55.8, 8.8, 6.1, 11.7):
+                    print(f"LoRA r80     {got}  !! paper: (56.3, 55.8, 8.8, 6.1, 11.7)")
             # same item population as Table 1 / Table 2a: the rank-16 and LoopBridge rows must reproduce their values
             want = {"a41": {"LoRA r16, maps frozen": (55.0, 49.8), "LoopBridge": (56.8, 64.7)},
                     "a42": {"LoRA r16, maps frozen": (66.8, 71.6), "LoopBridge": (67.2, 73.5)}}[c]

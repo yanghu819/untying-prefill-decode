@@ -52,7 +52,7 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 - **Review 11-13 (Codex astra-ultra, ARR-style, Overall 3/5)**: fixed in the text (depth stop "two to five", Figure 5
   title, Thinking claim scoped to Figure 13's items, Figure 8 names the one-cache variant, Section 5.5 states that the
   advantage over distillation is largest at one decode loop, Table 2 panels in reading order). **In flight on a1**:
-  the parameter-matched control it asked for, an all-(m,n) LoRA at rank 80 with frozen maps (`RANK=80
+  done 11-13: the parameter-matched control it asked for, an all-(m,n) LoRA at rank 80 with frozen maps (`RANK=80
   launch_variant.sh lora`, X26-a-lora-r80, evals X26lor80-a4{1,2}-*); /root/pn/lora80.sh trains it once the running
   evaluations finish, evaluates it, then puts the held w8 seed-3 sweep (/root/pn/hold_w8s3.txt, 117 lines) back on
   the queue. `paper_numbers.lora80()` compares it with the rank-16 maps-frozen LoRA and LoopBridge on shared items;

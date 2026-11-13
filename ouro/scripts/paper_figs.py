@@ -853,25 +853,14 @@ def tab_prefilltrn():
     (OUT / "tab_prefilltrn.tex").write_text("\n".join(lines) + "\n")
 
 
-def tab_avg():
-    """Main text, Table 1 (two parts). (a) tab_avg: average accuracy over the 11 benchmarks at the same decode loops,
-    Original / training-free / Distilled (rank 16 and 80) / Ours 4/n, Ours shaded with its gain over Original.
-    (b) tab_build: how LoopBridge is built, at prefill 4 / decode 1: whether one set of weights serves every (m, n),
-    the 11-benchmark average and RULER-16K; the default (LoopBridge) shaded. Every row with every benchmark: Table 5."""
+def tab_build():
+    """Main text, Table 2a: how LoopBridge is built, at prefill 4 / decode 1: whether one set of weights serves every
+    (m, n), the 11-benchmark average and RULER-16K (each benchmark on the items all main-table rows share); the default
+    (LoopBridge) shaded; the rank-80 all-(m,n) LoRA control from paper_numbers.lora80 (same items) when it has landed."""
     T = PN["main_table"]
     avg = lambda l: (None if any(r.get(l) is None for r in T) else sum(r[l] for r in T) / len(T))
     one = lambda l, b: next((r.get(l) for r in T if r["bench"] == b), None)
     f = lambda x: "--" if x is None else f"{x:.1f}"
-    rows = [("Original $n/n$", "native 1/1", "native 2/2"), ("Training-free $4/n$", "training-free 4/1", "training-free 4/2"),
-            ("Distilled $n/n$", "LoRA-distilled 1/1", "LoRA-distilled 2/2"),
-            ("Distilled $n/n$, rank 80", "distilled r80 1/1", "distilled r80 2/2")]
-    lines = [f"{name} & {f(avg(a))} & {f(avg(b))} \\\\" for name, a, b in rows]
-    o1, o2 = avg("aligned adapter 4/1"), avg("aligned adapter 4/2")
-    b1, b2 = avg("native 1/1"), avg("native 2/2")
-    lines.append("\\midrule")
-    lines.append(f"\\rowcolor{{oursbg}} \\textbf{{Ours $4/n$}} & \\textbf{{{f(o1)}}}\\gain{{{o1 - b1:.1f}}} & "
-                 f"\\textbf{{{f(o2)}}}\\gain{{{o2 - b2:.1f}}} \\\\")
-    (OUT / "tab_avg.tex").write_text("\n".join(lines) + "\n")
     build = [("Ours, fixed $m{=}4$ (LoRA)", "fixed-4 LoRA 4/1", False, False),
              ("LoRA trained on all $(m,n)$", "aligned LoRA-only 4/1", True, False),
              ("\\quad + key/value maps (LoopBridge)", "aligned adapter 4/1", True, True),
@@ -883,10 +872,10 @@ def tab_avg():
         row = f"{name} & {mark} & {f(avg(l))} & {f(one(l, 'RULER-16K'))} \\\\"
         lines.append(("\\rowcolor{oursbg} " + row) if default else row)
         if l == "aligned LoRA-only 4/1" and R:
-            lines.append(f"\\quad rank 80 (as many parameters as LoopBridge) & \\cmark & "
+            lines.append(f"\\quad rank 80 instead (63M parameters) & \\cmark & "
                          f"{f(R['avg']['LoRA r80, maps frozen'])} & {f(R['ruler']['LoRA r80, maps frozen'])} \\\\")
     (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 
 if __name__ == "__main__":
-    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_build(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

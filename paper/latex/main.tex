@@ -335,7 +335,7 @@ prefill loops add 3.1 points over 2/2 at the same decode cost.}
 
 \begin{table*}[t]
 \centering\footnotesize
-\begin{minipage}[t]{0.61\textwidth}\centering
+\begin{minipage}[t]{0.59\textwidth}\centering
 \begin{tabular}{@{}lccc@{}}
 \toprule
 prefill 4 / decode 1 & all $(m,n)$ & average & RULER-16K \\
@@ -345,7 +345,7 @@ prefill 4 / decode 1 & all $(m,n)$ & average & RULER-16K \\
 \end{tabular}
 \par\smallskip(a) What LoopBridge adds.
 \end{minipage}\hfill
-\begin{minipage}[t]{0.37\textwidth}\centering
+\begin{minipage}[t]{0.39\textwidth}\centering
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 \csname @@input\endcsname ../figs/tab_tokens.tex
@@ -365,7 +365,7 @@ learning rate & $\times0.3$ & $\times1$ & $\times3$ \\
 \end{minipage}
 \caption{\textbf{Ablations}, Ouro-2.6B, 11-benchmark average (\%) unless noted; default shaded. (a) ``all $(m,n)$'': one
 set of weights serves every prefill and decode depth; the key/value maps restore the long-context retrieval that an
-all-pairs LoRA loses. (b) LoopBridge with one shared cache trained on fewer answer tokens (rank 16). (c) The whole
+all-pairs LoRA loses, also at rank 80 with as many parameters as LoopBridge. (b) LoopBridge with one shared cache trained on fewer answer tokens (rank 16). (c) The whole
 learning-rate schedule scaled for the distilled control and for LoopBridge.}
 \label{tab:ablate}
 \end{table*}
@@ -406,12 +406,14 @@ in $0.59\times$\ci{0.52}{0.66} the time of Original 4/4 at batch 1, scoring 93.3
 \label{sec:ablate}
 
 
-\paragraph{What LoopBridge adds.} A plain LoRA serves one prefill depth. Trained on all $(m,n)$ pairs with the maps
-fixed at the identity, it loses 1.8 points on average and 14.9 on RULER-16K at 4/1 (Table~\ref{tab:ablate}a; 14.9 to
-22.8 over three seeds), while at 4K and 8K tokens the two differ by at most 1.4 points. The key/value maps restore both:
-one LoopBridge matches the fixed-depth adapter on average and serves every depth, which the sweep of
-Section~\ref{sec:depth} needs. One shared prompt cache instead of aligned caches gives up 0.4 points for the memory of
-a single cache.
+\paragraph{What LoopBridge adds.} A LoRA trained at one prefill depth serves that depth. Trained on all $(m,n)$ pairs
+with the maps fixed at the identity, the same LoRA serves every depth but loses 1.8 points on average and 14.9 on
+RULER-16K at 4/1 (Table~\ref{tab:ablate}a; 14.9 to 22.8 over three seeds), while at 4K and 8K tokens the two differ by
+at most 1.4 points. More capacity does not close the long-context gap: at rank 80, with as many parameters as
+LoopBridge, the all-pairs LoRA reaches 56.3 on average but 55.8 on RULER-16K, and LoopBridge is
+$+8.8$\ci{6.1}{11.7} points above it there. The key/value maps thus keep long-context retrieval when one adapter serves
+every depth, and one LoopBridge matches the fixed-depth adapter on average. One shared prompt cache instead of aligned
+caches gives up 0.4 points for the memory of a single cache.
 
 \paragraph{Data and learning rate.} LoopBridge needs little data: with 6M answer tokens, an eighth of the default
 budget, the one-cache LoopBridge already averages 53.7 at 4/1, above the distilled model trained on 48M (49.8)

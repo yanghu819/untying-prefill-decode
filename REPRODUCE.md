@@ -24,7 +24,7 @@ The paper's numbers come from these places, all in this commit:
 | Figure 6, Section 5.4 (`fig_depth_main`; full: `fig_depth`) | `depth_sweep`, `depth_gains`, `same_weights`, `same_weights_seeds`, `plateau`, `plateau_seeds` | `sweep_depth.sh`, `launch_variant.sh wide`, `seed_main.sh ARM=a CELLS="11 12"` |
 | Figure 7, Section 5.5 (`fig_sametime`; full: `fig_budget`) | `time_breakdown`, `budget_pairs`, `batch_time` | `time_controls.sh` (folded maps `a<m>x<n>pm`, `f4x<n>pm`), `tput_batch.sh` |
 | Figure 8 (`fig2_frontier`, Thinking) and Figure 14 (`fig_pareto`) | `think_frontier`, `throughput` | Thinking evaluations, `tput_*.sh` microbenchmarks |
-| Table 2, Section 5.6 (a: `tab_build`, b: `tab_tokens`, c: `tab_lr`) | `main_table`, `ablations`, `lr_check`, `lora80` (pending) | `launch_variant.sh lora` (`RANK=80`: parameter-matched control), `ablate_tokens.sh`, `LRS=0.3/3 launch_x26_distill.sh`, `LRS=... launch_variant.sh lr` |
+| Table 2, Section 5.6 (a: `tab_build`, b: `tab_tokens`, c: `tab_lr`) | `main_table`, `ablations`, `lr_check`, `lora80` | `launch_variant.sh lora` (`RANK=80`: parameter-matched control), `ablate_tokens.sh`, `LRS=0.3/3 launch_x26_distill.sh`, `LRS=... launch_variant.sh lr` |
 | Figure 9, Section 5.7 (`fig_lev`, fixed m = all loops) | `lev` | Lev scripts (Appendix M) |
 | Ouro-2.6B-Thinking and Ouro-1.4B sweeps | `think_sweep`, `depth_sweep_14` | `sweep_think.sh`, `sweep_depth.sh MP=model-1.4b` |
 | Trainable prefill (Appendix B, Table 4) | `prefill_trainable` | `launch_variant.sh prefill / w8` (`SEED=2,3`) |
