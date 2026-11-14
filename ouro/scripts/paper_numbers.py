@@ -126,6 +126,13 @@ CMP += [
     *[("Maps by length", f"{c} RULER-16K Ours vs maps frozen, seed {sd}", ruler(f"X26-{c}", 16), ruler(f"X26los{sd}-{c}", 16),
        {("a41", 2): (22.3, 18.5, 26.0), ("a41", 3): (22.8, 19.1, 26.5)}.get((c, sd)))   # Section 6: "14.9 to 22.8"
       for c in ("a41", "a42") for sd in (2, 3)],
+    # review 11-13: the parameter-matched control (rank-80 all-pairs LoRA, maps frozen) over its three training seeds,
+    # and at 4K / 8K tokens (seed 1)
+    *[("Maps by length", f"{c} RULER-16K Ours vs rank-80 maps frozen, seed {sd}", ruler(f"X26-{c}", 16), ruler(f"{pre}-{c}", 16),
+       {("a41", 1): (8.8, 6.1, 11.7)}.get((c, sd)))
+      for c in ("a41", "a42") for sd, pre in ((1, "X26lor80"), (2, "X26los2r80"), (3, "X26los3r80"))],
+    *[("Maps by length", f"a41 RULER-{k}K Ours vs rank-80 maps frozen", ruler("X26-a41", k), ruler("X26lor80-a41", k), None)
+      for k in (4, 8)],
     *[("No-map control", f"maps frozen (same recipe) {c} {name}", ka.format(c=c), kb.format(c=c), NOMAP.get((c, name)))
       for c in ("S41", "S42", "S11", "S22")
       for name, ka, kb in (("GSM8K", gsm("X26fz-{c}"), gsm("X26-{c}")),
@@ -410,6 +417,10 @@ def keys():
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", f"X26los{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {main_key(b, "loraonly", c).replace("X26lo-", pre + "-", 1) for b in MAIN_BENCH for c in ("a41", "a42")
            for pre in ("X26lor80", "X26los2r80", "X26los3r80")}   # rank-80 control, seeds 1-3
+    ks |= {f"B:{pre}-{c}-{bench}:{bench}" for _, pre in LONGCTX_ARMS for bench in ("helmet", "longbench")
+           for c in ("a41", "a42")}   # long context
+    ks |= {f"B:{pre}-a41-{bench}:{bench}" for pre in ("X26s2", "X26s3", "X26los2r80", "X26los3r80")
+           for bench in ("helmet", "longbench")}
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {dist_seed_key(b, c, f"r80{sd}") for b in MAIN_BENCH for c, sds in R80_SEEDS.items() for sd in sds}
@@ -621,8 +632,13 @@ def think_frontier():
             per[c].append(agg(v, ids))
     out = [dict(config=c, avg=round(float(np.mean(per[c])), 2), scores=[round(x, 2) for x in per[c]],
                 tokens_per_s=confs[c][2]) for c in confs]
-    want = {"native 2/2": 65.4, "native 4/4": 71.5, "distilled 2/2": 67.5, "adapter 2/2": 67.0, "adapter 4/2": 70.1,
-            "aligned 2/2": 66.4, "aligned 4/2": 70.6}
+    # 11-14: MATH-500 on all 500 items (the distilled model's missing shard completed); Section 5.5 / Figure 8: "within
+    # 1.3 points of Original 4/4", "+3.1 over 2/2"
+    want = {"native 2/2": 65.5, "native 4/4": 71.5, "distilled 2/2": 67.6, "adapter 2/2": 67.1, "adapter 4/2": 70.2,
+            "aligned 2/2": 66.5, "aligned 4/2": 70.7}
+    av = {r["config"]: r["avg"] for r in out}
+    if round(av["native 4/4"] - av["adapter 4/2"], 1) != 1.3 or round(av["adapter 4/2"] - av["adapter 2/2"], 1) != 3.1:
+        print(f"Figure 6     gaps {av['native 4/4'] - av['adapter 4/2']:.2f} / {av['adapter 4/2'] - av['adapter 2/2']:.2f}  !! paper: 1.3 / 3.1")
     for r in out:
         flag = "" if r["config"] not in want or abs(r["avg"] - want[r["config"]]) < 0.051 else f"  !! paper: {want[r['config']]}"
         print(f"Figure 6     {r['config']:14s} avg {r['avg']:5.1f}  {r['tokens_per_s'] or 0:4d} tok/s  " +
@@ -1052,6 +1068,78 @@ def timed_requests(cond, model="Ouro-2.6B"):
     return out
 
 
+BATCH_CONDS = ("native1st", "D1st", "D1r80st", "a4x1pm", "f4x1pm", "native2st", "D2st", "D2r80st", "a4x2pm", "f4x2pm")
+BATCH_PAIRS = [("a4x1pm", "native1st"), ("a4x1pm", "D1st"), ("a4x1pm", "D1r80st"), ("f4x1pm", "native1st"),
+               ("f4x1pm", "D1st"), ("native2st", "a4x1pm"), ("D2st", "a4x1pm"), ("a4x2pm", "native2st"),
+               ("a4x2pm", "D2st"), ("a4x2pm", "D2r80st")]
+
+
+def batched_requests(cond, b, prefix="batch"):
+    """One condition served with batch_requests.py (continuous batching, up to b requests in flight) over the four timed
+    tasks: per-request (score, batch-1 prefill seconds, output tokens), summed wall seconds and request count; None if a
+    task is missing."""
+    rows, wall, n = {}, 0.0, 0
+    for task in TIME_TASKS:
+        f, s = E2E / f"{prefix}{b}-{cond}-{task}.jsonl", E2E / f"{prefix}{b}-{cond}-{task}.summary.json"
+        if not (f.exists() and s.exists()):
+            return None
+        summ = json.load(open(s))
+        wall, n = wall + summ["wall_s"], n + summ["n"]
+        for r in map(json.loads, open(f)):
+            rows[f"{task}/{r['id']}"] = (replay_score(r["id"], r["text"], r["target"]), r["prefill_s"], r["new_tokens"])
+    return rows, wall, n
+
+
+def batched_serving(reps=5000):
+    """Review 11-13 (W1): complete requests served in batches (batch_requests.py: continuous batching, every prefill at
+    batch 1 and stalling the batch) on the 400 timed requests: accuracy of the served answers, wall seconds per request
+    (total wall time / requests), prefill share of the wall time; paired accuracy differences with a bootstrap over
+    requests and the wall-time ratio."""
+    out = {}
+    for b in (1, 8, 32):
+        got = {c: batched_requests(c, b) for c in BATCH_CONDS}
+        for c, g in list(got.items()):   # a second timing pass (OUT=batchb): wall time = mean of the passes
+            again = batched_requests(c, b, "batchb") if g else None
+            if again and again[2] == g[2]:
+                got[c] = (g[0], (g[1] + again[1]) / 2, g[2])
+        for c, g in got.items():
+            if not g:
+                continue
+            rows, wall, n = g
+            v = list(rows.values())
+            out[f"{c}@{b}"] = dict(cond=c, batch=b, n=n, acc=round(100 * float(np.mean([x[0] for x in v])), 1),
+                                   s_per_request=round(wall / n, 3), prefill_pct=round(100 * sum(x[1] for x in v) / wall, 1),
+                                   tokens=round(float(np.mean([x[2] for x in v])), 1))
+            r = out[f"{c}@{b}"]
+            print(f"Batched      batch {b:2d} {c:10s} n={n}  acc {r['acc']:5.1f}  {r['s_per_request']:6.3f} s/request"
+                  f"  prefill {r['prefill_pct']:4.1f}%  {r['tokens']:6.1f} tokens")
+        for a, c in BATCH_PAIRS:
+            if not (got.get(a) and got.get(c)):
+                continue
+            A, C = got[a][0], got[c][0]
+            ids = sorted(set(A) & set(C))
+            qa, qc = np.array([A[i][0] for i in ids]), np.array([C[i][0] for i in ids])
+            rng = np.random.default_rng(0)
+            dq = 100 * (qa - qc)[rng.integers(0, len(ids), (reps, len(ids)))].mean(1)
+            row = dict(a=a, b=c, batch=b, n=len(ids), diff=round(100 * float((qa - qc).mean()), 1),
+                       lo=round(float(np.percentile(dq, 2.5)), 1), hi=round(float(np.percentile(dq, 97.5)), 1),
+                       ratio=round((got[a][1] / got[a][2]) / (got[c][1] / got[c][2]), 2))
+            out[f"{a} vs {c}@{b}"] = row
+            print(f"Batched      batch {b:2d} {a:10s} vs {c:10s} n={row['n']}  acc {row['diff']:+5.1f} [{row['lo']:+5.1f},"
+                  f" {row['hi']:+5.1f}]  time x{row['ratio']:.2f}")
+    # Section 5.5, introduction and Limitations (batch 32)
+    want = {"a4x1pm vs native1st@32": ((14.5, 9.0, 19.8), 1.13), "a4x1pm vs D1st@32": ((8.0, 2.8, 13.5), 1.13),
+            "native2st vs a4x1pm@32": (None, 1.50), "D2st vs a4x1pm@32": (None, 1.45)}
+    for k, (acc, ratio) in want.items():
+        r = out.get(k)
+        if r and ((acc and (r["diff"], r["lo"], r["hi"]) != acc) or r["ratio"] != ratio):
+            print(f"Batched      {k}: {r}  !! paper: {acc} x{ratio}")
+    r = out.get("a4x1pm@32")
+    if r and round(r["prefill_pct"]) != 29:
+        print(f"Batched      a4x1pm@32 prefill {r['prefill_pct']}%  !! paper: 29%")
+    return out
+
+
 BUDGET_PAIRS = [("a4x1pm", "native1st"), ("a4x1pm", "D1st"), ("a4x1pm", "D1r80st"), ("a4x2pm", "D2st"),
                 ("a4x2pm", "D2r80st"), ("a4x2pm", "f4x2pm"), ("a4x2pm", "native2st"), ("a3x2pm", "D2st"),
                 ("native2st", "a4x1pm"), ("f4x1pm", "native1st"), ("f4x1pm", "D1st")]   # Ours fixed m=4 (Figure 3)
@@ -1460,6 +1548,89 @@ def lora80():
         out["a41_seeds"] = dict(avg=(round(float(np.mean(avg)), 1), round(float(np.std(avg, ddof=1)), 1)),
                                 ruler=(round(float(np.mean(rul)), 1), round(float(np.std(rul, ddof=1)), 1)), per_seed=rows)
         print(f"LoRA r80     a41 over seeds: avg {out['a41_seeds']['avg']}  RULER-16K {out['a41_seeds']['ruler']}  per seed {rows}")
+    # the three all-pairs adapters over three training seeds each (Section 5.6), on the items all nine runs share
+    arms = {"LoopBridge": [lambda b: main_key(b, "aligned", "a41")] + [lambda b, p=p: seed_key(b, p, "a41") for p in MAIN_SEEDS],
+            "LoRA r16, maps frozen": [lambda b, p=p: main_key(b, "loraonly", "a41").replace("X26lo-", p + "-", 1)
+                                      for p in ("X26lo", "X26los2", "X26los3")],
+            "LoRA r80, maps frozen": [lambda b, p=p: main_key(b, "loraonly", "a41").replace("X26lo-", p + "-", 1)
+                                      for p in seeds]}
+    sets = {(arm, k, b): load(f(b)) for arm, fs in arms.items() for k, f in enumerate(fs) for b in MAIN_BENCH}
+    if all(v is not None for v in sets.values()):
+        ids = {b: set.intersection(*(set(v) for (_, _, bb), v in sets.items() if bb == b)) for b in MAIN_BENCH}
+        res = {}
+        for arm, fs in arms.items():
+            avg, rul = [], []
+            for k in range(len(fs)):
+                per = {b: agg(sets[(arm, k, b)], ids[b]) for b in MAIN_BENCH}
+                avg.append(float(np.mean(list(per.values())))); rul.append(per["RULER-16K"])
+            res[arm] = dict(avg=(round(float(np.mean(avg)), 1), round(float(np.std(avg, ddof=1)), 1)),
+                            ruler=(round(float(np.mean(rul)), 1), round(float(np.std(rul, ddof=1)), 1)),
+                            per_seed=[(round(x, 1), round(y, 1)) for x, y in zip(avg, rul)])
+            print(f"All-pairs    a41 three seeds {arm:22s} avg {res[arm]['avg']}  RULER-16K {res[arm]['ruler']}  {res[arm]['per_seed']}")
+        out["a41_three_arms"] = res
+        want = {"LoopBridge": ((56.7, 0.1), (63.9, 1.0)), "LoRA r16, maps frozen": ((54.3, 0.6), (44.7, 4.4)),
+                "LoRA r80, maps frozen": ((56.7, 0.3), (57.6, 1.6))}   # Section 5.6
+        for arm, (wa, wr) in want.items():
+            if (res[arm]["avg"], res[arm]["ruler"]) != (wa, wr):
+                print(f"All-pairs    {arm}: {res[arm]['avg']} / {res[arm]['ruler']}  !! paper: {wa} / {wr}")
+    return out
+
+
+LONGCTX_ARMS = (("LoopBridge", "X26"), ("LoRA r16, maps frozen", "X26lo"), ("LoRA r80, maps frozen", "X26lor80"))
+
+
+def longctx_maps():
+    """Review 11-13: do the maps also help on long-context benchmarks other than RULER? HELMET (bench-mini, 1,108 items,
+    aggregated as its authors do) and LongBench (400 items) at prefill 4 / decode 1, for LoopBridge, the all-(m,n) LoRA
+    with frozen maps (rank 16) and its rank-80 version; paired intervals of LoopBridge minus each."""
+    out = {}
+    for bench in ("helmet", "longbench"):
+        sets = {arm: load(f"B:{pre}-a41-{bench}:{bench}") for arm, pre in LONGCTX_ARMS}
+        if not all(sets.values()):
+            continue
+        ids = set.intersection(*(set(v) for v in sets.values()))
+        sub = {arm: {i: v[i] for i in ids} for arm, v in sets.items()}
+        row = {"n": len(ids)}
+        for arm in ("LoRA r16, maps frozen", "LoRA r80, maps frozen"):
+            c = boot(sub["LoopBridge"], sub[arm])
+            row["LoopBridge"] = round(c["a"], 1)
+            row[arm] = round(c["b"], 1)
+            row[f"vs {arm}"] = (round(c["diff"], 1), round(c["lo"], 1), round(c["hi"], 1))
+        out[bench] = row
+        print(f"Long ctx     {bench:9s} n={len(ids)}  " + "  ".join(f"{k}: {v}" for k, v in row.items() if k != "n"))
+        # a42 (two decode loops) and the training seeds of LoopBridge and the rank-80 LoRA, each on the items all share
+        two = {arm: load(f"B:{pre}-a42-{bench}:{bench}") for arm, pre in LONGCTX_ARMS}
+        if all(two.values()):
+            ids2 = set.intersection(*(set(v) for v in two.values()))
+            row2 = {arm: round(agg(v, ids2), 1) for arm, v in two.items()}
+            for arm in ("LoRA r16, maps frozen", "LoRA r80, maps frozen"):
+                c = boot({i: two["LoopBridge"][i] for i in ids2}, {i: two[arm][i] for i in ids2})
+                row2[f"vs {arm}"] = (round(c["diff"], 1), round(c["lo"], 1), round(c["hi"], 1))
+            out[f"{bench} a42"] = row2
+            print(f"Long ctx     {bench:9s} a42 n={len(ids2)}  " + "  ".join(f"{k}: {v}" for k, v in row2.items()))
+        seeds = {"LoopBridge": ("X26", "X26s2", "X26s3"), "LoRA r80, maps frozen": ("X26lor80", "X26los2r80", "X26los3r80")}
+        runs = {pre: load(f"B:{pre}-a41-{bench}:{bench}") for v in seeds.values() for pre in v}
+        if all(runs.values()):
+            ids3 = set.intersection(*(set(v) for v in runs.values()))
+            per = {arm: [agg(runs[pre], ids3) for pre in pres] for arm, pres in seeds.items()}
+            out[f"{bench} seeds"] = {arm: (round(float(np.mean(v)), 1), round(float(np.std(v, ddof=1)), 1), [round(x, 1) for x in v])
+                                     for arm, v in per.items()}
+            print(f"Long ctx     {bench:9s} three seeds n={len(ids3)}  {out[f'{bench} seeds']}")
+    # Appendix (The maps beyond RULER) and Section 5.6 ("within three points of each other, rank 80 ahead on HELMET")
+    want = {("helmet", ""): (-2.4, -5.0, -0.3), ("helmet", " a42"): (-2.9, -6.2, 0.0), ("longbench", ""): (-1.2, None, None),
+            ("longbench", " a42"): (1.3, None, None)}
+    for (bench, suf), w in want.items():
+        r = out.get(bench + suf)
+        if not r:
+            continue
+        got = tuple(r["vs LoRA r80, maps frozen"])
+        if got[0] != w[0] or (w[1] is not None and got != w):
+            print(f"Long ctx     {bench}{suf} LoopBridge - r80 {got}  !! paper: {w}")
+        if abs(r["vs LoRA r16, maps frozen"][0]) > 0.3:
+            print(f"Long ctx     {bench}{suf} LoopBridge - r16 {r['vs LoRA r16, maps frozen']}  !! paper: within 0.3")
+        arms = [r[a] for a, _ in LONGCTX_ARMS]
+        if max(arms) - min(arms) >= 3:
+            print(f"Long ctx     {bench}{suf} spread {max(arms) - min(arms):.1f}  !! paper: within three points")
     return out
 
 
@@ -2094,7 +2265,7 @@ def _compute(counter):
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
     _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), lora80=lora80(), budget_pairs=budget_pairs(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), lora80=lora80(), longctx_maps=longctx_maps(), budget_pairs=budget_pairs(), batched_serving=batched_serving(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 

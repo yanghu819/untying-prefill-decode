@@ -40,6 +40,23 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 - Backups: `ouro/scripts/backup_ms.py BOX [--data]` (every 2 h, log /root/pn/backup-BOX.log) to the private
   ModelScope repo torushy/untying-prefill-decode-backup; /dev/shm is a tmpfs and is lost on a restart.
 - Sync and pipeline: `~/.b300-handoff/pn_sync.sh [export|pipeline|all]`.
+- **Done 11-14 (answers to the 11-13 review)**:
+  - *Batched serving* (reviewer's W1/Q1): `ouro/scripts/batch_requests.py` serves the 400 timed requests with continuous
+    batching (each prompt prefilled alone at batch 1, decode attention = flash varlen with seqused_k over per-request
+    cache slots; logits match the batch-1 decoder to bf16 rounding). Launcher `runs_scripts/time_batch.sh` (OUT, BATCHES);
+    files `runs/e2e/batch<B>-<cond>-<task>.jsonl` + `.summary.json`, second pass `batchb<B>-*` (B=8/32 on a2, B=1 on a1).
+    `paper_numbers.batched_serving()` (pass mean), Figure `fig_batched`, Table `tab_batched` (Appendix K), two sentences
+    in Section 5.5. At batch 32: Ours 4/1 1.13x the time of Original 1/1 and Distilled 1/1, +14.5 / +8.0 points; prefill
+    29% of wall time; 2/2 costs 1.45-1.50x. The batch-32 *estimate* figure (fig_budget32) was removed.
+  - *Maps beyond RULER* (Q3): HELMET and LongBench at 4/1 and 4/2 for LoopBridge, all-pairs LoRA r16 and r80
+    (`longctx_maps()`, Table `tab_longctx` in Appendix L). The maps do not help there (LoopBridge within 0.3 of r16;
+    r80 +2.4/+2.9 on HELMET). Claims narrowed everywhere to "retrieval over 16K-token prompts"; one line in Limitations.
+    Seeds (X26s2/s3, X26los2/3, X26los2r80/3r80) on HELMET/LongBench are exported but not yet quoted.
+  - *Three seeds of each all-pairs adapter* at 4/1 (`lora80()` a41_three_arms): avg 56.7/54.3/56.7, RULER-16K
+    63.9+-1.0 (LoopBridge) / 44.7+-4.4 (r16) / 57.6+-1.6 (r80); in Section 5.6.
+  - *Thinking MATH-500*: the distilled model's shard 3 had died twice on a cuDNN SDPA error at item 74; resumed with
+    cuDNN attention off (`PYTHONPATH=/root/pn/nocudnn:` sitecustomize) -> all tables use 500 items; Thinking frontier
+    gap now 1.3 points (was 1.4).
 - **Operational lesson (2026-11-13)**: a launcher that exports an env var (`RANK=80 launch_variant.sh` exports
   OURO_LORA_RANK) passes it to the grid workers it starts, and those workers later run other runs' queue lines: 24
   seed-3 sweep jobs failed with a LoRA size mismatch. Workers are now started with `env -u OURO_LORA_RANK`; check
@@ -52,10 +69,7 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
 - **Review status 11-13**: three acceptance-focused rounds (`~/.b300-handoff/red_review.sh`), Overall 3 -> 3 -> 4/5
   (Accept). The parameter-matched control is in Table 2a: rank-80 all-(m,n) LoRA 56.3 average / 55.8 RULER-16K vs
   LoopBridge 56.8 / 64.7 (+8.8 [6.1, 11.7]). At 4/2 all three all-pairs adapters reach 71.6-73.7 on
-  RULER-16K (in Section 5.6). **In flight**: its RULER 4K/8K (moved to a2 with the checkpoint, X26lor80-a41f), a second
-  training seed on a2 (/root/pn/lora80s2.sh: `RANK=80 SEED=2 launch_variant.sh lora`, X26-a-lora-s2-r80 /
-  X26los2r80-*) and a third on a1 (/root/pn/lora80s3.sh, SEED=3, X26los3r80-*), each starting when its box's queue
-  drains. When they land: 4K/8K and the seeds into Section 5.6 / Table 2a (`lora80()` needs a seed loop).
+  RULER-16K (in Section 5.6). Seeds 2 and 3 landed 11-13/14 (X26los2r80-*, X26los3r80-*; see "Done 11-14").
 - **Review 11-13 (Codex astra-ultra, ARR-style, Overall 3/5)**: fixed in the text (depth stop "two to five", Figure 5
   title, Thinking claim scoped to Figure 13's items, Figure 8 names the one-cache variant, Section 5.5 states that the
   advantage over distillation is largest at one decode loop, Table 2 panels in reading order). **In flight on a1**:

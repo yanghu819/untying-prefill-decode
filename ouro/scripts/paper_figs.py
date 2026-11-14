@@ -186,7 +186,7 @@ def fig2():
     ax.scatter([x], [y], s=18, color=NAT_LIGHT, marker="D", zorder=3)
     ax.annotate("2/2 distilled", (x, y), xytext=(-4, 5), textcoords="offset points", fontsize=8, color=NAT, ha="right")
     ax.set_xlim(80, 460)
-    ax.set_xlabel("decode throughput (tokens/s, 8K prompt)", fontsize=8)
+    ax.set_xlabel("decode tokens/s, best batch, 8K prompt", fontsize=8)
     ax.set_ylabel("average accuracy (%)", fontsize=8)
     legend(fig, "Ours (LoopBridge, one cache)", "", y=1.02, ncol=2)
     fig.subplots_adjust(left=0.15, right=0.97, bottom=0.18, top=0.8)
@@ -606,7 +606,7 @@ def fig_time():
         ax.text(98.5, y, f"{r['total_s']:.1f} s / request", va="center", ha="right", fontsize=7, color=NAT, zorder=4)
     ax.set_yticks(range(len(rows))); ax.set_yticklabels([t for t, _ in rows], fontsize=8)
     ax.set_xlim(0, 100); ax.set_xticks([0, 25, 50, 75, 100]); ax.set_xticklabels(["0", "25", "50", "75", "100%"])
-    ax.set_xlabel("share of time per request (batch 1)")
+    ax.set_xlabel("share of the total time over 100 requests (batch 1)")
     ax.spines["left"].set_visible(False); ax.tick_params(axis="y", length=0)
     ax.legend([plt.Rectangle((0, 0), 1, 1, color=INK), plt.Rectangle((0, 0), 1, 1, color="#DADADA")], ["prefill", "decode"],
               loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, fontsize=7.5, handlelength=1.2)
@@ -792,6 +792,80 @@ def fig_budget(batch=None, name="fig_budget"):
     save(fig, name)
 
 
+def fig_batched(name="fig_batched"):
+    """Appendix: Figure 7 measured with batched serving (batch_requests.py, continuous batching): mean accuracy of the
+    served answers against wall seconds per request at batch 1, 8 and 32 (paper_numbers batched_serving)."""
+    B = PN.get("batched_serving", {})
+    sizes = [b for b in (1, 8, 32) if all(f"{c}@{b}" in B for c in ("native1st", "a4x1pm", "D1st", "native2st"))]
+    if not sizes:
+        return drop(name)
+    fig, axes = plt.subplots(1, len(sizes), figsize=(2.3 * len(sizes), 2.45), squeeze=False)
+    pt = lambda c, b: (B[f"{c}@{b}"]["s_per_request"], B[f"{c}@{b}"]["acc"]) if f"{c}@{b}" in B else None
+    for ax, b in zip(axes[0], sizes):
+        nat = [(pt(f"native{d}st", b), f"{d}/{d}") for d in (1, 2) if pt(f"native{d}st", b)]
+        ax.plot([p[0][0] for p in nat], [p[0][1] for p in nat], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3)
+        for (x, y), lab in nat:
+            ax.annotate(lab, (x, y), xytext=(0, -9), textcoords="offset points", fontsize=6.5, color=NAT, ha="center")
+        for n, fill in ((1, None), (2, "white")):
+            for c, m, col, sz in ((f"D{n}st", "^", DIST, 20), (f"D{n}r80st", "v", DIST, 20), (f"f4x{n}pm", "D", OURS, 18),
+                                  (f"a4x{n}pm", "s", OURS, 20)):
+                p = pt(c, b)
+                if p:
+                    ax.scatter(*p, marker=m, s=sz, zorder=3, facecolors=fill or col, edgecolors=col, lw=0.9)
+        lo = min(B[k]["acc"] for k in B if k.endswith(f"@{b}") and "acc" in B[k])
+        ax.set_ylim(lo - 6, None)   # room for the 1/1 label under its point
+        ax.set_title(f"batch {b}", fontsize=8.5, color=INK, pad=4)
+        ax.set_xlabel("seconds per request"); ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
+    axes[0, 0].set_ylabel("mean accuracy (%)")
+    L = plt.Line2D
+    h = [L([], [], color=OURS, marker="s", ms=4, ls="none"), L([], [], color=OURS, marker="D", ms=4, ls="none"),
+         L([], [], color=DIST, marker="^", ms=4.5, ls="none"), L([], [], color=DIST, marker="v", ms=4.5, ls="none"),
+         L([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.3)]
+    l = ["Ours, LoopBridge, 4/n", "Ours, fixed m=4, 4/n", "Distilled n/n", "Distilled n/n, rank 80", "Original n/n"]
+    fig.legend(h, l, fontsize=6.5, loc="lower center", frameon=False, handlelength=1.6, ncol=5, columnspacing=1.0)
+    fig.subplots_adjust(left=0.08, right=0.99, top=0.9, bottom=0.3, wspace=0.28)
+    save(fig, name)
+
+
+def tab_batched():
+    """Appendix: the batched serving numbers behind fig_batched: accuracy of the served answers (batch 32), wall seconds
+    per request at batch 1, 8 and 32, and the prefill share of the wall time at batch 32."""
+    B = PN.get("batched_serving", {})
+    rows = [("Original 1/1", "native1st"), ("Distilled 1/1", "D1st"), ("Distilled 1/1, rank 80", "D1r80st"),
+            ("Ours, fixed $m{=}4$, 4/1", "f4x1pm"), ("Ours, LoopBridge, 4/1", "a4x1pm"), None,
+            ("Original 2/2", "native2st"), ("Distilled 2/2", "D2st"), ("Distilled 2/2, rank 80", "D2r80st"),
+            ("Ours, fixed $m{=}4$, 4/2", "f4x2pm"), ("Ours, LoopBridge, 4/2", "a4x2pm")]
+    lines = []
+    for r in rows:
+        if r is None:
+            lines.append(r"\midrule"); continue
+        lab, c = r
+        if f"{c}@32" not in B:
+            continue
+        sh = r"\rowcolor{oursbg} " if c.startswith(("a4", "f4")) else ""
+        t = " & ".join(f"{B[f'{c}@{b}']['s_per_request']:.2f}" if f"{c}@{b}" in B else "--" for b in (1, 8, 32))
+        lines.append(rf"{sh}{lab} & {B[f'{c}@32']['acc']:.1f} & {t} & {B[f'{c}@32']['prefill_pct']:.0f}\% \\")
+    (OUT / "tab_batched.tex").write_text("\n".join(lines) + "\n")
+
+
+def tab_longctx():
+    """Appendix (Design Variants): the three all-pairs adapters on RULER-16K, HELMET and LongBench at 4/1 and 4/2 (seed 1;
+    paper_numbers lora80 and longctx_maps, each benchmark on the items the three share)."""
+    L, R = PN.get("longctx_maps", {}), PN.get("lora80", {})
+    arms = [("LoRA r16", "LoRA r16, maps frozen"), ("LoRA r80", "LoRA r80, maps frozen"), ("LoopBridge", "LoopBridge")]
+    lines = []
+    for c, suf, mn in (("a41", "", "4/1"), ("a42", " a42", "4/2")):
+        if not (L.get("helmet" + suf) and L.get("longbench" + suf) and R.get(c)):
+            continue
+        if lines:
+            lines.append(r"\midrule")
+        for lab, arm in arms:
+            sh = r"\rowcolor{oursbg} " if arm == "LoopBridge" else ""
+            lines.append(rf"{sh}{mn} & {lab} & {R[c]['ruler'][arm]:.1f} & {L['helmet' + suf][arm]:.1f} & "
+                         rf"{L['longbench' + suf][arm]:.1f} \\")
+    (OUT / "tab_longctx.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_time():
     """Appendix: per-request distributions behind Figure 1 (100 requests per task, batch 1)."""
     rows = [r for r in PN.get("time_breakdown", []) if "total_median" in r]
@@ -877,5 +951,5 @@ def tab_build():
     (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 
 if __name__ == "__main__":
-    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_build(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_budget(32, "fig_budget32"); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_build(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_batched(); tab_batched(); tab_longctx(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

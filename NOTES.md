@@ -24,6 +24,24 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
 
 ## Log
 
+### 2026-11-14 (answers to the 11-13 acceptance review)
+- Batched serving, measured (`batch_requests.py`, `time_batch.sh`): continuous batching of the 400 timed requests,
+  every prompt prefilled alone at batch 1 (stalls the batch, no chunked prefill), decode attention = flash varlen over
+  per-request cache slots (`_flash_attention_forward(..., seqused_k=fill+1)`), the same n-loop decode path for every
+  condition. Checked: logits within bf16 rounding (max |d| 0.125-0.25 at logit scale ~22) and identical argmax over 24
+  teacher-forced steps against the batch-1 decoder. In this eager implementation a batch-1 prefill costs ~0.08 s per
+  loop-set (mostly launch overhead), so at batch 32 the four prefill loops take 29% of the wall time; Ours 4/1 still
+  costs only 1.13x Original/Distilled 1/1 (Ours writes ~10% more tokens) and keeps +14.5 / +8.0 points; 2/2 costs
+  1.45-1.5x. Batch 8: 1.15-1.17x. Two passes: a2 (all B) and a1 (B=1) / a2 (B=8, 32); hardware and driver identical.
+- Maps vs rank-80 LoRA beyond RULER (HELMET bench-mini, LongBench 400): no advantage for the maps. HELMET 4/1: LB 32.2,
+  r16 32.0, r80 34.7; 4/2: 48.3 / 48.6 / 51.2. The HELMET gap is driven by the small recall (34 items) and re-rank
+  (41) categories; on RAG (700) and ICL (333) LB = r80 and LB > r16 (+2.1, +2.4). LongBench (~9-13%) within 1.5.
+  Conclusion: the maps preserve exact retrieval at 16K tokens with one decode loop; wording narrowed to that.
+- Three seeds of each all-pairs adapter, 4/1: RULER-16K 63.9+-1.0 (LB) / 57.6+-1.6 (r80) / 44.7+-4.4 (r16); averages
+  56.7 / 56.7 / 54.3.
+- T26-Df-math500_think_s3 had failed twice (cuDNN SDPA "mha_graph.execute" error at item 74/100); resumed from its
+  sqlite cache with `torch.backends.cuda.enable_cudnn_sdp(False)` via a sitecustomize on PYTHONPATH.
+
 ### 2026-11-07 (restructure for the 4-page arXiv version, advisor review)
 - Story: in decode-dominated tasks, spend loops on prefill. Three experiment groups, each with its launcher:
   1. Time breakdown per request (prefill / decode / total, in/out tokens), batch 1, dedicated GPUs:
