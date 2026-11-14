@@ -778,6 +778,7 @@ def fig_budget(batch=None, name="fig_budget"):
             ax.set_title(title, fontsize=8.5, color=INK, pad=4)
         else:   # the low-latency end, where one decode loop runs (about 11 s per request)
             ax.axvspan(9.2, 12.4, color="#F3F3F3", zorder=0, lw=0)
+            ax.set_ylim(23.5, None)   # room for the 1/1 label under its point
             ax.text(10.8, ax.get_ylim()[1] if False else 66.5, "one decode\nloop", ha="center", va="top", fontsize=6.5, color=NAT)
         ax.set_xlabel("seconds per request"); ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     for ax in axes[:, 0]:

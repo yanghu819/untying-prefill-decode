@@ -46,8 +46,8 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
     cache slots; logits match the batch-1 decoder to bf16 rounding). Launcher `runs_scripts/time_batch.sh` (OUT, BATCHES);
     files `runs/e2e/batch<B>-<cond>-<task>.jsonl` + `.summary.json`, second pass `batchb<B>-*` (B=8/32 on a2, B=1 on a1).
     `paper_numbers.batched_serving()` (pass mean), Figure `fig_batched`, Table `tab_batched` (Appendix K), two sentences
-    in Section 5.5. At batch 32: Ours 4/1 1.13x the time of Original 1/1 and Distilled 1/1, +14.5 / +8.0 points; prefill
-    29% of wall time; 2/2 costs 1.45-1.50x. The batch-32 *estimate* figure (fig_budget32) was removed.
+    in Section 5.5. At batch 32 (mean of two passes): Ours 4/1 1.15x / 1.17x the time of Original 1/1 / Distilled 1/1, +14.5 / +8.0
+    points; prefill 27% of wall time; 2/2 costs 1.38-1.48x. The batch-32 *estimate* figure (fig_budget32) was removed.
   - *Maps beyond RULER* (Q3): HELMET and LongBench at 4/1 and 4/2 for LoopBridge, all-pairs LoRA r16 and r80
     (`longctx_maps()`, Table `tab_longctx` in Appendix L). The maps do not help there (LoopBridge within 0.3 of r16;
     r80 +2.4/+2.9 on HELMET). Claims narrowed everywhere to "retrieval over 16K-token prompts"; one line in Limitations.

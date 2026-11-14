@@ -27709,7 +27709,7 @@
     ],
     "2": [
      56.86782753107552,
-     58.150641025641036
+     58.15064102564102
     ],
     "3": [
      56.927962122119425,
@@ -27985,7 +27985,7 @@
    "batch": 1,
    "n": 400,
    "acc": 27.5,
-   "s_per_request": 8.484,
+   "s_per_request": 8.266,
    "prefill_pct": 1.2,
    "tokens": 290.5
   },
@@ -27994,7 +27994,7 @@
    "batch": 1,
    "n": 400,
    "acc": 35.0,
-   "s_per_request": 8.564,
+   "s_per_request": 8.386,
    "prefill_pct": 1.2,
    "tokens": 289.9
   },
@@ -28003,7 +28003,7 @@
    "batch": 1,
    "n": 400,
    "acc": 34.2,
-   "s_per_request": 7.701,
+   "s_per_request": 7.808,
    "prefill_pct": 1.3,
    "tokens": 274.7
   },
@@ -28012,8 +28012,8 @@
    "batch": 1,
    "n": 400,
    "acc": 43.5,
-   "s_per_request": 8.736,
-   "prefill_pct": 2.4,
+   "s_per_request": 9.307,
+   "prefill_pct": 2.2,
    "tokens": 306.9
   },
   "f4x1pm@1": {
@@ -28021,9 +28021,54 @@
    "batch": 1,
    "n": 400,
    "acc": 41.2,
-   "s_per_request": 9.114,
+   "s_per_request": 8.952,
    "prefill_pct": 2.3,
    "tokens": 307.9
+  },
+  "native2st@1": {
+   "cond": "native2st",
+   "batch": 1,
+   "n": 400,
+   "acc": 57.5,
+   "s_per_request": 12.734,
+   "prefill_pct": 1.3,
+   "tokens": 237.1
+  },
+  "D2st@1": {
+   "cond": "D2st",
+   "batch": 1,
+   "n": 400,
+   "acc": 59.5,
+   "s_per_request": 12.568,
+   "prefill_pct": 1.3,
+   "tokens": 220.3
+  },
+  "D2r80st@1": {
+   "cond": "D2r80st",
+   "batch": 1,
+   "n": 400,
+   "acc": 58.8,
+   "s_per_request": 12.48,
+   "prefill_pct": 1.3,
+   "tokens": 225.3
+  },
+  "a4x2pm@1": {
+   "cond": "a4x2pm",
+   "batch": 1,
+   "n": 400,
+   "acc": 57.8,
+   "s_per_request": 13.473,
+   "prefill_pct": 1.8,
+   "tokens": 237.3
+  },
+  "f4x2pm@1": {
+   "cond": "f4x2pm",
+   "batch": 1,
+   "n": 400,
+   "acc": 59.2,
+   "s_per_request": 11.257,
+   "prefill_pct": 2.2,
+   "tokens": 203.8
   },
   "a4x1pm vs native1st@1": {
    "a": "a4x1pm",
@@ -28033,7 +28078,7 @@
    "diff": 16.0,
    "lo": 10.7,
    "hi": 21.5,
-   "ratio": 1.03
+   "ratio": 1.13
   },
   "a4x1pm vs D1st@1": {
    "a": "a4x1pm",
@@ -28043,7 +28088,7 @@
    "diff": 8.5,
    "lo": 3.0,
    "hi": 14.0,
-   "ratio": 1.02
+   "ratio": 1.11
   },
   "a4x1pm vs D1r80st@1": {
    "a": "a4x1pm",
@@ -28053,7 +28098,7 @@
    "diff": 9.2,
    "lo": 3.8,
    "hi": 14.5,
-   "ratio": 1.13
+   "ratio": 1.19
   },
   "f4x1pm vs native1st@1": {
    "a": "f4x1pm",
@@ -28063,7 +28108,7 @@
    "diff": 13.8,
    "lo": 8.5,
    "hi": 19.0,
-   "ratio": 1.07
+   "ratio": 1.08
   },
   "f4x1pm vs D1st@1": {
    "a": "f4x1pm",
@@ -28073,14 +28118,64 @@
    "diff": 6.2,
    "lo": 1.0,
    "hi": 11.8,
+   "ratio": 1.07
+  },
+  "native2st vs a4x1pm@1": {
+   "a": "native2st",
+   "b": "a4x1pm",
+   "batch": 1,
+   "n": 400,
+   "diff": 14.0,
+   "lo": 8.5,
+   "hi": 19.5,
+   "ratio": 1.37
+  },
+  "D2st vs a4x1pm@1": {
+   "a": "D2st",
+   "b": "a4x1pm",
+   "batch": 1,
+   "n": 400,
+   "diff": 16.0,
+   "lo": 11.0,
+   "hi": 21.2,
+   "ratio": 1.35
+  },
+  "a4x2pm vs native2st@1": {
+   "a": "a4x2pm",
+   "b": "native2st",
+   "batch": 1,
+   "n": 400,
+   "diff": 0.2,
+   "lo": -4.5,
+   "hi": 4.8,
    "ratio": 1.06
+  },
+  "a4x2pm vs D2st@1": {
+   "a": "a4x2pm",
+   "b": "D2st",
+   "batch": 1,
+   "n": 400,
+   "diff": -1.8,
+   "lo": -6.2,
+   "hi": 2.8,
+   "ratio": 1.07
+  },
+  "a4x2pm vs D2r80st@1": {
+   "a": "a4x2pm",
+   "b": "D2r80st",
+   "batch": 1,
+   "n": 400,
+   "diff": -1.0,
+   "lo": -5.2,
+   "hi": 3.5,
+   "ratio": 1.08
   },
   "native1st@8": {
    "cond": "native1st",
    "batch": 8,
    "n": 400,
    "acc": 27.8,
-   "s_per_request": 1.289,
+   "s_per_request": 1.294,
    "prefill_pct": 7.2,
    "tokens": 284.1
   },
@@ -28089,8 +28184,8 @@
    "batch": 8,
    "n": 400,
    "acc": 34.5,
-   "s_per_request": 1.267,
-   "prefill_pct": 7.8,
+   "s_per_request": 1.231,
+   "prefill_pct": 8.1,
    "tokens": 280.8
   },
   "D1r80st@8": {
@@ -28098,8 +28193,8 @@
    "batch": 8,
    "n": 400,
    "acc": 33.5,
-   "s_per_request": 1.172,
-   "prefill_pct": 7.6,
+   "s_per_request": 1.189,
+   "prefill_pct": 7.5,
    "tokens": 283.2
   },
   "a4x1pm@8": {
@@ -28107,7 +28202,7 @@
    "batch": 8,
    "n": 400,
    "acc": 42.5,
-   "s_per_request": 1.481,
+   "s_per_request": 1.48,
    "prefill_pct": 13.4,
    "tokens": 314.4
   },
@@ -28116,8 +28211,8 @@
    "batch": 8,
    "n": 400,
    "acc": 41.5,
-   "s_per_request": 1.407,
-   "prefill_pct": 13.7,
+   "s_per_request": 1.473,
+   "prefill_pct": 13.1,
    "tokens": 313.9
   },
   "native2st@8": {
@@ -28125,8 +28220,8 @@
    "batch": 8,
    "n": 400,
    "acc": 57.2,
-   "s_per_request": 2.101,
-   "prefill_pct": 7.6,
+   "s_per_request": 2.08,
+   "prefill_pct": 7.7,
    "tokens": 240.5
   },
   "D2st@8": {
@@ -28134,8 +28229,8 @@
    "batch": 8,
    "n": 400,
    "acc": 59.5,
-   "s_per_request": 1.87,
-   "prefill_pct": 8.5,
+   "s_per_request": 1.955,
+   "prefill_pct": 8.1,
    "tokens": 221.1
   },
   "D2r80st@8": {
@@ -28143,8 +28238,8 @@
    "batch": 8,
    "n": 400,
    "acc": 60.2,
-   "s_per_request": 2.065,
-   "prefill_pct": 8.0,
+   "s_per_request": 1.999,
+   "prefill_pct": 8.3,
    "tokens": 220.9
   },
   "a4x2pm@8": {
@@ -28152,8 +28247,8 @@
    "batch": 8,
    "n": 400,
    "acc": 58.2,
-   "s_per_request": 2.138,
-   "prefill_pct": 11.2,
+   "s_per_request": 2.164,
+   "prefill_pct": 11.1,
    "tokens": 233.1
   },
   "f4x2pm@8": {
@@ -28173,7 +28268,7 @@
    "diff": 14.8,
    "lo": 9.5,
    "hi": 20.2,
-   "ratio": 1.15
+   "ratio": 1.14
   },
   "a4x1pm vs D1st@8": {
    "a": "a4x1pm",
@@ -28183,7 +28278,7 @@
    "diff": 8.0,
    "lo": 2.8,
    "hi": 13.5,
-   "ratio": 1.17
+   "ratio": 1.2
   },
   "a4x1pm vs D1r80st@8": {
    "a": "a4x1pm",
@@ -28193,7 +28288,7 @@
    "diff": 9.0,
    "lo": 3.8,
    "hi": 14.3,
-   "ratio": 1.26
+   "ratio": 1.24
   },
   "f4x1pm vs native1st@8": {
    "a": "f4x1pm",
@@ -28203,7 +28298,7 @@
    "diff": 13.8,
    "lo": 8.2,
    "hi": 19.2,
-   "ratio": 1.09
+   "ratio": 1.14
   },
   "f4x1pm vs D1st@8": {
    "a": "f4x1pm",
@@ -28213,7 +28308,7 @@
    "diff": 7.0,
    "lo": 1.8,
    "hi": 12.5,
-   "ratio": 1.11
+   "ratio": 1.2
   },
   "native2st vs a4x1pm@8": {
    "a": "native2st",
@@ -28223,7 +28318,7 @@
    "diff": 14.8,
    "lo": 9.2,
    "hi": 20.0,
-   "ratio": 1.42
+   "ratio": 1.4
   },
   "D2st vs a4x1pm@8": {
    "a": "D2st",
@@ -28233,7 +28328,7 @@
    "diff": 17.0,
    "lo": 12.0,
    "hi": 22.0,
-   "ratio": 1.26
+   "ratio": 1.32
   },
   "a4x2pm vs native2st@8": {
    "a": "a4x2pm",
@@ -28243,7 +28338,7 @@
    "diff": 1.0,
    "lo": -3.5,
    "hi": 5.5,
-   "ratio": 1.02
+   "ratio": 1.04
   },
   "a4x2pm vs D2st@8": {
    "a": "a4x2pm",
@@ -28253,7 +28348,7 @@
    "diff": -1.2,
    "lo": -5.8,
    "hi": 3.2,
-   "ratio": 1.14
+   "ratio": 1.11
   },
   "a4x2pm vs D2r80st@8": {
    "a": "a4x2pm",
@@ -28263,15 +28358,15 @@
    "diff": -2.0,
    "lo": -6.2,
    "hi": 2.2,
-   "ratio": 1.04
+   "ratio": 1.08
   },
   "native1st@32": {
    "cond": "native1st",
    "batch": 32,
    "n": 400,
    "acc": 28.0,
-   "s_per_request": 0.558,
-   "prefill_pct": 15.6,
+   "s_per_request": 0.576,
+   "prefill_pct": 15.1,
    "tokens": 278.3
   },
   "D1st@32": {
@@ -28279,8 +28374,8 @@
    "batch": 32,
    "n": 400,
    "acc": 34.5,
-   "s_per_request": 0.558,
-   "prefill_pct": 15.8,
+   "s_per_request": 0.563,
+   "prefill_pct": 15.7,
    "tokens": 282.0
   },
   "D1r80st@32": {
@@ -28288,8 +28383,8 @@
    "batch": 32,
    "n": 400,
    "acc": 34.8,
-   "s_per_request": 0.547,
-   "prefill_pct": 15.3,
+   "s_per_request": 0.549,
+   "prefill_pct": 15.2,
    "tokens": 276.6
   },
   "a4x1pm@32": {
@@ -28297,8 +28392,8 @@
    "batch": 32,
    "n": 400,
    "acc": 42.5,
-   "s_per_request": 0.629,
-   "prefill_pct": 28.7,
+   "s_per_request": 0.66,
+   "prefill_pct": 27.3,
    "tokens": 303.3
   },
   "f4x1pm@32": {
@@ -28306,8 +28401,8 @@
    "batch": 32,
    "n": 400,
    "acc": 41.5,
-   "s_per_request": 0.664,
-   "prefill_pct": 28.2,
+   "s_per_request": 0.675,
+   "prefill_pct": 27.7,
    "tokens": 307.4
   },
   "native2st@32": {
@@ -28315,8 +28410,8 @@
    "batch": 32,
    "n": 400,
    "acc": 58.5,
-   "s_per_request": 0.944,
-   "prefill_pct": 15.3,
+   "s_per_request": 0.976,
+   "prefill_pct": 14.8,
    "tokens": 225.8
   },
   "D2st@32": {
@@ -28325,7 +28420,7 @@
    "n": 400,
    "acc": 59.5,
    "s_per_request": 0.912,
-   "prefill_pct": 15.9,
+   "prefill_pct": 16.0,
    "tokens": 222.6
   },
   "D2r80st@32": {
@@ -28333,8 +28428,8 @@
    "batch": 32,
    "n": 400,
    "acc": 60.0,
-   "s_per_request": 0.919,
-   "prefill_pct": 16.3,
+   "s_per_request": 0.934,
+   "prefill_pct": 16.1,
    "tokens": 207.2
   },
   "a4x2pm@32": {
@@ -28342,8 +28437,8 @@
    "batch": 32,
    "n": 400,
    "acc": 58.8,
-   "s_per_request": 1.1,
-   "prefill_pct": 22.0,
+   "s_per_request": 1.071,
+   "prefill_pct": 22.6,
    "tokens": 236.5
   },
   "f4x2pm@32": {
@@ -28351,8 +28446,8 @@
    "batch": 32,
    "n": 400,
    "acc": 59.8,
-   "s_per_request": 1.041,
-   "prefill_pct": 23.1,
+   "s_per_request": 1.067,
+   "prefill_pct": 22.5,
    "tokens": 203.1
   },
   "a4x1pm vs native1st@32": {
@@ -28363,7 +28458,7 @@
    "diff": 14.5,
    "lo": 9.0,
    "hi": 19.8,
-   "ratio": 1.13
+   "ratio": 1.15
   },
   "a4x1pm vs D1st@32": {
    "a": "a4x1pm",
@@ -28373,7 +28468,7 @@
    "diff": 8.0,
    "lo": 2.8,
    "hi": 13.5,
-   "ratio": 1.13
+   "ratio": 1.17
   },
   "a4x1pm vs D1r80st@32": {
    "a": "a4x1pm",
@@ -28383,7 +28478,7 @@
    "diff": 7.8,
    "lo": 2.5,
    "hi": 13.2,
-   "ratio": 1.15
+   "ratio": 1.2
   },
   "f4x1pm vs native1st@32": {
    "a": "f4x1pm",
@@ -28393,7 +28488,7 @@
    "diff": 13.5,
    "lo": 8.0,
    "hi": 18.8,
-   "ratio": 1.19
+   "ratio": 1.17
   },
   "f4x1pm vs D1st@32": {
    "a": "f4x1pm",
@@ -28403,7 +28498,7 @@
    "diff": 7.0,
    "lo": 1.8,
    "hi": 12.5,
-   "ratio": 1.19
+   "ratio": 1.2
   },
   "native2st vs a4x1pm@32": {
    "a": "native2st",
@@ -28413,7 +28508,7 @@
    "diff": 16.0,
    "lo": 10.5,
    "hi": 21.5,
-   "ratio": 1.5
+   "ratio": 1.48
   },
   "D2st vs a4x1pm@32": {
    "a": "D2st",
@@ -28423,7 +28518,7 @@
    "diff": 17.0,
    "lo": 12.0,
    "hi": 22.0,
-   "ratio": 1.45
+   "ratio": 1.38
   },
   "a4x2pm vs native2st@32": {
    "a": "a4x2pm",
@@ -28433,7 +28528,7 @@
    "diff": 0.2,
    "lo": -4.2,
    "hi": 4.8,
-   "ratio": 1.16
+   "ratio": 1.1
   },
   "a4x2pm vs D2st@32": {
    "a": "a4x2pm",
@@ -28443,7 +28538,7 @@
    "diff": -0.8,
    "lo": -5.0,
    "hi": 3.5,
-   "ratio": 1.21
+   "ratio": 1.17
   },
   "a4x2pm vs D2r80st@32": {
    "a": "a4x2pm",
@@ -28453,9 +28548,10 @@
    "diff": -1.2,
    "lo": -5.5,
    "hi": 3.0,
-   "ratio": 1.2
+   "ratio": 1.15
   }
  },
+ "thinking_batched": {},
  "depth_sweep_14": [
   {
    "n": 1,
