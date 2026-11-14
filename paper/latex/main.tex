@@ -47,7 +47,7 @@
 
 \begin{abstract}
 Looped language models run a block of layers several times per token and use the same number of loops to read the
-prompt (prefill) and to generate each token (decode). Generation, however, is almost all decoding. On Ouro-2.6B
+prompt (prefill) and to generate each token (decode). Chain-of-thought generation, however, is almost all decoding. On Ouro-2.6B
 at batch 1, prefill takes 0.4--2.8\% of the time of a chain-of-thought answer, so extra prefill loops cost
 little. We untie the two loop counts and read the prompt with more loops than we use to decode each token.
 The released model cannot use the states of a longer prefill, so we distill a small adapter (2.4\% of the
@@ -68,7 +68,7 @@ models.
 \caption{\textbf{Untying prefill and decode loops.} (a) A looped model such as Ouro runs every token, prompt and
 answer, through the same loops, although the prompt is read once in parallel and the answer is written token by token.
 (b) We read the prompt with more loops ($m=4$) and decode each answer token with fewer ($n=1$); a small adapter lets
-the short decoder read the long prefill's key-value cache.}
+the short decoder read the long prefill's key-value cache. *Chain-of-thought answers at batch 1 (Figure~\ref{fig:time}).}
 \label{fig:concept}
 \end{figure}
 
@@ -282,8 +282,9 @@ original model, also on long-context retrieval (RULER-16K at 4/3: 79.8 against 7
 \caption{\textbf{A few more prefill loops buy a lot of accuracy.} One decode loop, Ouro-2.6B with a LoopBridge trained
 on prefill depths 1 to 16 (one set of weights for every $m$, no depth extrapolated). Orange: gain from one prefill loop
 to the best observed depth; shaded: two to five loops, where that depth lies for all four tasks (a range, not an
-interval). $m$ up to 8 shown; 12 and 16, two decode loops, the main adapter and time per request:
-Figure~\ref{fig:depthfull}; stopping depths by a fixed rule for every benchmark: Table~\ref{tab:plateau}.}
+interval). $m$ up to 8 shown; depths 12 and 16 for the timed tasks (GSM8K, MMLU-Pro, MATH-500, BBH), two decode
+loops, the main adapter and time per request: Figure~\ref{fig:depthfull}; stopping depths by a fixed rule for every
+benchmark: Table~\ref{tab:plateau}.}
 \label{fig:depth}
 \end{figure*}
 
@@ -331,13 +332,12 @@ time.}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
-\caption{\textbf{Two decode loops come within 1.3 points of four on average at $3.2\times$ the decode throughput.}
-Ouro-2.6B-Thinking with LoopBridge (one cache): average accuracy over eight benchmarks (each on the items all
-configurations share) against a separate decode microbenchmark (best tokens/s over batch sizes at an 8K-token prompt,
-Table~\ref{tab:serve}). Labels: prefill/decode loops; the four
-prefill loops add 3.1 points over 2/2 at the same decode cost.}
-\label{fig:frontier}
+\includegraphics[width=\columnwidth]{../figs/fig_tbatched.pdf}
+\caption{\textbf{The reasoning model: four-loop accuracy at two-loop cost.} Ouro-2.6B-Thinking served with continuous
+batching (batch 16, one B300; chat template, 4,096- and 8,192-token budgets): accuracy of the served answers against
+wall seconds per request on 400 GSM8K problems and all of MATH-500. Ours: LoopBridge with per-loop caches and the maps
+folded in, prefill 4 / decode 2; dotted: Original 4/4. Numbers: Table~\ref{tab:tbatched}.}
+\label{fig:tbatched}
 \end{figure}
 
 \begin{table*}[t]
@@ -396,7 +396,8 @@ loop and about 11 seconds per request, the fixed-depth adapter scores 42.0 and L
 chain-of-thought tasks, against 27.0 for Original 1/1 and 34.2 for Distilled 1/1; paired over the 400 requests,
 LoopBridge is $+14.2$\ci{9.0}{19.8} points above Original 1/1 and $+7.0$\ci{1.8}{12.5} above Distilled 1/1, and the
 fixed-depth adapter is $+15.0$\ci{9.8}{20.5} and $+7.8$\ci{2.5}{13.2}. The advantage is largest when decoding must stay
-at one loop: with two decode loops, untying and distillation reach about the same accuracy in about the same time
+at one loop, as under a bound on the time per generated token, which a mix of one- and two-loop requests does not meet:
+with two decode loops, untying and distillation reach about the same accuracy in about the same time
 (Figure~\ref{fig:budgetfull}).
 
 Batching makes the extra prefill loops dearer, since the batch shares each decode step while every prompt is still
@@ -463,7 +464,8 @@ decision loop: $+5.3$\ci{3.4}{7.2} on Lev-1.4B, $+7.5$\ci{5.7}{9.5} on Lev-2.6B 
 
 \section{Conclusion}
 
-Generation in looped models is almost all decoding, so the prompt can be read with more loops than each answer token.
+Chain-of-thought generation in looped models is almost all decoding, so the prompt can be read with more loops than
+each answer token.
 A small distilled adapter makes this untying work: with four prefill loops, one decode loop gains about 13 points on
 average over the original model and 14--15 points in the same measured time, and LoopBridge keeps retrieval over
 16K-token prompts when one adapter serves every trained pair of depths. Reading the prompt with many loops and decoding with few is a cheap way to spend test-time compute in
@@ -495,7 +497,27 @@ reasoning models and decision models; Appendices~\ref{app:method}--\ref{app:eval
 details; the remaining appendices give further checks, and Appendix~\ref{app:repro} lists what is released. In the
 appendix, ``LoRA-distilled'' is Distilled and ``loop adapter'' or ``aligned adapter'' is LoopBridge; ``one cache'' is
 its lighter variant in which every decode loop reads the last prefill loop. In every figure ours is orange and the
-original model grey.
+original model grey. Table~\ref{tab:impl} lists which implementation and which measurement each result uses.
+
+\begin{table}[h]
+\centering\footnotesize
+\setlength\tabcolsep{2.5pt}
+\begin{tabular}{@{}p{0.32\columnwidth}p{0.29\columnwidth}p{0.32\columnwidth}@{}}
+\toprule
+result & LoopBridge form & measurement \\
+\midrule
+Tables~\ref{tab:main}, \ref{tab:ablate}; Figures~\ref{fig:grid}, \ref{fig:depth} & per-loop caches, maps as in
+training & accuracy, full evaluation sets \\
+Figures~\ref{fig:budget}, \ref{fig:budgetfull} & per-loop caches, maps folded in & batch 1, replayed requests \\
+Figures~\ref{fig:tbatched}, \ref{fig:batched} & per-loop caches, maps folded in & continuous batching, wall time \\
+Figures~\ref{fig:equal}, \ref{fig:pareto}, \ref{fig:frontier} & one shared cache & accuracy; decode
+microbenchmark \\
+\bottomrule
+\end{tabular}
+\caption{\textbf{Implementation behind each result.} The per-loop forms compute the same function in exact arithmetic
+(Section~\ref{sec:method}); the one-cache LoopBridge is a separately trained variant.}
+\label{tab:impl}
+\end{table}
 
 \section{Per-Request Time}
 \label{app:time}
@@ -1091,25 +1113,27 @@ is no chunked prefill, which favours configurations with a short prefill. Each r
 one buffer per loop and layer, and decode attention reads only that request's tokens (flash attention with variable
 lengths). Decoding is the same for every configuration: the $n$-loop model on per-loop prompt caches, with LoRA merged
 into the weights and, for LoopBridge, the maps folded into the caches. Time per request is the total wall time divided
-by the 400 requests.
+by the 400 requests, averaged over two timing passes: single runs of one task vary by 10--30\% between passes (the
+generated tokens are identical), as eager decoding is bound by host-side work on a shared machine. Batch 1 is in
+Figure~\ref{fig:budgetfull}.
 
 \begin{figure*}[t]
 \centering
-\IfFileExists{../figs/fig_batched.pdf}{\includegraphics[width=0.82\textwidth]{../figs/fig_batched.pdf}}{}
+\IfFileExists{../figs/fig_batched.pdf}{\includegraphics[width=0.66\textwidth]{../figs/fig_batched.pdf}}{}
 \caption{\textbf{Batched serving keeps the one-decode-loop advantage.} The 400 timed requests of
 Figure~\ref{fig:budgetfull} served with continuous batching on one B300, each prompt prefilled alone: mean accuracy of
-the served answers against wall seconds per request (batch 8 and 32: mean of two timing passes). Filled: one decode
-loop; hollow: two.}
+the served answers against wall seconds per request (mean of two timing passes). Filled: one decode loop; hollow:
+two.}
 \label{fig:batched}
 \end{figure*}
 
 \begin{table}[h]
 \centering\small
 \setlength\tabcolsep{3pt}
-\begin{tabular}{@{}lrrrrr@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
- & & \multicolumn{3}{c}{s / request, batch} & prefill \\
-configuration & acc. & 1 & 8 & 32 & at 32 \\
+ & & \multicolumn{2}{c}{s / request, batch} & prefill \\
+configuration & acc. & 8 & 32 & at 32 \\
 \midrule
 \csname @@input\endcsname ../figs/tab_batched.tex
 \bottomrule
@@ -1120,13 +1144,13 @@ seconds per request, and the prefill share of the wall time at batch 32; ours sh
 \end{table}
 
 \begin{table}[h]
-\centering\small
+\centering\footnotesize
 \setlength\tabcolsep{3pt}
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
  & \multicolumn{3}{c}{GSM8K (400)} & \multicolumn{2}{c}{MATH-500} \\
 \cmidrule(lr){2-4}\cmidrule(l){5-6}
- & acc. & s, b16 & s, b32 & acc. & s, b16 \\
+ & acc., b16 & s, b16 & s, b32 & acc. & s, b16 \\
 \midrule
 \csname @@input\endcsname ../figs/tab_tbatched.tex
 \bottomrule
@@ -1145,6 +1169,17 @@ generated tokens) one prompt KV cache decodes $0.97\times$ Original at $n{=}2$ a
 prompt to $3.3\times$ at 15K, where \rw{4}{2} also outpaces \nat{2} ($1.12\times$). Aligned caches decode at about the
 cost of \nat{n} (314 against 342 tokens/s at $n=2$, $2.5\times$ \nat{4}).
 
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\columnwidth]{../figs/fig2_frontier.pdf}
+\caption{\textbf{Two decode loops come within 1.3 points of four on average at $3.2\times$ the decode throughput.}
+Ouro-2.6B-Thinking with LoopBridge (one cache): average accuracy over eight benchmarks (each on the items all
+configurations share) against a separate decode microbenchmark (best tokens/s over batch sizes at an 8K-token prompt,
+Table~\ref{tab:serve}). Labels: prefill/decode loops; the four
+prefill loops add 3.1 points over 2/2 at the same decode cost.}
+\label{fig:frontier}
+\end{figure}
 
 \begin{table}[h]
 \centering\small

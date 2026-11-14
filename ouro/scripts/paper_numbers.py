@@ -422,6 +422,7 @@ def keys():
            for c in ("a41", "a42")}   # long context
     ks |= {f"B:{pre}-a41-{bench}:{bench}" for pre in ("X26s2", "X26s3", "X26los2r80", "X26los3r80")
            for bench in ("helmet", "longbench")}
+    ks |= {ruler(f"{pre}-{c}", 16) for _, pre in LONGCTX_ARMS for c in MAP_CELLS}   # maps by depth (Q3)
     ks |= {main_key(b, "fixed4", c).replace("X26f4-", f"X26f4s{sd}-", 1) for b in MAIN_BENCH for c in ("a41", "a42") for sd in (2, 3)}
     ks |= {dist_seed_key(b, c, v) for b in MAIN_BENCH for c in (1, 2) for v in LR_VARIANTS}
     ks |= {dist_seed_key(b, c, f"r80{sd}") for b in MAIN_BENCH for c, sds in R80_SEEDS.items() for sd in sds}
@@ -1122,10 +1123,14 @@ def batched_serving(reps=5000):
     out = {}
     for b in (1, 8, 32):
         got = {c: batched_requests(c, b) for c in BATCH_CONDS}
-        for c, g in list(got.items()):   # a second timing pass (OUT=batchb): wall time = mean of the passes
-            again = batched_requests(c, b, "batchb") if g else None
-            if again and again[2] == g[2]:
-                got[c] = (g[0], (g[1] + again[1]) / 2, g[2])
+        for c, g in list(got.items()):   # further timing passes (OUT=batchb, batchc): wall time = mean of the passes
+            walls = [g[1]] if g else []
+            for pre in ("batchb", "batchc"):
+                again = batched_requests(c, b, pre) if g else None
+                if again and again[2] == g[2]:
+                    walls.append(again[1])
+            if g:
+                got[c] = (g[0], float(np.mean(walls)), g[2])
         for c, g in got.items():
             if not g:
                 continue
@@ -1659,6 +1664,29 @@ def lora80():
 
 
 LONGCTX_ARMS = (("LoopBridge", "X26"), ("LoRA r16, maps frozen", "X26lo"), ("LoRA r80, maps frozen", "X26lor80"))
+
+
+MAP_CELLS = ("a11", "a22", "a33", "a44", "a21", "a31", "a41", "a32", "a42", "a43")
+
+
+def maps_by_depth():
+    """Review 11-14 (Q3): is the maps' RULER-16K advantage about prefill depth exceeding decode depth (m > n) or about
+    length alone? RULER-16K of LoopBridge and the all-pairs LoRA at rank 16 and 80 (maps frozen) at matched cells m = n
+    and at m > n, each cell on the items the three share; paired intervals of LoopBridge minus each."""
+    out = {}
+    for c in MAP_CELLS:
+        sets = {arm: load(ruler(f"{pre}-{c}", 16)) for arm, pre in LONGCTX_ARMS}
+        if not all(sets.values()):
+            continue
+        ids = set.intersection(*(set(v) for v in sets.values()))
+        sub = {arm: {i: v[i] for i in ids} for arm, v in sets.items()}
+        row = {arm: round(agg(v, ids), 1) for arm, v in sub.items()}
+        for arm in ("LoRA r16, maps frozen", "LoRA r80, maps frozen"):
+            d = boot(sub["LoopBridge"], sub[arm])
+            row[f"vs {arm}"] = (round(d["diff"], 1), round(d["lo"], 1), round(d["hi"], 1))
+        out[c] = row
+        print(f"Maps x depth {c[1]}/{c[2]} (m-n={int(c[1]) - int(c[2])})  " + "  ".join(f"{k}: {v}" for k, v in row.items()))
+    return out
 
 
 def longctx_maps():
@@ -2349,7 +2377,7 @@ def _compute(counter):
         print(f"{sec:12s} {label:52s} {means[-1]['mean']:6.1f}  n={len(s)}")
     e2e_rows, ratios = e2e_table()
     _TB = time_breakdown()   # printed once (its checks count); later callers reuse it through time_breakdown_rows
-    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), lora80=lora80(), longctx_maps=longctx_maps(), budget_pairs=budget_pairs(), batched_serving=batched_serving(), thinking_batched=thinking_batched(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
+    OUT.write_text(json.dumps(dict(comparisons=res, means=means, e2e=e2e_rows, e2e_ratios=ratios, throughput=throughput(), lev=lev(), equal=(eq := equal()), equal_aligned=equal("a"), smaller=smaller_model(e2e_rows, eq), throughput_context=throughput_context(), appendix=appendix_checks(), think_frontier=think_frontier(), repro=repro(), sn_equal=sn_equal(), taskmap_select=taskmap_select(), taskmap_cells=taskmap_cells(), main_table=main_table(), gsm_protocol=gsm_protocol(), same_weights=same_weights(), same_weights_seeds=same_weights_seeds(), time_breakdown=_TB, batch_time=batch_time(), timing_repeat=timing_repeat(), depth_sweep=depth_sweep(), depth_gains=depth_gains_main(), main_gains=main_gains(), lora80=lora80(), longctx_maps=longctx_maps(), maps_by_depth=maps_by_depth(), budget_pairs=budget_pairs(), batched_serving=batched_serving(), thinking_batched=thinking_batched(), depth_sweep_14=depth_sweep_14(), plateau_seeds=plateau_seeds(), prefill_trainable=prefill_trainable(), lr_check=lr_check(), think_sweep=think_sweep(), plateau=plateau(), plateau_extrapolated=plateau("m<=4"), main_table_14=main_table_14(), aligned_cells=aligned_cells(), ablations=ablations(), overlap=overlap_check()), indent=1))
     print(f"wrote {OUT}; {counter.flags} printed values differ ({bad} in the paired comparisons)")
 
 
