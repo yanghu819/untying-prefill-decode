@@ -17,6 +17,7 @@ Paired bootstrap: 5,000 resamples of items (numpy, seed 0), 2.5 / 97.5 percentil
 """
 import glob
 import gzip
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -1018,7 +1019,28 @@ OVERHEAD_PRINTED = (19, 40)   # Limitations: adapter decode time per token vs Or
 TIME_TASKS = {"gsmfull": "GSM8K", "math": "MATH-500", "bbh": "BBH", "mmlupro": "MMLU-Pro"}
 
 
+_REPLAY_CACHE = None
+
+
 def replay_score(item, text, target):
+    """replay_score_uncached, memoised on disk when REPLAY_CACHE names a JSON file (pn_sync sets it on the pipeline box:
+    math_verify over tens of thousands of served answers otherwise dominates the compute time)."""
+    global _REPLAY_CACHE
+    path = os.environ.get("REPLAY_CACHE")
+    if not path:
+        return replay_score_uncached(item, text, target)
+    if _REPLAY_CACHE is None:
+        import atexit
+        _REPLAY_CACHE = json.load(open(path)) if os.path.exists(path) else {}
+        n0 = len(_REPLAY_CACHE)
+        atexit.register(lambda: len(_REPLAY_CACHE) > n0 and json.dump(_REPLAY_CACHE, open(path, "w")))
+    k = hashlib.md5(json.dumps([item, text, str(target)]).encode()).hexdigest()
+    if k not in _REPLAY_CACHE:
+        _REPLAY_CACHE[k] = replay_score_uncached(item, text, target)
+    return _REPLAY_CACHE[k]
+
+
+def replay_score_uncached(item, text, target):
     """Score a replayed answer (time_requests.py) with the evaluation's rule: final answer for MATH-500 (boxed), else
     the task's lm-eval regex filter (first match) and exact match with its normalisation."""
     import string

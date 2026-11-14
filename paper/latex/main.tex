@@ -406,14 +406,13 @@ per request of Original 1/1 and Distilled 1/1 and stays $+14.5$\ci{9.0}{19.8} an
 them; a second decode loop costs $1.38$--$1.48\times$ its time.
 
 Measured as decode throughput instead (Figure~\ref{fig:pareto}), the one-cache LoopBridge with four prefill loops is
-more accurate than Original $n/n$ at one or two decode loops and faster at three or four, because a single stored
-prompt cache admits larger batches; at prefill 4 / decode 2 it runs at $1.19\times$ the throughput of Original 2/2 and
-$3.2\times$ that of Original 4/4 (Appendix~\ref{app:serve}).
+more accurate than Original $n/n$ at one or two decode loops and faster at three or four, since one stored prompt cache
+admits larger batches; at 4/2 it has $1.19\times$ and $3.2\times$ the throughput of Original 2/2 and 4/4.
 
 On Ouro-2.6B-Thinking, prefill 4 / decode 2 comes within 1.3 points of Original 4/4 on average at 3.2 times its decode
-throughput (Figure~\ref{fig:frontier}). Served in batches of 16 or 32, LoopBridge 4/2 answers 400 GSM8K problems as
-accurately as Original 4/4 (96.5 against 95.5) in 0.49--0.58 of its time, and 2.2 to 4.2 points more accurately than
-Original 2/2 and Distilled 2/2 in 0.80--1.02 of their time (Table~\ref{tab:tbatched} in Appendix~\ref{app:serve}).
+throughput (Figure~\ref{fig:frontier}). Served in batches of 16 or 32, LoopBridge 4/2 matches Original 4/4 on
+400 GSM8K problems (96.5 against 95.5) in 0.49--0.58 of its time and beats Original 2/2 and Distilled 2/2 by 2.2 to 4.2
+points in 0.80--1.02 of their time (Table~\ref{tab:tbatched}).
 
 
 \subsection{Ablations}
