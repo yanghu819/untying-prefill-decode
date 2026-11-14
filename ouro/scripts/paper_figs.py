@@ -849,6 +849,24 @@ def tab_batched():
     (OUT / "tab_batched.tex").write_text("\n".join(lines) + "\n")
 
 
+def tab_tbatched():
+    """Appendix K: Ouro-2.6B-Thinking served in batches (paper_numbers thinking_batched): accuracy and wall seconds per
+    request on GSM8K (batch 16 and 32) and MATH-500 (batch 16)."""
+    T = PN.get("thinking_batched", {})
+    rows = [("Original 2/2", "native2st"), ("Original 4/4", "native4st"), ("Distilled 2/2", "D2st"),
+            ("Ours, LoopBridge, 4/2", "a4x2pm")]
+    lines = []
+    for lab, c in rows:
+        g16, g32, m16 = T.get(f"gsmthink {c}@16"), T.get(f"gsmthink {c}@32"), T.get(f"maththink {c}@16")
+        if not g16:
+            continue
+        cell = lambda r, k, fmt: fmt % r[k] if r else "--"
+        sh = r"\rowcolor{oursbg} " if c == "a4x2pm" else ""
+        lines.append(rf"{sh}{lab} & {cell(g16, 'acc', '%.1f')} & {cell(g16, 's_per_request', '%.2f')} & "
+                     rf"{cell(g32, 's_per_request', '%.2f')} & {cell(m16, 'acc', '%.1f')} & {cell(m16, 's_per_request', '%.2f')} \\")
+    (OUT / "tab_tbatched.tex").write_text("\n".join(lines) + "\n")
+
+
 def tab_longctx():
     """Appendix (Design Variants): the three all-pairs adapters on RULER-16K, HELMET and LongBench at 4/1 and 4/2 (seed 1;
     paper_numbers lora80 and longctx_maps, each benchmark on the items the three share)."""
@@ -952,5 +970,5 @@ def tab_build():
     (OUT / "tab_build.tex").write_text("\n".join(lines) + "\n")
 
 if __name__ == "__main__":
-    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_build(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_batched(); tab_batched(); tab_longctx(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
+    fig_concept(); fig_time(); tab_time(); tab_plateau(); tab_depth14(); tab_prefilltrn(); tab_build(); tab_lr(); fig_depth_main(); fig_depth(); fig_sametime(); fig_budget(); fig_batched(); tab_batched(); tab_tbatched(); tab_longctx(); fig0(); fig2(); fig_equal(); fig_pareto(); fig_lev(); fig_aligned(["MMLU", "BBH 3-shot", "ARC-C", "Winogrande", "GSM8K", "HumanEval+", "MBPP+", "RULER-16K"]); tab_equal("2.6B-T"); tab_distill(); tab_lev(); tab_main(); tab_main("main_table_14", "tab_main14"); tab_ablation(); tab_tokens(); tab_e2e(); tab_repro(); tab_aligned()
     print("\n".join(sorted(p.name for p in OUT.iterdir())))

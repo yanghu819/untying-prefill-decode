@@ -27824,6 +27824,26 @@
     0.0
    ]
   },
+  "helmet seeds": {
+   "LoopBridge": [
+    32.7,
+    1.2,
+    [
+     32.2,
+     34.0,
+     31.9
+    ]
+   ],
+   "LoRA r80, maps frozen": [
+    34.5,
+    1.1,
+    [
+     34.7,
+     33.3,
+     35.5
+    ]
+   ]
+  },
   "longbench": {
    "n": 400,
    "LoopBridge": 8.6,
@@ -27853,6 +27873,26 @@
     1.3,
     -0.2,
     2.9
+   ]
+  },
+  "longbench seeds": {
+   "LoopBridge": [
+    8.9,
+    0.3,
+    [
+     8.6,
+     8.8,
+     9.2
+    ]
+   ],
+   "LoRA r80, maps frozen": [
+    9.9,
+    0.1,
+    [
+     9.8,
+     10.0,
+     9.8
+    ]
    ]
   }
  },
@@ -28030,8 +28070,8 @@
    "batch": 1,
    "n": 400,
    "acc": 57.5,
-   "s_per_request": 12.734,
-   "prefill_pct": 1.3,
+   "s_per_request": 13.281,
+   "prefill_pct": 1.2,
    "tokens": 237.1
   },
   "D2st@1": {
@@ -28039,7 +28079,7 @@
    "batch": 1,
    "n": 400,
    "acc": 59.5,
-   "s_per_request": 12.568,
+   "s_per_request": 13.176,
    "prefill_pct": 1.3,
    "tokens": 220.3
   },
@@ -28048,8 +28088,8 @@
    "batch": 1,
    "n": 400,
    "acc": 58.8,
-   "s_per_request": 12.48,
-   "prefill_pct": 1.3,
+   "s_per_request": 13.216,
+   "prefill_pct": 1.2,
    "tokens": 225.3
   },
   "a4x2pm@1": {
@@ -28057,8 +28097,8 @@
    "batch": 1,
    "n": 400,
    "acc": 57.8,
-   "s_per_request": 13.473,
-   "prefill_pct": 1.8,
+   "s_per_request": 13.362,
+   "prefill_pct": 1.9,
    "tokens": 237.3
   },
   "f4x2pm@1": {
@@ -28066,8 +28106,8 @@
    "batch": 1,
    "n": 400,
    "acc": 59.2,
-   "s_per_request": 11.257,
-   "prefill_pct": 2.2,
+   "s_per_request": 11.939,
+   "prefill_pct": 2.1,
    "tokens": 203.8
   },
   "a4x1pm vs native1st@1": {
@@ -28128,7 +28168,7 @@
    "diff": 14.0,
    "lo": 8.5,
    "hi": 19.5,
-   "ratio": 1.37
+   "ratio": 1.43
   },
   "D2st vs a4x1pm@1": {
    "a": "D2st",
@@ -28138,7 +28178,7 @@
    "diff": 16.0,
    "lo": 11.0,
    "hi": 21.2,
-   "ratio": 1.35
+   "ratio": 1.42
   },
   "a4x2pm vs native2st@1": {
    "a": "a4x2pm",
@@ -28148,7 +28188,7 @@
    "diff": 0.2,
    "lo": -4.5,
    "hi": 4.8,
-   "ratio": 1.06
+   "ratio": 1.01
   },
   "a4x2pm vs D2st@1": {
    "a": "a4x2pm",
@@ -28158,7 +28198,7 @@
    "diff": -1.8,
    "lo": -6.2,
    "hi": 2.8,
-   "ratio": 1.07
+   "ratio": 1.01
   },
   "a4x2pm vs D2r80st@1": {
    "a": "a4x2pm",
@@ -28168,7 +28208,7 @@
    "diff": -1.0,
    "lo": -5.2,
    "hi": 3.5,
-   "ratio": 1.08
+   "ratio": 1.01
   },
   "native1st@8": {
    "cond": "native1st",
@@ -28551,7 +28591,114 @@
    "ratio": 1.15
   }
  },
- "thinking_batched": {},
+ "thinking_batched": {
+  "gsmthink native2st@16": {
+   "n": 400,
+   "passes": 2,
+   "acc": 94.2,
+   "s_per_request": 3.799,
+   "prefill_pct": 3.7,
+   "tokens": 948.4
+  },
+  "gsmthink native4st@16": {
+   "n": 400,
+   "passes": 2,
+   "acc": 95.5,
+   "s_per_request": 6.815,
+   "prefill_pct": 3.7,
+   "tokens": 825.5
+  },
+  "gsmthink D2st@16": {
+   "n": 400,
+   "passes": 2,
+   "acc": 92.2,
+   "s_per_request": 4.162,
+   "prefill_pct": 3.6,
+   "tokens": 905.0
+  },
+  "gsmthink a4x2pm@16": {
+   "n": 400,
+   "passes": 2,
+   "acc": 96.5,
+   "s_per_request": 3.321,
+   "prefill_pct": 6.3,
+   "tokens": 750.1
+  },
+  "gsmthink a4x2pm vs native4st@16": {
+   "n": 400,
+   "diff": 1.0,
+   "lo": -0.8,
+   "hi": 2.8,
+   "ratio": 0.49
+  },
+  "gsmthink a4x2pm vs native2st@16": {
+   "n": 400,
+   "diff": 2.2,
+   "lo": 0.5,
+   "hi": 4.2,
+   "ratio": 0.87
+  },
+  "gsmthink a4x2pm vs D2st@16": {
+   "n": 400,
+   "diff": 4.2,
+   "lo": 2.2,
+   "hi": 6.5,
+   "ratio": 0.8
+  },
+  "gsmthink native2st@32": {
+   "n": 400,
+   "passes": 2,
+   "acc": 94.2,
+   "s_per_request": 2.323,
+   "prefill_pct": 6.0,
+   "tokens": 948.2
+  },
+  "gsmthink native4st@32": {
+   "n": 400,
+   "passes": 2,
+   "acc": 95.5,
+   "s_per_request": 3.86,
+   "prefill_pct": 6.8,
+   "tokens": 825.4
+  },
+  "gsmthink D2st@32": {
+   "n": 400,
+   "passes": 2,
+   "acc": 92.8,
+   "s_per_request": 2.197,
+   "prefill_pct": 6.4,
+   "tokens": 893.5
+  },
+  "gsmthink a4x2pm@32": {
+   "n": 400,
+   "passes": 2,
+   "acc": 96.5,
+   "s_per_request": 2.235,
+   "prefill_pct": 10.3,
+   "tokens": 749.6
+  },
+  "gsmthink a4x2pm vs native4st@32": {
+   "n": 400,
+   "diff": 1.0,
+   "lo": -0.8,
+   "hi": 2.8,
+   "ratio": 0.58
+  },
+  "gsmthink a4x2pm vs native2st@32": {
+   "n": 400,
+   "diff": 2.2,
+   "lo": 0.5,
+   "hi": 4.2,
+   "ratio": 0.96
+  },
+  "gsmthink a4x2pm vs D2st@32": {
+   "n": 400,
+   "diff": 3.8,
+   "lo": 1.5,
+   "hi": 6.0,
+   "ratio": 1.02
+  }
+ },
  "depth_sweep_14": [
   {
    "n": 1,

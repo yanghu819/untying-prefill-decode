@@ -1146,44 +1146,57 @@ def batched_serving(reps=5000):
 
 
 def thinking_batched(reps=5000):
-    """Ouro-2.6B-Thinking GSM8K (chat template, 4,096-token budget) served with batch_requests.py at batch 16 and 32
-    (time_batch_think.sh; passes tbatch / tbatchb): accuracy (math_verify), wall seconds per request (mean of the
-    passes), prefill share; LoopBridge 4/2 against Original 4/4, Original 2/2 and Distilled 2/2."""
+    """Ouro-2.6B-Thinking served with batch_requests.py (time_batch_think.sh; passes tbatch / tbatchb): GSM8K (400
+    requests, 4,096-token budget) at batch 16 and 32 and MATH-500 (500, 8,192 tokens) at batch 16, chat template;
+    accuracy (math_verify, as lm-eval), wall seconds per request (mean of the passes), prefill share; LoopBridge 4/2
+    against Original 4/4, Original 2/2 and Distilled 2/2."""
     out = {}
-    for b in (16, 32):
-        got = {}
-        for c in ("native2st", "native4st", "D2st", "a4x2pm"):
-            runs = []
-            for pre in ("tbatch", "tbatchb"):
-                f, sm = E2E / f"{pre}{b}-{c}-gsmthink.jsonl", E2E / f"{pre}{b}-{c}-gsmthink.summary.json"
-                if f.exists() and sm.exists():
-                    runs.append(([json.loads(x) for x in open(f)], json.load(open(sm))))
-            if not runs:
-                continue
-            rows = {r["id"]: (replay_score(r["id"], r["text"], r["target"]), r["prefill_s"], r["new_tokens"]) for r in runs[0][0]}
-            wall = float(np.mean([sm["wall_s"] for _, sm in runs]))
-            got[c] = (rows, wall)
-            v = list(rows.values())
-            out[f"{c}@{b}"] = dict(n=len(v), passes=len(runs), acc=round(100 * float(np.mean([x[0] for x in v])), 1),
-                                   s_per_request=round(wall / len(v), 3), prefill_pct=round(100 * sum(x[1] for x in v) / wall, 1),
-                                   tokens=round(float(np.mean([x[2] for x in v])), 1))
-            r = out[f"{c}@{b}"]
-            print(f"Think batch  batch {b:2d} {c:10s} n={r['n']} passes={r['passes']}  acc {r['acc']:5.1f}  {r['s_per_request']:6.3f} s/request"
-                  f"  prefill {r['prefill_pct']:4.1f}%  {r['tokens']:7.1f} tokens")
-        for c in ("native4st", "native2st", "D2st"):
-            if "a4x2pm" not in got or c not in got:
-                continue
-            A, C = got["a4x2pm"][0], got[c][0]
-            ids = sorted(set(A) & set(C))
-            d = np.array([A[i][0] - C[i][0] for i in ids])
-            rng = np.random.default_rng(0)
-            dq = 100 * d[rng.integers(0, len(ids), (reps, len(ids)))].mean(1)
-            row = dict(n=len(ids), diff=round(100 * float(d.mean()), 1), lo=round(float(np.percentile(dq, 2.5)), 1),
-                       hi=round(float(np.percentile(dq, 97.5)), 1),
-                       ratio=round((got["a4x2pm"][1] / len(A)) / (got[c][1] / len(C)), 2))
-            out[f"a4x2pm vs {c}@{b}"] = row
-            print(f"Think batch  batch {b:2d} a4x2pm vs {c:10s} n={row['n']}  acc {row['diff']:+5.1f} [{row['lo']:+5.1f}, {row['hi']:+5.1f}]"
-                  f"  time x{row['ratio']:.2f}")
+    for task, sizes in (("gsmthink", (16, 32)), ("maththink", (16,))):
+        for b in sizes:
+            got = {}
+            for c in ("native2st", "native4st", "D2st", "a4x2pm"):
+                runs = []
+                for pre in ("tbatch", "tbatchb", "tbatchc"):
+                    f, sm = E2E / f"{pre}{b}-{c}-{task}.jsonl", E2E / f"{pre}{b}-{c}-{task}.summary.json"
+                    if f.exists() and sm.exists():
+                        runs.append(([json.loads(x) for x in open(f)], json.load(open(sm))))
+                if not runs:
+                    continue
+                rows = {r["id"]: (replay_score(r["id"], r["text"], r["target"]), r["prefill_s"], r["new_tokens"])
+                        for r in runs[0][0]}
+                wall = float(np.mean([sm["wall_s"] for _, sm in runs]))
+                got[c] = (rows, wall)
+                v = list(rows.values())
+                k = f"{task} {c}@{b}"
+                out[k] = dict(n=len(v), passes=len(runs), acc=round(100 * float(np.mean([x[0] for x in v])), 1),
+                              s_per_request=round(wall / len(v), 3), prefill_pct=round(100 * sum(x[1] for x in v) / wall, 1),
+                              tokens=round(float(np.mean([x[2] for x in v])), 1))
+                r = out[k]
+                print(f"Think batch  {task} batch {b:2d} {c:10s} n={r['n']} passes={r['passes']}  acc {r['acc']:5.1f}"
+                      f"  {r['s_per_request']:6.3f} s/request  prefill {r['prefill_pct']:4.1f}%  {r['tokens']:7.1f} tokens")
+            for c in ("native4st", "native2st", "D2st"):
+                if "a4x2pm" not in got or c not in got:
+                    continue
+                A, C = got["a4x2pm"][0], got[c][0]
+                ids = sorted(set(A) & set(C))
+                d = np.array([A[i][0] - C[i][0] for i in ids])
+                rng = np.random.default_rng(0)
+                dq = 100 * d[rng.integers(0, len(ids), (reps, len(ids)))].mean(1)
+                row = dict(n=len(ids), diff=round(100 * float(d.mean()), 1), lo=round(float(np.percentile(dq, 2.5)), 1),
+                           hi=round(float(np.percentile(dq, 97.5)), 1),
+                           ratio=round((got["a4x2pm"][1] / len(A)) / (got[c][1] / len(C)), 2))
+                out[f"{task} a4x2pm vs {c}@{b}"] = row
+                print(f"Think batch  {task} batch {b:2d} a4x2pm vs {c:10s} n={row['n']}  acc {row['diff']:+5.1f}"
+                      f" [{row['lo']:+5.1f}, {row['hi']:+5.1f}]  time x{row['ratio']:.2f}")
+    # Section 5.5: "as accurately as Original 4/4 (96.5 against 95.5) in 0.49--0.58 of its time, and 2.2 to 4.2 points
+    # more accurately than Original 2/2 and Distilled 2/2 in 0.80--1.02 of their time" (GSM8K, batch 16 and 32)
+    if all(f"gsmthink a4x2pm vs {c}@{b}" in out for c in ("native4st", "native2st", "D2st") for b in (16, 32)):
+        acc = [out[f"gsmthink {c}@{b}"]["acc"] for c in ("a4x2pm", "native4st") for b in (16, 32)]
+        r4 = sorted(out[f"gsmthink a4x2pm vs native4st@{b}"]["ratio"] for b in (16, 32))
+        two = [out[f"gsmthink a4x2pm vs {c}@{b}"] for c in ("native2st", "D2st") for b in (16, 32)]
+        got = (acc, r4, (min(r["diff"] for r in two), max(r["diff"] for r in two)), (min(r["ratio"] for r in two), max(r["ratio"] for r in two)))
+        if got != ([96.5, 96.5, 95.5, 95.5], [0.49, 0.58], (2.2, 4.2), (0.8, 1.02)) or any(r["lo"] <= 0 for r in two):
+            print(f"Think batch  {got}  !! paper: 96.5/95.5, x0.49-0.58, +2.2 to +4.2 (all intervals > 0), x0.80-1.02")
     return out
 
 
@@ -1663,6 +1676,8 @@ def longctx_maps():
             out[f"{bench} seeds"] = {arm: (round(float(np.mean(v)), 1), round(float(np.std(v, ddof=1)), 1), [round(x, 1) for x in v])
                                      for arm, v in per.items()}
             print(f"Long ctx     {bench:9s} three seeds n={len(ids3)}  {out[f'{bench} seeds']}")
+            if bench == "helmet" and [out["helmet seeds"][a][:2] for a in seeds] != [(32.7, 1.2), (34.5, 1.1)]:
+                print("Long ctx     helmet three seeds  !! paper (Appendix L): 32.7+-1.2 / 34.5+-1.1")
     # Appendix (The maps beyond RULER) and Section 5.6 ("within three points of each other, rank 80 ahead on HELMET")
     want = {("helmet", ""): (-2.4, -5.0, -0.3), ("helmet", " a42"): (-2.9, -6.2, 0.0), ("longbench", ""): (-1.2, None, None),
             ("longbench", " a42"): (1.3, None, None)}

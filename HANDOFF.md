@@ -52,6 +52,11 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
     (`longctx_maps()`, Table `tab_longctx` in Appendix L). The maps do not help there (LoopBridge within 0.3 of r16;
     r80 +2.4/+2.9 on HELMET). Claims narrowed everywhere to "retrieval over 16K-token prompts"; one line in Limitations.
     Seeds (X26s2/s3, X26los2/3, X26los2r80/3r80) on HELMET/LongBench are exported but not yet quoted.
+  - *Thinking batched serving* (`time_batch_think.sh`, TASK=gsm8k|math500, files `tbatch<B>-<cond>-{gsm,math}think`,
+    second pass `tbatchb`; `thinking_batched()`, Table `tab_tbatched`): GSM8K, 400 requests, batch 16/32: LoopBridge 4/2
+    96.5 vs Original 4/4 95.5 (+1.0 [-0.8, 2.8]) at 0.54-0.58x its time; +2.2 over Original 2/2 and +3.8-4.2 over
+    Distilled 2/2 at 0.80-1.02x their time (served-answer accuracy; lm-eval on the same 400 items: 95.0 / 95.2).
+    MATH-500 (500, 8,192 tokens, batch 16) both passes running on a2 since 17:56.
   - *Three seeds of each all-pairs adapter* at 4/1 (`lora80()` a41_three_arms): avg 56.7/54.3/56.7, RULER-16K
     63.9+-1.0 (LoopBridge) / 44.7+-4.4 (r16) / 57.6+-1.6 (r80); in Section 5.6.
   - *Thinking MATH-500*: the distilled model's shard 3 had died twice on a cuDNN SDPA error at item 74; resumed with
