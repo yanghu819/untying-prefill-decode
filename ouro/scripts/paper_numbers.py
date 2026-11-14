@@ -1157,8 +1157,8 @@ def batched_serving(reps=5000):
             print(f"Batched      batch {b:2d} {a:10s} vs {c:10s} n={row['n']}  acc {row['diff']:+5.1f} [{row['lo']:+5.1f},"
                   f" {row['hi']:+5.1f}]  time x{row['ratio']:.2f}")
     # Section 5.5, introduction and Limitations (batch 32)
-    want = {"a4x1pm vs native1st@32": ((14.5, 9.0, 19.8), 1.15), "a4x1pm vs D1st@32": ((8.0, 2.8, 13.5), 1.17),
-            "native2st vs a4x1pm@32": (None, 1.48), "D2st vs a4x1pm@32": (None, 1.38)}   # mean of two passes
+    want = {"a4x1pm vs native1st@32": ((14.5, 9.0, 19.8), 1.15), "a4x1pm vs D1st@32": ((8.0, 2.8, 13.5), 1.16),
+            "native2st vs a4x1pm@32": (None, 1.52), "D2st vs a4x1pm@32": (None, 1.44)}   # mean of three passes
     for k, (acc, ratio) in want.items():
         r = out.get(k)
         if r and ((acc and (r["diff"], r["lo"], r["hi"]) != acc) or r["ratio"] != ratio):
@@ -1167,8 +1167,8 @@ def batched_serving(reps=5000):
     if r and round(r["prefill_pct"]) != 27:
         print(f"Batched      a4x1pm@32 prefill {r['prefill_pct']}%  !! paper: 27%")
     r = out.get("D2r80st@32")
-    if r and out.get("a4x1pm@32") and not 1.38 <= round(r["s_per_request"] / out["a4x1pm@32"]["s_per_request"], 2) <= 1.48:
-        print(f"Batched      D2r80st@32 / a4x1pm@32 outside 1.38-1.48  !! paper")
+    if r and out.get("a4x1pm@32") and not 1.44 <= round(r["s_per_request"] / out["a4x1pm@32"]["s_per_request"], 2) <= 1.52:
+        print(f"Batched      D2r80st@32 / a4x1pm@32 outside 1.44-1.52  !! paper")
     return out
 
 
@@ -1222,8 +1222,12 @@ def thinking_batched(reps=5000):
         r4 = sorted(out[f"gsmthink a4x2pm vs native4st@{b}"]["ratio"] for b in (16, 32))
         two = [out[f"gsmthink a4x2pm vs {c}@{b}"] for c in ("native2st", "D2st") for b in (16, 32)]
         got = (acc, r4, (min(r["diff"] for r in two), max(r["diff"] for r in two)), (min(r["ratio"] for r in two), max(r["ratio"] for r in two)))
-        if got != ([96.5, 96.5, 95.5, 95.5], [0.49, 0.58], (2.2, 4.2), (0.8, 1.02)) or any(r["lo"] <= 0 for r in two):
-            print(f"Think batch  {got}  !! paper: 96.5/95.5, x0.49-0.58, +2.2 to +4.2 (all intervals > 0), x0.80-1.02")
+        if got != ([96.5, 96.5, 95.5, 95.5], [0.46, 0.56], (2.2, 4.2), (0.8, 0.98)) or any(r["lo"] <= 0 for r in two):
+            print(f"Think batch  {got}  !! paper: 96.5/95.5, x0.46-0.56, +2.2 to +4.2 (all intervals > 0), x0.80-0.98")
+    m = {c: out.get(f"maththink {c}@16", {}).get("acc") for c in ("a4x2pm", "native2st", "native4st")}
+    r = out.get("maththink a4x2pm vs native4st@16")
+    if r and (m != {"a4x2pm": 86.2, "native2st": 84.2, "native4st": 89.8} or r["ratio"] != 0.58):
+        print(f"Think batch  MATH-500 {m} x{r['ratio']}  !! paper: 86.2 / 84.2 / 89.8, x0.58")
     return out
 
 

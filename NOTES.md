@@ -31,8 +31,8 @@ why, and what changed in the paper. Launchers for every run are in `ouro/runs_sc
   condition. Checked: logits within bf16 rounding (max |d| 0.125-0.25 at logit scale ~22) and identical argmax over 24
   teacher-forced steps against the batch-1 decoder. In this eager implementation a batch-1 prefill costs ~0.08 s per
   loop-set (mostly launch overhead), so at batch 32 the four prefill loops take 27% of the wall time; Ours 4/1 still
-  costs only 1.15-1.17x Original/Distilled 1/1 (Ours writes ~10% more tokens) and keeps +14.5 / +8.0 points; 2/2 costs
-  1.38-1.48x (mean of two passes). Batch 8: 1.14x / 1.20x. Two passes: a2 (all B) and a1 (B=1) / a2 (B=8, 32); hardware and driver identical.
+  costs only 1.15-1.16x Original/Distilled 1/1 (Ours writes ~10% more tokens) and keeps +14.5 / +8.0 points; 2/2 costs
+  1.44-1.52x (mean of three passes). Batch 8: 1.14x / 1.20x. Two passes: a2 (all B) and a1 (B=1) / a2 (B=8, 32); hardware and driver identical.
 - Maps vs rank-80 LoRA beyond RULER (HELMET bench-mini, LongBench 400): no advantage for the maps. HELMET 4/1: LB 32.2,
   r16 32.0, r80 34.7; 4/2: 48.3 / 48.6 / 51.2. The HELMET gap is driven by the small recall (34 items) and re-rank
   (41) categories; on RAG (700) and ICL (333) LB = r80 and LB > r16 (+2.1, +2.4). LongBench (~9-13%) within 1.5.

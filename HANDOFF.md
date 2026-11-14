@@ -46,17 +46,18 @@ and login are **not** in this public repo: they are in `~/.b300-handoff/CLUSTER.
     cache slots; logits match the batch-1 decoder to bf16 rounding). Launcher `runs_scripts/time_batch.sh` (OUT, BATCHES);
     files `runs/e2e/batch<B>-<cond>-<task>.jsonl` + `.summary.json`, second pass `batchb<B>-*` (B=8/32 on a2, B=1 on a1).
     `paper_numbers.batched_serving()` (pass mean), Figure `fig_batched`, Table `tab_batched` (Appendix K), two sentences
-    in Section 5.5. At batch 32 (mean of two passes): Ours 4/1 1.15x / 1.17x the time of Original 1/1 / Distilled 1/1, +14.5 / +8.0
-    points; prefill 27% of wall time; 2/2 costs 1.38-1.48x. The batch-32 *estimate* figure (fig_budget32) was removed.
+    in Section 5.5. At batch 32 (mean of three passes, a2/a2/a1): Ours 4/1 1.15x / 1.16x the time of Original 1/1 / Distilled 1/1,
+    +14.5 / +8.0 points; prefill 27% of wall time; 2/2 costs 1.44-1.52x. The batch-32 *estimate* figure (fig_budget32) was removed.
   - *Maps beyond RULER* (Q3): HELMET and LongBench at 4/1 and 4/2 for LoopBridge, all-pairs LoRA r16 and r80
     (`longctx_maps()`, Table `tab_longctx` in Appendix L). The maps do not help there (LoopBridge within 0.3 of r16;
     r80 +2.4/+2.9 on HELMET). Claims narrowed everywhere to "retrieval over 16K-token prompts"; one line in Limitations.
     Seeds (X26s2/s3, X26los2/3, X26los2r80/3r80) on HELMET/LongBench are exported but not yet quoted.
   - *Thinking batched serving* (`time_batch_think.sh`, TASK=gsm8k|math500, files `tbatch<B>-<cond>-{gsm,math}think`,
     second pass `tbatchb`; `thinking_batched()`, Table `tab_tbatched`): GSM8K, 400 requests, batch 16/32: LoopBridge 4/2
-    96.5 vs Original 4/4 95.5 (+1.0 [-0.8, 2.8]) at 0.54-0.58x its time; +2.2 over Original 2/2 and +3.8-4.2 over
-    Distilled 2/2 at 0.80-1.02x their time (served-answer accuracy; lm-eval on the same 400 items: 95.0 / 95.2).
-    MATH-500 (500, 8,192 tokens, batch 16) both passes running on a2 since 17:56.
+    96.5 vs Original 4/4 95.5 (+1.0 [-0.8, 2.8]) at 0.46-0.56x its time (3 passes); +2.2 over Original 2/2 and
+    +3.8-4.2 over Distilled 2/2 at 0.80-0.98x their time (served-answer accuracy; lm-eval on the same 400 items: 95.0 / 95.2).
+    MATH-500 (500, 8,192 tokens, batch 16): LoopBridge 86.2, Original 2/2 84.2, 4/4 89.8, Distilled 83.6; 0.58x the
+    time of 4/4. Now Figure 8 (fig_tbatched); the old throughput frontier is in Appendix K. Third MATH pass (tbatchc) on a1.
   - *Three seeds of each all-pairs adapter* at 4/1 (`lora80()` a41_three_arms): avg 56.7/54.3/56.7, RULER-16K
     63.9+-1.0 (LoopBridge) / 44.7+-4.4 (r16) / 57.6+-1.6 (r80); in Section 5.6.
   - *Thinking MATH-500*: the distilled model's shard 3 had died twice on a cuDNN SDPA error at item 74; resumed with

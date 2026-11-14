@@ -871,30 +871,32 @@ def tab_batched():
 
 
 def fig_tbatched(name="fig_tbatched"):
-    """Ouro-2.6B-Thinking served in batches of 16 (paper_numbers thinking_batched): accuracy of the served answers against
-    wall seconds per request on GSM8K and MATH-500 for Original 2/2 and 4/4, Distilled 2/2 and Ours (LoopBridge 4/2)."""
+    """Figure 8: Ouro-2.6B-Thinking served in batches of 16 (paper_numbers thinking_batched): accuracy of the served
+    answers against wall seconds per request on GSM8K and MATH-500 for Original 2/2 and 4/4, Distilled 2/2 and Ours
+    (LoopBridge 4/2); the panel text gives Ours' time relative to Original 4/4."""
     T = PN.get("thinking_batched", {})
     tasks = [(t, lab) for t, lab in (("gsmthink", "GSM8K"), ("maththink", "MATH-500"))
              if all(f"{t} {c}@16" in T for c in ("native2st", "native4st", "D2st", "a4x2pm"))]
     if not tasks:
         return drop(name)
-    fig, axes = plt.subplots(1, len(tasks), figsize=(3.3, 2.0), squeeze=False)
+    fig, axes = plt.subplots(1, len(tasks), figsize=(3.3, 2.25), squeeze=False)
     for ax, (t, lab) in zip(axes[0], tasks):
         pt = lambda c: (T[f"{t} {c}@16"]["s_per_request"], T[f"{t} {c}@16"]["acc"])
-        (x2, y2), (x4, y4) = pt("native2st"), pt("native4st")
-        ax.plot([x2, x4], [y2, y4], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3)
-        ax.annotate("2/2", (x2, y2), xytext=(0, -9), textcoords="offset points", fontsize=6.5, color=NAT, ha="center")
+        (x2, y2), (x4, y4), (xd, yd), (xo, yo) = pt("native2st"), pt("native4st"), pt("D2st"), pt("a4x2pm")
+        ax.plot([x2, x4], [y2, y4], "-", color=NAT_LIGHT, marker="o", ms=3, lw=1.3, zorder=2)
+        ax.annotate("2/2", (x2, y2), xytext=(5, -2), textcoords="offset points", fontsize=6.5, color=NAT, ha="left", va="top")
         ax.annotate("4/4", (x4, y4), xytext=(0, -9), textcoords="offset points", fontsize=6.5, color=NAT, ha="center")
-        ax.scatter(*pt("D2st"), marker="^", s=22, zorder=3, facecolors="white", edgecolors=DIST, lw=1)
-        xo, yo = pt("a4x2pm")
+        ax.scatter(xd, yd, marker="^", s=22, zorder=3, facecolors="white", edgecolors=DIST, lw=1)
         ax.scatter(xo, yo, marker="s", s=24, zorder=4, color=OURS)
-        ax.annotate("4/2", (xo, yo), xytext=(0, 4), textcoords="offset points", fontsize=6.5, color=INK, ha="center")
+        ax.annotate("4/2", (xo, yo), xytext=(-5, 2), textcoords="offset points", fontsize=6.5, color=INK, ha="right")
         ax.axhline(y4, color=NAT_LIGHT, lw=0.7, ls=":", zorder=1)
         r = T.get(f"{t} a4x2pm vs native4st@16")
         if r:
-            ax.set_title(f"{lab}: {r['ratio']:.2f}x the time of 4/4", fontsize=7.5, color=INK, pad=3)
-        lo = min(y2, y4, yo, pt("D2st")[1]); hi = max(y2, y4, yo)
-        ax.set_ylim(lo - 3, hi + 2.5); ax.set_xlim(0, max(x2, x4, xo) * 1.12)
+            ax.text(0.03, 0.04, f"4/2: {r['ratio']:.2f}x the\ntime of 4/4", transform=ax.transAxes, fontsize=6,
+                    color=OURS, ha="left", va="bottom")
+        lo, hi = min(y2, y4, yo, yd), max(y2, y4, yo)
+        ax.set_ylim(lo - 3.5, hi + 2); ax.set_xlim(0, max(x2, x4, xo) * 1.12)
+        ax.set_title(lab, fontsize=7.5, color=INK, pad=3)
         ax.set_xlabel("seconds per request", fontsize=7); ax.tick_params(labelsize=6.5)
         ax.grid(color="#EDEDED", lw=0.5); ax.set_axisbelow(True)
     axes[0, 0].set_ylabel("accuracy (%)", fontsize=7)
@@ -903,7 +905,7 @@ def fig_tbatched(name="fig_tbatched"):
          L([], [], color=NAT_LIGHT, marker="o", ms=4, lw=1.3)]
     fig.legend(h, ["Ours (LoopBridge 4/2)", "Distilled 2/2", "Original n/n"], fontsize=6.5, loc="lower center",
                frameon=False, handlelength=1.5, ncol=3, columnspacing=1.0)
-    fig.subplots_adjust(left=0.12, right=0.98, top=0.88, bottom=0.33, wspace=0.32)
+    fig.subplots_adjust(left=0.12, right=0.98, top=0.9, bottom=0.3, wspace=0.3)
     save(fig, name)
 
 

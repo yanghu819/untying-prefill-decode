@@ -333,7 +333,7 @@ time.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{../figs/fig_tbatched.pdf}
-\caption{\textbf{The reasoning model: four-loop accuracy at two-loop cost.} Ouro-2.6B-Thinking served with continuous
+\caption{\textbf{Four prefill loops lift two-loop decoding toward four-loop accuracy at two-loop cost.} Ouro-2.6B-Thinking served with continuous
 batching (batch 16, one B300; chat template, 4,096- and 8,192-token budgets): accuracy of the served answers against
 wall seconds per request on 400 GSM8K problems and all of MATH-500. Ours: LoopBridge with per-loop caches and the maps
 folded in, prefill 4 / decode 2; dotted: Original 4/4. Numbers: Table~\ref{tab:tbatched}.}
@@ -402,18 +402,19 @@ with two decode loops, untying and distillation reach about the same accuracy in
 
 Batching makes the extra prefill loops dearer, since the batch shares each decode step while every prompt is still
 prefilled on its own. Served with continuous batching (Figure~\ref{fig:batched} in Appendix~\ref{app:serve}), the four
-prefill loops take 27\% of the wall time at batch 32. LoopBridge 4/1 then needs $1.15\times$ and $1.17\times$ the time
+prefill loops take 27\% of the wall time at batch 32. LoopBridge 4/1 then needs $1.15\times$ and $1.16\times$ the time
 per request of Original 1/1 and Distilled 1/1 and stays $+14.5$\ci{9.0}{19.8} and $+8.0$\ci{2.8}{13.5} points above
-them; a second decode loop costs $1.38$--$1.48\times$ its time.
+them; a second decode loop costs $1.44$--$1.52\times$ its time.
 
 Measured as decode throughput instead (Figure~\ref{fig:pareto}), the one-cache LoopBridge with four prefill loops is
 more accurate than Original $n/n$ at one or two decode loops and faster at three or four, since one stored prompt cache
 admits larger batches; at 4/2 it has $1.19\times$ and $3.2\times$ the throughput of Original 2/2 and 4/4.
 
-On Ouro-2.6B-Thinking, prefill 4 / decode 2 comes within 1.3 points of Original 4/4 on average at 3.2 times its decode
-throughput (Figure~\ref{fig:frontier}). Served in batches of 16 or 32, LoopBridge 4/2 matches Original 4/4 on
-400 GSM8K problems (96.5 against 95.5) in 0.49--0.58 of its time and beats Original 2/2 and Distilled 2/2 by 2.2 to 4.2
-points in 0.80--1.02 of their time (Table~\ref{tab:tbatched}).
+On Ouro-2.6B-Thinking, prefill 4 / decode 2 comes within 1.3 points of Original 4/4 on average over eight benchmarks
+at 3.2 times its decode throughput (Figure~\ref{fig:frontier} in Appendix~\ref{app:serve}). Served in batches
+(Figure~\ref{fig:tbatched}), LoopBridge 4/2 matches Original 4/4 on 400 GSM8K problems (96.5 against 95.5) in
+0.46--0.56 of its time and beats Original 2/2 and Distilled 2/2 by 2.2 to 4.2 points in 0.80--0.98 of their time; on
+MATH-500 it lands between Original 2/2 and 4/4 (86.2 against 84.2 and 89.8) in 0.58 of the time of 4/4.
 
 
 \subsection{Ablations}
@@ -1113,7 +1114,7 @@ is no chunked prefill, which favours configurations with a short prefill. Each r
 one buffer per loop and layer, and decode attention reads only that request's tokens (flash attention with variable
 lengths). Decoding is the same for every configuration: the $n$-loop model on per-loop prompt caches, with LoRA merged
 into the weights and, for LoopBridge, the maps folded into the caches. Time per request is the total wall time divided
-by the 400 requests, averaged over two timing passes: single runs of one task vary by 10--30\% between passes (the
+by the 400 requests, averaged over three timing passes: single runs of one task vary by 10--30\% between passes (the
 generated tokens are identical), as eager decoding is bound by host-side work on a shared machine. Batch 1 is in
 Figure~\ref{fig:budgetfull}.
 
@@ -1122,7 +1123,7 @@ Figure~\ref{fig:budgetfull}.
 \IfFileExists{../figs/fig_batched.pdf}{\includegraphics[width=0.66\textwidth]{../figs/fig_batched.pdf}}{}
 \caption{\textbf{Batched serving keeps the one-decode-loop advantage.} The 400 timed requests of
 Figure~\ref{fig:budgetfull} served with continuous batching on one B300, each prompt prefilled alone: mean accuracy of
-the served answers against wall seconds per request (mean of two timing passes). Filled: one decode loop; hollow:
+the served answers against wall seconds per request (mean of three timing passes). Filled: one decode loop; hollow:
 two.}
 \label{fig:batched}
 \end{figure*}
@@ -1150,13 +1151,13 @@ seconds per request, and the prefill share of the wall time at batch 32; ours sh
 \toprule
  & \multicolumn{3}{c}{GSM8K (400)} & \multicolumn{2}{c}{MATH-500} \\
 \cmidrule(lr){2-4}\cmidrule(l){5-6}
- & acc., b16 & s, b16 & s, b32 & acc. & s, b16 \\
+ & acc. & s, b16 & s, b32 & acc. & s, b16 \\
 \midrule
 \csname @@input\endcsname ../figs/tab_tbatched.tex
 \bottomrule
 \end{tabular}
-\caption{\textbf{Batched serving, Ouro-2.6B-Thinking} (chat template; budgets 4,096 and 8,192 tokens): accuracy (\%)
-and wall seconds per request at batch 16 and 32, mean of two timing passes; ours shaded.}
+\caption{\textbf{Batched serving, Ouro-2.6B-Thinking} (chat template; budgets 4,096 and 8,192 tokens): accuracy (\%) of the answers served at batch 16 and wall seconds per
+request at batch 16 and 32, mean of two or three timing passes; ours shaded.}
 \label{tab:tbatched}
 \end{table}
 

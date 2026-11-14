@@ -22,11 +22,11 @@ against the printed value: `python ouro/scripts/paper_numbers.py compute`. See [
    one loop on the same data (49.8; 50.2 at rank 80); with two decode loops, 63.0 -> 67.3 / 67.2.
 3. **Same measured time, more accuracy.** At one decode loop and about 11 s per request, +15.0 and +14.2 points over
    the original model and +7.8 and +7.0 over the distilled one (paired over 400 requests). Served with continuous
-   batching at batch 32, LoopBridge 4/1 keeps +14.5 / +8.0 points for 1.15x / 1.17x their time per request.
+   batching at batch 32, LoopBridge 4/1 keeps +14.5 / +8.0 points for 1.15x / 1.16x their time per request.
 4. **A few prefill loops suffice.** The gain peaks after two to five prefill loops (also for an adapter trained up to
    16 loops, over seeds, and when the prefill loops are trained too).
 5. **It transfers** to Ouro-1.4B, Ouro-2.6B-Thinking (prefill 4 / decode 2 within 1.3 points of the original 4/4 on average;
-   served in batches of 16-32, as accurate as 4/4 on GSM8K, 96.5 vs 95.5, in 0.49-0.58x its time) and looped decision
+   served in batches of 16-32, as accurate as 4/4 on GSM8K, 96.5 vs 95.5, in 0.46-0.56x its time; on MATH-500 between 2/2 and 4/4 in 0.58x the time of 4/4) and looped decision
    models (Lev, +4.4 to +7.5 at one decision loop).
 6. **LoopBridge's key/value maps keep retrieval over 16K-token prompts** when one adapter serves every depth
    (RULER-16K at 4/1 over three seeds: 63.9 vs 57.6 for a parameter-matched rank-80 LoRA and 44.7 at rank 16); they
